@@ -26,3 +26,8 @@ secret-settings.json
 .pytest_cache/
 tests/.pytest_cache/
 node_modules/
+
+.DS_Store
+api/.DS_Store
+api/__pycache__/
+api/tests/test_sql/.DS_Store
