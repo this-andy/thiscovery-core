@@ -1,0 +1,137 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: citsci-api
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: eu-west-2
+  profile: serverless
+  timeout: 10
+  vpc:
+    securityGroupIds:
+      - sg-b719b0dc
+    subnetIds:
+      - subnet-4cef1736
+      - subnet-653d3328
+      - subnet-c4db60ad
+
+iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - rds:*
+      Resource:
+        - "*"
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+plugins:
+  - serverless-python-requirements
+  - serverless-offline
+
+functions:
+  ping:
+    handler: api/handler.ping
+    events:
+      - http:
+          path: v1/ping
+          method: get
+          cors: true
+
+# Project endpoints
+  list-projects:
+    handler: api/project.list_projects_api
+    events:
+      - http:
+          path: v1/project
+          method: get
+          cors: true
+
+# User endpoints
+  get-user-by-uuid:
+    handler: api/user.get_user_by_uuid_api
+    events:
+      - http:
+          path: v1/user/{id}
+          method: get
+          cors: true
+
+  get-user-by-email:
+    handler: api/user.get_user_by_email_api
+    events:
+      - http:
+          path: v1/user
+          method: get
+          cors: true
+
+  patch-user:
+    handler: api/user.patch_user_api
+    events:
+      - http:
+          path: v1/user/{id}
+          method: patch
+          cors: true
+
+# User external account endpoints
+  create-user-external-account:
+    handler: api/user_external_account.create_user_external_account_api
+    events:
+      - http:
+          path: v1/userexternalaccount
+          method: post
+          cors: true
+
+# User project endpoints
+  list-userprojects:
+    handler: api/user_project.list_user_projects_api
+    events:
+      - http:
+          path: v1/userproject
+          method: get
+          cors: true
+
+  create-userproject:
+    handler: api/user_project.create_user_project_api
+    events:
+      - http:
+          path: v1/userproject
+          method: post
+          cors: true
+
+# User task endpoints
+  list-usertasks:
+    handler: api/user_task.list_user_tasks_api
+    events:
+      - http:
+          path: v1/usertask
+          method: get
+          cors: true
+
+  create-usertask:
+    handler: api/user_task.create_user_task_api
+    events:
+      - http:
+          path: v1/usertask
+          method: post
+          cors: true
+
+
+
+
