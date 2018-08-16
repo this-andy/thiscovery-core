@@ -5,6 +5,19 @@ from api.utilities import validate_uuid, get_correlation_id, get_logger, Detaile
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body
 
 
+BASE_USER_SELECT_SQL = '''
+  SELECT 
+    username, 
+    name,
+    first_name,
+    last_name,
+    email,
+    uuid 
+  FROM 
+    public.users_user
+    '''
+
+
 def get_user_id(user_uuid, correlation_id):
 
     base_sql = '''
@@ -31,21 +44,9 @@ def get_user_by_uuid(user_uuid, correlation_id):
     except DetailedValueError as err:
         raise err
 
-    base_sql = '''
-      SELECT 
-        username, 
-        name,
-        first_name,
-        last_name,
-        email,
-        uuid 
-      FROM 
-        public.users_user
-      WHERE
-        uuid = ''' \
-               + "\'" + str(user_uuid) + "\'"
+    sql_where_clause = " WHERE uuid = \'" + str(user_uuid) + "\'"
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, correlation_id)
 
 
 def get_user_by_uuid_api(event, context):
@@ -53,8 +54,8 @@ def get_user_by_uuid_api(event, context):
     correlation_id = None
 
     try:
-        user_uuid = event['pathParameters']['id']
         correlation_id = get_correlation_id(event)
+        user_uuid = event['pathParameters']['id']
         logger.info('API call', extra={'user_uuid': user_uuid, 'correlation_id': correlation_id, 'event': event})
 
         result = get_user_by_uuid(user_uuid, correlation_id)
@@ -82,21 +83,9 @@ def get_user_by_uuid_api(event, context):
 
 def get_user_by_email(user_email, correlation_id):
 
-    base_sql = '''
-      SELECT 
-        username, 
-        name,
-        first_name,
-        last_name,
-        email,
-        uuid 
-      FROM 
-        public.users_user
-      WHERE
-        email = ''' \
-        + "\'" + str(user_email) + "\'"
+    sql_where_clause = " WHERE email = \'" + str(user_email) + "\'"
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, correlation_id)
 
 
 def get_user_by_email_api(event, context):
@@ -173,7 +162,7 @@ def patch_user_api(event, context):
 
 
 if __name__ == "__main__":
-    qsp = {'email': 'a.paterson@thisinstitute.cam.ac.uk'}
+    qsp = {'email': 'andy.paterson@thisinstitute.cam.ac.uk'}
     ev = {'queryStringParameters': qsp}
     result = get_user_by_email_api(ev, None)
     print(result)

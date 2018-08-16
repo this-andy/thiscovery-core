@@ -22,7 +22,7 @@ provider:
   runtime: python3.6
   region: eu-west-2
   profile: serverless
-  timeout: 10
+  timeout: 30
   vpc:
     securityGroupIds:
       - sg-b719b0dc
@@ -35,6 +35,7 @@ iamRoleStatements:
     - Effect: Allow
       Action:
         - rds:*
+        - secretsmanager:*
       Resource:
         - "*"
 
@@ -61,6 +62,14 @@ functions:
     events:
       - http:
           path: v1/project
+          method: get
+          cors: true
+
+  get-project-by-uuid:
+    handler: api/project.get_project_api
+    events:
+      - http:
+          path: v1/project/{id}
           method: get
           cors: true
 
