@@ -70,7 +70,8 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_get_user_by_uuid_api_bad_uuid(self):
@@ -82,8 +83,12 @@ class TestUser(TestCase):
 
         result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('uuid' in result_json)
+        self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
     def test_get_user_email_exists(self):
@@ -126,7 +131,8 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_patch_user_api_ok(self):
@@ -187,8 +193,9 @@ class TestUser(TestCase):
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_patch_user_api_bad_attribute(self):
@@ -204,6 +211,7 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(result_status, expected_status)
+        self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'Patch attribute not recognised')
 
 
@@ -220,6 +228,7 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(result_status, expected_status)
+        self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'Patch operation not currently supported')
 
 
@@ -236,6 +245,7 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(result_status, expected_status)
+        self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'].endswith('not found in jsonpatch'))
 
 
@@ -268,7 +278,11 @@ class TestUser(TestCase):
         expected_status = 409
         result = create_user_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
     def test_create_user_api_bad_uuid(self):
@@ -287,5 +301,9 @@ class TestUser(TestCase):
         event = {'body': json.dumps(user_json)}
         result = create_user_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('uuid' in result_json)
+        self.assertTrue('message' in result_json and 'uuid' in result_json['message'])

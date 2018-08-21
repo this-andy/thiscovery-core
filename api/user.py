@@ -33,6 +33,7 @@ def get_user_by_id(user_id, correlation_id):
     try:
         user_uuid = validate_uuid(user_id)
     except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
         raise err
 
     sql_where_clause = " WHERE id = \'" + str(user_id) + "\'"
@@ -177,15 +178,18 @@ def create_user(user_json, correlation_id):
         first_name = user_json['first_name']
         last_name = user_json['last_name']
         status = validate_status(user_json['status'])
-    except :
-        raise
+    except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
+
 
     # now process optional json data
     if 'id' in user_json:
         try:
             id = validate_uuid(user_json['id'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         id = str(uuid.uuid4())
         user_json['id'] = id
@@ -193,8 +197,9 @@ def create_user(user_json, correlation_id):
     if 'created' in user_json:
         try:
             created = validate_utc_datetime(user_json['created'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         created = str(datetime.datetime.utcnow())
         user_json['created'] = created

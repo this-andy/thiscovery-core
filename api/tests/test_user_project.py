@@ -81,7 +81,8 @@ class TestUserProject(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_list_user_projects_api_no_results(self) :
@@ -127,7 +128,11 @@ class TestUserProject(TestCase):
         expected_status = 409
         result = create_user_project_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
     def test_create_user_projects_api_user_not_exists(self):
@@ -142,8 +147,11 @@ class TestUserProject(TestCase):
         event = {'body': json.dumps(up_json)}
         result = create_user_project_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_create_user_projects_api_project_not_exists(self):
@@ -158,5 +166,8 @@ class TestUserProject(TestCase):
         event = {'body': json.dumps(up_json)}
         result = create_user_project_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])

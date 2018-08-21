@@ -64,8 +64,13 @@ class TestUserExternalAccount(TestCase):
         # now check we can't insert same record again...
         expected_status = 409
         result = create_user_external_account_api(event, None)
+
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
     def test_create_user_external_account_api_user_not_exists(self):
@@ -84,7 +89,8 @@ class TestUserExternalAccount(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_create_user_external_account_api_ext_sys_not_exists(self):
@@ -100,8 +106,11 @@ class TestUserExternalAccount(TestCase):
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
     def test_create_user_external_account_api_bad_user_uuid(self):
@@ -110,15 +119,19 @@ class TestUserExternalAccount(TestCase):
         expected_status = 400
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
-            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6dddf",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6dddm",
             'external_user_id': 'cc02',
             'status': 'A'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('uuid' in result_json)
+        self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
     def test_create_user_external_account_api_bad_ext_sys_uuid(self):
@@ -126,7 +139,7 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = 400
         uea_json = {
-            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4dz",
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4dm",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
             'status': 'A'
@@ -134,5 +147,31 @@ class TestUserExternalAccount(TestCase):
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('uuid' in result_json)
+        self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
+
+
+    def test_create_user_external_account_api_bad_created_date(self):
+        from api.user_external_account import create_user_external_account_api
+
+        expected_status = 400
+        uea_json = {
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
+            'external_user_id': 'cc02',
+            'status': 'A',
+            'created': '2018-26-23 14:15:16.171819+00'
+        }
+        event = {'body': json.dumps(uea_json)}
+        result = create_user_external_account_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('datetime' in result_json)
+        self.assertTrue('message' in result_json and 'datetime' in result_json['message'])

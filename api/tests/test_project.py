@@ -114,4 +114,5 @@ class TestProject(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'project does not exist')

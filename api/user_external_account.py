@@ -35,15 +35,17 @@ def create_user_external_account(uea_json, correlation_id):
         user_id = validate_uuid(uea_json['user_id'])
         external_user_id = uea_json['external_user_id']
         status = validate_status(uea_json['status'])
-    except :
-        raise
+    except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
 
     # now process optional json data
     if 'id' in uea_json:
         try:
             id = validate_uuid(uea_json['id'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         id = str(uuid.uuid4())
         uea_json['id'] = id
@@ -51,8 +53,9 @@ def create_user_external_account(uea_json, correlation_id):
     if 'created' in uea_json:
         try:
             created = validate_utc_datetime(uea_json['created'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         created = str(datetime.datetime.utcnow())
         uea_json['created'] = created

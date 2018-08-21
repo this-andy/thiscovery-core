@@ -102,7 +102,8 @@ class TestUserTask(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
     def test_3_list_user_tasks_api_no_results(self):
@@ -149,7 +150,11 @@ class TestUserTask(TestCase):
         expected_status = 409
         result = create_user_task_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
         self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
     def test_5_create_user_task_api_task_not_exists(self):
@@ -165,8 +170,11 @@ class TestUserTask(TestCase):
         event = {'body': json.dumps(ut_json)}
         result = create_user_task_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
     def test_6_create_user_task_api_user_project_not_exists(self):
@@ -182,5 +190,9 @@ class TestUserTask(TestCase):
         event = {'body': json.dumps(ut_json)}
         result = create_user_task_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
+
