@@ -81,8 +81,10 @@ class TestUserExternalAccount(TestCase):
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
         result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
 
 
     def test_create_user_external_account_api_ext_sys_not_exists(self):

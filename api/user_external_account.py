@@ -2,6 +2,7 @@ import json
 import uuid
 import datetime
 from api.pg_utilities import execute_query, execute_non_query
+from api.user import get_user_by_id
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body
 
@@ -65,8 +66,8 @@ def create_user_external_account(uea_json, correlation_id):
         raise DuplicateInsertError('user_external_account already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)
-    # user_id = get_user_id(user_uuid, correlation_id)
-    if user_id is None:
+    existing_user = get_user_by_id(user_id, correlation_id)
+    if len(existing_user) == 0:
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
