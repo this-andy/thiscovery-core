@@ -1,28 +1,19 @@
-CREATE TABLE public.users_user
+DROP TABLE public.projects_user CASCADE;
+
+CREATE TABLE public.projects_user
 (
-    id integer NOT NULL,
-    password character varying(128) COLLATE pg_catalog."default" NOT NULL,
-    last_login timestamp with time zone,
-    is_superuser boolean NOT NULL,
-    username character varying(150) COLLATE pg_catalog."default" NOT NULL,
-    first_name character varying(30) COLLATE pg_catalog."default" NOT NULL,
-    last_name character varying(30) COLLATE pg_catalog."default" NOT NULL,
-    email character varying(254) COLLATE pg_catalog."default" NOT NULL,
-    is_staff boolean NOT NULL,
-    is_active boolean NOT NULL,
-    date_joined timestamp with time zone NOT NULL,
-    name character varying(255) COLLATE pg_catalog."default" NOT NULL,
-    uuid uuid NOT NULL,
-    CONSTRAINT users_user_pkey PRIMARY KEY (id),
-    CONSTRAINT users_user_username_key UNIQUE (username),
-    CONSTRAINT users_user_uuid_key UNIQUE (uuid)
+    id uuid NOT NULL,
+    created timestamp with time zone NOT NULL,
+    modified timestamp with time zone NOT NULL,
+    email character varying(100) COLLATE pg_catalog."default",
+    title character varying(20) COLLATE pg_catalog."default",
+    first_name character varying(50) COLLATE pg_catalog."default",
+    last_name character varying(50) COLLATE pg_catalog."default",
+    auth0_id character varying(50) COLLATE pg_catalog."default",
+    status character varying(12) COLLATE pg_catalog."default",
+    CONSTRAINT projects_user_pkey PRIMARY KEY (id)
 )
 WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
-
-CREATE INDEX users_user_username_06e46fe6_like
-    ON public.users_user USING btree
-    (username COLLATE pg_catalog."default" varchar_pattern_ops)
-    TABLESPACE pg_default;

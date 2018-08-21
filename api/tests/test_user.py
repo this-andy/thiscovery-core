@@ -22,7 +22,7 @@ class TestUser(TestCase):
 
         correlation_id = new_correlation_id()
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.users_user')
+        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
 
 
     @classmethod
@@ -32,29 +32,25 @@ class TestUser(TestCase):
         self.postgresql.stop()
 
 
-    def test_get_user_id_exists(self):
-        from api.user import get_user_id
-        user_uuid = '23e38ff4-1483-408a-ad58-d08cb5a34037'
-        result = get_user_id(user_uuid, new_correlation_id())
-        self.assertEqual(4, result)
-
-
-    def test_get_user_id_not_exists(self):
-        from api.user import get_user_id
-        user_uuid = '23e38ff4-1483-408a-ad58-d08cb5a34038'
-        result = get_user_id(user_uuid, new_correlation_id())
-        self.assertIsNone(result)
-
-
     def test_get_user_by_uuid_api_exists(self):
-        from api.user import get_user_by_uuid_api
-        path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34037"}
+        from api.user import get_user_by_id_api
+        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
         event = {'pathParameters': path_parameters}
 
         expected_status = 200
-        expected_body = [{"username": "user01", "name": "User01", "first_name": "fn1", "last_name": "LN1", "email": "user01@emailaddress.co.uk", "uuid": "23e38ff4-1483-408a-ad58-d08cb5a34037"}]
+        expected_body = [{
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T13:10:56.798192+01:00",
+            "modified": "2018-08-17T13:10:56.833885+01:00",
+            "email": "altha@email.addr",
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "auth0_id": None,
+            "status": None
+        }]
 
-        result = get_user_by_uuid_api(event, None)
+        result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -63,13 +59,13 @@ class TestUser(TestCase):
 
 
     def test_get_user_by_uuid_api_not_exists(self):
-        from api.user import get_user_by_uuid_api
+        from api.user import get_user_by_id_api
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
         event = {'pathParameters': path_parameters}
 
         expected_status = 404
 
-        result = get_user_by_uuid_api(event, None)
+        result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -78,13 +74,13 @@ class TestUser(TestCase):
 
 
     def test_get_user_by_uuid_api_bad_uuid(self):
-        from api.user import get_user_by_uuid_api
+        from api.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
         event = {'pathParameters': path_parameters}
 
         expected_status = 400
 
-        result = get_user_by_uuid_api(event, None)
+        result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
 
         self.assertEqual(expected_status, result_status)
@@ -93,11 +89,21 @@ class TestUser(TestCase):
     def test_get_user_email_exists(self):
         from api.user import get_user_by_email_api
 
-        querystring_parameters = {'email': 'user03@emailaddress.co.uk'}
+        querystring_parameters = {'email': 'altha@email.addr'}
         event = {'queryStringParameters': querystring_parameters}
 
         expected_status = 200
-        expected_body = [{"username": "user03", "name": "User03", "first_name": "fn3", "last_name": "LN3", "email": "user03@emailaddress.co.uk", "uuid": "e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41"}]
+        expected_body = [{
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T13:10:56.798192+01:00",
+            "modified": "2018-08-17T13:10:56.833885+01:00",
+            "email": "altha@email.addr",
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "auth0_id": None,
+            "status": None
+        }]
 
         result = get_user_by_email_api(event, None)
         result_status = result['statusCode']
@@ -122,6 +128,7 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('message' in result_json and result_json['message'] == 'user does not exist')
 
+
     def test_patch_user_api_ok(self):
         from api.user import patch_user_api
 
@@ -131,7 +138,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': 'last_name', 'value': 'smith'},
             {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'}]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4679'}
+        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -139,19 +146,23 @@ class TestUser(TestCase):
         self.assertEqual(result_status, expected_status)
 
         # now check database values...
-        from api.user import get_user_by_uuid_api
-        path_parameters = {'id': "8e385316-5827-4c72-8d4b-af5c57ff4679"}
+        from api.user import get_user_by_id_api
+        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
         event = {'pathParameters': path_parameters}
 
         expected_body = [{
-            "username": "user02",
-            "name": "User02",
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T13:10:56.798192+01:00",
+            "modified": "2018-08-17T13:10:56.833885+01:00",
+            "email": "simon.smith@dancingbear.com",
+            "title": "Mrs",
             "first_name": "simon",
             "last_name": "smith",
-            "email": "simon.smith@dancingbear.com",
-            "uuid": "8e385316-5827-4c72-8d4b-af5c57ff4679"}]
+            "auth0_id": None,
+            "status": None
+        }]
 
-        result = get_user_by_uuid_api(event, None)
+        result = get_user_by_id_api(event, None)
         result_json = json.loads(result['body'])
 
         self.assertDictEqual(result_json[0], expected_body[0])
@@ -166,7 +177,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': 'last_name', 'value': 'smith'},
             {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'}]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4670'}
+        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdd'}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -182,7 +193,7 @@ class TestUser(TestCase):
         expected_status = 400
         user_jsonpatch = [{'op': 'replace', 'path': 'non-existent-attribute', 'value': 'simon'}]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4679'}
+        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -198,7 +209,7 @@ class TestUser(TestCase):
         expected_status = 400
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': 'first_name', 'value': 'simon'}]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4679'}
+        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -214,7 +225,7 @@ class TestUser(TestCase):
         expected_status = 400
         user_jsonpatch = [{'this': 'is', 'not': 'a', 'valid': 'jsonpatch'}]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4679'}
+        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -222,3 +233,55 @@ class TestUser(TestCase):
 
         self.assertEqual(result_status, expected_status)
         self.assertTrue('message' in result_json and result_json['message'].endswith('not found in jsonpatch'))
+
+
+    def test_create_user_api_ok_and_duplicate(self):
+        from api.user import create_user_api
+
+        expected_status = 201
+        user_json = {
+            "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
+            "created": "2018-08-21T11:16:56+01:00",
+            "email": "sw@email.addr",
+            "title": "Mr",
+            "first_name": "Steven",
+            "last_name": "Walcorn",
+            "auth0_id": "1234abcd",
+            "status": "new"}
+        event = {'body': json.dumps(user_json)}
+        result = create_user_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # modified is not part of body supplied but is returned
+        expected_body = dict.copy(user_json)
+        expected_body['modified'] = user_json['created']
+
+        self.assertEqual(result_status, expected_status)
+        self.assertDictEqual(result_json, expected_body)
+
+        # now check we can't insert same record again...
+        expected_status = 409
+        result = create_user_api(event, None)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+
+    def test_create_user_api_bad_uuid(self):
+        from api.user import create_user_api
+
+        expected_status = 400
+        user_json = {
+            "id": "48e30e54-b4fc-4303-963f-2943dda2b13m",
+            "created": "2018-08-21T11:16:56+01:00",
+            "email": "sw@email.addr",
+            "title": "Mr",
+            "first_name": "Steven",
+            "last_name": "Walcorn",
+            "auth0_id": "1234abcd",
+            "status": "new"}
+        event = {'body': json.dumps(user_json)}
+        result = create_user_api(event, None)
+        result_status = result['statusCode']
+
+        self.assertEqual(result_status, expected_status)

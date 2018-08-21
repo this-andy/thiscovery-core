@@ -1,3 +1,5 @@
+DROP TABLE public.projects_userexternalaccount CASCADE;
+
 CREATE TABLE public.projects_userexternalaccount
 (
     id uuid NOT NULL,
@@ -6,15 +8,15 @@ CREATE TABLE public.projects_userexternalaccount
     external_user_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
     status character varying(12) COLLATE pg_catalog."default",
     external_system_id uuid NOT NULL,
-    user_id integer NOT NULL,
+    user_id uuid NOT NULL,
     CONSTRAINT projects_userexternalaccount_pkey PRIMARY KEY (id),
     CONSTRAINT projects_userexterna_external_system_id_caa20537_fk_projects_ FOREIGN KEY (external_system_id)
         REFERENCES public.projects_externalsystem (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         DEFERRABLE INITIALLY DEFERRED,
-    CONSTRAINT projects_userexternalaccount_user_id_f56ae6d3_fk_users_user_id FOREIGN KEY (user_id)
-        REFERENCES public.users_user (id) MATCH SIMPLE
+    CONSTRAINT projects_userexterna_user_id_f56ae6d3_fk_projects_ FOREIGN KEY (user_id)
+        REFERENCES public.projects_user (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         DEFERRABLE INITIALLY DEFERRED

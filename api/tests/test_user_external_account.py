@@ -8,8 +8,8 @@ from api.utilities import new_correlation_id
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
 
-class TestUserExternalAccount(TestCase):
 
+class TestUserExternalAccount(TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -25,7 +25,7 @@ class TestUserExternalAccount(TestCase):
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_external_account_create.sql', correlation_id)
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.users_user')
+        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
         insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
         insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_external_account_data.csv', 'public.projects_userexternalaccount')
 
@@ -42,8 +42,8 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = 201
         uea_json = {
-            'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef4',
-            'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4679',
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
             'status': 'A',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
@@ -90,8 +90,8 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = 400
         uea_json = {
-            'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef5',
-            'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4679',
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d9",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
             'status': 'A'
         }
@@ -107,8 +107,8 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = 400
         uea_json = {
-            'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef4',
-            'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4670z',
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6dddf",
             'external_user_id': 'cc02',
             'status': 'A'
         }
@@ -124,8 +124,8 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = 400
         uea_json = {
-            'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64efz',
-            'user_id': '8e385316-5827-4c72-8d4b-af5c57ff46709',
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4dz",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
             'status': 'A'
         }

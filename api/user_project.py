@@ -2,41 +2,40 @@ import uuid
 import json
 import datetime
 from api.pg_utilities import execute_query, execute_non_query
-from api.utilities import UserDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
+from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body
-from api.user import get_user_id
+from api.user import get_user_by_id
 
 
 def validate_status(s):
     return s
 
 
-def list_user_projects(user_uuid, correlation_id):
+def list_user_projects(user_id, correlation_id):
 
     try:
-        user_uuid = validate_uuid(user_uuid)
+        user_id = validate_uuid(user_id)
     except DetailedValueError:
         raise
 
     # check that user exists
-    user_id = get_user_id(user_uuid, correlation_id)
-    if user_id is None:
-        errorjson = {'user_uuid': user_uuid, 'correlation_id': str(correlation_id)}
-        raise UserDoesNotExistError('user does not exist', errorjson)
+    result = get_user_by_id(user_id, correlation_id)
+    if len(result) == 0:
+        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     base_sql = '''
         SELECT 
-            up.id,
-            u.uuid as user_id,
-            up.project_id,
-            up.created,
-            up.modified,               
-            up.status                
+            id,
+            user_id,
+            project_id,
+            created,
+            modified,               
+            status                
         FROM 
-            public.projects_userproject up
-            inner join public.users_user u on u.id = up.user_id
-        WHERE u.uuid = ''' \
-            + "'" + str(user_uuid) + "'"
+            public.projects_userproject
+        WHERE user_id = ''' \
+               + "'" + str(user_id) + "'"
 
     return execute_query(base_sql, correlation_id)
 
@@ -56,7 +55,7 @@ def list_user_projects_api(event, context):
             "body": json.dumps(list_user_projects(user_uuid, correlation_id))
         }
 
-    except UserDoesNotExistError as err:
+    except ObjectDoesNotExistError as err:
         response = {"statusCode": 404, "body": err.as_response_body()}
 
     except DetailedValueError as err:
@@ -71,28 +70,26 @@ def list_user_projects_api(event, context):
     return response
 
 
-def get_existing_user_project_count(user_uuid, project_id, correlation_id):
+def get_existing_user_project_count(user_id, project_id, correlation_id):
 
-    base_sql = '''
+    base_sql = """
       SELECT 
-        COUNT(up.id)
-      FROM public.projects_userproject up
-        INNER JOIN public.users_user u ON up.user_id = u.id
-      WHERE
-        up.project_id = ''' \
-        + "'" + str(project_id) + "'" \
-        + " AND u.uuid = '" + str(user_uuid) + "'"
+        COUNT(id)
+      FROM public.projects_userproject
+      WHERE """ \
+        + "project_id = '" + str(project_id) + "' " \
+        + "AND user_id = '" + str(user_id) + "'"
 
     return execute_query(base_sql, correlation_id, False)
 
 
 def create_user_project(up_json, correlation_id):
-    # json MUST contain: user_uuid, project_id, status
+    # json MUST contain: user_id, project_id, status
     # json may OPTIONALLY include: id, created,
 
     # extract mandatory data from json
     try:
-        user_uuid = validate_uuid(up_json['user_id'])    # all public id are uuids
+        user_id = validate_uuid(up_json['user_id'])    # all public id are uuids
         project_id = validate_uuid(up_json['project_id'])
         status = validate_status(up_json['status'])
     except DetailedValueError:
@@ -120,16 +117,16 @@ def create_user_project(up_json, correlation_id):
     up_json['modified'] = created
 
     # check external account does not already exist
-    existing = get_existing_user_project_count(user_uuid, project_id, correlation_id)
+    existing = get_existing_user_project_count(user_id, project_id, correlation_id)
     if int(existing[0][0]) > 0:
-        errorjson = {'user_uuid': user_uuid, 'project_id': project_id, 'correlation_id': str(correlation_id)}
+        errorjson = {'user_id': user_id, 'project_id': project_id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user_project already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)
-    user_id = get_user_id(user_uuid, correlation_id)
-    if user_id is None:
-        errorjson = {'user_uuid': user_uuid, 'correlation_id': str(correlation_id)}
-        raise UserDoesNotExistError('user does not exist', errorjson)
+    result = get_user_by_id(user_id, correlation_id)
+    if len(result) == 0:
+        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     sql = '''INSERT INTO public.projects_userproject (
         id,
@@ -141,8 +138,6 @@ def create_user_project(up_json, correlation_id):
     ) VALUES ( %s, %s, %s, %s, %s, %s );'''
 
     rowcount = execute_non_query(sql, (id, created, created, user_id, project_id, status), correlation_id)
-
-    dbdata = list_user_projects(user_uuid, correlation_id)
 
     return rowcount
 
@@ -163,7 +158,7 @@ def create_user_project_api(event, context):
     except DuplicateInsertError as err:
         response = {"statusCode": 409, "body": err.as_response_body()}
 
-    except (UserDoesNotExistError, DetailedIntegrityError, DetailedValueError) as err:
+    except (ObjectDoesNotExistError, DetailedIntegrityError, DetailedValueError) as err:
         response = {"statusCode": 400, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -177,17 +172,17 @@ def create_user_project_api(event, context):
 
 if __name__ == "__main__":
     print('running user_project')
-    up_json = {
-        'user_id': "e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41",
-        'project_id': "21c0779a-5fc2-4b72-8a88-0ba31456b563",
-        'status': 'A',
-        'id': '9620089b-e9a4-46fd-bb78-091c8449d778',
-        'created': '2018-06-13 14:15:16.171819+00'
-    }
-    # print(up_json)
-
-    ev = {'body': json.dumps(up_json)}
-    print(create_user_project_api(ev, None))
-
-    # ev = {}
-    # print(list_user_projects("e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41", None))
+    # up_json = {
+    #     'user_id': "e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41",
+    #     'project_id': "21c0779a-5fc2-4b72-8a88-0ba31456b563",
+    #     'status': 'A',
+    #     'id': '9620089b-e9a4-46fd-bb78-091c8449d778',
+    #     'created': '2018-06-13 14:15:16.171819+00'
+    # }
+    # # print(up_json)
+    #
+    # ev = {'body': json.dumps(up_json)}
+    # print(create_user_project_api(ev, None))
+    #
+    # # ev = {}
+    print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))

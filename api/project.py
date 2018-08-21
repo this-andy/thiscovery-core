@@ -1,7 +1,7 @@
 import json
 import sys
 from api.pg_utilities import execute_query, _jsonize_sql, _get_json_from_tuples
-from api.utilities import get_correlation_id, get_logger, error_as_response_body, UserDoesNotExistError
+from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
 
 
 BASE_PROJECT_SELECT_SQL = '''
@@ -24,7 +24,7 @@ BASE_PROJECT_SELECT_SQL = '''
                         modified,
                         task_type_id,
                         status                         
-                    from public.projects_task task
+                    from public.projects_projecttask task
                     where task.project_id = project.id
                     order by created
                     ) task_row
@@ -83,6 +83,7 @@ def list_projects_api(event, context):
 def get_project_with_tasks(project_uuid, correlation_id):
     # take base sql query and insert a where clause to get specified project
     sql_where_clause = "where id = \'" + str(project_uuid) + "\' "
+    # put where clause before final order by
     order_by_index = BASE_PROJECT_SELECT_SQL.rfind('order by')
     sql = BASE_PROJECT_SELECT_SQL[:order_by_index] + sql_where_clause + BASE_PROJECT_SELECT_SQL[order_by_index:]
 
@@ -106,10 +107,9 @@ def get_project_api(event, context):
             response = {"statusCode": 200, "body": json.dumps(result)}
         else:
             errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise UserDoesNotExistError('project does not exist', errorjson)
+            raise ObjectDoesNotExistError('project does not exist', errorjson)
 
-
-    except UserDoesNotExistError as err:
+    except ObjectDoesNotExistError as err:
         response = {"statusCode": 404, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     # result = get_project_with_tasks('21c0779a-5fc2-4b72-8a88-0ba31456b562',None)
 
-    pp = {'id': "21c0779a-5fc2-4b72-8a88-0ba31456b562"}
+    pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
     ev = {'pathParameters': pp}
     result = get_project_api(ev, None)
 

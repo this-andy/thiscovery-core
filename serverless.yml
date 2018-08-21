@@ -75,7 +75,7 @@ functions:
 
 # User endpoints
   get-user-by-uuid:
-    handler: api/user.get_user_by_uuid_api
+    handler: api/user.get_user_by_id_api
     events:
       - http:
           path: v1/user/{id}

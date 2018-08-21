@@ -24,7 +24,7 @@ class TestUserProject(TestCase):
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_project_create.sql', correlation_id)
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.users_user')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject')
 
@@ -42,16 +42,24 @@ class TestUserProject(TestCase):
         expected_status = 200
         # todo figure out how do do this properly!
         expected_body_gmt = [
-            {'id': '226435d7-e36a-4b0b-a0bd-63e0216cbc0b', 'user_id': 'e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41',
-             'project_id': 'a37331cb-ebb9-4457-b67b-8ce83ae1a24f', 'created': '2018-07-01T14:58:21.558716+00:00',
-             'modified': '2018-07-01T14:58:21.558739+00:00', 'status': None}]
+            {'id': '3fd54ed7-d25c-40ba-9005-4c4da1321748', 'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+             'project_id': '3ffc498f-8add-4448-b452-4fc7f463aa21', 'created': '2018-08-17T12:10:57.362814+00:00',
+             'modified': '2018-08-17T12:10:57.401109+00:00', 'status': None},
+            {'id': '8fdb6137-e196-4c17-8091-7a0d370fadba', 'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+             'project_id': '0c137d9d-e087-448b-ba8d-24141b6ceecd', 'created': '2018-08-17T12:10:57.648741+00:00',
+             'modified': '2018-08-17T12:10:57.683971+00:00', 'status': None}
+        ]
         expected_body_bst = [
-            {'id': '226435d7-e36a-4b0b-a0bd-63e0216cbc0b', 'user_id': 'e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41',
-             'project_id': 'a37331cb-ebb9-4457-b67b-8ce83ae1a24f', 'created': '2018-07-01T15:58:21.558716+01:00',
-             'modified': '2018-07-01T15:58:21.558739+01:00', 'status': None}]
+            {'id': '3fd54ed7-d25c-40ba-9005-4c4da1321748', 'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+             'project_id': '3ffc498f-8add-4448-b452-4fc7f463aa21', 'created': '2018-08-17T13:10:57.362814+01:00',
+             'modified': '2018-08-17T13:10:57.401109+01:00', 'status': None},
+            {'id': '8fdb6137-e196-4c17-8091-7a0d370fadba', 'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+             'project_id': '0c137d9d-e087-448b-ba8d-24141b6ceecd', 'created': '2018-08-17T13:10:57.648741+01:00',
+             'modified': '2018-08-17T13:10:57.683971+01:00', 'status': None}
+        ]
         expected_body = expected_body_bst
 
-        querystring_parameters = {'user_id': 'e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41'}
+        querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
         event = {'queryStringParameters': querystring_parameters}
         result = list_user_projects_api(event, None)
         result_status = result['statusCode']
@@ -66,7 +74,7 @@ class TestUserProject(TestCase):
 
         expected_status = 404
 
-        querystring_parameters = {'user_id': 'e8d6b60f-9b99-4dfa-89d4-2ec7b2038b42'}
+        querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
         event = {'queryStringParameters': querystring_parameters}
         result = list_user_projects_api(event, None)
         result_status = result['statusCode']
@@ -82,7 +90,7 @@ class TestUserProject(TestCase):
         expected_status = 200
         expected_body = []
 
-        querystring_parameters = {'user_id': 'b4308c90-f8cc-49f2-b40b-16e7c4aebb6b'}
+        querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
         event = {'queryStringParameters': querystring_parameters}
         result = list_user_projects_api(event, None)
         result_status = result['statusCode']
@@ -97,8 +105,8 @@ class TestUserProject(TestCase):
 
         expected_status = 201
         up_json = {
-            'user_id': "23e38ff4-1483-408a-ad58-d08cb5a34037",
-            'project_id': "a37331cb-ebb9-4457-b67b-8ce83ae1a24f",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
+            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
             'status': 'A',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
@@ -127,8 +135,8 @@ class TestUserProject(TestCase):
 
         expected_status = 400
         up_json = {
-            'user_id': "23e38ff4-1483-408a-ad58-d08cb5a34038",
-            'project_id': "a37331cb-ebb9-4457-b67b-8ce83ae1a24f",
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
+            'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
             'status': 'A'
         }
         event = {'body': json.dumps(up_json)}
@@ -143,8 +151,8 @@ class TestUserProject(TestCase):
 
         expected_status = 400
         up_json = {
-            'user_id': "23e38ff4-1483-408a-ad58-d08cb5a34037",
-            'project_id': "a37331cb-ebb9-4457-b67b-8ce83ae1a240",
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
+            'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa22",
             'status': 'A'
         }
         event = {'body': json.dumps(up_json)}

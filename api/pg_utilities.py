@@ -1,7 +1,7 @@
 import psycopg2
 import os
 import ast
-from api.utilities import minimise_white_space, get_file_as_string, get_logger, UserDoesNotExistError, PatchOperationNotSupportedError, \
+from api.utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
     PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, get_aws_secret
 
 
@@ -184,7 +184,7 @@ def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, correlation
             rowcount = execute_non_query(sql_update, params, correlation_id)
             if rowcount == 0:
                 errorjson = {'id_column': id_column, 'id_to_update': id_to_update, 'sql_update': sql_update, 'correlation_id': str(correlation_id)}
-                raise UserDoesNotExistError('user does not exist', errorjson)
+                raise ObjectDoesNotExistError('user does not exist', errorjson)
     except Exception as ex:
         # all exceptions will be dealt with by calling method
         raise ex

@@ -24,11 +24,11 @@ class TestProject(TestCase):
         correlation_id = new_correlation_id()
         run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'task_create.sql', correlation_id)
+        run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
 
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'task_data.csv', 'public.projects_task')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
 
 
     @classmethod
@@ -38,30 +38,28 @@ class TestProject(TestCase):
         cls.postgresql.stop()
 
 
-    def test_list_projects_api(self):
+    def test_1_list_projects_api(self):
         from api.project import list_projects_api
 
         expected_status = 200
         # todo figure out how do do this properly!
         expected_body_bst = [
-            {"id": "21c0779a-5fc2-4b72-8a88-0ba31456b562", "name": "Test project No 1", "short_name": "testproj01",
-                "created": "2018-05-15T16:03:25.516512+01:00", "modified": "2018-05-15T16:03:25.516554+01:00", "status": None,
-                "tasks": [
-                    {"id": "36362f97-c5a2-47ec-9492-3c34e18dca36", "description": "SR for 1", "created": "2018-06-14T15:15:05.283843+01:00",
-                        "modified": "2018-06-14T15:15:05.283868+01:00", "task_type_id": "e1706e9b-e7f1-4a7a-bba9-7b9aeb7400e0", "status": None}
-                ]},
-            {"id": "a37331cb-ebb9-4457-b67b-8ce83ae1a24f", "name": "Test project No 2", "short_name": "testproj02",
-                "created": "2018-05-15T16:04:37.508621+01:00", "modified": "2018-05-15T16:04:37.508644+01:00", "status": None,
-                "tasks": [
-                    {"id": "08de83b9-1da7-4ae2-b59f-1f1725ac02e8", "description": "photo for 2", "created": "2018-06-14T15:15:22.103509+01:00",
-                        "modified": "2018-06-14T15:15:22.103569+01:00", "task_type_id": "69f2645b-e1a2-45d5-a77b-279db2ba50a5", "status": None},
-                    {"id": "ebd5f57b-e77c-4f26-9ae4-b65cdabaf018", "description": "delphi for 2", "created": "2018-06-14T15:15:33.099432+01:00",
-                        "modified": "2018-06-14T15:15:33.099455+01:00", "task_type_id": "73a60ef7-85c7-473d-a081-dd0dd4984718", "status": None}
-                ]},
-            ]
-        # expected_body_bst = [
-        #     {"id": "21c0779a-5fc2-4b72-8a88-0ba31456b562", "name": "Test project No 1", "short_name": "testproj01", "created": "2018-05-15T16:03:25.516512+01:00", "modified": "2018-05-15T16:03:25.516554+01:00", "status": None},
-        #     {"id": "a37331cb-ebb9-4457-b67b-8ce83ae1a24f", "name": "Test project No 2", "short_name": "testproj02", "created": "2018-05-15T16:04:37.508621+01:00", "modified": "2018-05-15T16:04:37.508644+01:00", "status": None}]
+            {"id": "3ffc498f-8add-4448-b452-4fc7f463aa21", "name": "CTG Monitoring", "short_name": "CTG Monitoring",
+             "created": "2018-08-17T13:10:56.084487+01:00", "modified": "2018-08-17T13:10:56.119612+01:00", "status": None,
+             "tasks": [
+                 {"id": "c92c8289-3590-4a85-b699-98bc8171ccde", "description": "Systematic review for CTG monitoring", "created": "2018-08-17T13:10:56.98669+01:00",
+                  "modified": "2018-08-17T13:10:57.023286+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                 {"id": "4ee70544-6797-4e21-8cec-5653c8d5b234", "description": "Midwife assessment for CTG monitoring", "created": "2018-08-17T13:10:57.074321+01:00",
+                  "modified": "2018-08-17T13:10:57.111495+01:00", "task_type_id": "d92d9935-cb9e-4422-9dbb-65c3423599b1", "status": None}]},
+            {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
+             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": None,
+             "tasks": [
+                 {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag", "created": "2018-08-17T13:10:57.162016+01:00",
+                  "modified": "2018-08-17T13:10:57.198223+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                 {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment", "created": "2018-08-17T13:10:57.275273+01:00",
+                  "modified": "2018-08-17T13:10:57.311031+01:00", "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": None}]
+             }]
+
         expected_body = expected_body_bst
         result = list_projects_api(None, None)
         result_status = result['statusCode']
@@ -70,3 +68,50 @@ class TestProject(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(result_json[0], expected_body[0])
         self.assertDictEqual(result_json[1], expected_body[1])
+
+
+    def test_2_get_project_api_exists(self):
+        from api.project import get_project_api
+
+        path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
+        event = {'pathParameters': path_parameters}
+
+        expected_status = 200
+        # todo figure out how do do this properly!
+        expected_body_bst = [
+            {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
+             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": None,
+             "tasks": [
+                 {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag",
+                  "created": "2018-08-17T13:10:57.162016+01:00", "modified": "2018-08-17T13:10:57.198223+01:00",
+                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                 {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment",
+                  "created": "2018-08-17T13:10:57.275273+01:00", "modified": "2018-08-17T13:10:57.311031+01:00",
+                  "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": None}
+             ]}
+        ]
+
+        expected_body = expected_body_bst
+        result = get_project_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(result_json[0], expected_body[0])
+
+
+    def test_3_get_project_api_not_exists(self):
+        from api.project import get_project_api
+
+        path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceece"}
+        event = {'pathParameters': path_parameters}
+
+        expected_status = 404
+        # todo figure out how do do this properly!
+
+        result = get_project_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('message' in result_json and result_json['message'] == 'project does not exist')

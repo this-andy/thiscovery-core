@@ -1,19 +1,21 @@
-CREATE TABLE public.projects_task
+DROP TABLE public.projects_projecttask CASCADE ;
+
+CREATE TABLE public.projects_projecttask
 (
     id uuid NOT NULL,
     created timestamp with time zone NOT NULL,
     modified timestamp with time zone NOT NULL,
     description character varying(500) COLLATE pg_catalog."default" NOT NULL,
+    status character varying(12) COLLATE pg_catalog."default",
     project_id uuid NOT NULL,
     task_type_id uuid NOT NULL,
-    status character varying(12) COLLATE pg_catalog."default",
-    CONSTRAINT projects_task_pkey PRIMARY KEY (id),
-    CONSTRAINT projects_task_project_id_a1b987d6_fk_projects_project_id FOREIGN KEY (project_id)
+    CONSTRAINT projects_projecttask_pkey PRIMARY KEY (id),
+    CONSTRAINT projects_projecttask_project_id_c579add0_fk_projects_project_id FOREIGN KEY (project_id)
         REFERENCES public.projects_project (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         DEFERRABLE INITIALLY DEFERRED,
-    CONSTRAINT projects_task_task_type_id_dac99a35_fk_projects_tasktype_id FOREIGN KEY (task_type_id)
+    CONSTRAINT projects_projecttask_task_type_id_fce5c6e0_fk_projects_ FOREIGN KEY (task_type_id)
         REFERENCES public.projects_tasktype (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
@@ -24,12 +26,12 @@ WITH (
 )
 TABLESPACE pg_default;
 
-CREATE INDEX projects_task_project_id_a1b987d6
-    ON public.projects_task USING btree
+CREATE INDEX projects_projecttask_project_id_c579add0
+    ON public.projects_projecttask USING btree
     (project_id)
     TABLESPACE pg_default;
 
-CREATE INDEX projects_task_task_type_id_dac99a35
-    ON public.projects_task USING btree
+CREATE INDEX projects_projecttask_task_type_id_fce5c6e0
+    ON public.projects_projecttask USING btree
     (task_type_id)
     TABLESPACE pg_default;
