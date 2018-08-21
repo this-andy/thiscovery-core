@@ -98,6 +98,14 @@ functions:
           method: patch
           cors: true
 
+  create-user:
+    handler: api/user.create_user_api
+    events:
+      - http:
+          path: v1/user
+          method: post
+          cors: true
+
 # User external account endpoints
   create-user-external-account:
     handler: api/user_external_account.create_user_external_account_api

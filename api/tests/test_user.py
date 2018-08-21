@@ -134,9 +134,13 @@ class TestUser(TestCase):
 
         expected_status = 204
         user_jsonpatch = [
+            {'op': 'replace', 'path': 'title', 'value': 'Sir'},
             {'op': 'replace', 'path': 'first_name', 'value': 'simon'},
             {'op': 'replace', 'path': 'last_name', 'value': 'smith'},
-            {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'}]
+            {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'},
+            {'op': 'replace', 'path': 'auth0_id', 'value': 'new-auth0-id'},
+            {'op': 'replace', 'path': 'status', 'value': 'singing'},
+        ]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
@@ -155,11 +159,11 @@ class TestUser(TestCase):
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
             "email": "simon.smith@dancingbear.com",
-            "title": "Mrs",
+            "title": "Sir",
             "first_name": "simon",
             "last_name": "smith",
-            "auth0_id": None,
-            "status": None
+            "auth0_id": "new-auth0-id",
+            "status": "singing"
         }]
 
         result = get_user_by_id_api(event, None)
@@ -173,9 +177,9 @@ class TestUser(TestCase):
 
         expected_status = 404
         user_jsonpatch = [
+            {'op': 'replace', 'path': 'title', 'value': 'Sir'},
             {'op': 'replace', 'path': 'first_name', 'value': 'simon'},
-            {'op': 'replace', 'path': 'last_name', 'value': 'smith'},
-            {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'}]
+        ]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdd'}
 

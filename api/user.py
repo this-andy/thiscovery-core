@@ -111,8 +111,11 @@ def get_user_by_email_api(event, context):
 def patch_user(id_to_update, patch_json, correlation_id):
     mappings = {
         'email': {'table_name': 'public.projects_user', 'column_name': 'email'},
+        'title': {'table_name': 'public.projects_user', 'column_name': 'title'},
         'first_name': {'table_name': 'public.projects_user', 'column_name': 'first_name'},
         'last_name': {'table_name': 'public.projects_user', 'column_name': 'last_name'},
+        'auth0_id': {'table_name': 'public.projects_user', 'column_name': 'auth0_id'},
+        'status': {'table_name': 'public.projects_user', 'column_name': 'status'},
     }
 
     id_column = 'id'
