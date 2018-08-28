@@ -55,6 +55,7 @@ functions:
           path: v1/ping
           method: get
           cors: true
+          private: true
 
 # Project endpoints
   list-projects:
@@ -64,6 +65,7 @@ functions:
           path: v1/project
           method: get
           cors: true
+          private: true
 
   get-project-by-uuid:
     handler: api/project.get_project_api
@@ -72,6 +74,7 @@ functions:
           path: v1/project/{id}
           method: get
           cors: true
+          private: true
 
 # User endpoints
   get-user-by-uuid:
@@ -81,6 +84,7 @@ functions:
           path: v1/user/{id}
           method: get
           cors: true
+          private: true
 
   get-user-by-email:
     handler: api/user.get_user_by_email_api
@@ -89,6 +93,7 @@ functions:
           path: v1/user
           method: get
           cors: true
+          private: true
 
   patch-user:
     handler: api/user.patch_user_api
@@ -97,6 +102,7 @@ functions:
           path: v1/user/{id}
           method: patch
           cors: true
+          private: true
 
   create-user:
     handler: api/user.create_user_api
@@ -105,6 +111,7 @@ functions:
           path: v1/user
           method: post
           cors: true
+          private: true
 
 # User external account endpoints
   create-user-external-account:
@@ -114,6 +121,7 @@ functions:
           path: v1/userexternalaccount
           method: post
           cors: true
+          private: true
 
 # User project endpoints
   list-userprojects:
@@ -123,6 +131,7 @@ functions:
           path: v1/userproject
           method: get
           cors: true
+          private: true
 
   create-userproject:
     handler: api/user_project.create_user_project_api
@@ -131,6 +140,7 @@ functions:
           path: v1/userproject
           method: post
           cors: true
+          private: true
 
 # User task endpoints
   list-usertasks:
@@ -140,6 +150,7 @@ functions:
           path: v1/usertask
           method: get
           cors: true
+          private: true
 
   create-usertask:
     handler: api/user_task.create_user_task_api
@@ -148,7 +159,4 @@ functions:
           path: v1/usertask
           method: post
           cors: true
-
-
-
-
+          private: true
