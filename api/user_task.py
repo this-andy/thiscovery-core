@@ -166,9 +166,9 @@ def create_user_task_api(event, context):
         response = {"statusCode": 400, "body": err.as_response_body()}
 
     except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        error_msg = ex.args[0]
+        logger.error(error_msg, extra={'correlation_id': correlation_id})
+        response = {"statusCode": 500, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'event': event})
     return response
