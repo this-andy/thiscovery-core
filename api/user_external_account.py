@@ -4,7 +4,7 @@ import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.user import get_user_by_id
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body
+    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
 
 def validate_status(s):
     # todo figure out what valid statuses are
@@ -57,7 +57,7 @@ def create_user_external_account(uea_json, correlation_id):
             err.add_correlation_id(correlation_id)
             raise err
     else:
-        created = str(datetime.datetime.utcnow())
+        created = str(now_with_tz())
         uea_json['created'] = created
 
     uea_json['modified'] = created

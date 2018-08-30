@@ -47,6 +47,10 @@ def execute_query(base_sql, correlation_id, return_json=True, jsonize_sql=True):
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
+
+    try:
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
         cursor = conn.cursor()
 
@@ -75,13 +79,16 @@ def execute_query(base_sql, correlation_id, return_json=True, jsonize_sql=True):
 def execute_non_query(sql, params, correlation_id):
     try:
         logger = get_logger()
+        conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
 
+    try:
         sql = minimise_white_space(sql)
         param_str = str(params)
 
         logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
 
-        conn = _get_connection(correlation_id)
         cursor = conn.cursor()
         cursor.execute(sql, params)
         rowcount = cursor.rowcount
@@ -158,7 +165,7 @@ def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id):
     return tables_to_update, columns_to_update
 
 
-def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, correlation_id):
+def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified):
     sql_updates = []
     for table_name in tables_to_update:
         # create update columns SQL
@@ -166,20 +173,24 @@ def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column,
         params = ()
         for update in columns_to_update:
             if update['table_name'] == table_name:
-                if len(cols_sql) > 0:
-                    cols_sql += ', '
-                cols_sql += update['column_name'] + ' = %s'
+                cols_sql += update['column_name'] + ' = %s, '
                 params += (update['value'],)
+
+        # add update to modified column
+        cols_sql += 'modified = %s'
+        params += (str(modified),)
+
         table_sql = 'UPDATE ' + table_name + ' SET ' + cols_sql + ' WHERE ' + id_column + ' = %s'
         params += (id_to_update,)
         sql_updates.append((table_sql, params))
     return sql_updates
 
 
-def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, correlation_id):
+def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id):
+    # todo - wrap in transaction if ever extended to multi table updates
     try:
         tables_to_update, columns_to_update = create_updates_list_from_jsonpatch(mappings, patch_json, correlation_id)
-        sql_updates = create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, correlation_id)
+        sql_updates = create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified)
         for (sql_update, params) in sql_updates:
             rowcount = execute_non_query(sql_update, params, correlation_id)
             if rowcount == 0:

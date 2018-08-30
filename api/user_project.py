@@ -3,7 +3,7 @@ import json
 import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body
+    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
 from api.user import get_user_by_id
 
 
@@ -111,7 +111,7 @@ def create_user_project(up_json, correlation_id):
         except DetailedValueError:
             raise
     else:
-        created = str(datetime.datetime.utcnow())
+        created = str(now_with_tz())
         up_json['created'] = created
 
     up_json['modified'] = created

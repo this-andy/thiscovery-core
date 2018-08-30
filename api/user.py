@@ -1,11 +1,12 @@
 import datetime
 import json
 import uuid
-
-from jsonpatch import JsonPatch
+from jsonpatch import JsonPatch, JsonPatchException
 from api.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
 from api.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
-    PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime
+    PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
+    now_with_tz
+from api.entity_update import EntityUpdate
 
 
 BASE_USER_SELECT_SQL = '''
@@ -109,7 +110,7 @@ def get_user_by_email_api(event, context):
     return response
 
 
-def patch_user(id_to_update, patch_json, correlation_id):
+def patch_user(id_to_update, patch_json, modified, correlation_id):
     mappings = {
         'email': {'table_name': 'public.projects_user', 'column_name': 'email'},
         'title': {'table_name': 'public.projects_user', 'column_name': 'title'},
@@ -121,7 +122,20 @@ def patch_user(id_to_update, patch_json, correlation_id):
 
     id_column = 'id'
 
-    execute_jsonpatch(id_column, id_to_update, mappings, patch_json, correlation_id)
+    execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id)
+
+
+def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id):
+    try:
+        original_user_list = get_user_by_id(user_id, correlation_id)
+        original_user = original_user_list[0]
+        return EntityUpdate('user', original_user, user_jsonpatch, modified, correlation_id)
+    except IndexError as ex:
+        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        raise ObjectDoesNotExistError('user does not exist', errorjson)
+    except JsonPatchException as ex:
+        errorjson = {'user_jsonpatch': user_jsonpatch.to_string(), 'correlation_id': str(correlation_id)}
+        raise PatchInvalidJsonError('invalid jsonpatch', errorjson)
 
 
 def patch_user_api(event, context):
@@ -130,15 +144,23 @@ def patch_user_api(event, context):
 
     try:
         correlation_id = get_correlation_id(event)
+        # get info supplied to api call
         user_id = event['pathParameters']['id']
-        # user_jsonpatch = json.loads(event['body'])
         user_jsonpatch = JsonPatch.from_string(event['body'])
 
         logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
 
-        patch_user(user_id, user_jsonpatch, correlation_id)
+        modified = now_with_tz()
+
+        # create an audit record of update, inc 'undo' patch
+        # entity_update = create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
+
+        patch_user(user_id, user_jsonpatch, modified, correlation_id)
 
         response = {"statusCode": 204, "body": json.dumps('')}
+
+        # on successful update save audit record
+        # entity_update.save()
 
     except ObjectDoesNotExistError as err:
         response = {"statusCode": 404, "body": err.as_response_body()}
@@ -155,7 +177,8 @@ def patch_user_api(event, context):
 
     return response
 
-# User JSON should look like this:
+
+# User create JSON should look like this:
 #   {
 #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
 #     "created": "2018-08-21T11:16:56+01:00",
@@ -201,7 +224,7 @@ def create_user(user_json, correlation_id):
             err.add_correlation_id(correlation_id)
             raise err
     else:
-        created = str(datetime.datetime.utcnow())
+        created = str(now_with_tz())
         user_json['created'] = created
 
     auth0_id = user_json['auth0_id']
@@ -264,14 +287,14 @@ if __name__ == "__main__":
     # result = get_user_by_email_api(ev, None)
     # print(result)
 
-    # pp = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
-    # ev = {'pathParameters': pp}
-    # print(get_user_by_id_api(ev, None))
+    pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
+    ev = {'pathParameters': pp}
+    print(get_user_by_id_api(ev, None))
 
-    # jp = [{'op': 'replace', 'path': 'first_name', 'value': 'zahra'}, {'op': 'replace', 'path': 'last_name', 'value': 'hhyth'}, {'op': 'replace', 'path': '/email', 'value': 'zahra@somewhere.com'}]
+    # jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
     #
     # ev = {'body': json.dumps(jp)}
-    # ev['pathParameters'] = {'id': '8e385316-5827-4c72-8d4b-af5c57ff4670'}
+    # ev['pathParameters'] = {'id': 'f3c37970-711d-4153-b478-0051409daac2'}
     #
     # r = patch_user_api(ev, None)
     #
@@ -283,18 +306,18 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    user_json = {
-        "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-        "created": "2018-08-21T11:16:56+01:00",
-        "email": "sw@email.addr",
-        "title": "Mr",
-        "first_name": "Steven",
-        "last_name": "Walcorn",
-        "auth0_id": "1234abcd",
-        "status": "new"}
-
-    correlation_id = None
+    # user_json = {
+    #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
+    #     "created": "2018-08-21T11:16:56+01:00",
+    #     "email": "sw@email.addr",
+    #     "title": "Mr",
+    #     "first_name": "Steven",
+    #     "last_name": "Walcorn",
+    #     "auth0_id": "1234abcd",
+    #     "status": "new"}
+    #
+    # correlation_id = None
     # print(create_user(user_json,correlation_id))
 
-    ev = {'body': json.dumps(user_json)}
-    print(create_user_api(ev, None))
+    # ev = {'body': json.dumps(user_json)}
+    # print(create_user_api(ev, None))

@@ -125,11 +125,11 @@ if __name__ == "__main__":
 
     # result = get_project_with_tasks('21c0779a-5fc2-4b72-8a88-0ba31456b562',None)
 
-    pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
-    ev = {'pathParameters': pp}
-    result = get_project_api(ev, None)
+    # pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
+    # ev = {'pathParameters': pp}
+    # result = get_project_api(ev, None)
 
-    # result = list_projects_api(None, None)
+    result = list_projects_api(None, None)
     # result_status = result['statusCode']
     # result_json = json.loads(result['body'])
     print(result)

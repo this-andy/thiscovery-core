@@ -1,5 +1,3 @@
-DROP TABLE public.projects_userproject CASCADE;
-
 CREATE TABLE public.projects_userproject
 (
     id uuid NOT NULL,

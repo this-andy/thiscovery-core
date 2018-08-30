@@ -3,7 +3,7 @@ import json
 import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body
+    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
 from api.user import get_user_by_id
 
 
@@ -120,7 +120,7 @@ def create_user_task(ut_json, correlation_id):
         except DetailedValueError:
             raise
     else:
-        created = str(datetime.datetime.utcnow())
+        created = str(now_with_tz())
         ut_json['created'] = created
 
     ut_json['modified'] = created
@@ -175,18 +175,17 @@ def create_user_task_api(event, context):
 
 
 if __name__ == "__main__":
-    # print('hello')
-    # ut_json = {
-    #     'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
-    #     'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf018',
-    #     'status': 'A',
-    #     'consented': '2018-06-12 16:16:56.087895+01',
-    #     'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
-    #     'created': '2018-06-13 14:15:16.171819+00'
-    # }
-    # # print(ut_json)
-    #
-    # ev = {'body': json.dumps(ut_json)}
-    # print(create_user_task_api(ev, None))
+    print('hello')
+    ut_json = {
+        'user_project_id': "3fd54ed7-d25c-40ba-9005-4c4da1321748",
+        'project_task_id': "6f1c63e2-fbe8-4d24-8680-c68a30b407e3",
+        'status': 'A',
+        'consented': '2018-06-12 16:16:56.087895+01',
+        'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
+    }
+    # print(ut_json)
 
-    print(list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None))
+    ev = {'body': json.dumps(ut_json)}
+    print(create_user_task_api(ev, None))
+
+    # print(list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None))

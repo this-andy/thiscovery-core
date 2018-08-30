@@ -36,8 +36,8 @@ class TestValidate_uuid(TestCase):
 class TestValidate_utc_datetime(TestCase):
     def test_validate_utc_datetime_ok(self):
         import datetime
-        from api.utilities import validate_utc_datetime
-        dt = str(datetime.datetime.utcnow())
+        from api.utilities import validate_utc_datetime, now_with_tz
+        dt = str(now_with_tz())
         self.assertEqual(dt, validate_utc_datetime(dt))
 
     def test_validate_utc_datetime_fail_us_date(self):

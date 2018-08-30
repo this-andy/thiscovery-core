@@ -1,5 +1,3 @@
-DROP TABLE public.projects_userexternalaccount CASCADE;
-
 CREATE TABLE public.projects_userexternalaccount
 (
     id uuid NOT NULL,
