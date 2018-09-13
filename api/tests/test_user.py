@@ -1,7 +1,6 @@
 import os
 import json
-import datetime
-from dateutil import parser, tz
+from dateutil import parser
 import testing.postgresql
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -140,6 +139,10 @@ class TestUser(TestCase):
 
     def test_patch_user_api_ok(self):
         from api.user import patch_user_api
+        from api.entity_update import EntityUpdate
+        from jsonpatch import JsonPatch
+
+        user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
 
         expected_status = 204
         user_jsonpatch = [
@@ -151,7 +154,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
         ]
         event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
+        event['pathParameters'] = {'id': user_id}
 
         result = patch_user_api(event, None)
         result_status = result['statusCode']
@@ -160,11 +163,11 @@ class TestUser(TestCase):
 
         # now check database values...
         from api.user import get_user_by_id_api
-        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
+        path_parameters = {'id': user_id}
         event = {'pathParameters': path_parameters}
 
         expected_body = [{
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "id": user_id,
             "created": "2018-08-17T13:10:56.798192+01:00",
             "email": "simon.smith@dancingbear.com",
             "title": "Sir",
@@ -191,6 +194,50 @@ class TestUser(TestCase):
         self.assertLess(difference.seconds, 10)
 
         # now check that we have a corresponding entity update record
+        entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
+        self.assertTrue(len(entity_updates) > 0, 'No entity update record found')
+        if len(entity_updates) > 0:
+            # get most recent update record
+            last_entity_update = entity_updates[-1]
+            # remove and store data items to be tested individually
+            result_created = last_entity_update['created']
+            del last_entity_update['created']
+            result_json_reverse_patch = last_entity_update['json_reverse_patch']
+            del last_entity_update['json_reverse_patch']
+            result_json_patch = last_entity_update['json_patch']
+            del last_entity_update['json_patch']
+
+            # now remove from returned value those things we don't want to test
+            del last_entity_update['id']
+            del last_entity_update['modified']
+
+            # check created datetime - allow up to 10 seconds difference
+            result_created_datetime = parser.parse(result_created)
+            difference = abs(now - result_created_datetime)
+            self.assertLess(difference.seconds, 10)
+
+            # check jsonpatch - compare as lists in case order different
+            result_json_patch = json.loads(result_json_patch)
+            self.assertCountEqual(user_jsonpatch, result_json_patch)
+
+            # need to compare list objects not strings as elements may be in different order
+            result_json_reverse_patch = json.loads(result_json_reverse_patch)
+            expected_json_reverse_patch = [
+                {"op": "replace", "path": "/first_name", "value": "Altha"},
+                {"op": "replace", "path": "/auth0_id", "value": None},
+                {"op": "replace", "path": "/title", "value": "Mrs"},
+                {"op": "replace", "path": "/last_name", "value": "Alcorn"},
+                {"op": "replace", "path": "/status", "value": None},
+                {"op": "replace", "path": "/email", "value": "altha@email.addr"}
+            ]
+            self.assertCountEqual(expected_json_reverse_patch,result_json_reverse_patch)
+
+            # and finally check what's left
+            expected_body = {
+                'entity_name': 'user',
+                'entity_id': user_id,
+            }
+            self.assertDictEqual(expected_body, last_entity_update)
 
 
     def test_patch_user_api_user_not_exists(self):

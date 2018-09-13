@@ -153,14 +153,14 @@ def patch_user_api(event, context):
         modified = now_with_tz()
 
         # create an audit record of update, inc 'undo' patch
-        # entity_update = create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
+        entity_update = create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 
         patch_user(user_id, user_jsonpatch, modified, correlation_id)
 
         response = {"statusCode": 204, "body": json.dumps('')}
 
         # on successful update save audit record
-        # entity_update.save()
+        entity_update.save()
 
     except ObjectDoesNotExistError as err:
         response = {"statusCode": 404, "body": err.as_response_body()}

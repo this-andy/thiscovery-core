@@ -1,5 +1,4 @@
 import uuid
-import datetime
 from jsonpatch import JsonPatch
 from api.pg_utilities import execute_non_query, execute_query
 
@@ -10,7 +9,7 @@ class EntityUpdate:
         self.entity_name = entity_name
         self.entity_id = entity['id']
         self.json_patch = json_patch
-        self.reverse_json_patch = self.create_reverse_jsonpatch(entity, json_patch)
+        self.reverse_json_patch = self.create_reverse_jsonpatch(entity)
         self.modified = modified
         self.correlation_id = correlation_id
 
@@ -22,8 +21,8 @@ class EntityUpdate:
         return '{}:{} ({})'.format(self.entity_name, self.entity_id, path_list)
 
 
-    def create_reverse_jsonpatch(self, original_entity, jsonpatch: JsonPatch):
-        patched_entity = jsonpatch.apply(original_entity, False)
+    def create_reverse_jsonpatch(self, original_entity):
+        patched_entity = self.json_patch.apply(original_entity, False)
         return JsonPatch.from_diff(patched_entity, original_entity)
 
 

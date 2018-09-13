@@ -32,6 +32,30 @@ def ping(event, context):
 
     return response
 
+
+def hubspot_entity_info(event, context):
+
+    body = {
+        "results": [
+            {
+                "objectId": 245,
+                "title": "Eric's participation on Maternity care systematic review",
+                "created": "2016-09-15",
+                "study-id": "123abc",
+                "reviews-completed": "234",
+                "accuracy-percent": "56.7",
+            },
+        ]
+    }
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+
 if __name__ == "__main__":
-    result = ping(None, None)
+    result = hubspot_entity_info(None, None)
     print(result)

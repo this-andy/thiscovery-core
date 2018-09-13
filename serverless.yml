@@ -57,6 +57,15 @@ functions:
           cors: true
           private: true
 
+  hubspot-test:
+    handler: api/handler.hubspot_entity_info
+    events:
+      - http:
+          path: v1/hubspotdata
+          method: get
+          cors: true
+          private: false
+
 # Project endpoints
   list-projects:
     handler: api/project.list_projects_api
