@@ -1,11 +1,14 @@
-import logging
-from pythonjsonlogger import jsonlogger
-import re
-import json
-import uuid
 import os
-from dateutil import parser
-
+import uuid
+import logging
+import re
+import sys
+import datetime
+from dateutil import parser, tz
+from pythonjsonlogger import jsonlogger
+import json
+import boto3
+from botocore.exceptions import ClientError
 
 
 # region Custom error classes and handling
@@ -18,8 +21,11 @@ class DetailedValueError(ValueError):
     def as_response_body(self):
         return json.dumps({**{'message': self.message}, **self.details})
 
+    def add_correlation_id(self, correlation_id):
+        self.details['correlation_id'] = str(correlation_id)
 
-class UserDoesNotExistError(DetailedValueError):
+
+class ObjectDoesNotExistError(DetailedValueError):
     pass
 
 
@@ -49,9 +55,31 @@ def error_as_response_body(error_msg, correlation_id):
 # endregion
 
 
+# region Misc utilities
 # removes newlines and multiple spaces
 def minimise_white_space(s):
     return re.sub(' +', ' ', s.replace('\n', ' '))
+
+
+# Reads and returns the entire contents of a file
+def get_file_as_string(path):
+    with open(path, 'r') as f:
+        return f.read()
+
+
+def running_on_aws():
+    try:
+        region = os.environ['AWS_REGION']
+    except:
+        region = None
+
+    return region is not None
+
+
+def now_with_tz():
+    return datetime.datetime.now(tz.tzlocal())
+
+# endregion
 
 
 # region Validation methods
@@ -87,12 +115,6 @@ def validate_utc_datetime(s):
         raise DetailedValueError('invalid utc format datetime', errorjson)
 
 # endregion
-
-
-def get_file_as_string(path):
-    """ Reads and returns the entire contents of a file """
-    with open(path, 'r') as f:
-        return f.read()
 
 
 # region Logging
@@ -131,28 +153,87 @@ def get_correlation_id(event):
 
 # endregion
 
-
-# region Secret settings handling
+# region Secrets processing
 
 secrets_filename = 'secret-settings.json'
+
 try:
     secrets = json.loads(get_file_as_string(secrets_filename))
 except FileNotFoundError:
-    # legitimate reason for file not being found is that we are running test scripts from different directory
+    # legitimate reason for file not being found is that we are running test scripts from different directory or we are running on AWS
     secrets_filename = '../' + secrets_filename
-    secrets = json.loads(get_file_as_string(secrets_filename))
+    try:
+        secrets = json.loads(get_file_as_string(secrets_filename))
+    except FileNotFoundError:
+        pass
 
 
-def get_secret(secret_name):
+def get_local_secret(secret_name):
     try:
         return secrets[secret_name]
     except KeyError:
         errorjson = {'secret_name': secret_name}
         raise DetailedValueError('Secret key not found', errorjson)
 
+
+def get_secret(secret_name):
+    if running_on_aws():
+        return get_aws_secret(secret_name)
+    else:
+        return get_local_secret(secret_name)
+
+
+def get_aws_secret(secret_name):
+    logger = get_logger()
+    secret_name = "database-connection"
+    endpoint_url = "https://secretsmanager.eu-west-2.amazonaws.com"
+    region_name = "eu-west-2"
+
+    logger.info('get_aws_secret: ' + secret_name)
+
+    session = boto3.session.Session()
+    # logger.info('get_aws_secret:session created')
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name,
+        endpoint_url=endpoint_url
+    )
+
+    secret= {"No": "secrets"}
+
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        # logger.info('get_aws_secret:secret retrieved')
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ResourceNotFoundException':
+            logger.error("The requested secret " + secret_name + " was not found")
+        elif e.response['Error']['Code'] == 'InvalidRequestException':
+            logger.error("The request was invalid due to:" + str(e))
+        elif e.response['Error']['Code'] == 'InvalidParameterException':
+            logger.error("The request had invalid params:" + str(e))
+        raise
+    except:
+        logger.error(sys.exc_info()[0])
+    else:
+        # logger.info('get_aws_secret:secret about to decode')
+        # Decrypted secret using the associated KMS CMK
+        # Depending on whether the secret was a string or binary, one of these fields will be populated
+        if 'SecretString' in get_secret_value_response:
+            secret = get_secret_value_response['SecretString']
+        else:
+            binary_secret_data = get_secret_value_response['SecretBinary']
+        # logger.info('get_aws_secret:secret decoded')
+        # logger.info('secret:' + secret)
+
+        secret = json.loads(secret)
+    finally:
+        return secret
+
 # endregion
 
 
 if __name__ == "__main__":
-    result = get_secret('aws_rds_connection')
+    result = get_aws_secret('database-connection')
+    # result = {"dbname": "citsci_platform", **result}
     print(result)
+

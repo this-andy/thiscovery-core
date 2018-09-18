@@ -1,6 +1,6 @@
 import json
 import os
-from api.utilities import get_logger, get_correlation_id
+from api.utilities import get_logger, get_correlation_id, get_secret
 
 
 def ping(event, context):
@@ -56,6 +56,21 @@ def hubspot_entity_info(event, context):
     return response
 
 
+def connection_info(event, context):
+
+    env_dict = get_secret('database-connection')
+    t = str(type(env_dict))
+
+    body = env_dict
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+
 if __name__ == "__main__":
-    result = hubspot_entity_info(None, None)
+    result = connection_info(None, None)
     print(result)

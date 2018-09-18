@@ -23,6 +23,7 @@ provider:
   region: eu-west-2
   profile: serverless
   timeout: 30
+  role: arn:aws:iam::595383251813:role/citsci_api_lambda_role
   vpc:
     securityGroupIds:
       - sg-b719b0dc
@@ -65,6 +66,24 @@ functions:
           method: get
           cors: true
           private: false
+
+#  connection-test:
+#    handler: api/handler.connection_info
+#    events:
+#      - http:
+#          path: v1/connectinfo
+#          method: get
+#          cors: true
+#          private: true
+
+  secrets-test:
+    handler: api/secrets_test.get_test_secret
+    events:
+    - http:
+        path: v1/secretstest
+        method: get
+        cors: true
+        private: false
 
 # Project endpoints
   list-projects:
