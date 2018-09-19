@@ -324,6 +324,7 @@ class TestUser(TestCase):
             "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
             "created": "2018-08-21T11:16:56+01:00",
             "email": "sw@email.addr",
+            "email_address_verified": False,
             "title": "Mr",
             "first_name": "Steven",
             "last_name": "Walcorn",

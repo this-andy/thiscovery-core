@@ -218,7 +218,6 @@ def create_user(user_json, correlation_id):
             raise err
     else:
         id = str(uuid.uuid4())
-        user_json['id'] = id
 
     if 'created' in user_json:
         try:
@@ -228,7 +227,6 @@ def create_user(user_json, correlation_id):
             raise err
     else:
         created = str(now_with_tz())
-        user_json['created'] = created
 
     if 'auth0_id' in user_json:
         auth0_id = user_json['auth0_id']
@@ -237,9 +235,6 @@ def create_user(user_json, correlation_id):
 
     # set up default values
     email_address_verified = False
-
-    # initialise modified = created
-    user_json['modified'] = created
 
     existing_user = get_user_by_id(id, correlation_id)
     if len(existing_user) > 0:
@@ -259,9 +254,22 @@ def create_user(user_json, correlation_id):
             status
         ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    rowcount = execute_non_query(sql, (id, created, created, email, email_address_verified, title, first_name, last_name, auth0_id, status), correlation_id)
+    execute_non_query(sql, (id, created, created, email, email_address_verified, title, first_name, last_name, auth0_id, status), correlation_id)
 
-    return rowcount
+    new_user = {
+        'id': id,
+        'created': created,
+        'modified': created,        
+        'email': email,
+        'email_address_verified': email_address_verified,
+        'title': title,
+        'first_name': first_name,
+        'last_name': last_name,
+        'auth0_id': auth0_id,
+        'status': status,
+    }
+    
+    return new_user
 
 
 def create_user_api(event, context):
@@ -273,9 +281,9 @@ def create_user_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})
 
-        create_user(user_json, correlation_id)
+        new_user = create_user(user_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(user_json)}
+        response = {"statusCode": 201, "body": json.dumps(new_user)}
 
     except DuplicateInsertError as err:
         response = {"statusCode": 409, "body": err.as_response_body()}
