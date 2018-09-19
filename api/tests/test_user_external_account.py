@@ -1,9 +1,11 @@
 import os
 import json
 import testing.postgresql
+import uuid
+from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id
+from api.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -71,6 +73,47 @@ class TestUserExternalAccount(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
+
+
+    def test_create_user_external_account_api_with_defaults(self):
+        from api.user_external_account import create_user_external_account_api
+
+        expected_status = 201
+        uea_json = {
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
+            'external_user_id': 'abc74',
+            'status': 'unknown',
+        }
+        event = {'body': json.dumps(uea_json)}
+        result = create_user_external_account_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # now remove from returned object those that weren't in input json and test separately
+        id = result_json['id']
+        del result_json['id']
+
+        created = result_json['created']
+        del result_json['created']
+
+        modified = result_json['modified']
+        del result_json['modified']
+
+        self.assertEqual(result_status, expected_status)
+        self.assertDictEqual(result_json, result_json)
+
+        # now check individual data items
+        self.assertTrue(uuid.UUID(id).version == 4)
+
+        result_datetime = parser.parse(created)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+        result_datetime = parser.parse(modified)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
 
 
     def test_create_user_external_account_api_user_not_exists(self):

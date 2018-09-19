@@ -1,6 +1,5 @@
 import json
 import uuid
-import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.user import get_user_by_id
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
@@ -90,7 +89,6 @@ def create_user_external_account(uea_json, correlation_id):
         'user_id': user_id,
         'external_user_id': external_user_id,
         'status': status,
-
     }
 
     return new_user_external_account

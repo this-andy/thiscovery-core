@@ -353,6 +353,57 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
+    def test_create_user_api_with_defaults(self):
+        from api.user import create_user_api
+        import uuid
+
+        expected_status = 201
+        user_json = {
+            "email": "hh@email.addr",
+            "title": "Mr",
+            "first_name": "Harry",
+            "last_name": "Hippie",
+            "status": "new"}
+        event = {'body': json.dumps(user_json)}
+        result = create_user_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # now remove from returned object those that weren't in input json and test separately
+        id = result_json['id']
+        del result_json['id']
+
+        created = result_json['created']
+        del result_json['created']
+
+        modified = result_json['modified']
+        del result_json['modified']
+
+        auth0_id = result_json['auth0_id']
+        del result_json['auth0_id']
+
+        email_address_verified = result_json['email_address_verified']
+        del result_json['email_address_verified']
+
+        self.assertEqual(expected_status, result_status)
+        # first check what's left in returned data
+        self.assertDictEqual(result_json, user_json)
+
+        # now check individual data items
+        self.assertTrue(uuid.UUID(id).version == 4)
+
+        result_datetime = parser.parse(created)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+        result_datetime = parser.parse(modified)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+        self.assertIsNone(auth0_id)
+        self.assertFalse(email_address_verified)
+
+
     def test_create_user_api_bad_uuid(self):
         from api.user import create_user_api
 

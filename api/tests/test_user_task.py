@@ -1,9 +1,11 @@
 import os
 import json
 import testing.postgresql
+import uuid
+from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id
+from api.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -157,7 +159,47 @@ class TestUserTask(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_5_create_user_task_api_task_not_exists(self):
+    def test_5_create_user_task_api_with_defaults(self):
+        from api.user_task import create_user_task_api
+
+        expected_status = 201
+        ut_json = {
+            'user_project_id': "9645cd24-cfb8-432d-80c6-9e06fb49aff5",
+            'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
+            'status': 'new',
+            'consented': '2018-07-19 16:16:56.087895+01',
+        }
+        event = {'body': json.dumps(ut_json)}
+        result = create_user_task_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # now remove from returned object those that weren't in input json and test separately
+        id = result_json['id']
+        del result_json['id']
+
+        created = result_json['created']
+        del result_json['created']
+
+        modified = result_json['modified']
+        del result_json['modified']
+
+        self.assertEqual(result_status, expected_status)
+        self.assertDictEqual(result_json, result_json)
+
+        # now check individual data items
+        self.assertTrue(uuid.UUID(id).version == 4)
+
+        result_datetime = parser.parse(created)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+        result_datetime = parser.parse(modified)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+
+    def test_6_create_user_task_api_task_not_exists(self):
         from api.user_task import create_user_task_api
 
         expected_status = 400
@@ -177,7 +219,7 @@ class TestUserTask(TestCase):
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
-    def test_6_create_user_task_api_user_project_not_exists(self):
+    def test_7_create_user_task_api_user_project_not_exists(self):
         from api.user_task import create_user_task_api
 
         expected_status = 400

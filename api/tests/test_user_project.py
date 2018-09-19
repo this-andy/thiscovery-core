@@ -1,9 +1,11 @@
 import os
 import json
 import testing.postgresql
+import uuid
+from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id
+from api.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -36,7 +38,7 @@ class TestUserProject(TestCase):
         cls.postgresql.stop()
 
 
-    def test_list_user_projects_api_ok(self):
+    def test_1_list_user_projects_api_ok(self):
         from api.user_project import list_user_projects_api
 
         expected_status = 200
@@ -69,7 +71,7 @@ class TestUserProject(TestCase):
         self.assertDictEqual(result_json[0], expected_body[0])
 
 
-    def test_list_user_projects_api_user_not_exists(self):
+    def test_2_list_user_projects_api_user_not_exists(self):
         from api.user_project import list_user_projects_api
 
         expected_status = 404
@@ -85,7 +87,7 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_list_user_projects_api_no_results(self) :
+    def test_3_list_user_projects_api_no_results(self) :
         from api.user_project import list_user_projects_api
 
         expected_status = 200
@@ -101,7 +103,7 @@ class TestUserProject(TestCase):
         self.assertEqual(result_json, expected_body)
 
 
-    def test_create_user_projects_api_ok_and_duplicate(self):
+    def test_4_create_user_projects_api_ok_and_duplicate(self):
         from api.user_project import create_user_project_api
 
         expected_status = 201
@@ -135,7 +137,46 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_create_user_projects_api_user_not_exists(self):
+    def test_5_create_user_projects_api_with_defaults(self):
+        from api.user_project import create_user_project_api
+
+        expected_status = 201
+        up_json = {
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
+            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
+            'status': 'new',
+        }
+        event = {'body': json.dumps(up_json)}
+        result = create_user_project_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # now remove from returned object those that weren't in input json and test separately
+        id = result_json['id']
+        del result_json['id']
+
+        created = result_json['created']
+        del result_json['created']
+
+        modified = result_json['modified']
+        del result_json['modified']
+
+        self.assertEqual(result_status, expected_status)
+        self.assertDictEqual(result_json, result_json)
+
+        # now check individual data items
+        self.assertTrue(uuid.UUID(id).version == 4)
+
+        result_datetime = parser.parse(created)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+        result_datetime = parser.parse(modified)
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)
+
+
+    def test_6_create_user_projects_api_user_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = 400
@@ -154,7 +195,7 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_create_user_projects_api_project_not_exists(self):
+    def test_7_create_user_projects_api_project_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = 400
