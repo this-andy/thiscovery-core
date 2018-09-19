@@ -84,9 +84,20 @@ def create_user_external_account(uea_json, correlation_id):
             status
         ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
 
-    rowcount = execute_non_query(sql, (id, created, created, external_system_id, user_id, external_user_id, status), correlation_id)
+    execute_non_query(sql, (id, created, created, external_system_id, user_id, external_user_id, status), correlation_id)
 
-    return rowcount
+    new_user_external_account = {
+        'id': id,
+        'created': created,
+        'modified': created,
+        'external_system_id': external_system_id,
+        'user_id': user_id,
+        'external_user_id': external_user_id,
+        'status': status,
+
+    }
+
+    return new_user_external_account
 
 
 def create_user_external_account_api(event, context):
@@ -98,9 +109,9 @@ def create_user_external_account_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'uea_json': uea_json, 'correlation_id': correlation_id, 'event': event})
 
-        create_user_external_account(uea_json, correlation_id)
+        new_user_external_account = create_user_external_account(uea_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(uea_json)}
+        response = {"statusCode": 201, "body": json.dumps(new_user_external_account)}
 
     except DuplicateInsertError as err:
         response = {"statusCode": 409, "body": err.as_response_body()}
