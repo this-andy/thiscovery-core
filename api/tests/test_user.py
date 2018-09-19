@@ -45,6 +45,7 @@ class TestUser(TestCase):
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
             "email": "altha@email.addr",
+            "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
@@ -105,6 +106,7 @@ class TestUser(TestCase):
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
             "email": "altha@email.addr",
+            "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
@@ -150,6 +152,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
             {'op': 'replace', 'path': '/last_name', 'value': 'smith'},
             {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'},
+            {'op': 'replace', 'path': '/email_address_verified', 'value': 'true'},
             {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
         ]
@@ -170,6 +173,7 @@ class TestUser(TestCase):
             "id": user_id,
             "created": "2018-08-17T13:10:56.798192+01:00",
             "email": "simon.smith@dancingbear.com",
+            "email_address_verified": True,
             "title": "Sir",
             "first_name": "simon",
             "last_name": "smith",
@@ -228,7 +232,8 @@ class TestUser(TestCase):
                 {"op": "replace", "path": "/title", "value": "Mrs"},
                 {"op": "replace", "path": "/last_name", "value": "Alcorn"},
                 {"op": "replace", "path": "/status", "value": None},
-                {"op": "replace", "path": "/email", "value": "altha@email.addr"}
+                {"op": "replace", "path": "/email", "value": "altha@email.addr"},
+                {"op": "replace", "path": "/email_address_verified", "value": False}
             ]
             self.assertCountEqual(expected_json_reverse_patch,result_json_reverse_patch)
 

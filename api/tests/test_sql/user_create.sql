@@ -9,6 +9,7 @@ CREATE TABLE public.projects_user
     last_name character varying(50) COLLATE pg_catalog."default",
     auth0_id character varying(50) COLLATE pg_catalog."default",
     status character varying(12) COLLATE pg_catalog."default",
+    email_address_verified boolean NOT NULL,
     CONSTRAINT projects_user_pkey PRIMARY KEY (id)
 )
 WITH (

@@ -15,6 +15,7 @@ BASE_USER_SELECT_SQL = '''
     created, 
     modified, 
     email, 
+    email_address_verified,
     title, 
     first_name, 
     last_name, 
@@ -113,6 +114,7 @@ def get_user_by_email_api(event, context):
 def patch_user(id_to_update, patch_json, modified, correlation_id):
     mappings = {
         'email': {'table_name': 'public.projects_user', 'column_name': 'email'},
+        'email_address_verified': {'table_name': 'public.projects_user', 'column_name': 'email_address_verified'},
         'title': {'table_name': 'public.projects_user', 'column_name': 'title'},
         'first_name': {'table_name': 'public.projects_user', 'column_name': 'first_name'},
         'last_name': {'table_name': 'public.projects_user', 'column_name': 'last_name'},
@@ -193,6 +195,7 @@ def patch_user_api(event, context):
 def create_user(user_json, correlation_id):
     # json MUST contain: email, title, first_name, last_name, status
     # json may OPTIONALLY include: id, created, auth0_id
+    # note that users will always be created with email_address_verified = false
 
     # extract mandatory data from json
     try:
@@ -227,8 +230,15 @@ def create_user(user_json, correlation_id):
         created = str(now_with_tz())
         user_json['created'] = created
 
-    auth0_id = user_json['auth0_id']
+    if 'auth0_id' in user_json:
+        auth0_id = user_json['auth0_id']
+    else:
+        auth0_id = None
 
+    # set up default values
+    email_address_verified = False
+
+    # initialise modified = created
     user_json['modified'] = created
 
     existing_user = get_user_by_id(id, correlation_id)
@@ -241,14 +251,15 @@ def create_user(user_json, correlation_id):
             created,
             modified,
             email,
+            email_address_verified,
             title,
             first_name,
             last_name,
             auth0_id,
             status
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
+        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    rowcount = execute_non_query(sql, (id, created, created, email, title, first_name, last_name, auth0_id, status), correlation_id)
+    rowcount = execute_non_query(sql, (id, created, created, email, email_address_verified, title, first_name, last_name, auth0_id, status), correlation_id)
 
     return rowcount
 
@@ -287,18 +298,19 @@ if __name__ == "__main__":
     # result = get_user_by_email_api(ev, None)
     # print(result)
 
-    pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
-    ev = {'pathParameters': pp}
-    print(get_user_by_id_api(ev, None))
+    # pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
+    # ev = {'pathParameters': pp}
+    # print(get_user_by_id_api(ev, None))
 
-    # jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
-    #
-    # ev = {'body': json.dumps(jp)}
-    # ev['pathParameters'] = {'id': 'f3c37970-711d-4153-b478-0051409daac2'}
-    #
-    # r = patch_user_api(ev, None)
-    #
-    # print(r)
+    jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
+    jp = [{'op': 'replace', 'path': '/email_address_verified', 'value': 'True'}]
+
+    ev = {'body': json.dumps(jp)}
+    ev['pathParameters'] = {'id': '48e30e54-b4fc-4303-963f-2943dda2b139'}
+
+    r = patch_user_api(ev, None)
+
+    print(r)
 
     # sql_updates = jsonpatch_to_sql(jp, '8e385316-5827-4c72-8d4b-af5c57ff4679')
 
@@ -308,12 +320,10 @@ if __name__ == "__main__":
 
     # user_json = {
     #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-    #     "created": "2018-08-21T11:16:56+01:00",
     #     "email": "sw@email.addr",
     #     "title": "Mr",
     #     "first_name": "Steven",
     #     "last_name": "Walcorn",
-    #     "auth0_id": "1234abcd",
     #     "status": "new"}
     #
     # correlation_id = None
