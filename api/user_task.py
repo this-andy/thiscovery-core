@@ -1,6 +1,5 @@
 import uuid
 import json
-import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
@@ -9,6 +8,25 @@ from api.user import get_user_by_id
 
 def validate_status(s):
     return s
+
+
+def get_user_task(ut_id, correlation_id):
+
+    base_sql = '''
+        SELECT 
+            id,
+            user_project_id,
+            project_task_id,
+            created,
+            modified,               
+            status,
+            consented                
+        FROM 
+            public.projects_usertask
+        WHERE id = ''' \
+            + "\'" + str(ut_id) + "\' "
+
+    return execute_query(base_sql, correlation_id)
 
 
 def list_user_tasks(user_id, correlation_id):
@@ -112,7 +130,6 @@ def create_user_task(ut_json, correlation_id):
             raise
     else:
         id = str(uuid.uuid4())
-        ut_json['id'] = id
 
     if 'created' in ut_json:
         try:
@@ -121,9 +138,6 @@ def create_user_task(ut_json, correlation_id):
             raise
     else:
         created = str(now_with_tz())
-        ut_json['created'] = created
-
-    ut_json['modified'] = created
 
     # check external account does not already exist
     existing = check_if_user_task_exists(user_project_id, project_task_id, correlation_id)
@@ -141,9 +155,19 @@ def create_user_task(ut_json, correlation_id):
             consented
         ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
 
-    rowcount = execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
+    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
 
-    return rowcount
+    new_user_task = {
+        'id': id,
+        'created': created,
+        'modified': created,
+        'user_project_id': user_project_id,
+        'project_task_id': project_task_id,
+        'status': ut_status,
+        'consented': ut_consented,
+    }
+
+    return new_user_task
 
 
 def create_user_task_api(event, context):
@@ -155,9 +179,9 @@ def create_user_task_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
 
-        create_user_task(ut_json, correlation_id)
+        new_user_task = create_user_task(ut_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(ut_json)}
+        response = {"statusCode": 201, "body": json.dumps(new_user_task)}
 
     except DuplicateInsertError as err:
         response = {"statusCode": 409, "body": err.as_response_body()}
