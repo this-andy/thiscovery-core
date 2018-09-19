@@ -48,7 +48,6 @@ def create_user_external_account(uea_json, correlation_id):
             raise err
     else:
         id = str(uuid.uuid4())
-        uea_json['id'] = id
 
     if 'created' in uea_json:
         try:
@@ -58,9 +57,6 @@ def create_user_external_account(uea_json, correlation_id):
             raise err
     else:
         created = str(now_with_tz())
-        uea_json['created'] = created
-
-    uea_json['modified'] = created
 
     # check external account does not already exist
     existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
