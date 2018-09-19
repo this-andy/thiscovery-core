@@ -103,7 +103,6 @@ def create_user_project(up_json, correlation_id):
             raise
     else:
         id = str(uuid.uuid4())
-        up_json['id'] = id
 
     if 'created' in up_json:
         try:
@@ -112,9 +111,6 @@ def create_user_project(up_json, correlation_id):
             raise
     else:
         created = str(now_with_tz())
-        up_json['created'] = created
-
-    up_json['modified'] = created
 
     # check external account does not already exist
     existing = get_existing_user_project_count(user_id, project_id, correlation_id)
