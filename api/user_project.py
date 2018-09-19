@@ -137,9 +137,18 @@ def create_user_project(up_json, correlation_id):
         status
     ) VALUES ( %s, %s, %s, %s, %s, %s );'''
 
-    rowcount = execute_non_query(sql, (id, created, created, user_id, project_id, status), correlation_id)
+    execute_non_query(sql, (id, created, created, user_id, project_id, status), correlation_id)
 
-    return rowcount
+    new_user_project = {
+        'id': id,
+        'created': created,
+        'modified': created,
+        'user_id': user_id,
+        'project_id': project_id,
+        'status': status,
+    }
+
+    return new_user_project
 
 
 def create_user_project_api(event, context):
@@ -151,9 +160,9 @@ def create_user_project_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})
 
-        create_user_project(up_json, correlation_id)
+        new_user_project = create_user_project(up_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(up_json)}
+        response = {"statusCode": 201, "body": json.dumps(new_user_project)}
 
     except DuplicateInsertError as err:
         response = {"statusCode": 409, "body": err.as_response_body()}
