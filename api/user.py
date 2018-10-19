@@ -1,4 +1,3 @@
-import datetime
 import json
 import uuid
 from jsonpatch import JsonPatch, JsonPatchException
@@ -63,7 +62,7 @@ def get_user_by_id_api(event, context):
     except ObjectDoesNotExistError as err:
         response = {"statusCode": 404, "body": err.as_response_body()}
 
-    except DetailedValueError  as err:
+    except DetailedValueError as err:
         response = {"statusCode": 400, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -311,7 +310,7 @@ if __name__ == "__main__":
     # print(get_user_by_id_api(ev, None))
 
     jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
-    jp = [{'op': 'replace', 'path': '/email_address_verified', 'value': 'True'}]
+    # jp = [{'op': 'replace', 'path': '/email_address_verified', 'value': 'True'}]
 
     ev = {'body': json.dumps(jp)}
     ev['pathParameters'] = {'id': '48e30e54-b4fc-4303-963f-2943dda2b139'}

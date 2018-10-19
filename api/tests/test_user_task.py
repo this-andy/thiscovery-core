@@ -68,15 +68,15 @@ class TestUserTask(TestCase):
             {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
              'user_project_status': None, 'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
              'task_description': 'Systematic review for CTG monitoring', 'user_task_id': 'dd8d4003-bb8e-4cb8-af7f-7c82816a5ff4',
-             'created': '2018-08-17T13:10:57.827727+01:00', 'modified': '2018-08-17T13:10:57.883217+01:00', 'status': None, 'consented': None},
+             'created': '2018-08-17T13:10:57.827727+01:00', 'modified': '2018-08-17T13:10:57.883217+01:00', 'status': 'active', 'consented': None},
             {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
              'user_project_status': None, 'project_task_id': '6f1c63e2-fbe8-4d24-8680-c68a30b407e3',
              'task_description': 'Systematic review for ambulance bag', 'user_task_id': 'a3313e72-3532-482f-af5e-d31b0fa8efd6',
-             'created': '2018-08-17T13:10:58.104983+01:00', 'modified': '2018-08-17T13:10:58.170637+01:00', 'status': None, 'consented': None},
+             'created': '2018-08-17T13:10:58.104983+01:00', 'modified': '2018-08-17T13:10:58.170637+01:00', 'status': 'complete', 'consented': None},
             {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
              'user_project_status': None, 'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
              'task_description': 'Midwife assessment for CTG monitoring', 'user_task_id': '70083082-1ffd-4e45-a8a7-364f4214af12',
-             'created': '2018-08-17T13:10:58.228041+01:00', 'modified': '2018-08-17T13:10:58.263516+01:00', 'status': None, 'consented': None},
+             'created': '2018-08-17T13:10:58.228041+01:00', 'modified': '2018-08-17T13:10:58.263516+01:00', 'status': 'active', 'consented': None},
         ]
         expected_body = expected_body_bst
 
@@ -131,7 +131,7 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_project_id': "8fdb6137-e196-4c17-8091-7a0d370fadba",
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-            'status': 'A',
+            'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
@@ -166,7 +166,7 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_project_id': "9645cd24-cfb8-432d-80c6-9e06fb49aff5",
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-            'status': 'new',
+            'status': 'complete',
             'consented': '2018-07-19 16:16:56.087895+01',
         }
         event = {'body': json.dumps(ut_json)}
@@ -206,7 +206,7 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
-            'status': 'A',
+            'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01'
         }
         event = {'body': json.dumps(ut_json)}
@@ -226,7 +226,7 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c44',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf018',
-            'status': 'A',
+            'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01'
         }
         event = {'body': json.dumps(ut_json)}

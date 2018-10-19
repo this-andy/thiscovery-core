@@ -7,7 +7,14 @@ from api.user import get_user_by_id
 
 
 def validate_status(s):
-    return s
+    VALID_USERTASK_STATUSES = {
+        'active',
+        'complete',
+    }
+    if s in VALID_USERTASK_STATUSES:
+        return s
+    else:
+        raise ValueError
 
 
 def get_user_task(ut_id, correlation_id):

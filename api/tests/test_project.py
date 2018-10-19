@@ -45,19 +45,19 @@ class TestProject(TestCase):
         # todo figure out how do do this properly!
         expected_body_bst = [
             {"id": "3ffc498f-8add-4448-b452-4fc7f463aa21", "name": "CTG Monitoring", "short_name": "CTG Monitoring",
-             "created": "2018-08-17T13:10:56.084487+01:00", "modified": "2018-08-17T13:10:56.119612+01:00", "status": None,
+             "created": "2018-08-17T13:10:56.084487+01:00", "modified": "2018-08-17T13:10:56.119612+01:00", "status": "complete",
              "tasks": [
                  {"id": "c92c8289-3590-4a85-b699-98bc8171ccde", "description": "Systematic review for CTG monitoring", "created": "2018-08-17T13:10:56.98669+01:00",
-                  "modified": "2018-08-17T13:10:57.023286+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                  "modified": "2018-08-17T13:10:57.023286+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": "planned"},
                  {"id": "4ee70544-6797-4e21-8cec-5653c8d5b234", "description": "Midwife assessment for CTG monitoring", "created": "2018-08-17T13:10:57.074321+01:00",
-                  "modified": "2018-08-17T13:10:57.111495+01:00", "task_type_id": "d92d9935-cb9e-4422-9dbb-65c3423599b1", "status": None}]},
+                  "modified": "2018-08-17T13:10:57.111495+01:00", "task_type_id": "d92d9935-cb9e-4422-9dbb-65c3423599b1", "status": "active"}]},
             {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
-             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": None,
+             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": "active",
              "tasks": [
                  {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag", "created": "2018-08-17T13:10:57.162016+01:00",
-                  "modified": "2018-08-17T13:10:57.198223+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                  "modified": "2018-08-17T13:10:57.198223+01:00", "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": "active"},
                  {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment", "created": "2018-08-17T13:10:57.275273+01:00",
-                  "modified": "2018-08-17T13:10:57.311031+01:00", "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": None}]
+                  "modified": "2018-08-17T13:10:57.311031+01:00", "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": "complete"}]
              }]
 
         expected_body = expected_body_bst
@@ -80,14 +80,14 @@ class TestProject(TestCase):
         # todo figure out how do do this properly!
         expected_body_bst = [
             {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
-             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": None,
+             "created": "2018-08-17T13:10:56.173198+01:00", "modified": "2018-08-17T13:10:56.209544+01:00", "status": "active",
              "tasks": [
                  {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag",
                   "created": "2018-08-17T13:10:57.162016+01:00", "modified": "2018-08-17T13:10:57.198223+01:00",
-                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": None},
+                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "status": "active"},
                  {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment",
                   "created": "2018-08-17T13:10:57.275273+01:00", "modified": "2018-08-17T13:10:57.311031+01:00",
-                  "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": None}
+                  "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "status": "complete"}
              ]}
         ]
 
