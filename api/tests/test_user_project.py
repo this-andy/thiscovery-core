@@ -176,7 +176,27 @@ class TestUserProject(TestCase):
         self.assertLess(difference.seconds, 10)
 
 
-    def test_6_create_user_projects_api_user_not_exists(self):
+    def test_6_create_user_projects_api_invalid_uuid(self):
+        from api.user_project import create_user_project_api
+
+        expected_status = 400
+        up_json = {
+            'id': '9620089b-e9a4-46fd-bb78-091c8449d77z',
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
+            'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
+            'status': 'A'
+        }
+        event = {'body': json.dumps(up_json)}
+        result = create_user_project_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'invalid' in result_json['message'])
+
+
+    def test_7_create_user_projects_api_user_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = 400
@@ -195,7 +215,7 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_7_create_user_projects_api_project_not_exists(self):
+    def test_8_create_user_projects_api_project_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = 400

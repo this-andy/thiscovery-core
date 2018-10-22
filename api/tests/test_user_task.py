@@ -199,7 +199,27 @@ class TestUserTask(TestCase):
         self.assertLess(difference.seconds, 10)
 
 
-    def test_6_create_user_task_api_task_not_exists(self):
+    def test_6_create_user_task_api_invalid_status(self):
+        from api.user_task import create_user_task_api
+
+        expected_status = 400
+        ut_json = {
+            'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
+            'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
+            'status': 'invalid',
+            'consented': '2018-06-12 16:16:56.087895+01'
+        }
+        event = {'body': json.dumps(ut_json)}
+        result = create_user_task_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'invalid usertask status' in result_json['message'])
+
+
+    def test_7_create_user_task_api_task_not_exists(self):
         from api.user_task import create_user_task_api
 
         expected_status = 400
@@ -219,7 +239,7 @@ class TestUserTask(TestCase):
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
-    def test_7_create_user_task_api_user_project_not_exists(self):
+    def test_8_create_user_task_api_user_project_not_exists(self):
         from api.user_task import create_user_task_api
 
         expected_status = 400

@@ -14,7 +14,8 @@ def validate_status(s):
     if s in VALID_USERTASK_STATUSES:
         return s
     else:
-        raise ValueError
+        errorjson = {'status': s}
+        raise DetailedValueError('invalid usertask status', errorjson)
 
 
 def get_user_task(ut_id, correlation_id):
@@ -126,23 +127,26 @@ def create_user_task(ut_json, correlation_id):
         project_task_id = validate_uuid(ut_json['project_task_id'])
         ut_status = validate_status(ut_json['status'])
         ut_consented = validate_utc_datetime(ut_json['consented'])
-    except DetailedValueError:
-        raise
+    except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
 
     # now process optional json data
     if 'id' in ut_json:
         try:
             id = validate_uuid(ut_json['id'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         id = str(uuid.uuid4())
 
     if 'created' in ut_json:
         try:
             created = validate_utc_datetime(ut_json['created'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         created = str(now_with_tz())
 

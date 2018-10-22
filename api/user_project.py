@@ -92,23 +92,26 @@ def create_user_project(up_json, correlation_id):
         user_id = validate_uuid(up_json['user_id'])    # all public id are uuids
         project_id = validate_uuid(up_json['project_id'])
         status = validate_status(up_json['status'])
-    except DetailedValueError:
-        raise
+    except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
 
     # now process optional json data
     if 'id' in up_json:
         try:
             id = validate_uuid(up_json['id'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         id = str(uuid.uuid4())
 
     if 'created' in up_json:
         try:
             created = validate_utc_datetime(up_json['created'])
-        except DetailedValueError:
-            raise
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
     else:
         created = str(now_with_tz())
 
