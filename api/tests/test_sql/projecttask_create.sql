@@ -9,6 +9,7 @@ CREATE TABLE public.projects_projecttask
     task_type_id uuid NOT NULL,
     closing_date timestamp with time zone,
     earliest_start_date timestamp with time zone,
+    signup_status character varying(12) COLLATE pg_catalog."default",
     CONSTRAINT projects_projecttask_pkey PRIMARY KEY (id),
     CONSTRAINT projects_projecttask_project_id_c579add0_fk_projects_project_id FOREIGN KEY (project_id)
         REFERENCES public.projects_project (id) MATCH SIMPLE

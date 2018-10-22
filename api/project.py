@@ -25,6 +25,7 @@ BASE_PROJECT_SELECT_SQL = '''
                         task_type_id,
                         earliest_start_date,
                         closing_date,
+                        signup_status,
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
