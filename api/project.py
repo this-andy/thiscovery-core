@@ -23,6 +23,8 @@ BASE_PROJECT_SELECT_SQL = '''
                         created,
                         modified,
                         task_type_id,
+                        earliest_start_date,
+                        closing_date,
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
