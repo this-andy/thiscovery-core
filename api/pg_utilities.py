@@ -43,40 +43,7 @@ def _jsonize_sql(base_sql):
     return 'SELECT row_to_json(row) FROM (' + base_sql + ') row'
 
 
-def execute_query(base_sql, correlation_id, return_json=True, jsonize_sql=True):
-    try:
-        logger = get_logger()
-        conn = _get_connection(correlation_id)
-    except Exception as ex:
-        raise ex
-
-    try:
-        # conn.cursor will return a cursor object, you can use this cursor to perform queries
-        cursor = conn.cursor()
-
-        # tell sql to create json if that's what's wanted
-        if return_json and jsonize_sql:
-            sql = _jsonize_sql(base_sql)
-        else:
-            sql = base_sql
-        sql = minimise_white_space(sql)
-        logger.info('postgres query', extra = {'query': sql, 'correlation_id': correlation_id})
-
-        cursor.execute(sql)
-        records = cursor.fetchall()
-        logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
-
-        if return_json:
-            return _get_json_from_tuples(records)
-        else:
-            return records
-    except Exception as ex:
-        raise ex
-    finally:
-        conn.close()
-
-
-def execute_param_query(base_sql, params, correlation_id, return_json=True, jsonize_sql=True):
+def execute_query(base_sql, params, correlation_id, return_json=True, jsonize_sql=True):
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)

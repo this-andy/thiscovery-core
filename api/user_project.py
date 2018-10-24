@@ -34,10 +34,10 @@ def list_user_projects(user_id, correlation_id):
             status                
         FROM 
             public.projects_userproject
-        WHERE user_id = ''' \
-               + "'" + str(user_id) + "'"
+        WHERE user_id = %s
+    '''
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(base_sql, (str(user_id),), correlation_id)
 
 
 def list_user_projects_api(event, context):
@@ -76,11 +76,12 @@ def get_existing_user_project_count(user_id, project_id, correlation_id):
       SELECT 
         COUNT(id)
       FROM public.projects_userproject
-      WHERE """ \
-        + "project_id = '" + str(project_id) + "' " \
-        + "AND user_id = '" + str(user_id) + "'"
+      WHERE 
+        project_id = %s
+        AND user_id = %s
+    """
 
-    return execute_query(base_sql, correlation_id, False)
+    return execute_query(base_sql, (str(project_id), str(user_id)), correlation_id, False)
 
 
 def create_user_project(up_json, correlation_id):

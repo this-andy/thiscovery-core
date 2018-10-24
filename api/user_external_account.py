@@ -17,11 +17,10 @@ def check_user_id_and_external_account(user_id, external_system_id, correlation_
         COUNT(id)
       FROM public.projects_userexternalaccount
       WHERE
-        user_id = ''' \
-        + "\'" + str(user_id) + "\'" \
-        + " AND external_system_id = \'" + str(external_system_id) + "\'"
+        user_id = %s AND external_system_id = %s
+    '''
 
-    return execute_query(base_sql, correlation_id, False)
+    return execute_query(base_sql, (str(user_id), str(external_system_id)), correlation_id, False)
 
 
 def create_user_external_account(uea_json, correlation_id):

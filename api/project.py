@@ -1,5 +1,5 @@
 import json
-from api.pg_utilities import execute_query, execute_param_query
+from api.pg_utilities import execute_query
 from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
 
 
@@ -51,12 +51,12 @@ def list_projects(correlation_id):
         created
     '''
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(base_sql, None, correlation_id)
 
 
 def list_projects_with_tasks(correlation_id):
 
-    result = execute_query(BASE_PROJECT_SELECT_SQL, correlation_id, True, False)
+    result = execute_query(BASE_PROJECT_SELECT_SQL, None, correlation_id, True, False)
 
     return result
 
@@ -84,12 +84,12 @@ def list_projects_api(event, context):
 
 def get_project_with_tasks(project_uuid, correlation_id):
     # take base sql query and insert a where clause to get specified project
-    sql_where_clause = "where id = \'" + str(project_uuid) + "\' "
+    sql_where_clause = "WHERE id = %s "
     # put where clause before final order by
     order_by_index = BASE_PROJECT_SELECT_SQL.rfind('order by')
     sql = BASE_PROJECT_SELECT_SQL[:order_by_index] + sql_where_clause + BASE_PROJECT_SELECT_SQL[order_by_index:]
 
-    result = execute_query(sql, correlation_id, True, False)
+    result = execute_query(sql, (str(project_uuid),), correlation_id, True, False)
 
     return result
 
@@ -143,7 +143,7 @@ def list_publicly_visible_projects(correlation_id):
         created
     '''
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(base_sql, None, correlation_id)
 
 
 def list_user_visible_projects(user_uuid, correlation_id):
@@ -166,7 +166,7 @@ def list_user_visible_projects(user_uuid, correlation_id):
        AND ugm.user_id = %s
       )"""
 
-    return execute_param_query(base_sql, (user_uuid,), correlation_id)
+    return execute_query(base_sql, (user_uuid,), correlation_id)
 
 
 def list_user_visibles(user_uuid, correlation_id):
@@ -177,7 +177,7 @@ def list_user_visibles(user_uuid, correlation_id):
       WHERE p.id = %s"""
 
     # return execute_query(base_sql, correlation_id)
-    return execute_param_query(base_sql, (user_uuid,), correlation_id)
+    return execute_query(base_sql, (user_uuid,), correlation_id)
 
 
 if __name__ == "__main__":

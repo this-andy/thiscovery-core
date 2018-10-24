@@ -47,7 +47,8 @@ class EntityUpdate:
     @staticmethod
     def get_entity_updates_for_entity(entity_name:str, entity_id:uuid, correlation_id):
 
-        select_sql = '''SELECT
+        select_sql = '''
+            SELECT
                 id,
                 created,
                 modified,
@@ -55,11 +56,13 @@ class EntityUpdate:
                 entity_id,
                 json_patch,
                 json_reverse_patch
-            FROM public.projects_entityupdate '''
-        sql_where_clause = " WHERE entity_name = \'" + entity_name + "\' AND entity_id = \'" + str(entity_id) + "\'"
-        sql_order_by_clause = " ORDER BY created"
+            FROM public.projects_entityupdate 
+            WHERE entity_name = %s 
+                AND entity_id = %s
+            ORDER BY created
+        '''
 
-        return execute_query(select_sql + sql_where_clause + sql_order_by_clause, correlation_id)
+        return execute_query(select_sql, (entity_name, str(entity_id)), correlation_id)
 
 
 if __name__ == "__main__":

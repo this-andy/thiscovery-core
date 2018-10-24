@@ -431,7 +431,7 @@ class TestUser(TestCase):
     def test_timezone(self):
         from api.pg_utilities import execute_query
         sql = 'Select NOW()'
-        result =  execute_query(sql, 'abc')
+        result =  execute_query(sql, None, 'abc')
         return result
 
 

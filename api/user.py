@@ -37,9 +37,9 @@ def get_user_by_id(user_id, correlation_id):
         err.add_correlation_id(correlation_id)
         raise err
 
-    sql_where_clause = " WHERE id = \'" + str(user_id) + "\'"
+    sql_where_clause = " WHERE id = %s"
 
-    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, correlation_id)
+    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
 
 
 def get_user_by_id_api(event, context):
@@ -76,9 +76,9 @@ def get_user_by_id_api(event, context):
 
 def get_user_by_email(user_email, correlation_id):
 
-    sql_where_clause = " WHERE email = \'" + str(user_email) + "\'"
+    sql_where_clause = " WHERE email = %s"
 
-    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, correlation_id)
+    return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
 
 
 def get_user_by_email_api(event, context):

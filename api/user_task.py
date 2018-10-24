@@ -31,10 +31,10 @@ def get_user_task(ut_id, correlation_id):
             consented                
         FROM 
             public.projects_usertask
-        WHERE id = ''' \
-            + "\'" + str(ut_id) + "\' "
+        WHERE id = %s
+    '''
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(base_sql, (str(ut_id),), correlation_id)
 
 
 def list_user_tasks(user_id, correlation_id):
@@ -66,11 +66,11 @@ def list_user_tasks(user_id, correlation_id):
             public.projects_usertask ut
             inner join public.projects_projecttask pt on pt.id = ut.project_task_id
             inner join public.projects_userproject up on up.id = ut.user_project_id
-        WHERE up.user_id = ''' \
-            + "\'" + str(user_id) + "\' " \
-            + "ORDER BY ut.created"
+        WHERE up.user_id = %s
+        ORDER BY ut.created
+    '''
 
-    return execute_query(base_sql, correlation_id)
+    return execute_query(base_sql, (str(user_id),), correlation_id)
 
 
 def list_user_tasks_api(event, context):
@@ -110,11 +110,11 @@ def check_if_user_task_exists(user_project_id, project_task_id, correlation_id):
         COUNT(id)
       FROM public.projects_usertask 
       WHERE
-        user_project_id = ''' \
-               + "\'" + str(user_project_id) + "\'" \
-               + " AND project_task_id = \'" + str(project_task_id) + "\'"
+        user_project_id = %s
+        AND project_task_id = %s
+    '''
 
-    return execute_query(base_sql, correlation_id, False)
+    return execute_query(base_sql, (str(user_project_id), str(project_task_id)), correlation_id, False)
 
 
 def create_user_task(ut_json, correlation_id):
