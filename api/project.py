@@ -1,6 +1,5 @@
 import json
-import sys
-from api.pg_utilities import execute_query, _jsonize_sql, _get_json_from_tuples
+from api.pg_utilities import execute_query, execute_param_query
 from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
 
 
@@ -124,6 +123,63 @@ def get_project_api(event, context):
     return response
 
 
+def list_publicly_visible_projects(correlation_id):
+    base_sql = '''
+      SELECT 
+        id, 
+        name,
+        short_name,
+        created,
+        modified,
+        status
+      FROM 
+        public.projects_project p
+      WHERE NOT EXISTS (
+        SELECT id 
+        FROM public.projects_projectgroupvisibility
+        WHERE project_id = p.id
+        )
+      ORDER BY 
+        created
+    '''
+
+    return execute_query(base_sql, correlation_id)
+
+
+def list_user_visible_projects(user_uuid, correlation_id):
+    base_sql = """
+      SELECT 
+        id, 
+        name,
+        short_name,
+        created,
+        modified,
+        status
+      FROM 
+        public.projects_project p
+      WHERE EXISTS (
+        SELECT pgv.id 
+        FROM public.projects_projectgroupvisibility pgv
+        INNER JOIN projects_usergroup ug on pgv.user_group_id = ug.id
+        INNER JOIN projects_usergroupmembership ugm on ug.id = ugm.user_group_id
+       WHERE project_id = p.id 
+       AND ugm.user_id = %s
+      )"""
+
+    return execute_param_query(base_sql, (user_uuid,), correlation_id)
+
+
+def list_user_visibles(user_uuid, correlation_id):
+    base_sql = """
+      SELECT 
+        *
+      FROM public.projects_project p
+      WHERE p.id = %s"""
+
+    # return execute_query(base_sql, correlation_id)
+    return execute_param_query(base_sql, (user_uuid,), correlation_id)
+
+
 if __name__ == "__main__":
 
     # result = get_project_with_tasks('21c0779a-5fc2-4b72-8a88-0ba31456b562',None)
@@ -132,9 +188,17 @@ if __name__ == "__main__":
     # ev = {'pathParameters': pp}
     # result = get_project_api(ev, None)
 
-    result = list_projects_api(None, None)
+    # result = list_projects_api(None, None)
     # result_status = result['statusCode']
     # result_json = json.loads(result['body'])
+
+    # result = list_publicly_visible_projects('123')
+    # j "04306e5c-b04f-4d2c-9e82-97fee2d135af"
+    # d "26ee974a-08de-4a89-a85e-bcdabc7d9944"
+    # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
+    # a "a5634be4-af2a-4d4a-a282-663e8c816507"
+    # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
+    result = list_user_visible_projects('04306e5c-b04f-4d2c-9e82-97fee2d135af','123')
     print(result)
 
     # print(list_projects_with_tasks(None))

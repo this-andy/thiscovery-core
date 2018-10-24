@@ -17,8 +17,8 @@ def _get_connection(correlation_id=None):
     if True:  # conn == None:
         test_dsn = os.getenv("TEST_DSN")
         if test_dsn is None:
-            # env_dict = get_secret('local-connection')
-            env_dict = get_secret('database-connection')
+            env_dict = get_secret('local-connection')
+            # env_dict = get_secret('database-connection')
         else:
             env_dict = ast.literal_eval(test_dsn)
 
@@ -63,6 +63,40 @@ def execute_query(base_sql, correlation_id, return_json=True, jsonize_sql=True):
         logger.info('postgres query', extra = {'query': sql, 'correlation_id': correlation_id})
 
         cursor.execute(sql)
+        records = cursor.fetchall()
+        logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+
+        if return_json:
+            return _get_json_from_tuples(records)
+        else:
+            return records
+    except Exception as ex:
+        raise ex
+    finally:
+        conn.close()
+
+
+def execute_param_query(base_sql, params, correlation_id, return_json=True, jsonize_sql=True):
+    try:
+        logger = get_logger()
+        conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
+
+    try:
+        # conn.cursor will return a cursor object, you can use this cursor to perform queries
+        cursor = conn.cursor()
+
+        # tell sql to create json if that's what's wanted
+        if return_json and jsonize_sql:
+            sql = _jsonize_sql(base_sql)
+        else:
+            sql = base_sql
+        sql = minimise_white_space(sql)
+        param_str = str(params)
+        logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+
+        cursor.execute(sql, params)
         records = cursor.fetchall()
         logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
 
