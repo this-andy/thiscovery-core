@@ -104,7 +104,16 @@ functions:
           cors: true
           private: true
 
-# User endpoints
+  get_user_project_statuses:
+    handler: api/project.get_user_project_statuses_api
+    events:
+      - http:
+          path: v1/project-user-status
+          method: get
+          cors: true
+          private: true
+
+  # User endpoints
   get-user-by-uuid:
     handler: api/user.get_user_by_id_api
     events:

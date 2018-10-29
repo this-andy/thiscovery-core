@@ -182,7 +182,7 @@ PROJECT_USER_SELECT_SQL = '''
                         FALSE as is_visible,
                         FALSE as is_signedup,
                         FALSE as sign_up_available,
-                        'null' as user_task_status
+                        null as user_task_status
                     from public.projects_projecttask task
                     where task.project_id = project.id
                         AND task.status != 'planned'
