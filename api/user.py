@@ -32,7 +32,7 @@ def validate_status(s):
 def get_user_by_id(user_id, correlation_id):
 
     try:
-        user_uuid = validate_uuid(user_id)
+        user_id = validate_uuid(user_id)
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err

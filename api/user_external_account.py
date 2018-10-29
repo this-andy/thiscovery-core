@@ -24,7 +24,7 @@ def check_user_id_and_external_account(user_id, external_system_id, correlation_
 
 
 def create_user_external_account(uea_json, correlation_id):
-    # json MUST contain: external_system_id, user_uuid, external_user_id, status
+    # json MUST contain: external_system_id, user_id, external_user_id, status
     # json may OPTIONALLY include: id, created,
 
     # extract mandatory data from json
@@ -59,7 +59,7 @@ def create_user_external_account(uea_json, correlation_id):
     # check external account does not already exist
     existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
     if int(existing[0][0]) > 0:
-        errorjson = {'user_uuid': user_id, 'external_system_id': external_system_id, 'correlation_id': str(correlation_id)}
+        errorjson = {'user_id': user_id, 'external_system_id': external_system_id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user_external_account already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)

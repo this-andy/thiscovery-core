@@ -79,13 +79,13 @@ def list_user_tasks_api(event, context):
 
     try:
         params = event['queryStringParameters']
-        user_uuid = params['user_id']
+        user_id = params['user_id']
         correlation_id = get_correlation_id(event)
-        logger.info('API call', extra={'user_uuid': user_uuid, 'correlation_id': correlation_id})
+        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
 
         response = {
             "statusCode": 200,
-            "body": json.dumps(list_user_tasks(user_uuid, correlation_id))
+            "body": json.dumps(list_user_tasks(user_id, correlation_id))
         }
 
     except ObjectDoesNotExistError as err:

@@ -4,12 +4,14 @@ CREATE TABLE public.projects_projecttask
     created timestamp with time zone NOT NULL,
     modified timestamp with time zone NOT NULL,
     description character varying(500) COLLATE pg_catalog."default" NOT NULL,
-    status character varying(12) COLLATE pg_catalog."default",
+    status character varying(12) COLLATE pg_catalog."default" NOT NULL,
     project_id uuid NOT NULL,
     task_type_id uuid NOT NULL,
     closing_date timestamp with time zone,
     earliest_start_date timestamp with time zone,
-    signup_status character varying(12) COLLATE pg_catalog."default",
+    signup_status character varying(12) COLLATE pg_catalog."default" NOT NULL,
+    website_highlight boolean NOT NULL,
+    visibility character varying(12) COLLATE pg_catalog."default" NOT NULL,
     CONSTRAINT projects_projecttask_pkey PRIMARY KEY (id),
     CONSTRAINT projects_projecttask_project_id_c579add0_fk_projects_project_id FOREIGN KEY (project_id)
         REFERENCES public.projects_project (id) MATCH SIMPLE

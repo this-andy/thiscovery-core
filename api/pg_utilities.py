@@ -2,7 +2,7 @@ import psycopg2
 import os
 import ast
 from api.utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
-    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, get_aws_secret
+    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret
 
 
 conn = None
@@ -17,8 +17,8 @@ def _get_connection(correlation_id=None):
     if True:  # conn == None:
         test_dsn = os.getenv("TEST_DSN")
         if test_dsn is None:
-            env_dict = get_secret('local-connection')
-            # env_dict = get_secret('database-connection')
+            # env_dict = get_secret('local-connection')
+            env_dict = get_secret('database-connection')
         else:
             env_dict = ast.literal_eval(test_dsn)
 

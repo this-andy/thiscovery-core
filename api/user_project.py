@@ -1,6 +1,5 @@
 import uuid
 import json
-import datetime
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
@@ -46,13 +45,13 @@ def list_user_projects_api(event, context):
 
     try:
         params = event['queryStringParameters']
-        user_uuid = params['user_id']  # all public id are uuids
+        user_id = params['user_id']  # all public id are uuids
         correlation_id = get_correlation_id(event)
-        logger.info('API call', extra={'user_uuid': user_uuid, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
 
         response = {
             "statusCode": 200,
-            "body": json.dumps(list_user_projects(user_uuid, correlation_id))
+            "body": json.dumps(list_user_projects(user_id, correlation_id))
         }
 
     except ObjectDoesNotExistError as err:
