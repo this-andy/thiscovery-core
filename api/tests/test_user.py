@@ -1,13 +1,16 @@
 import os
 import json
+import uuid
 from dateutil import parser
+from datetime import timedelta
 import testing.postgresql
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id, now_with_tz
+from api.utilities import new_correlation_id, now_with_tz, validate_uuid
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
+TIME_TOLERANCE_SECONDS = 10
 
 class TestUser(TestCase):
 
@@ -191,11 +194,11 @@ class TestUser(TestCase):
         # check the rest of the result excluding modified
         self.assertDictEqual(result_json[0], expected_body[0])
 
-        # now check modified datetime - allow up to 10 seconds difference
+        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
         result_modified_datetime = parser.parse(result_modified)
         difference = abs(now - result_modified_datetime)
-        self.assertLess(difference.seconds, 10)
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         # now check that we have a corresponding entity update record
         entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
@@ -215,10 +218,10 @@ class TestUser(TestCase):
             del last_entity_update['id']
             del last_entity_update['modified']
 
-            # check created datetime - allow up to 10 seconds difference
+            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
             result_created_datetime = parser.parse(result_created)
             difference = abs(now - result_created_datetime)
-            self.assertLess(difference.seconds, 10)
+            self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
             # check jsonpatch - compare as lists in case order different
             result_json_patch = json.loads(result_json_patch)
@@ -339,8 +342,20 @@ class TestUser(TestCase):
         expected_body = dict.copy(user_json)
         expected_body['modified'] = user_json['created']
 
+        email_verification_token = result_json['email_verification_token']
+        del result_json['email_verification_token']
+
+        email_verification_expiry = result_json['email_verification_expiry']
+        del result_json['email_verification_expiry']
+
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(result_json, expected_body)
+
+        self.assertTrue(uuid.UUID(email_verification_token).version == 4)
+
+        result_datetime = parser.parse(email_verification_expiry)
+        difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         # now check we can't insert same record again...
         expected_status = 409
@@ -355,7 +370,6 @@ class TestUser(TestCase):
 
     def test_create_user_api_with_defaults(self):
         from api.user import create_user_api
-        import uuid
 
         expected_status = 201
         user_json = {
@@ -385,6 +399,12 @@ class TestUser(TestCase):
         email_address_verified = result_json['email_address_verified']
         del result_json['email_address_verified']
 
+        email_verification_token = result_json['email_verification_token']
+        del result_json['email_verification_token']
+
+        email_verification_expiry = result_json['email_verification_expiry']
+        del result_json['email_verification_expiry']
+
         self.assertEqual(expected_status, result_status)
         # first check what's left in returned data
         self.assertDictEqual(result_json, user_json)
@@ -394,14 +414,19 @@ class TestUser(TestCase):
 
         result_datetime = parser.parse(created)
         difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         result_datetime = parser.parse(modified)
         difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         self.assertIsNone(auth0_id)
         self.assertFalse(email_address_verified)
+        self.assertTrue(uuid.UUID(email_verification_token).version == 4)
+
+        result_datetime = parser.parse(email_verification_expiry)
+        difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
 
     def test_create_user_api_bad_uuid(self):

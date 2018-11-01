@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS public.projects_entityupdate CASCADE;
+
 CREATE TABLE public.projects_entityupdate
 (
     id uuid NOT NULL,

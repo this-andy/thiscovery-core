@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 from api.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
 from api.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -234,6 +235,8 @@ def create_user(user_json, correlation_id):
 
     # set up default values
     email_address_verified = False
+    email_verification_token = str(uuid.uuid4())
+    email_verification_expiry = str(now_with_tz() + timedelta(hours=24))
 
     existing_user = get_user_by_id(id, correlation_id)
     if len(existing_user) > 0:
@@ -246,14 +249,17 @@ def create_user(user_json, correlation_id):
             modified,
             email,
             email_address_verified,
+            email_verification_token,
+            email_verification_expiry,
             title,
             first_name,
             last_name,
             auth0_id,
             status
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
+        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, email, email_address_verified, title, first_name, last_name, auth0_id, status), correlation_id)
+    params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry, title, first_name, last_name, auth0_id, status)
+    execute_non_query(sql, params, correlation_id)
 
     new_user = {
         'id': id,
@@ -261,6 +267,8 @@ def create_user(user_json, correlation_id):
         'modified': created,        
         'email': email,
         'email_address_verified': email_address_verified,
+        'email_verification_token': email_verification_token,
+        'email_verification_expiry': email_verification_expiry,
         'title': title,
         'first_name': first_name,
         'last_name': last_name,
@@ -299,6 +307,18 @@ def create_user_api(event, context):
     return response
 
 
+def validate_user_email(user_id, email_verification_token_to_check, correlation_id):
+    sql = """
+        SELECT 
+            email_verification_token, email_verification_expiry
+        FROM 
+            public.projects_user
+        WHERE
+            id = %s
+    """
+    result = execute_query(sql, (str(user_id),), correlation_id)
+
+
 if __name__ == "__main__":
     # qsp = {'email': 'andy.paterson@thisinstitute.cam.ac.uk'}
     # ev = {'queryStringParameters': qsp}
@@ -309,15 +329,15 @@ if __name__ == "__main__":
     # ev = {'pathParameters': pp}
     # print(get_user_by_id_api(ev, None))
 
-    jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
-    # jp = [{'op': 'replace', 'path': '/email_address_verified', 'value': 'True'}]
-
-    ev = {'body': json.dumps(jp)}
-    ev['pathParameters'] = {'id': '48e30e54-b4fc-4303-963f-2943dda2b139'}
-
-    r = patch_user_api(ev, None)
-
-    print(r)
+    # jp = [{'op': 'replace', 'path': '/first_name', 'value': '1555'}, {'op': 'replace', 'path': '/last_name', 'value': '11345'}, {'op': 'replace', 'path': '/email', 'value': '1234@somewhere.com'}]
+    # # jp = [{'op': 'replace', 'path': '/email_address_verified', 'value': 'True'}]
+    #
+    # ev = {'body': json.dumps(jp)}
+    # ev['pathParameters'] = {'id': '48e30e54-b4fc-4303-963f-2943dda2b139'}
+    #
+    # r = patch_user_api(ev, None)
+    #
+    # print(r)
 
     # sql_updates = jsonpatch_to_sql(jp, '8e385316-5827-4c72-8d4b-af5c57ff4679')
 
@@ -325,16 +345,15 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    # user_json = {
-    #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-    #     "email": "sw@email.addr",
-    #     "title": "Mr",
-    #     "first_name": "Steven",
-    #     "last_name": "Walcorn",
-    #     "status": "new"}
-    #
-    # correlation_id = None
-    # print(create_user(user_json,correlation_id))
+    user_json = {
+        "email": "an@email.addr",
+        "title": "Mr",
+        "first_name": "Albert",
+        "last_name": "Narlcorn",
+        "status": "new"}
+
+    correlation_id = None
+    print(create_user(user_json,correlation_id))
 
     # ev = {'body': json.dumps(user_json)}
     # print(create_user_api(ev, None))
