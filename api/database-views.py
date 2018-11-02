@@ -75,7 +75,7 @@ def project_task_group_users():
         u.email
       FROM 
         public.projects_projecttask pt
-      JOIN citsci_platform.public.projects_projecttaskgroupvisibility ptgv ON pt.id = ptgv.project_task_id
+      JOIN public.projects_projecttaskgroupvisibility ptgv ON pt.id = ptgv.project_task_id
       JOIN projects_usergroup ug on ptgv.user_group_id = ug.id
       JOIN projects_usergroupmembership ugm on ug.id = ugm.user_group_id
       JOIN projects_user u ON ugm.user_id = u.id  

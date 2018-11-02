@@ -203,7 +203,7 @@ def dict_from_dataset(dataset, key_name):
     return dataset_as_dict
 
 
-def get_user_project_statuses(user_id, correlation_id):
+def get_project_status_for_user(user_id, correlation_id):
 
     project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
@@ -242,7 +242,7 @@ def get_user_project_statuses(user_id, correlation_id):
     sql = """
         SELECT project_task_id, ut.status
 	    FROM public.projects_usertask ut
-	    JOIN citsci_platform.public.projects_userproject up ON ut.user_project_id = up.id
+	    JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
 	"""
     projects_usertasks = execute_query(sql, (str(user_id),), correlation_id)
@@ -253,9 +253,10 @@ def get_user_project_statuses(user_id, correlation_id):
     for project in project_list:
         project_id = project['id']
         project['is_visible'] = \
-            (project['visibility'] == 'public') \
-            or ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
-            or ((project['status'] != 'testing') and (project_group_users_dict.get(project_id) is not None))
+            ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
+            or ((project['status'] != 'testing') and \
+                ((project['visibility'] == 'public') or \
+                (project_group_users_dict.get(project_id) is not None)))
         for task in project['tasks']:
             task_id = task['id']
             task['is_visible'] = \
@@ -271,7 +272,7 @@ def get_user_project_statuses(user_id, correlation_id):
     return project_list
 
 
-def get_user_project_statuses_api(event, context):
+def get_project_status_for_user_api(event, context):
     logger = get_logger()
     correlation_id = None
 
@@ -282,7 +283,7 @@ def get_user_project_statuses_api(event, context):
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": 200,
-            "body": json.dumps(get_user_project_statuses(user_id, correlation_id))
+            "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
         }
 
     except Exception as ex:
@@ -315,7 +316,7 @@ if __name__ == "__main__":
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
     qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
     ev = {'queryStringParameters': qsp}
-    result = get_user_project_statuses_api(ev, None)
+    result = get_project_status_for_user_api(ev, None)
     print (result)
     # if len(result) == 0:
     #     print(result)

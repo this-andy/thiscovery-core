@@ -10,9 +10,20 @@ CREATE TABLE public.projects_project
     status character varying(12) COLLATE pg_catalog."default" NOT NULL,
     website_highlight boolean NOT NULL,
     visibility character varying(12) COLLATE pg_catalog."default" NOT NULL,
-    CONSTRAINT projects_project_pkey PRIMARY KEY (id)
+    testing_group_id uuid,
+    CONSTRAINT projects_project_pkey PRIMARY KEY (id),
+    CONSTRAINT projects_project_testing_group_id_bb4dd85f_fk_projects_ FOREIGN KEY (testing_group_id)
+        REFERENCES public.projects_usergroup (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        DEFERRABLE INITIALLY DEFERRED
 )
 WITH (
     OIDS = FALSE
 )
 TABLESPACE pg_default;
+
+CREATE INDEX projects_project_testing_group_id_bb4dd85f
+    ON public.projects_project USING btree
+    (testing_group_id)
+    TABLESPACE pg_default;
