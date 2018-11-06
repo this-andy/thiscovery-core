@@ -265,7 +265,9 @@ def get_project_status_for_user(user_id, correlation_id):
                     or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None)) \
                     or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
             task['is_signedup'] = projects_usertasks_dict.get(task_id) is not None
-            task['sign_up_available'] = task['is_visible'] and (task['status'] == 'active') and not task['is_signedup']
+            task['sign_up_available'] = \
+                (task['is_visible'] and (task['status'] == 'active') and not task['is_signedup'] and (task['signup_status'] == 'open')) \
+                or (task['is_visible'] and (task['status'] == 'testing') and not task['is_signedup'])
             if task['is_signedup']:
                 task['user_task_status'] = projects_usertasks_dict[task_id]['status']
 
