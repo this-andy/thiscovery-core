@@ -12,7 +12,6 @@ BASE_PROJECT_SELECT_SQL = '''
             short_name,
             created,
             modified,
-            website_highlight,
             visibility,
             status,
             (
@@ -27,7 +26,6 @@ BASE_PROJECT_SELECT_SQL = '''
                         earliest_start_date,
                         closing_date,
                         signup_status,
-                        website_highlight,
                         visibility,                       
                         status                         
                     from public.projects_projecttask task
@@ -80,7 +78,6 @@ def list_projects(correlation_id):
         short_name,
         created,
         modified,
-        website_highlight,
         visibility,
         status
       FROM 
@@ -225,7 +222,7 @@ def get_project_status_for_user(user_id, correlation_id):
 
     sql = """
         SELECT project_task_id, description, group_id, group_name, user_id, email
-	    FROM public.projecttask_group_users
+        FROM public.projecttask_group_users
         WHERE user_id = %s
     """
     projecttask_group_users = execute_query(sql, (str(user_id),), correlation_id)
@@ -241,10 +238,10 @@ def get_project_status_for_user(user_id, correlation_id):
 
     sql = """
         SELECT project_task_id, ut.status
-	    FROM public.projects_usertask ut
-	    JOIN public.projects_userproject up ON ut.user_project_id = up.id
+        FROM public.projects_usertask ut
+        JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
-	"""
+    """
     projects_usertasks = execute_query(sql, (str(user_id),), correlation_id)
     projects_usertasks_dict = dict_from_dataset(projects_usertasks,'project_task_id')
 
@@ -254,15 +251,15 @@ def get_project_status_for_user(user_id, correlation_id):
         project_id = project['id']
         project['is_visible'] = \
             ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
-            or ((project['status'] != 'testing') and \
-                ((project['visibility'] == 'public') or \
+            or ((project['status'] != 'testing') and
+                ((project['visibility'] == 'public') or
                 (project_group_users_dict.get(project_id) is not None)))
         for task in project['tasks']:
             task_id = task['id']
             task['is_visible'] = \
                 project['is_visible'] and (
-                    (task['visibility'] == 'public') \
-                    or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None)) \
+                    (task['visibility'] == 'public')
+                    or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
                     or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
             task['is_signedup'] = projects_usertasks_dict.get(task_id) is not None
             task['sign_up_available'] = \
@@ -289,13 +286,12 @@ def get_project_status_for_user_api(event, context):
         }
 
     except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        error_msg = ex.args[0]
+        logger.error(error_msg, extra={'correlation_id': correlation_id})
+        response = {"statusCode": 500, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
-
 
 
 if __name__ == "__main__":
@@ -319,7 +315,7 @@ if __name__ == "__main__":
     qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
     ev = {'queryStringParameters': qsp}
     result = get_project_status_for_user_api(ev, None)
-    print (result)
+    print(result)
     # if len(result) == 0:
     #     print(result)
     # else:
