@@ -11,11 +11,11 @@ TEST_DATA_FOLDER = './test_data/'
 
 class ProjectTaskTestResult:
 
-    def __init__(self, is_visible, is_signedup, signup_available, usertask_status):
-        self.is_visible = is_visible
-        self.is_signedup = is_signedup
+    def __init__(self, task_is_visible, user_is_signedup, signup_available, user_task_status):
+        self.task_is_visible = task_is_visible
+        self.user_is_signedup = user_is_signedup
         self.signup_available = signup_available
-        self.usertask_status = usertask_status
+        self.user_task_status = user_task_status
 
 
 class TestProjectStatusForUser(TestCase):
@@ -86,23 +86,23 @@ class TestProjectStatusForUser(TestCase):
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):
-            print(user_id, expected_project_is_visible, project_result['is_visible'])
-            self.assertEqual(expected_project_is_visible, project_result['is_visible'])
+            print(user_id, expected_project_is_visible, project_result['project_is_visible'])
+            self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
             for (task) in project_result['tasks']:
                 task_desc = task['description']
                 # print(task)
                 expected_task_result = expected_results.get(task_desc)
                 if expected_task_result is None:
-                    self.assertFalse(task['is_visible'])
-                    self.assertFalse(task['is_signedup'])
-                    self.assertFalse(task['sign_up_available'])
+                    self.assertFalse(task['task_is_visible'])
+                    self.assertFalse(task['user_is_signedup'])
+                    self.assertFalse(task['signup_available'])
                     self.assertIsNone(task['user_task_status'])
                 else:
                     # print(expected_task_result)
-                    self.assertEqual(task['is_visible'], expected_task_result.is_visible, user_id + ":" + task_desc + ":is_visible")
-                    self.assertEqual(task['is_signedup'], expected_task_result.is_signedup, user_id + ":" + task_desc + ":is_signedup")
-                    self.assertEqual(task['sign_up_available'], expected_task_result.signup_available, user_id + ":" + task_desc + ":sign_up_available")
-                    self.assertEqual(task['user_task_status'], expected_task_result.usertask_status, user_id + ":" + task_desc + ":user_task_status")
+                    self.assertEqual(task['task_is_visible'], expected_task_result.task_is_visible, user_id + ":" + task_desc + ":task_is_visible")
+                    self.assertEqual(task['user_is_signedup'], expected_task_result.user_is_signedup, user_id + ":" + task_desc + ":user_is_signedup")
+                    self.assertEqual(task['signup_available'], expected_task_result.signup_available, user_id + ":" + task_desc + ":signup_available")
+                    self.assertEqual(task['user_task_status'], expected_task_result.user_task_status, user_id + ":" + task_desc + ":user_task_status")
 
 
     def test_user_a_project_status(self):

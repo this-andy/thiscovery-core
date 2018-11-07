@@ -158,6 +158,7 @@ def get_project_api(event, context):
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
 
+
 PROJECT_USER_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
     from (
@@ -166,7 +167,7 @@ PROJECT_USER_SELECT_SQL = '''
             short_name,
             visibility,
             status,
-            FALSE as is_visible,
+            FALSE as project_is_visible,
             (
                 select coalesce(json_agg(task_row), '[]'::json)
                 from (
@@ -176,9 +177,9 @@ PROJECT_USER_SELECT_SQL = '''
                         signup_status,
                         visibility,                       
                         status,
-                        FALSE as is_visible,
-                        FALSE as is_signedup,
-                        FALSE as sign_up_available,
+                        FALSE as task_is_visible,
+                        FALSE as user_is_signedup,
+                        FALSE as signup_available,
                         null as user_task_status
                     from public.projects_projecttask task
                     where task.project_id = project.id
@@ -249,23 +250,23 @@ def get_project_status_for_user(user_id, correlation_id):
 
     for project in project_list:
         project_id = project['id']
-        project['is_visible'] = \
+        project['project_is_visible'] = \
             ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
             or ((project['status'] != 'testing') and
                 ((project['visibility'] == 'public') or
                 (project_group_users_dict.get(project_id) is not None)))
         for task in project['tasks']:
             task_id = task['id']
-            task['is_visible'] = \
-                project['is_visible'] and (
+            task['task_is_visible'] = \
+                project['project_is_visible'] and (
                     (task['visibility'] == 'public')
                     or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
                     or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
-            task['is_signedup'] = projects_usertasks_dict.get(task_id) is not None
-            task['sign_up_available'] = \
-                (task['is_visible'] and (task['status'] == 'active') and not task['is_signedup'] and (task['signup_status'] == 'open')) \
-                or (task['is_visible'] and (task['status'] == 'testing') and not task['is_signedup'])
-            if task['is_signedup']:
+            task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
+            task['signup_available'] = \
+                (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
+                or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
+            if task['user_is_signedup']:
                 task['user_task_status'] = projects_usertasks_dict[task_id]['status']
 
     return project_list

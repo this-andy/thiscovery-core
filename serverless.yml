@@ -105,7 +105,7 @@ functions:
           private: true
 
   get_user_project_statuses:
-    handler: api/project.get_user_project_statuses_api
+    handler: api/project.get_project_status_for_user_api
     events:
       - http:
           path: v1/project-user-status
