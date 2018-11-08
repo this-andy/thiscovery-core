@@ -23,9 +23,12 @@ class TestUserProject(TestCase):
         cls.cursor = cls.conn.cursor()
 
         correlation_id = new_correlation_id()
+        run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_project_create.sql', correlation_id)
+
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject')

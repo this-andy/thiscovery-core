@@ -1,5 +1,5 @@
 import json
-from api.pg_utilities import execute_query
+from api.pg_utilities import execute_query, execute_query_multiple
 from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
 
 
@@ -272,6 +272,81 @@ def get_project_status_for_user(user_id, correlation_id):
     return project_list
 
 
+def get_project_status_for_user2(user_id, correlation_id):
+
+    project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
+
+    sql1 = """
+        SELECT project_id, project_name, group_id, group_name, user_id, email
+        FROM public.project_group_users
+        WHERE user_id = %s
+    """
+
+    sql2 = """
+        SELECT project_id, project_name, testing_group_id, group_name, user_id, email
+        FROM public.project_testgroup_users
+        WHERE user_id = %s
+    """
+
+    sql3 = """
+        SELECT project_task_id, description, group_id, group_name, user_id, email
+        FROM public.projecttask_group_users
+        WHERE user_id = %s
+    """
+
+    sql4 = """
+        SELECT project_task_id, description, testing_group_id, group_name, user_id, email
+        FROM public.projecttask_testgroup_users
+        WHERE user_id = %s
+    """
+
+    sql5 = """
+        SELECT project_task_id, ut.status
+        FROM public.projects_usertask ut
+        JOIN public.projects_userproject up ON ut.user_project_id = up.id
+        WHERE up.user_id = %s
+    """
+    str_user_id = (str(user_id),)
+    results = execute_query_multiple((sql1, sql2, sql3, sql4, sql5), (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
+
+    project_group_users = results[0]
+    project_testgroup_users = results[1]
+    projecttask_group_users = results[2]
+    projecttask_testgroup_users = results[3]
+    projects_usertasks = results[4]
+
+    project_group_users_dict = dict_from_dataset(project_group_users, 'project_id')
+    project_testgroup_users_dict = dict_from_dataset(project_testgroup_users, 'project_id')
+    projecttask_group_users_dict = dict_from_dataset(projecttask_group_users,'project_task_id')
+    projecttask_testgroup_users_dict = dict_from_dataset(projecttask_testgroup_users,'project_task_id')
+    projects_usertasks_dict = dict_from_dataset(projects_usertasks,'project_task_id')
+
+    # now add calculated attributes to returned json...
+
+    for project in project_list:
+        project_id = project['id']
+        project['project_is_visible'] = \
+            ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
+            or ((project['status'] != 'testing') and
+                ((project['visibility'] == 'public') or
+                (project_group_users_dict.get(project_id) is not None)))
+        for task in project['tasks']:
+            task_id = task['id']
+            task['task_is_visible'] = \
+                project['project_is_visible'] and (
+                    (task['visibility'] == 'public')
+                    or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
+                    or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
+            task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
+            task['signup_available'] = \
+                (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
+                or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
+            if task['user_is_signedup']:
+                task['user_task_status'] = projects_usertasks_dict[task_id]['status']
+
+    return project_list
+
+
 def get_project_status_for_user_api(event, context):
     logger = get_logger()
     correlation_id = None
@@ -283,7 +358,7 @@ def get_project_status_for_user_api(event, context):
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": 200,
-            "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
+            "body": json.dumps(get_project_status_for_user2(user_id, correlation_id))
         }
 
     except Exception as ex:

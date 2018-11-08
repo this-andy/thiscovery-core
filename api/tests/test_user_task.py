@@ -13,28 +13,32 @@ TEST_DATA_FOLDER = './test_data/'
 class TestUserTask(TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.postgresql = testing.postgresql.Postgresql(port=7654)
+    def setUpClass(cls):
+        cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
         # setup environment variable for get_connection to use
-        os.environ["TEST_DSN"] = str(self.postgresql.dsn())
+        os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
 
-        self.conn = _get_connection()
-        self.cursor = self.conn.cursor()
+        cls.conn = _get_connection()
+        cls.cursor = cls.conn.cursor()
 
         correlation_id = new_correlation_id()
+
+        run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_task_create.sql', correlation_id)
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask')
+
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask')
 
 
     @classmethod

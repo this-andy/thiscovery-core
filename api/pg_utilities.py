@@ -2,7 +2,7 @@ import psycopg2
 import os
 import ast
 from api.utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
-    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret
+    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id
 
 
 conn = None
@@ -43,7 +43,7 @@ def _jsonize_sql(base_sql):
     return 'SELECT row_to_json(row) FROM (' + base_sql + ') row'
 
 
-def execute_query(base_sql, params, correlation_id, return_json=True, jsonize_sql=True):
+def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -77,7 +77,47 @@ def execute_query(base_sql, params, correlation_id, return_json=True, jsonize_sq
         conn.close()
 
 
-def execute_non_query(sql, params, correlation_id):
+def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    try:
+        logger = get_logger()
+        conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
+
+    results= []
+
+    try:
+        # conn.cursor will return a cursor object, you can use this cursor to perform queries
+        cursor = conn.cursor()
+
+        for (base_sql, params) in zip(base_sql_tuple, params_tuple):
+            # tell sql to create json if that's what's wanted
+            if return_json and jsonize_sql:
+                sql = _jsonize_sql(base_sql)
+            else:
+                sql = base_sql
+            sql = minimise_white_space(sql)
+            param_str = str(params)
+            logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+
+            cursor.execute(sql, params)
+            records = cursor.fetchall()
+            logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+
+            if return_json:
+                results.append(_get_json_from_tuples(records))
+            else:
+                results.append(records)
+
+        return results
+
+    except Exception as ex:
+        raise ex
+    finally:
+        conn.close()
+
+
+def execute_non_query(sql, params, correlation_id=new_correlation_id()):
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -104,7 +144,7 @@ def execute_non_query(sql, params, correlation_id):
         conn.close()
 
 
-def run_sql_script_file(sql_script_file, correlation_id):
+def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     sql = get_file_as_string(sql_script_file)
     execute_non_query(sql, None, correlation_id)
 
@@ -117,7 +157,7 @@ def insert_data_from_csv(cursor, conn, source_file, destination_table, header_ro
     conn.commit()
 
 
-def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id):
+def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_correlation_id()):
     tables_to_update = set()
     columns_to_update = []
     # process each attribute update and figure out where it belongs in database
@@ -187,7 +227,7 @@ def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column,
     return sql_updates
 
 
-def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id):
+def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id=new_correlation_id()):
     # todo - wrap in transaction if ever extended to multi table updates
     try:
         tables_to_update, columns_to_update = create_updates_list_from_jsonpatch(mappings, patch_json, correlation_id)

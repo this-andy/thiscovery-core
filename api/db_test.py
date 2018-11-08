@@ -1,5 +1,5 @@
 import psycopg2
-from api.pg_utilities import execute_non_query
+from api.pg_utilities import execute_non_query, execute_query, execute_query_multiple
 
 
 def duplicate_insert():
@@ -13,7 +13,13 @@ def duplicate_insert():
         print('integrity error' + str(ex.args))
 
 
+def multiple_query():
+    sql1 = 'SELECT * FROM public.projects_tasktype'
+    sql2 = 'SELECT * FROM public.projects_usergroup'
+    sql = sql1 + ';' + sql2
+    return execute_query_multiple((sql1,sql2), (None,None))
+
 
 if __name__ == "__main__":
-    result = duplicate_insert()
+    result = multiple_query()
     print('result=' + str(result))
