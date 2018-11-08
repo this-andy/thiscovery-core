@@ -201,7 +201,7 @@ def dict_from_dataset(dataset, key_name):
     return dataset_as_dict
 
 
-def get_project_status_for_user(user_id, correlation_id):
+def get_project_status_for_user_NO_LONGER_USED(user_id, correlation_id):
 
     project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
@@ -272,7 +272,7 @@ def get_project_status_for_user(user_id, correlation_id):
     return project_list
 
 
-def get_project_status_for_user2(user_id, correlation_id):
+def get_project_status_for_user(user_id, correlation_id):
 
     project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
@@ -358,7 +358,7 @@ def get_project_status_for_user_api(event, context):
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": 200,
-            "body": json.dumps(get_project_status_for_user2(user_id, correlation_id))
+            "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
         }
 
     except Exception as ex:
