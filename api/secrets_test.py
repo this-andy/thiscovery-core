@@ -4,6 +4,7 @@
 
 import boto3
 from botocore.exceptions import ClientError
+from http import HTTPStatus
 
 def get_secret():
     secret_name = "test_secret"
@@ -47,7 +48,7 @@ def get_test_secret(event, context):
     secret = get_secret()
 
     response = {
-        "statusCode": 200,
+        "statusCode": HTTPStatus.OK,
         "body": secret
     }
 

@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+from http import HTTPStatus
 from dateutil import parser
 from datetime import timedelta
 import testing.postgresql
@@ -42,7 +43,7 @@ class TestUser(TestCase):
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
         event = {'pathParameters': path_parameters}
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         expected_body = [{
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
@@ -69,7 +70,7 @@ class TestUser(TestCase):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
         event = {'pathParameters': path_parameters}
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
 
         result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
@@ -85,7 +86,7 @@ class TestUser(TestCase):
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
         event = {'pathParameters': path_parameters}
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
 
         result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
@@ -103,7 +104,7 @@ class TestUser(TestCase):
         querystring_parameters = {'email': 'altha@email.addr'}
         event = {'queryStringParameters': querystring_parameters}
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         expected_body = [{
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
@@ -131,7 +132,7 @@ class TestUser(TestCase):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         event = {'queryStringParameters': querystring_parameters}
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
 
         result = get_user_by_email_api(event, None)
         result_status = result['statusCode']
@@ -149,7 +150,7 @@ class TestUser(TestCase):
 
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
 
-        expected_status = 204
+        expected_status = HTTPStatus.NO_CONTENT
         user_jsonpatch = [
             {'op': 'replace', 'path': '/title', 'value': 'Sir'},
             {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
@@ -251,7 +252,7 @@ class TestUser(TestCase):
     def test_patch_user_api_user_not_exists(self):
         from api.user import patch_user_api
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
         user_jsonpatch = [
             {'op': 'replace', 'path': '/title', 'value': 'Sir'},
             {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
@@ -271,7 +272,7 @@ class TestUser(TestCase):
     def test_patch_user_api_bad_attribute(self):
         from api.user import patch_user_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'replace', 'path': '/non-existent-attribute', 'value': 'simon'}]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
@@ -288,7 +289,7 @@ class TestUser(TestCase):
     def test_patch_user_api_bad_operation(self):
         from api.user import patch_user_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': '/first_name', 'value': 'simon'}]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
@@ -305,7 +306,7 @@ class TestUser(TestCase):
     def test_patch_user_api_bad_jsonpatch(self):
         from api.user import patch_user_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'this': 'is', 'not': '/a', 'valid': 'jsonpatch'}]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
@@ -322,7 +323,7 @@ class TestUser(TestCase):
     def test_create_user_api_ok_and_duplicate(self):
         from api.user import create_user_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
             "created": "2018-08-21T11:16:56+01:00",
@@ -358,7 +359,7 @@ class TestUser(TestCase):
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         # now check we can't insert same record again...
-        expected_status = 409
+        expected_status = HTTPStatus.CONFLICT
         result = create_user_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -371,7 +372,7 @@ class TestUser(TestCase):
     def test_create_user_api_with_defaults(self):
         from api.user import create_user_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         user_json = {
             "email": "hh@email.addr",
             "title": "Mr",
@@ -432,7 +433,7 @@ class TestUser(TestCase):
     def test_create_user_api_bad_uuid(self):
         from api.user import create_user_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b13m",
             "created": "2018-08-21T11:16:56+01:00",

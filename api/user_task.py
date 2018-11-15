@@ -1,5 +1,6 @@
 import uuid
 import json
+from http import HTTPStatus
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
@@ -84,20 +85,20 @@ def list_user_tasks_api(event, context):
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
 
         response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK,
             "body": json.dumps(list_user_tasks(user_id, correlation_id))
         }
 
     except ObjectDoesNotExistError as err:
-        response = {"statusCode": 404, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'event': event})
     return response
@@ -192,18 +193,18 @@ def create_user_task_api(event, context):
 
         new_user_task = create_user_task(ut_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(new_user_task)}
+        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
 
     except DuplicateInsertError as err:
-        response = {"statusCode": 409, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except (DetailedIntegrityError, DetailedValueError) as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         error_msg = ex.args[0]
         logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(error_msg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'event': event})
     return response

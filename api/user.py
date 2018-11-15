@@ -1,5 +1,6 @@
 import json
 import uuid
+from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 from api.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
@@ -55,21 +56,21 @@ def get_user_by_id_api(event, context):
         result = get_user_by_id(user_id, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": 200, "body": json.dumps(result)}
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
-        response = {"statusCode": 404, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
@@ -94,18 +95,18 @@ def get_user_by_email_api(event, context):
         result = get_user_by_email(user_email, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": 200, "body": json.dumps(result)}
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'user_email': user_email, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
-        response = {"statusCode": 404, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
@@ -159,21 +160,21 @@ def patch_user_api(event, context):
 
         patch_user(user_id, user_jsonpatch, modified, correlation_id)
 
-        response = {"statusCode": 204, "body": json.dumps('')}
+        response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps('')}
 
         # on successful update save audit record
         entity_update.save()
 
     except ObjectDoesNotExistError as err:
-        response = {"statusCode": 404, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except (PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, PatchInvalidJsonError, DetailedValueError) as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
 
@@ -290,18 +291,18 @@ def create_user_api(event, context):
 
         new_user = create_user(user_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(new_user)}
+        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
 
     except DuplicateInsertError as err:
-        response = {"statusCode": 409, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except DetailedValueError as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
@@ -317,6 +318,7 @@ def validate_user_email(user_id, email_verification_token_to_check, correlation_
             id = %s
     """
     result = execute_query(sql, (str(user_id),), correlation_id)
+
 
 
 if __name__ == "__main__":
@@ -357,3 +359,5 @@ if __name__ == "__main__":
 
     # ev = {'body': json.dumps(user_json)}
     # print(create_user_api(ev, None))
+
+

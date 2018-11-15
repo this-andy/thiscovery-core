@@ -1,5 +1,6 @@
 import json
 import os
+from http import HTTPStatus
 from api.utilities import get_logger, get_correlation_id, get_secret
 
 
@@ -23,7 +24,7 @@ def ping(event, context):
     }
 
     response = {
-        "statusCode": 200,
+        "statusCode": HTTPStatus.OK,
         "body": json.dumps(body)
     }
 
@@ -49,7 +50,7 @@ def hubspot_entity_info(event, context):
     }
 
     response = {
-        "statusCode": 200,
+        "statusCode": HTTPStatus.OK,
         "body": json.dumps(body)
     }
 
@@ -64,7 +65,7 @@ def connection_info(event, context):
     body = env_dict
 
     response = {
-        "statusCode": 200,
+        "statusCode": HTTPStatus.OK,
         "body": json.dumps(body)
     }
 

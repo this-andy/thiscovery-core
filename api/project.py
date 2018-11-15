@@ -1,6 +1,7 @@
 import json
-from api.pg_utilities import execute_query, execute_query_multiple
+from api.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
 from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
+from http import HTTPStatus
 
 
 BASE_PROJECT_SELECT_SQL = '''
@@ -105,14 +106,14 @@ def list_projects_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
         response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK,
             "body": json.dumps(list_projects_with_tasks(correlation_id))
         }
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
@@ -142,18 +143,18 @@ def get_project_api(event, context):
         result = get_project_with_tasks(project_id, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": 200, "body": json.dumps(result)}
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('project does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
-        response = {"statusCode": 404, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
@@ -192,13 +193,6 @@ PROJECT_USER_SELECT_SQL = '''
         order by created
         ) project_row
     '''
-
-
-def dict_from_dataset(dataset, key_name):
-    dataset_as_dict = {}
-    for datarow in dataset:
-        dataset_as_dict[datarow[key_name]] = datarow
-    return dataset_as_dict
 
 
 def get_project_status_for_user_NO_LONGER_USED(user_id, correlation_id):
@@ -357,14 +351,14 @@ def get_project_status_for_user_api(event, context):
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK,
             "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
         }
 
     except Exception as ex:
         error_msg = ex.args[0]
         logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(error_msg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response

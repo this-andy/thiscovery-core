@@ -2,6 +2,7 @@ import os
 import json
 import testing.postgresql
 import uuid
+from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -52,7 +53,7 @@ class TestUserTask(TestCase):
         pass
         from api.user_task import list_user_tasks_api
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
         expected_body_gmt = [
             {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
@@ -99,7 +100,7 @@ class TestUserTask(TestCase):
     def test_2_list_user_tasks_api_user_not_exists(self):
         from api.user_project import list_user_projects_api
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
         event = {'queryStringParameters': querystring_parameters}
@@ -115,7 +116,7 @@ class TestUserTask(TestCase):
     def test_3_list_user_tasks_api_no_results(self):
         from api.user_project import list_user_projects_api
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         expected_body = []
 
         querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
@@ -131,7 +132,7 @@ class TestUserTask(TestCase):
     def test_4_create_user_task_api_ok_and_duplicate(self):
         from api.user_task import create_user_task_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         ut_json = {
             'user_project_id': "8fdb6137-e196-4c17-8091-7a0d370fadba",
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
@@ -153,7 +154,7 @@ class TestUserTask(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
         # now check we can't insert same record again...
-        expected_status = 409
+        expected_status = HTTPStatus.CONFLICT
         result = create_user_task_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -166,7 +167,7 @@ class TestUserTask(TestCase):
     def test_5_create_user_task_api_with_defaults(self):
         from api.user_task import create_user_task_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         ut_json = {
             'user_project_id': "9645cd24-cfb8-432d-80c6-9e06fb49aff5",
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
@@ -206,7 +207,7 @@ class TestUserTask(TestCase):
     def test_6_create_user_task_api_invalid_status(self):
         from api.user_task import create_user_task_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
@@ -226,7 +227,7 @@ class TestUserTask(TestCase):
     def test_7_create_user_task_api_task_not_exists(self):
         from api.user_task import create_user_task_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
@@ -246,7 +247,7 @@ class TestUserTask(TestCase):
     def test_8_create_user_task_api_user_project_not_exists(self):
         from api.user_task import create_user_task_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c44',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf018',

@@ -240,3 +240,10 @@ def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, c
     except Exception as ex:
         # all exceptions will be dealt with by calling method
         raise ex
+
+
+def dict_from_dataset(dataset, key_name):
+    dataset_as_dict = {}
+    for datarow in dataset:
+        dataset_as_dict[datarow[key_name]] = datarow
+    return dataset_as_dict

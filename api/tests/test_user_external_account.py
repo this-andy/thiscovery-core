@@ -2,6 +2,7 @@ import os
 import json
 import testing.postgresql
 import uuid
+from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -42,7 +43,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_ok_and_duplicate(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
@@ -64,7 +65,7 @@ class TestUserExternalAccount(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
         # now check we can't insert same record again...
-        expected_status = 409
+        expected_status = HTTPStatus.CONFLICT
         result = create_user_external_account_api(event, None)
 
         result_status = result['statusCode']
@@ -78,7 +79,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_with_defaults(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
@@ -119,7 +120,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_user_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef4',
             'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4670',
@@ -139,7 +140,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_ext_sys_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d9",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
@@ -159,7 +160,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_bad_user_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6dddm",
@@ -180,7 +181,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_bad_ext_sys_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4dm",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
@@ -201,7 +202,7 @@ class TestUserExternalAccount(TestCase):
     def test_create_user_external_account_api_bad_created_date(self):
         from api.user_external_account import create_user_external_account_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",

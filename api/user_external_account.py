@@ -1,5 +1,6 @@
 import json
 import uuid
+from http import HTTPStatus
 from api.pg_utilities import execute_query, execute_non_query
 from api.user import get_user_by_id
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
@@ -104,18 +105,18 @@ def create_user_external_account_api(event, context):
 
         new_user_external_account = create_user_external_account(uea_json, correlation_id)
 
-        response = {"statusCode": 201, "body": json.dumps(new_user_external_account)}
+        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_external_account)}
 
     except DuplicateInsertError as err:
-        response = {"statusCode": 409, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except (ObjectDoesNotExistError, DetailedIntegrityError, DetailedValueError) as err:
-        response = {"statusCode": 400, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": 500, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response

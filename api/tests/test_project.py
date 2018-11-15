@@ -1,5 +1,6 @@
 import os
 import json
+from http import HTTPStatus
 import testing.postgresql
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -43,7 +44,7 @@ class TestProject(TestCase):
     def test_1_list_projects_api(self):
         from api.project import list_projects_api
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
         expected_body_bst = [
             {"id": "3ffc498f-8add-4448-b452-4fc7f463aa21", "name": "CTG Monitoring", "short_name": "CTG Monitoring",
@@ -92,7 +93,7 @@ class TestProject(TestCase):
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
         event = {'pathParameters': path_parameters}
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
         expected_body_bst = [
             {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
@@ -125,7 +126,7 @@ class TestProject(TestCase):
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceece"}
         event = {'pathParameters': path_parameters}
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
 
         result = get_project_api(event, None)
         result_status = result['statusCode']

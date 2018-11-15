@@ -1,5 +1,6 @@
 import os
 import json
+from http import HTTPStatus
 import testing.postgresql
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -76,7 +77,7 @@ class TestProjectStatusForUser(TestCase):
         querystring_parameters = {'user_id': user_id}
         event = {'queryStringParameters': querystring_parameters}
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
 
         result = get_project_status_for_user_api(event, None)
         result_status = result['statusCode']

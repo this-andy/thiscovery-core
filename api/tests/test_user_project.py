@@ -2,6 +2,7 @@ import os
 import json
 import testing.postgresql
 import uuid
+from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -44,7 +45,7 @@ class TestUserProject(TestCase):
     def test_1_list_user_projects_api_ok(self):
         from api.user_project import list_user_projects_api
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
         expected_body_gmt = [
             {'id': '3fd54ed7-d25c-40ba-9005-4c4da1321748', 'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
@@ -77,7 +78,7 @@ class TestUserProject(TestCase):
     def test_2_list_user_projects_api_user_not_exists(self):
         from api.user_project import list_user_projects_api
 
-        expected_status = 404
+        expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
         event = {'queryStringParameters': querystring_parameters}
@@ -93,7 +94,7 @@ class TestUserProject(TestCase):
     def test_3_list_user_projects_api_no_results(self) :
         from api.user_project import list_user_projects_api
 
-        expected_status = 200
+        expected_status = HTTPStatus.OK
         expected_body = []
 
         querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
@@ -109,7 +110,7 @@ class TestUserProject(TestCase):
     def test_4_create_user_projects_api_ok_and_duplicate(self):
         from api.user_project import create_user_project_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
@@ -130,7 +131,7 @@ class TestUserProject(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
         # now check we can't insert same record again...
-        expected_status = 409
+        expected_status = HTTPStatus.CONFLICT
         result = create_user_project_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -143,7 +144,7 @@ class TestUserProject(TestCase):
     def test_5_create_user_projects_api_with_defaults(self):
         from api.user_project import create_user_project_api
 
-        expected_status = 201
+        expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
             'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
@@ -182,7 +183,7 @@ class TestUserProject(TestCase):
     def test_6_create_user_projects_api_invalid_uuid(self):
         from api.user_project import create_user_project_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
             'id': '9620089b-e9a4-46fd-bb78-091c8449d77z',
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
@@ -202,7 +203,7 @@ class TestUserProject(TestCase):
     def test_7_create_user_projects_api_user_not_exists(self):
         from api.user_project import create_user_project_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
@@ -221,7 +222,7 @@ class TestUserProject(TestCase):
     def test_8_create_user_projects_api_project_not_exists(self):
         from api.user_project import create_user_project_api
 
-        expected_status = 400
+        expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa22",
