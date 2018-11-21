@@ -56,7 +56,7 @@ def get_user_by_id_api(event, context):
         result = get_user_by_id(user_id, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
         else:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)
@@ -95,7 +95,7 @@ def get_user_by_email_api(event, context):
         result = get_user_by_email(user_email, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
         else:
             errorjson = {'user_email': user_email, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)

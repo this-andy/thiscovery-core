@@ -44,7 +44,7 @@ class TestUser(TestCase):
         event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.OK
-        expected_body = [{
+        expected_body = {
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
@@ -55,14 +55,14 @@ class TestUser(TestCase):
             "last_name": "Alcorn",
             "auth0_id": None,
             "status": None
-        }]
+        }
 
         result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json[0], expected_body[0])
+        self.assertDictEqual(result_json, expected_body)
 
 
     def test_get_user_by_uuid_api_not_exists(self):
@@ -105,7 +105,7 @@ class TestUser(TestCase):
         event = {'queryStringParameters': querystring_parameters}
 
         expected_status = HTTPStatus.OK
-        expected_body = [{
+        expected_body = {
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
@@ -116,14 +116,14 @@ class TestUser(TestCase):
             "last_name": "Alcorn",
             "auth0_id": None,
             "status": None
-        }]
+        }
 
         result = get_user_by_email_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json[0], expected_body[0])
+        self.assertDictEqual(result_json, expected_body)
 
 
     def test_get_user_email_not_exists(self):
@@ -173,7 +173,7 @@ class TestUser(TestCase):
         path_parameters = {'id': user_id}
         event = {'pathParameters': path_parameters}
 
-        expected_body = [{
+        expected_body = {
             "id": user_id,
             "created": "2018-08-17T13:10:56.798192+01:00",
             "email": "simon.smith@dancingbear.com",
@@ -183,17 +183,17 @@ class TestUser(TestCase):
             "last_name": "smith",
             "auth0_id": "new-auth0-id",
             "status": "singing"
-        }]
+        }
 
         result = get_user_by_id_api(event, None)
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
-        result_modified = result_json[0]['modified']
-        del result_json[0]['modified']
+        result_modified = result_json['modified']
+        del result_json['modified']
 
         # check the rest of the result excluding modified
-        self.assertDictEqual(result_json[0], expected_body[0])
+        self.assertDictEqual(result_json, expected_body)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
