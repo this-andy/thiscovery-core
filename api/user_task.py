@@ -7,13 +7,13 @@ from api.utilities import DuplicateInsertError, ObjectDoesNotExistError, Detaile
 from api.user import get_user_by_id
 from api.project import get_project_task
 from api.user_project import create_user_project_if_not_exists
-from api.user_external_account import create_user_external_account_if_not_exists
 
 
-STATUS_CHOICES = {
+STATUS_CHOICES = (
     'active',
     'complete',
-}
+    'withdrawn',
+)
 DEFAULT_STATUS = 'active'
 
 
@@ -22,7 +22,7 @@ def validate_status(s):
         return s
     else:
         errorjson = {'status': s}
-        raise DetailedValueError('invalid usertask status', errorjson)
+        raise DetailedValueError('invalid user_task status', errorjson)
 
 
 def get_user_task(ut_id, correlation_id):

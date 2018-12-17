@@ -42,7 +42,7 @@ class TestUserProject(TestCase):
         cls.postgresql.stop()
 
 
-    def test_1_list_user_projects_api_ok(self):
+    def test_01_list_user_projects_api_ok(self):
         from api.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.OK
@@ -75,7 +75,7 @@ class TestUserProject(TestCase):
         self.assertDictEqual(result_json[0], expected_body[0])
 
 
-    def test_2_list_user_projects_api_user_not_exists(self):
+    def test_02_list_user_projects_api_user_not_exists(self):
         from api.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.NOT_FOUND
@@ -91,7 +91,7 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_3_list_user_projects_api_no_results(self) :
+    def test_03_list_user_projects_api_no_results(self):
         from api.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.OK
@@ -107,14 +107,14 @@ class TestUserProject(TestCase):
         self.assertEqual(result_json, expected_body)
 
 
-    def test_4_create_user_projects_api_ok_and_duplicate(self):
+    def test_04_create_user_projects_api_ok_and_duplicate(self):
         from api.user_project import create_user_project_api
 
         expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
-            'status': 'A',
+            'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
         }
@@ -141,14 +141,13 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_5_create_user_projects_api_with_defaults(self):
+    def test_05_create_user_projects_api_with_defaults(self):
         from api.user_project import create_user_project_api
 
         expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
-            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
-            'status': 'new',
+            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"
         }
         event = {'body': json.dumps(up_json)}
         result = create_user_project_api(event, None)
@@ -165,6 +164,9 @@ class TestUserProject(TestCase):
         modified = result_json['modified']
         del result_json['modified']
 
+        status = result_json['status']
+        del result_json['status']
+
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, result_json)
 
@@ -179,8 +181,10 @@ class TestUserProject(TestCase):
         difference = abs(now_with_tz() - result_datetime)
         self.assertLess(difference.seconds, 10)
 
+        self.assertEqual(status, 'active')
 
-    def test_6_create_user_projects_api_invalid_uuid(self):
+
+    def test_06_create_user_projects_api_invalid_uuid(self):
         from api.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -200,14 +204,14 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'invalid' in result_json['message'])
 
 
-    def test_7_create_user_projects_api_user_not_exists(self):
+    def test_07_create_user_projects_api_user_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
-            'status': 'A'
+            'status': 'active'
         }
         event = {'body': json.dumps(up_json)}
         result = create_user_project_api(event, None)
@@ -219,14 +223,14 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_8_create_user_projects_api_project_not_exists(self):
+    def test_08_create_user_projects_api_project_not_exists(self):
         from api.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa22",
-            'status': 'A'
+            'status': 'active'
         }
         event = {'body': json.dumps(up_json)}
         result = create_user_project_api(event, None)
@@ -238,7 +242,7 @@ class TestUserProject(TestCase):
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
-    def test_9_create_user_projects_api_if_not_exists(self):
+    def test_09_create_user_projects_api_if_not_exists(self):
         from api.user_project import create_user_project_if_not_exists
 
         user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
@@ -248,3 +252,21 @@ class TestUserProject(TestCase):
         # should return id of user_project created in test 4
         self.assertEqual(len(result), 1)
         self.assertEqual(result['id'], '9620089b-e9a4-46fd-bb78-091c8449d777')
+
+
+    def test_10_create_user_projects_api_missing_params(self):
+        from api.user_project import create_user_project_api
+
+        expected_status = HTTPStatus.BAD_REQUEST
+        up_json = {
+            'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516"
+        }
+        event = {'body': json.dumps(up_json)}
+        result = create_user_project_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('parameter' in result_json and 'project_id' in result_json['parameter'])
+        self.assertTrue('message' in result_json and 'mandatory data missing' in result_json['message'])

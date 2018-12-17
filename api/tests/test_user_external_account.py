@@ -260,4 +260,4 @@ class TestUserExternalAccount(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('parameter' in result_json and 'user_id' in result_json['parameter'])
-        self.assertTrue('message' in result_json and 'missing' in result_json['message'])
+        self.assertTrue('message' in result_json and 'mandatory data missing' in result_json['message'])

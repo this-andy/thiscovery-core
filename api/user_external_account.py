@@ -9,7 +9,7 @@ from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, Detaile
 
 STATUS_CHOICES = (
     'active',
-    'closed'
+    'closed',
 )
 DEFAULT_STATUS = 'active'
 

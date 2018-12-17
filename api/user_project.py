@@ -7,9 +7,20 @@ from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, Detaile
 from api.user import get_user_by_id
 
 
-def validate_status(s):
-    return s
+STATUS_CHOICES = (
+    'active',
+    'complete',
+    'withdrawn',
+)
+DEFAULT_STATUS = 'active'
 
+
+def validate_status(s):
+    if s in STATUS_CHOICES:
+        return s
+    else:
+        errorjson = {'status': s}
+        raise DetailedValueError('invalid user_project status', errorjson)
 
 def list_user_projects(user_id, correlation_id):
 
@@ -85,17 +96,19 @@ def get_existing_user_project_id(user_id, project_id, correlation_id):
 
 
 def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
-    # json MUST contain: user_id, project_id, status
-    # json may OPTIONALLY include: id, created,
+    # json MUST contain: user_id, project_id,
+    # json may OPTIONALLY include: id, created, status
 
     # extract mandatory data from json
     try:
         user_id = validate_uuid(up_json['user_id'])    # all public id are uuids
         project_id = validate_uuid(up_json['project_id'])
-        status = validate_status(up_json['status'])
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
+    except KeyError as err:
+        errorjson = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
+        raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
     if 'id' in up_json:
@@ -116,9 +129,17 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     else:
         created = str(now_with_tz())
 
+    if 'status' in up_json:
+        try:
+            status = validate_status(up_json['status'])
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
+    else:
+        status = DEFAULT_STATUS
+
     # check external account does not already exist
     existing = get_existing_user_project_id(user_id, project_id, correlation_id)
-    # if int(existing[0][0]) > 0:
     if len(existing) > 0:
         if do_nothing_if_exists:
             return existing[0]

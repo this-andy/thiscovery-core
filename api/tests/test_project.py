@@ -14,6 +14,7 @@ class TestProject(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.maxDiff = None
         cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
         # setup environment variable for get_connection to use

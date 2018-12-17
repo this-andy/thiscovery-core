@@ -230,7 +230,7 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'invalid usertask status' in result_json['message'])
+        self.assertTrue('message' in result_json and 'invalid user_task status' in result_json['message'])
 
 
     def test_7_create_user_task_api_task_not_exists(self):
@@ -251,3 +251,21 @@ class TestUserTask(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'project_task' in result_json['message'])
+
+
+    def test_8_create_user_task_api_task_missing_params(self):
+        from api.user_task import create_user_task_api
+
+        expected_status = HTTPStatus.BAD_REQUEST
+        ut_json = {
+            'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
+        }
+        event = {'body': json.dumps(ut_json)}
+        result = create_user_task_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('parameter' in result_json and 'project_task_id' in result_json['parameter'])
+        self.assertTrue('message' in result_json and 'mandatory data missing' in result_json['message'])
