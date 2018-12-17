@@ -27,7 +27,9 @@ BASE_PROJECT_SELECT_SQL = '''
                         earliest_start_date,
                         closing_date,
                         signup_status,
-                        visibility,                       
+                        visibility,
+                        external_system_id,                       
+                        external_task_id,                       
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
@@ -56,7 +58,7 @@ MINIMAL_PROJECT_SELECT_SQL = '''
                         id,
                         description,
                         signup_status,
-                        visibility,                       
+                        visibility,
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
@@ -117,6 +119,19 @@ def list_projects_api(event, context):
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
     return response
+
+
+def get_project_task(project_task_id, correlation_id):
+    sql = '''
+        SELECT
+            project_id,
+            task_type_id,
+            external_system_id,
+            external_task_id
+        FROM public.projects_projecttask
+        WHERE id = %s'''
+
+    return execute_query(sql, (str(project_task_id),), correlation_id)
 
 
 def get_project_with_tasks(project_uuid, correlation_id):
@@ -365,8 +380,9 @@ def get_project_status_for_user_api(event, context):
 
 
 if __name__ == "__main__":
+    # result = get_project_with_tasks('5907275b-6d75-4ec0-ada8-5854b44fb955',None)
 
-    # result = get_project_with_tasks('21c0779a-5fc2-4b72-8a88-0ba31456b562',None)
+    result = get_project_task("07af2fbe-5cd1-447f-bae1-3a2f8de82829", None)
 
     # pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
     # ev = {'pathParameters': pp}
@@ -382,9 +398,9 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
-    ev = {'queryStringParameters': qsp}
-    result = get_project_status_for_user_api(ev, None)
+    # qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
+    # ev = {'queryStringParameters': qsp}
+    # result = get_project_status_for_user_api(ev, None)
     print(result)
     # if len(result) == 0:
     #     print(result)

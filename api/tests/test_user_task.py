@@ -3,6 +3,7 @@ import json
 import testing.postgresql
 import uuid
 from http import HTTPStatus
+
 from dateutil import parser
 from unittest import TestCase
 from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
@@ -134,7 +135,7 @@ class TestUserTask(TestCase):
 
         expected_status = HTTPStatus.CREATED
         ut_json = {
-            'user_project_id': "8fdb6137-e196-4c17-8091-7a0d370fadba",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
@@ -145,6 +146,10 @@ class TestUserTask(TestCase):
         result = create_user_task_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
+
+        # user_project_id is returned but not in ut_json, so test separately
+        user_project_id = result_json['user_project_id']
+        del result_json['user_project_id']
 
         # modified is not part of body supplied but is returned
         expected_body = dict.copy(ut_json)
@@ -169,10 +174,9 @@ class TestUserTask(TestCase):
 
         expected_status = HTTPStatus.CREATED
         ut_json = {
-            'user_project_id': "9645cd24-cfb8-432d-80c6-9e06fb49aff5",
-            'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-            'status': 'complete',
-            'consented': '2018-07-19 16:16:56.087895+01',
+            'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2",
+            'project_task_id': 'f3316529-e073-435e-b5c7-053da4127e96',
+            'consented': '2018-07-19 16:16:56.087895+01'
         }
         event = {'body': json.dumps(ut_json)}
         result = create_user_task_api(event, None)
@@ -189,6 +193,9 @@ class TestUserTask(TestCase):
         modified = result_json['modified']
         del result_json['modified']
 
+        status = result_json['status']
+        del result_json['status']
+
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, result_json)
 
@@ -203,13 +210,15 @@ class TestUserTask(TestCase):
         difference = abs(now_with_tz() - result_datetime)
         self.assertLess(difference.seconds, 10)
 
+        self.assertEqual(status, 'active')
+
 
     def test_6_create_user_task_api_invalid_status(self):
         from api.user_task import create_user_task_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
-            'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
+            'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
             'status': 'invalid',
             'consented': '2018-06-12 16:16:56.087895+01'
@@ -229,7 +238,7 @@ class TestUserTask(TestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
-            'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c43',
+            'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
             'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf019',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01'
@@ -241,25 +250,4 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
-
-
-    def test_8_create_user_task_api_user_project_not_exists(self):
-        from api.user_task import create_user_task_api
-
-        expected_status = HTTPStatus.BAD_REQUEST
-        ut_json = {
-            'user_project_id': 'a55c9adc-bc5a-4e1b-be4b-e68db1a01c44',
-            'project_task_id': 'ebd5f57b-e77c-4f26-9ae4-b65cdabaf018',
-            'status': 'active',
-            'consented': '2018-06-12 16:16:56.087895+01'
-        }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
-
-        self.assertEqual(expected_status, result_status)
-        self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
-
+        self.assertTrue('message' in result_json and 'project_task' in result_json['message'])

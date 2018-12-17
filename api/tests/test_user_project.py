@@ -236,3 +236,15 @@ class TestUserProject(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
+
+
+    def test_9_create_user_projects_api_if_not_exists(self):
+        from api.user_project import create_user_project_if_not_exists
+
+        user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
+        project_id = "0c137d9d-e087-448b-ba8d-24141b6ceecd"
+        result = create_user_project_if_not_exists(user_id, project_id, None)
+
+        # should return id of user_project created in test 4
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result['id'], '9620089b-e9a4-46fd-bb78-091c8449d777')

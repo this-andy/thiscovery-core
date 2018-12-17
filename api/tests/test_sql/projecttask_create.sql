@@ -15,6 +15,8 @@ CREATE TABLE public.projects_projecttask
     website_highlight boolean NOT NULL,
     visibility character varying(12) COLLATE pg_catalog."default" NOT NULL,
     testing_group_id uuid,
+    external_task_id character varying(50) COLLATE pg_catalog."default",
+    external_system_id uuid,
     CONSTRAINT projects_projecttask_pkey PRIMARY KEY (id),
     CONSTRAINT projects_projecttask_project_id_c579add0_fk_projects_project_id FOREIGN KEY (project_id)
         REFERENCES public.projects_project (id) MATCH SIMPLE

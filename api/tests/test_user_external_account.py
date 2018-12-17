@@ -40,7 +40,7 @@ class TestUserExternalAccount(TestCase):
         self.postgresql.stop()
 
 
-    def test_create_user_external_account_api_ok_and_duplicate(self):
+    def test_1_create_user_external_account_api_ok_and_duplicate(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
@@ -48,7 +48,7 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
-            'status': 'A',
+            'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
         }
@@ -76,15 +76,14 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_create_user_external_account_api_with_defaults(self):
+    def test_2_create_user_external_account_api_with_defaults(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
-            'external_user_id': 'abc74',
-            'status': 'unknown',
+            'external_user_id': 'abc74'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
@@ -101,6 +100,9 @@ class TestUserExternalAccount(TestCase):
         modified = result_json['modified']
         del result_json['modified']
 
+        status = result_json['status']
+        del result_json['status']
+
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, result_json)
 
@@ -115,9 +117,10 @@ class TestUserExternalAccount(TestCase):
         difference = abs(now_with_tz() - result_datetime)
         self.assertLess(difference.seconds, 10)
 
+        self.assertEqual(status, 'active')
 
 
-    def test_create_user_external_account_api_user_not_exists(self):
+    def test_3_create_user_external_account_api_user_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -125,7 +128,7 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef4',
             'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4670',
             'external_user_id': 'cc02',
-            'status': 'A'
+            'status': 'active'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
@@ -137,15 +140,14 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_create_user_external_account_api_ext_sys_not_exists(self):
+    def test_4_create_user_external_account_api_ext_sys_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d9",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
-            'external_user_id': 'cc02',
-            'status': 'A'
+            'external_user_id': 'cc02'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
@@ -157,7 +159,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
-    def test_create_user_external_account_api_bad_user_uuid(self):
+    def test_5_create_user_external_account_api_bad_user_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -165,7 +167,7 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6dddm",
             'external_user_id': 'cc02',
-            'status': 'A'
+            'status': 'active'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
@@ -178,7 +180,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
-    def test_create_user_external_account_api_bad_ext_sys_uuid(self):
+    def test_6_create_user_external_account_api_bad_ext_sys_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -186,7 +188,7 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4dm",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
-            'status': 'A'
+            'status': 'active'
         }
         event = {'body': json.dumps(uea_json)}
         result = create_user_external_account_api(event, None)
@@ -199,7 +201,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
-    def test_create_user_external_account_api_bad_created_date(self):
+    def test_7_create_user_external_account_api_bad_created_date(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -207,7 +209,7 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02',
-            'status': 'A',
+            'status': 'active',
             'created': '2018-26-23 14:15:16.171819+00'
         }
         event = {'body': json.dumps(uea_json)}
@@ -219,3 +221,43 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('datetime' in result_json)
         self.assertTrue('message' in result_json and 'datetime' in result_json['message'])
+
+
+    def test_8_create_user_external_account_api_bad_status(self):
+        from api.user_external_account import create_user_external_account_api
+
+        expected_status = HTTPStatus.BAD_REQUEST
+        uea_json = {
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
+            'external_user_id': 'cc02',
+            'status': 'rubbish'
+        }
+        event = {'body': json.dumps(uea_json)}
+        result = create_user_external_account_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('status' in result_json)
+        self.assertTrue('message' in result_json and 'status' in result_json['message'])
+
+
+    def test_9_create_user_external_account_api_missing_params(self):
+        from api.user_external_account import create_user_external_account_api
+
+        expected_status = HTTPStatus.BAD_REQUEST
+        uea_json = {
+            'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+            'external_user_id': 'cc02'
+        }
+        event = {'body': json.dumps(uea_json)}
+        result = create_user_external_account_api(event, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('parameter' in result_json and 'user_id' in result_json['parameter'])
+        self.assertTrue('message' in result_json and 'missing' in result_json['message'])

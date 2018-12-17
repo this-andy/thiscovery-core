@@ -70,21 +70,21 @@ def list_user_projects_api(event, context):
     return response
 
 
-def get_existing_user_project_count(user_id, project_id, correlation_id):
+def get_existing_user_project_id(user_id, project_id, correlation_id):
 
     base_sql = """
       SELECT 
-        COUNT(id)
+        id
       FROM public.projects_userproject
       WHERE 
         project_id = %s
         AND user_id = %s
     """
 
-    return execute_query(base_sql, (str(project_id), str(user_id)), correlation_id, False)
+    return execute_query(base_sql, (str(project_id), str(user_id)), correlation_id)
 
 
-def create_user_project(up_json, correlation_id):
+def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     # json MUST contain: user_id, project_id, status
     # json may OPTIONALLY include: id, created,
 
@@ -117,10 +117,14 @@ def create_user_project(up_json, correlation_id):
         created = str(now_with_tz())
 
     # check external account does not already exist
-    existing = get_existing_user_project_count(user_id, project_id, correlation_id)
-    if int(existing[0][0]) > 0:
-        errorjson = {'user_id': user_id, 'project_id': project_id, 'correlation_id': str(correlation_id)}
-        raise DuplicateInsertError('user_project already exists', errorjson)
+    existing = get_existing_user_project_id(user_id, project_id, correlation_id)
+    # if int(existing[0][0]) > 0:
+    if len(existing) > 0:
+        if do_nothing_if_exists:
+            return existing[0]
+        else:
+            errorjson = {'user_id': user_id, 'project_id': project_id, 'correlation_id': str(correlation_id)}
+            raise DuplicateInsertError('user_project already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)
     result = get_user_by_id(user_id, correlation_id)
@@ -179,19 +183,27 @@ def create_user_project_api(event, context):
     return response
 
 
+def create_user_project_if_not_exists(user_id, project_id, correlation_id):
+    up_json = {
+        'user_id': user_id,
+        'project_id': project_id,
+        'status': 'active'
+    }
+    return create_user_project(up_json, correlation_id, True)
+
+
 if __name__ == "__main__":
-    print('running user_project')
-    # up_json = {
-    #     'user_id': "e8d6b60f-9b99-4dfa-89d4-2ec7b2038b41",
-    #     'project_id': "21c0779a-5fc2-4b72-8a88-0ba31456b563",
-    #     'status': 'A',
-    #     'id': '9620089b-e9a4-46fd-bb78-091c8449d778',
-    #     'created': '2018-06-13 14:15:16.171819+00'
-    # }
+    # print('running user_project')
+    up_json = {
+        'user_id': "0bef3b7e-ab4a-437e-936a-6b7b557fb059",
+        'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
+        'status': 'active'
+    }
     # # print(up_json)
     #
-    # ev = {'body': json.dumps(up_json)}
+    ev = {'body': json.dumps(up_json)}
+    print(create_user_project_if_not_exists("0bef3b7e-ab4a-437e-936a-6b7b557fb059", "0c137d9d-e087-448b-ba8d-24141b6ceecd", 'abc'))
     # print(create_user_project_api(ev, None))
     #
     # # ev = {}
-    print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))
+    # print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))

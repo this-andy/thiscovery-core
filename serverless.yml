@@ -15,22 +15,23 @@ service: citsci-api
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: ">=1.1.0 <2.0.0"
+frameworkVersion: ">=1.33.0 <2.0.0"
 
 provider:
   name: aws
   runtime: python3.6
+  stage: ${opt:stage, 'dev'}
   region: eu-west-2
   profile: serverless
   timeout: 30
   role: arn:aws:iam::595383251813:role/citsci_api_lambda_role
   vpc:
     securityGroupIds:
-      - sg-b719b0dc
+      - ${file(./api/config/${self:provider.stage}_config.json):security-group}
     subnetIds:
-      - subnet-4cef1736
-      - subnet-653d3328
-      - subnet-c4db60ad
+      - ${file(./api/config/${self:provider.stage}_config.json):subnet-a}
+      - ${file(./api/config/${self:provider.stage}_config.json):subnet-b}
+      - ${file(./api/config/${self:provider.stage}_config.json):subnet-c}
 
 iamRoleStatements:
     - Effect: Allow
