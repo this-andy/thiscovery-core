@@ -191,7 +191,8 @@ PROJECT_USER_SELECT_SQL = '''
                         id,
                         description,
                         signup_status,
-                        visibility,                       
+                        visibility,   
+                        external_task_id,                    
                         status,
                         FALSE as task_is_visible,
                         FALSE as user_is_signedup,
@@ -382,7 +383,7 @@ def get_project_status_for_user_api(event, context):
 if __name__ == "__main__":
     # result = get_project_with_tasks('5907275b-6d75-4ec0-ada8-5854b44fb955',None)
 
-    result = get_project_task("07af2fbe-5cd1-447f-bae1-3a2f8de82829", None)
+    # result = get_project_task("07af2fbe-5cd1-447f-bae1-3a2f8de82829", None)
 
     # pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
     # ev = {'pathParameters': pp}
@@ -398,9 +399,9 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    # qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
-    # ev = {'queryStringParameters': qsp}
-    # result = get_project_status_for_user_api(ev, None)
+    qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
+    ev = {'queryStringParameters': qsp}
+    result = get_project_status_for_user_api(ev, None)
     print(result)
     # if len(result) == 0:
     #     print(result)
