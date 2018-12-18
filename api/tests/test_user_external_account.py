@@ -40,7 +40,7 @@ class TestUserExternalAccount(TestCase):
         self.postgresql.stop()
 
 
-    def test_1_create_user_external_account_api_ok_and_duplicate(self):
+    def test_01_create_user_external_account_api_ok_and_duplicate(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
@@ -76,7 +76,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_2_create_user_external_account_api_with_defaults(self):
+    def test_02_create_user_external_account_api_with_defaults(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
@@ -120,7 +120,7 @@ class TestUserExternalAccount(TestCase):
         self.assertEqual(status, 'active')
 
 
-    def test_3_create_user_external_account_api_user_not_exists(self):
+    def test_03_create_user_external_account_api_user_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -140,7 +140,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_4_create_user_external_account_api_ext_sys_not_exists(self):
+    def test_04_create_user_external_account_api_ext_sys_not_exists(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -159,7 +159,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'integrity error' in result_json['message'])
 
 
-    def test_5_create_user_external_account_api_bad_user_uuid(self):
+    def test_05_create_user_external_account_api_bad_user_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -180,7 +180,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
-    def test_6_create_user_external_account_api_bad_ext_sys_uuid(self):
+    def test_06_create_user_external_account_api_bad_ext_sys_uuid(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -201,7 +201,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
-    def test_7_create_user_external_account_api_bad_created_date(self):
+    def test_07_create_user_external_account_api_bad_created_date(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -223,7 +223,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'datetime' in result_json['message'])
 
 
-    def test_8_create_user_external_account_api_bad_status(self):
+    def test_08_create_user_external_account_api_bad_status(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -244,7 +244,7 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('message' in result_json and 'status' in result_json['message'])
 
 
-    def test_9_create_user_external_account_api_missing_params(self):
+    def test_09_create_user_external_account_api_missing_params(self):
         from api.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -261,3 +261,33 @@ class TestUserExternalAccount(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('parameter' in result_json and 'user_id' in result_json['parameter'])
         self.assertTrue('message' in result_json and 'mandatory data missing' in result_json['message'])
+
+
+    def test_10_get_or_create_user_external_account_get(self):
+        from api.user_external_account import get_or_create_user_external_account
+
+        external_system_id = 'e056e0bf-8d24-487e-a57b-4e812b40c4d8'
+        user_id = '851f7b34-f76c-49de-a382-7e4089b744e2'
+
+        result = get_or_create_user_external_account(user_id, external_system_id, None)
+        # returns id of existing record
+        self.assertEqual(result, "3686f075-1da1-401d-8329-10da0ccf3258")
+
+
+    def test_11_get_or_create_user_external_account_create(self):
+        from api.user_external_account import get_or_create_user_external_account
+
+        external_system_id = 'e056e0bf-8d24-487e-a57b-4e812b40c4d8'
+        user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'
+
+        result = get_or_create_user_external_account(user_id, external_system_id, None)
+        # returns new record
+        self.assertNotEqual(result['id'], "3686f075-1da1-401d-8329-10da0ccf3258")
+
+        self.assertEqual(result['external_system_id'], "e056e0bf-8d24-487e-a57b-4e812b40c4d8")
+        self.assertEqual(result['user_id'], "35224bd5-f8a8-41f6-8502-f96e12d6ddde")
+        self.assertEqual(result['status'], "active")
+
+        result_datetime = parser.parse(result['created'])
+        difference = abs(now_with_tz() - result_datetime)
+        self.assertLess(difference.seconds, 10)

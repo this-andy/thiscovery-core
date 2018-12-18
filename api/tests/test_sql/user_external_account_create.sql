@@ -5,7 +5,7 @@ CREATE TABLE public.projects_userexternalaccount
     id uuid NOT NULL,
     created timestamp with time zone NOT NULL,
     modified timestamp with time zone NOT NULL,
-    external_user_id character varying(50) COLLATE pg_catalog."default" NOT NULL,
+    external_user_id character varying(50) COLLATE pg_catalog."default",
     status character varying(12) COLLATE pg_catalog."default",
     external_system_id uuid NOT NULL,
     user_id uuid NOT NULL,

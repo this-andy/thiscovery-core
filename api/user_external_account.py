@@ -35,7 +35,7 @@ def check_user_id_and_external_account(user_id, external_system_id, correlation_
     return execute_query(base_sql, (str(user_id), str(external_system_id)), correlation_id)
 
 
-def create_user_external_account(uea_json, correlation_id, do_nothing_if_exists=False):
+def create_user_external_account(uea_json, correlation_id):
     # json MUST contain: external_system_id, user_id, external_user_id
     # json may OPTIONALLY include: id, created, status
 
@@ -83,11 +83,8 @@ def create_user_external_account(uea_json, correlation_id, do_nothing_if_exists=
     # check external account does not already exist
     existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
     if len(existing) > 0:
-        if do_nothing_if_exists:
-            return existing[0]['id']
-        else:
-            errorjson = {'user_id': user_id, 'external_system_id': external_system_id, 'correlation_id': str(correlation_id)}
-            raise DuplicateInsertError('user_external_account already exists', errorjson)
+        errorjson = {'user_id': user_id, 'external_system_id': external_system_id, 'correlation_id': str(correlation_id)}
+        raise DuplicateInsertError('user_external_account already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)
     existing_user = get_user_by_id(user_id, correlation_id)
@@ -150,8 +147,29 @@ def create_user_external_account_api(event, context):
 
 def get_or_create_user_external_account(user_id, external_system_id, correlation_id):
     # see if it exists
-    # if not then call extrenal system to get id and create record
-    pass
+
+    existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
+    if len(existing) > 0:
+        # already exists - return id
+        return existing[0]['id']
+    else:
+        # if not then call external system to get id and create record
+        external_user_id = get_user_id_from_external_system(external_system_id, user_id, correlation_id)
+
+        # if call to external system fails then return 503
+        # todo - implement this
+        # if success then create local record of info
+        uea_json = {
+            'external_system_id': external_system_id,
+            'user_id': user_id,
+            'external_user_id': external_user_id
+        }
+        user_external_account = create_user_external_account(uea_json, correlation_id)
+        return user_external_account
+
+
+def get_user_id_from_external_system(external_system_id, user_id, correlation_id):
+    return None
 
 
 if __name__ == "__main__":
@@ -164,7 +182,7 @@ if __name__ == "__main__":
         # 'created': '2018-06-13 14:15:16.171819+00'
     }
     correlation_id = None
-    print(create_user_external_account(uea_json, correlation_id, True))
+    print(create_user_external_account(uea_json, correlation_id))
 
     # ev = {'body': json.dumps(uea_json)}
     # print(create_user_external_account_api(ev, None))
