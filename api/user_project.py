@@ -3,7 +3,7 @@ import json
 from http import HTTPStatus
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
+    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
 from api.user import get_user_by_id
 
 
@@ -52,6 +52,7 @@ def list_user_projects(user_id, correlation_id):
 
 
 def list_user_projects_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -77,7 +78,7 @@ def list_user_projects_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -177,6 +178,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
 
 
 def create_user_project_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -200,7 +202,7 @@ def create_user_project_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 

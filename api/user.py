@@ -6,7 +6,7 @@ from jsonpatch import JsonPatch, JsonPatchException
 from api.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
 from api.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-    now_with_tz
+    now_with_tz, get_start_time, get_elapsed_ms
 from api.entity_update import EntityUpdate
 
 
@@ -45,6 +45,7 @@ def get_user_by_id(user_id, correlation_id):
 
 
 def get_user_by_id_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -72,7 +73,7 @@ def get_user_by_id_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -84,6 +85,7 @@ def get_user_by_email(user_email, correlation_id):
 
 
 def get_user_by_email_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -108,7 +110,7 @@ def get_user_by_email_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -142,6 +144,7 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 
 
 def patch_user_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -176,7 +179,7 @@ def patch_user_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
 
     return response
 
@@ -281,6 +284,7 @@ def create_user(user_json, correlation_id):
 
 
 def create_user_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -304,7 +308,7 @@ def create_user_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 

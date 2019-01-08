@@ -3,7 +3,7 @@ import json
 from http import HTTPStatus
 from api.pg_utilities import execute_query, execute_non_query
 from api.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz
+    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
 from api.user import get_user_by_id
 from api.project import get_project_task
 from api.user_project import create_user_project_if_not_exists
@@ -81,6 +81,7 @@ def list_user_tasks(user_id, correlation_id):
 
 
 def list_user_tasks_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -106,7 +107,8 @@ def list_user_tasks_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'event': event})
+    logger.info('API response',
+                extra={'response': response, 'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -293,6 +295,7 @@ def create_user_task(ut_json, correlation_id):
 
 
 def create_user_task_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -316,7 +319,8 @@ def create_user_task_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'event': event})
+    logger.info('API response',
+                extra={'response': response, 'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 

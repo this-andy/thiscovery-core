@@ -15,29 +15,29 @@ TEST_DATA_FOLDER = './test_data/'
 class TestUserExternalAccount(TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.postgresql = testing.postgresql.Postgresql(port=7654)
+    def setUpClass(cls):
+        cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
         # setup environment variable for get_connection to use
-        os.environ["TEST_DSN"] = str(self.postgresql.dsn())
+        os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
 
-        self.conn = _get_connection()
-        self.cursor = self.conn.cursor()
+        cls.conn = _get_connection()
+        cls.cursor = cls.conn.cursor()
 
         correlation_id = new_correlation_id()
         run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'user_external_account_create.sql', correlation_id)
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_external_account_data.csv', 'public.projects_userexternalaccount')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'user_external_account_data.csv', 'public.projects_userexternalaccount')
 
 
     @classmethod
-    def tearDownClass(self):
-        self.conn.close()
+    def tearDownClass(cls):
+        cls.conn.close()
         os.unsetenv("TEST_DSN")
-        self.postgresql.stop()
+        cls.postgresql.stop()
 
 
     def test_01_create_user_external_account_api_ok_and_duplicate(self):

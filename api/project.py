@@ -1,6 +1,6 @@
 import json
 from api.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
-from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError
+from api.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
 from http import HTTPStatus
 
 
@@ -101,6 +101,7 @@ def list_projects_with_tasks(correlation_id):
 
 
 def list_projects_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -117,7 +118,7 @@ def list_projects_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -147,6 +148,7 @@ def get_project_with_tasks(project_uuid, correlation_id):
 
 
 def get_project_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -171,7 +173,7 @@ def get_project_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -358,6 +360,7 @@ def get_project_status_for_user(user_id, correlation_id):
 
 
 def get_project_status_for_user_api(event, context):
+    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -376,7 +379,7 @@ def get_project_status_for_user_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms()})
     return response
 
 
@@ -389,7 +392,7 @@ if __name__ == "__main__":
     # ev = {'pathParameters': pp}
     # result = get_project_api(ev, None)
 
-    # result = list_projects_api(None, None)
+    result = list_projects_api(None, None)
     # result_status = result['statusCode']
     # result_json = json.loads(result['body'])
 
@@ -399,10 +402,10 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
-    ev = {'queryStringParameters': qsp}
-    result = get_project_status_for_user_api(ev, None)
-    print(result)
+    # qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
+    # ev = {'queryStringParameters': qsp}
+    # result = get_project_status_for_user_api(ev, None)
+    # print(result)
     # if len(result) == 0:
     #     print(result)
     # else:

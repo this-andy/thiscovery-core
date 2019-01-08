@@ -4,6 +4,7 @@ import logging
 import re
 import sys
 import datetime
+from timeit import default_timer as timer
 from dateutil import parser, tz
 from pythonjsonlogger import jsonlogger
 import json
@@ -79,6 +80,16 @@ def running_on_aws():
 def now_with_tz():
     return datetime.datetime.now(tz.tzlocal())
 
+
+def get_start_time():
+    return timer()
+
+
+def get_elapsed_ms(start_time):
+    elapsed_ms = int((timer() - start_time) * 1000)
+    return elapsed_ms
+
+
 # endregion
 
 
@@ -152,6 +163,7 @@ def get_correlation_id(event):
     return correlation_id
 
 # endregion
+
 
 # region Secrets processing
 

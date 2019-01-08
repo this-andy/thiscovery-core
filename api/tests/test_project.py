@@ -27,11 +27,13 @@ class TestProject(TestCase):
         run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
+        run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
         run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
 
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
+        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
         insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
 
 
