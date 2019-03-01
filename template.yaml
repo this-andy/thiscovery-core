@@ -351,6 +351,39 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectstatuses.Arn}/invocations
               responses: {}
+          v1/userexternalaccount:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserexternalaccount.Arn}/invocations
+              responses: {}
+          v1/userproject:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${listuserprojects.Arn}/invocations
+              responses: {}
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserproject.Arn}/invocations
+              responses: {}
+          v1/usertask:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${listusertasks.Arn}/invocations
+              responses: {}
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusertask.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -522,7 +555,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: list-projects
       CodeUri: api/endpoints
-      Handler: api/project.list_projects_api
+      Handler: project.list_projects_api
       Runtime: python3.6
       MemorySize: 3008
       Timeout: 30
@@ -562,7 +595,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: get-project-by-uuid
       CodeUri: api/endpoints
-      Handler: api/project.get_project_api
+      Handler: project.get_project_api
       Runtime: python3.6
       MemorySize: 3008
       Timeout: 30
@@ -602,7 +635,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: get-project-statuses
       CodeUri: api/endpoints
-      Handler: api/project.get_project_status_for_user_api
+      Handler: project.get_project_status_for_user_api
       Runtime: python3.6
       MemorySize: 3008
       Timeout: 30
@@ -634,6 +667,206 @@ Resources:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: get-project-statuses
+  createuserexternalaccount:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-createuserexternalaccount
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: create-user-external-account
+      CodeUri: api/endpoints
+      Handler: user_external_account.create_user_external_account_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1userexternalaccount:
+          Type: Api
+          Properties:
+            Path: v1/userexternalaccount
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+    Metadata:
+      StackeryName: create-user-external-account
+  listuserprojects:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-listuserprojects
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: list-user-projects
+      CodeUri: api/endpoints
+      Handler: user_project.list_user_projects_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1userproject:
+          Type: Api
+          Properties:
+            Path: v1/userproject
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+    Metadata:
+      StackeryName: list-user-projects
+  createuserproject:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-createuserproject
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: create-user-project
+      CodeUri: api/endpoints
+      Handler: user_project.create_user_project_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1userproject:
+          Type: Api
+          Properties:
+            Path: v1/userproject
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: create-user-project
+  listusertasks:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-listusertasks
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: list-user-tasks
+      CodeUri: api/endpoints
+      Handler: user_task.list_user_tasks_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1usertask:
+          Type: Api
+          Properties:
+            Path: v1/usertask
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+    Metadata:
+      StackeryName: list-user-tasks
+  createusertask:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-createusertask
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: create-user-task
+      CodeUri: api/endpoints
+      Handler: user_task.create_user_task_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1usertask:
+          Type: Api
+          Properties:
+            Path: v1/usertask
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: create-user-task
 Parameters:
   StackTagName:
     Type: String
