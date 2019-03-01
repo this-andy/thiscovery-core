@@ -293,118 +293,6 @@ Resources:
     Properties:
       RouteTableId: !Ref VirtualNetworkPublicSubnetsRouteTable
       SubnetId: !Ref VirtualNetworkPublicSubnet2
-  Function:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-Function
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: ping
-      CodeUri: core_api/Function
-      Handler: handler.handler
-      Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-      Events:
-        Timer:
-          Type: Schedule
-          Properties:
-            Schedule: rate(1 minute)
-        CoreAPIGET:
-          Type: Api
-          Properties:
-            Path: /
-            Method: GET
-            RestApiId: !Ref CoreAPI
-      Environment:
-        Variables:
-          DB_INSTANCE: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${TestDatabase}
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-    Metadata:
-      StackeryName: ping
-  fnTestConnection:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-fnTestConnection
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: testConnection
-      CodeUri: core_api/fn-test-connection
-      Handler: handler.handler
-      Runtime: python3.6
-      MemorySize: 2560
-      Timeout: 30
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIGETtestconnection:
-          Type: Api
-          Properties:
-            Path: /test-connection
-            Method: GET
-            RestApiId: !Ref CoreAPI
-      Environment:
-        Variables:
-          DB_INSTANCE: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${TestDatabase}
-          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-    Metadata:
-      StackeryName: testConnection
-  Function2:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-Function2
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: DN-function 2
-      CodeUri: core_api/Function
-      Handler: handler.handler2
-      Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIGETsamehandler:
-          Type: Api
-          Properties:
-            Path: /same-handler
-            Method: GET
-            RestApiId: !Ref CoreAPI
-    Metadata:
-      StackeryName: DN-function 2
   CoreAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -416,27 +304,6 @@ Resources:
         swagger: '2.0'
         info: {}
         paths:
-          /:
-            get:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Function.Arn}/invocations
-              responses: {}
-          /test-connection:
-            get:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${fnTestConnection.Arn}/invocations
-              responses: {}
-          /same-handler:
-            get:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Function2.Arn}/invocations
-              responses: {}
           /v1/user/{id}:
             get:
               x-amazon-apigateway-integration:
@@ -467,7 +334,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: get-user-by-uuid
-      CodeUri: core_api/user_methods
+      CodeUri: api/endpoints
       Handler: user.get_user_by_id_api
       Runtime: python3.6
       MemorySize: 3008
@@ -507,7 +374,7 @@ Resources:
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: get-user-by-email
-      CodeUri: core_api/user_methods
+      CodeUri: api/endpoints
       Handler: user.get_user_by_email_api
       Runtime: python3.6
       MemorySize: 3008
@@ -546,8 +413,8 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-createuserapi
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: create_user_api
-      CodeUri: core_api/user_methods
+        - ResourceName: create_user
+      CodeUri: api/endpoints
       Handler: user.create_user_api
       Runtime: python3.6
       MemorySize: 3008
@@ -579,7 +446,7 @@ Resources:
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
-      StackeryName: create_user_api
+      StackeryName: create_user
 Parameters:
   StackTagName:
     Type: String
