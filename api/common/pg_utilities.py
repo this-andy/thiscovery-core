@@ -39,7 +39,7 @@ def _get_connection(correlation_id=None):
             env_dict = get_secret('database-connection')
         else:
             env_dict = ast.literal_eval(test_dsn)
-        print("dsn:" + str(env_dict))
+        # print("dsn:" + str(env_dict))
         conn = psycopg2.connect(**env_dict)
 
         # using dsn obscures password

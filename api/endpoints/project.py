@@ -17,9 +17,10 @@
 #
 
 import json
-from api.common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
-from api.common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
 from http import HTTPStatus
+
+from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
 
 
 BASE_PROJECT_SELECT_SQL = '''
