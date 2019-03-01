@@ -19,12 +19,14 @@
 import uuid
 import json
 from http import HTTPStatus
-from api.common.pg_utilities import execute_query, execute_non_query
-from api.common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
+
+from common.pg_utilities import execute_query, execute_non_query
+from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
-from api.endpoints.user import get_user_by_id
-from api.endpoints.project import get_project_task
-from api.endpoints.user_project import create_user_project_if_not_exists
+
+from user import get_user_by_id
+from project import get_project_task
+from user_project import create_user_project_if_not_exists
 
 
 STATUS_CHOICES = (

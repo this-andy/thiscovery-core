@@ -19,10 +19,12 @@
 import uuid
 import json
 from http import HTTPStatus
-from api.common.pg_utilities import execute_query, execute_non_query
-from api.common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
+
+from common.pg_utilities import execute_query, execute_non_query
+from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
-from api.endpoints.user import get_user_by_id
+
+from user import get_user_by_id
 
 
 STATUS_CHOICES = (
@@ -235,16 +237,16 @@ def create_user_project_if_not_exists(user_id, project_id, correlation_id):
 
 if __name__ == "__main__":
     # print('running user_project')
-    up_json = {
-        'user_id': "0bef3b7e-ab4a-437e-936a-6b7b557fb059",
-        'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
-        'status': 'active'
-    }
+    # up_json = {
+    #     'user_id': "0bef3b7e-ab4a-437e-936a-6b7b557fb059",
+    #     'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
+    #     'status': 'active'
+    # }
     # # print(up_json)
     #
-    ev = {'body': json.dumps(up_json)}
-    print(create_user_project_if_not_exists("0bef3b7e-ab4a-437e-936a-6b7b557fb059", "0c137d9d-e087-448b-ba8d-24141b6ceecd", 'abc'))
+    # ev = {'body': json.dumps(up_json)}
+    # print(create_user_project_if_not_exists("0bef3b7e-ab4a-437e-936a-6b7b557fb059", "0c137d9d-e087-448b-ba8d-24141b6ceecd", 'abc'))
     # print(create_user_project_api(ev, None))
     #
     # # ev = {}
-    # print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))
+    print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))
