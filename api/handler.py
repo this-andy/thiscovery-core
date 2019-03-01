@@ -73,7 +73,7 @@ def hubspot_entity_info(event, context):
         "body": json.dumps(body)
     }
 
-    return response
+    return response1
 
 
 def connection_info(event, context):
