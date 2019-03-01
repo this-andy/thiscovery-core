@@ -21,8 +21,8 @@ import json
 from http import HTTPStatus
 import testing.postgresql
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -92,7 +92,7 @@ class TestProjectStatusForUser(TestCase):
 
 
     def check_project_status_for_single_user(self, user_id, expected_results):
-        from api.project import get_project_status_for_user_api
+        from api.endpoints.project import get_project_status_for_user_api
 
         querystring_parameters = {'user_id': user_id}
         event = {'queryStringParameters': querystring_parameters}

@@ -24,11 +24,11 @@ from dateutil import parser
 from datetime import timedelta
 import testing.postgresql
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id, now_with_tz, validate_uuid
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id, now_with_tz
 
-TEST_SQL_FOLDER = './test_sql/'
-TEST_DATA_FOLDER = './test_data/'
+TEST_SQL_FOLDER = '../test_sql/'
+TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 10
 
 class TestUser(TestCase):
@@ -57,7 +57,7 @@ class TestUser(TestCase):
 
 
     def test_get_user_by_uuid_api_exists(self):
-        from api.user import get_user_by_id_api
+        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
         event = {'pathParameters': path_parameters}
 
@@ -84,7 +84,7 @@ class TestUser(TestCase):
 
 
     def test_get_user_by_uuid_api_not_exists(self):
-        from api.user import get_user_by_id_api
+        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
         event = {'pathParameters': path_parameters}
 
@@ -100,7 +100,7 @@ class TestUser(TestCase):
 
 
     def test_get_user_by_uuid_api_bad_uuid(self):
-        from api.user import get_user_by_id_api
+        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
         event = {'pathParameters': path_parameters}
 
@@ -117,7 +117,7 @@ class TestUser(TestCase):
 
 
     def test_get_user_email_exists(self):
-        from api.user import get_user_by_email_api
+        from api.endpoints.user import get_user_by_email_api
 
         querystring_parameters = {'email': 'altha@email.addr'}
         event = {'queryStringParameters': querystring_parameters}
@@ -145,7 +145,7 @@ class TestUser(TestCase):
 
 
     def test_get_user_email_not_exists(self):
-        from api.user import get_user_by_email_api
+        from api.endpoints.user import get_user_by_email_api
 
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         event = {'queryStringParameters': querystring_parameters}
@@ -162,9 +162,8 @@ class TestUser(TestCase):
 
 
     def test_patch_user_api_ok(self):
-        from api.user import patch_user_api
-        from api.entity_update import EntityUpdate
-        from jsonpatch import JsonPatch
+        from api.endpoints.user import patch_user_api
+        from api.common.entity_update import EntityUpdate
 
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
 
@@ -187,7 +186,7 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
 
         # now check database values...
-        from api.user import get_user_by_id_api
+        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': user_id}
         event = {'pathParameters': path_parameters}
 
@@ -268,7 +267,7 @@ class TestUser(TestCase):
 
 
     def test_patch_user_api_user_not_exists(self):
-        from api.user import patch_user_api
+        from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.NOT_FOUND
         user_jsonpatch = [
@@ -288,7 +287,7 @@ class TestUser(TestCase):
 
 
     def test_patch_user_api_bad_attribute(self):
-        from api.user import patch_user_api
+        from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'replace', 'path': '/non-existent-attribute', 'value': 'simon'}]
@@ -305,7 +304,7 @@ class TestUser(TestCase):
 
 
     def test_patch_user_api_bad_operation(self):
-        from api.user import patch_user_api
+        from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': '/first_name', 'value': 'simon'}]
@@ -322,7 +321,7 @@ class TestUser(TestCase):
 
 
     def test_patch_user_api_bad_jsonpatch(self):
-        from api.user import patch_user_api
+        from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'this': 'is', 'not': '/a', 'valid': 'jsonpatch'}]
@@ -339,7 +338,7 @@ class TestUser(TestCase):
 
 
     def test_create_user_api_ok_and_duplicate(self):
-        from api.user import create_user_api
+        from api.endpoints.user import create_user_api
 
         expected_status = HTTPStatus.CREATED
         user_json = {
@@ -388,7 +387,7 @@ class TestUser(TestCase):
 
 
     def test_create_user_api_with_defaults(self):
-        from api.user import create_user_api
+        from api.endpoints.user import create_user_api
 
         expected_status = HTTPStatus.CREATED
         user_json = {
@@ -449,7 +448,7 @@ class TestUser(TestCase):
 
 
     def test_create_user_api_bad_uuid(self):
-        from api.user import create_user_api
+        from api.endpoints.user import create_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
@@ -473,7 +472,7 @@ class TestUser(TestCase):
 
 
     def test_timezone(self):
-        from api.pg_utilities import execute_query
+        from api.common.pg_utilities import execute_query
         sql = 'Select NOW()'
         result =  execute_query(sql, None, 'abc')
         return result

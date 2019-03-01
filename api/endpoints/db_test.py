@@ -17,7 +17,7 @@
 #
 
 import psycopg2
-from api.pg_utilities import execute_non_query, execute_query, execute_query_multiple
+from api.common.pg_utilities import execute_non_query, execute_query_multiple
 
 
 def duplicate_insert():

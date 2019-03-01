@@ -18,7 +18,7 @@
 
 import uuid
 from jsonpatch import JsonPatch
-from api.pg_utilities import execute_non_query, execute_query
+from api.common.pg_utilities import execute_non_query, execute_query
 
 
 class EntityUpdate:

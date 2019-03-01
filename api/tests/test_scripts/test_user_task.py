@@ -24,8 +24,8 @@ from http import HTTPStatus
 
 from dateutil import parser
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id, now_with_tz
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -72,7 +72,7 @@ class TestUserTask(TestCase):
 
     def test_1_list_user_tasks_api_ok(self):
         pass
-        from api.user_task import list_user_tasks_api
+        from api.endpoints.user_task import list_user_tasks_api
 
         expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
@@ -119,7 +119,7 @@ class TestUserTask(TestCase):
 
 
     def test_2_list_user_tasks_api_user_not_exists(self):
-        from api.user_project import list_user_projects_api
+        from api.endpoints.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.NOT_FOUND
 
@@ -135,7 +135,7 @@ class TestUserTask(TestCase):
 
 
     def test_3_list_user_tasks_api_no_results(self):
-        from api.user_project import list_user_projects_api
+        from api.endpoints.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.OK
         expected_body = []
@@ -151,7 +151,7 @@ class TestUserTask(TestCase):
 
 
     def test_4_create_user_task_api_ok_and_duplicate(self):
-        from api.user_task import create_user_task_api
+        from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.CREATED
         ut_json = {
@@ -190,7 +190,7 @@ class TestUserTask(TestCase):
 
 
     def test_5_create_user_task_api_with_defaults(self):
-        from api.user_task import create_user_task_api
+        from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.CREATED
         ut_json = {
@@ -234,7 +234,7 @@ class TestUserTask(TestCase):
 
 
     def test_6_create_user_task_api_invalid_status(self):
-        from api.user_task import create_user_task_api
+        from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
@@ -254,7 +254,7 @@ class TestUserTask(TestCase):
 
 
     def test_7_create_user_task_api_task_not_exists(self):
-        from api.user_task import create_user_task_api
+        from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
@@ -274,7 +274,7 @@ class TestUserTask(TestCase):
 
 
     def test_8_create_user_task_api_task_missing_params(self):
-        from api.user_task import create_user_task_api
+        from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {

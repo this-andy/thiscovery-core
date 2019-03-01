@@ -16,7 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from api.pg_utilities import execute_query
+from api.common.pg_utilities import execute_query
 
 
 def project_testgroup_users():

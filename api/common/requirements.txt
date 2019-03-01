@@ -1,0 +1,4 @@
+boto3
+psycopg2
+jsonpatch
+python-json-logger

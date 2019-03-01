@@ -21,8 +21,8 @@ import json
 from http import HTTPStatus
 import testing.postgresql
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -63,7 +63,7 @@ class TestProject(TestCase):
 
 
     def test_1_list_projects_api(self):
-        from api.project import list_projects_api
+        from api.endpoints.project import list_projects_api
 
         expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
@@ -113,7 +113,7 @@ class TestProject(TestCase):
 
 
     def test_2_get_project_api_exists(self):
-        from api.project import get_project_api
+        from api.endpoints.project import get_project_api
 
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
         event = {'pathParameters': path_parameters}
@@ -148,7 +148,7 @@ class TestProject(TestCase):
 
 
     def test_3_get_project_api_not_exists(self):
-        from api.project import get_project_api
+        from api.endpoints.project import get_project_api
 
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceece"}
         event = {'pathParameters': path_parameters}

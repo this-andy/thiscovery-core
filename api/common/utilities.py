@@ -185,12 +185,13 @@ def get_correlation_id(event):
 
 # region Secrets processing
 
-secrets_filename = 'secret-settings.json'
+secrets_filename = 'local/secret-settings.json'
 
 try:
     secrets = json.loads(get_file_as_string(secrets_filename))
 except FileNotFoundError:
     # legitimate reason for file not being found is that we are running test scripts from different directory or we are running on AWS
+    # d = os.getcwd()
     secrets_filename = '../' + secrets_filename
     try:
         secrets = json.loads(get_file_as_string(secrets_filename))

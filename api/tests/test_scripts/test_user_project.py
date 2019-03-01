@@ -23,8 +23,8 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id, now_with_tz
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -61,7 +61,7 @@ class TestUserProject(TestCase):
 
 
     def test_01_list_user_projects_api_ok(self):
-        from api.user_project import list_user_projects_api
+        from api.endpoints.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
@@ -94,7 +94,7 @@ class TestUserProject(TestCase):
 
 
     def test_02_list_user_projects_api_user_not_exists(self):
-        from api.user_project import list_user_projects_api
+        from api.endpoints.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.NOT_FOUND
 
@@ -110,7 +110,7 @@ class TestUserProject(TestCase):
 
 
     def test_03_list_user_projects_api_no_results(self):
-        from api.user_project import list_user_projects_api
+        from api.endpoints.user_project import list_user_projects_api
 
         expected_status = HTTPStatus.OK
         expected_body = []
@@ -126,7 +126,7 @@ class TestUserProject(TestCase):
 
 
     def test_04_create_user_projects_api_ok_and_duplicate(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.CREATED
         up_json = {
@@ -160,7 +160,7 @@ class TestUserProject(TestCase):
 
 
     def test_05_create_user_projects_api_with_defaults(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.CREATED
         up_json = {
@@ -203,7 +203,7 @@ class TestUserProject(TestCase):
 
 
     def test_06_create_user_projects_api_invalid_uuid(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
@@ -223,7 +223,7 @@ class TestUserProject(TestCase):
 
 
     def test_07_create_user_projects_api_user_not_exists(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
@@ -242,7 +242,7 @@ class TestUserProject(TestCase):
 
 
     def test_08_create_user_projects_api_project_not_exists(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {
@@ -261,7 +261,7 @@ class TestUserProject(TestCase):
 
 
     def test_09_create_user_projects_api_if_not_exists(self):
-        from api.user_project import create_user_project_if_not_exists
+        from api.endpoints.user_project import create_user_project_if_not_exists
 
         user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
         project_id = "0c137d9d-e087-448b-ba8d-24141b6ceecd"
@@ -273,7 +273,7 @@ class TestUserProject(TestCase):
 
 
     def test_10_create_user_projects_api_missing_params(self):
-        from api.user_project import create_user_project_api
+        from api.endpoints.user_project import create_user_project_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         up_json = {

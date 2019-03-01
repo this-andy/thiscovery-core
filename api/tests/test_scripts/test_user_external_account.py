@@ -23,8 +23,8 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
-from api.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
-from api.utilities import new_correlation_id, now_with_tz
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = './test_sql/'
 TEST_DATA_FOLDER = './test_data/'
@@ -59,7 +59,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_01_create_user_external_account_api_ok_and_duplicate(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
         uea_json = {
@@ -95,7 +95,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_02_create_user_external_account_api_with_defaults(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.CREATED
         uea_json = {
@@ -139,7 +139,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_03_create_user_external_account_api_user_not_exists(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -159,7 +159,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_04_create_user_external_account_api_ext_sys_not_exists(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -178,7 +178,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_05_create_user_external_account_api_bad_user_uuid(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -199,7 +199,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_06_create_user_external_account_api_bad_ext_sys_uuid(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -220,7 +220,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_07_create_user_external_account_api_bad_created_date(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -242,7 +242,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_08_create_user_external_account_api_bad_status(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -263,7 +263,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_09_create_user_external_account_api_missing_params(self):
-        from api.user_external_account import create_user_external_account_api
+        from api.endpoints.user_external_account import create_user_external_account_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         uea_json = {
@@ -282,7 +282,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_10_get_or_create_user_external_account_get(self):
-        from api.user_external_account import get_or_create_user_external_account
+        from api.endpoints.user_external_account import get_or_create_user_external_account
 
         external_system_id = 'e056e0bf-8d24-487e-a57b-4e812b40c4d8'
         user_id = '851f7b34-f76c-49de-a382-7e4089b744e2'
@@ -293,7 +293,7 @@ class TestUserExternalAccount(TestCase):
 
 
     def test_11_get_or_create_user_external_account_create(self):
-        from api.user_external_account import get_or_create_user_external_account
+        from api.endpoints.user_external_account import get_or_create_user_external_account
 
         external_system_id = 'e056e0bf-8d24-487e-a57b-4e812b40c4d8'
         user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'

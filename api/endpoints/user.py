@@ -21,11 +21,11 @@ import uuid
 from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
-from api.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
-from api.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
+from api.endpoints.common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
+from api.endpoints.common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
     now_with_tz, get_start_time, get_elapsed_ms
-from api.entity_update import EntityUpdate
+from api.endpoints.common.entity_update import EntityUpdate
 
 
 BASE_USER_SELECT_SQL = '''

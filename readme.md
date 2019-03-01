@@ -1,5 +1,4 @@
-# citsci-api
-
+# thiscovery-core
 ## Overview
 
 This repository contains . 
