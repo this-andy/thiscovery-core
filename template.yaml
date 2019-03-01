@@ -311,6 +311,12 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyuuid.Arn}/invocations
               responses: {}
+            patch:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${patchuser.Arn}/invocations
+              responses: {}
           /v1/user:
             get:
               x-amazon-apigateway-integration:
@@ -323,6 +329,27 @@ Resources:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserapi.Arn}/invocations
+              responses: {}
+          /v1/project:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${listprojects.Arn}/invocations
+              responses: {}
+          /v1/project/{id}:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectbyuuid.Arn}/invocations
+              responses: {}
+          /v1/project-user-status:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectstatuses.Arn}/invocations
               responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
@@ -413,7 +440,7 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-createuserapi
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: create_user
+        - ResourceName: create-user
       CodeUri: api/endpoints
       Handler: user.create_user_api
       Runtime: python3.6
@@ -446,7 +473,167 @@ Resources:
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
-      StackeryName: create_user
+      StackeryName: create-user
+  patchuser:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-patchuser
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: patch-user-api
+      CodeUri: api/endpoints
+      Handler: user.patch_user_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPATCHv1userid:
+          Type: Api
+          Properties:
+            Path: /v1/user/{id}
+            Method: PATCH
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+    Metadata:
+      StackeryName: patch-user-api
+  listprojects:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-listprojects
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: list-projects
+      CodeUri: api/endpoints
+      Handler: api/project.list_projects_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1project:
+          Type: Api
+          Properties:
+            Path: /v1/project
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: list-projects
+  getprojectbyuuid:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-getprojectbyuuid
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: get-project-by-uuid
+      CodeUri: api/endpoints
+      Handler: api/project.get_project_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1projectid:
+          Type: Api
+          Properties:
+            Path: /v1/project/{id}
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: get-project-by-uuid
+  getprojectstatuses:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-getprojectstatuses
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: get-project-statuses
+      CodeUri: api/endpoints
+      Handler: api/project.get_project_status_for_user_api
+      Runtime: python3.6
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1projectuserstatus:
+          Type: Api
+          Properties:
+            Path: /v1/project-user-status
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref TestDatabase
+          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
+          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: get-project-statuses
 Parameters:
   StackTagName:
     Type: String
