@@ -110,6 +110,23 @@ def get_elapsed_ms(start_time):
 
 # endregion
 
+DEFAULT_AWS_REGION = 'eu-west-1'
+
+def get_aws_region():
+    try:
+        region = os.environ['AWS_REGION']
+    except:
+        region = DEFAULT_AWS_REGION
+    return region
+
+
+def get_aws_secrets_namespace():
+    try:
+        secrets_namespace = os.environ['SECRETS_NAMESPACE']
+    except:
+        secrets_namespace = '/dev/'
+    return secrets_namespace
+
 
 # region Validation methods
 
@@ -208,7 +225,7 @@ def get_local_secret(secret_name):
 
 
 def get_secret(secret_name):
-    if running_on_aws():
+    if True or running_on_aws():
         return get_aws_secret(secret_name)
     else:
         return get_local_secret(secret_name)
@@ -216,9 +233,13 @@ def get_secret(secret_name):
 
 def get_aws_secret(secret_name):
     logger = get_logger()
-    secret_name = "database-connection"
-    endpoint_url = "https://secretsmanager.eu-west-2.amazonaws.com"
-    region_name = "eu-west-2"
+    # need to prepend secret name with namespace...
+    namespace = get_aws_secrets_namespace()
+    if namespace is not None:
+        secret_name = namespace + secret_name
+
+    region = get_aws_region()
+    endpoint_url = "https://secretsmanager." + region + ".amazonaws.com"
 
     logger.info('get_aws_secret: ' + secret_name)
 
@@ -226,11 +247,11 @@ def get_aws_secret(secret_name):
     # logger.info('get_aws_secret:session created')
     client = session.client(
         service_name='secretsmanager',
-        region_name=region_name,
+        region_name=region,
         endpoint_url=endpoint_url
     )
 
-    secret= {"No": "secrets"}
+    secret = None
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret_name)
