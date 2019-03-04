@@ -351,14 +351,14 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectstatuses.Arn}/invocations
               responses: {}
-          v1/userexternalaccount:
+          /v1/userexternalaccount:
             post:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserexternalaccount.Arn}/invocations
               responses: {}
-          v1/userproject:
+          /v1/userproject:
             get:
               x-amazon-apigateway-integration:
                 httpMethod: POST
@@ -371,7 +371,7 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserproject.Arn}/invocations
               responses: {}
-          v1/usertask:
+          /v1/usertask:
             get:
               x-amazon-apigateway-integration:
                 httpMethod: POST
@@ -691,13 +691,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIPOSTv1userexternalaccount:
-          Type: Api
-          Properties:
-            Path: v1/userexternalaccount
-            Method: POST
-            RestApiId: !Ref CoreAPI
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -705,6 +698,13 @@ Resources:
           DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
           DB_PORT: !GetAtt TestDatabase.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+      Events:
+        CoreAPIPOSTv1userexternalaccount:
+          Type: Api
+          Properties:
+            Path: /v1/userexternalaccount
+            Method: POST
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: create-user-external-account
   listuserprojects:
@@ -731,13 +731,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIGETv1userproject:
-          Type: Api
-          Properties:
-            Path: v1/userproject
-            Method: GET
-            RestApiId: !Ref CoreAPI
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -745,6 +738,13 @@ Resources:
           DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
           DB_PORT: !GetAtt TestDatabase.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+      Events:
+        CoreAPIGETv1userproject:
+          Type: Api
+          Properties:
+            Path: /v1/userproject
+            Method: GET
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: list-user-projects
   createuserproject:
@@ -771,13 +771,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIPOSTv1userproject:
-          Type: Api
-          Properties:
-            Path: v1/userproject
-            Method: POST
-            RestApiId: !Ref CoreAPI
       Environment:
         Variables:
           DB_ID: !Ref TestDatabase
@@ -785,6 +778,13 @@ Resources:
           DB_PORT: !GetAtt TestDatabase.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        CoreAPIPOSTv1userproject:
+          Type: Api
+          Properties:
+            Path: /v1/userproject
+            Method: POST
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: create-user-project
   listusertasks:
@@ -811,13 +811,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIGETv1usertask:
-          Type: Api
-          Properties:
-            Path: v1/usertask
-            Method: GET
-            RestApiId: !Ref CoreAPI
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -825,6 +818,13 @@ Resources:
           DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
           DB_PORT: !GetAtt TestDatabase.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+      Events:
+        CoreAPIGETv1usertask:
+          Type: Api
+          Properties:
+            Path: /v1/usertask
+            Method: GET
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: list-user-tasks
   createusertask:
@@ -851,13 +851,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIPOSTv1usertask:
-          Type: Api
-          Properties:
-            Path: v1/usertask
-            Method: POST
-            RestApiId: !Ref CoreAPI
       Environment:
         Variables:
           DB_ID: !Ref TestDatabase
@@ -865,6 +858,13 @@ Resources:
           DB_PORT: !GetAtt TestDatabase.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        CoreAPIPOSTv1usertask:
+          Type: Api
+          Properties:
+            Path: /v1/usertask
+            Method: POST
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: create-user-task
 Parameters:
