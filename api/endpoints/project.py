@@ -19,9 +19,14 @@
 import json
 from http import HTTPStatus
 
-from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
-from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
+print ('name:' + __name__)
 
+if 'api.endpoints' in __name__:
+    from .common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+    from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
+else:
+    from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
