@@ -24,8 +24,8 @@ from unittest import TestCase
 from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
 from api.common.utilities import new_correlation_id
 
-TEST_SQL_FOLDER = './test_sql/'
-TEST_DATA_FOLDER = './test_data/'
+TEST_SQL_FOLDER = '../test_sql/'
+TEST_DATA_FOLDER = '../test_data/'
 
 
 class ProjectTaskTestResult:

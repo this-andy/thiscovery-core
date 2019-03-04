@@ -21,17 +21,20 @@ import uuid
 from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
-# from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
-# from .common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
-#     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-#     now_with_tz, get_start_time, get_elapsed_ms
-# from .common.entity_update import EntityUpdate
 
-from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
-from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
-    PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-    now_with_tz, get_start_time, get_elapsed_ms
-from common.entity_update import EntityUpdate
+if 'api.endpoints' in __name__:
+    from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
+    from .common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
+        PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
+        now_with_tz, get_start_time, get_elapsed_ms
+    from .common.entity_update import EntityUpdate
+else:
+    from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
+    from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
+        PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
+        now_with_tz, get_start_time, get_elapsed_ms
+    from common.entity_update import EntityUpdate
+
 
 BASE_USER_SELECT_SQL = '''
   SELECT 

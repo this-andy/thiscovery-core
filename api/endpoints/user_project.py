@@ -20,11 +20,16 @@ import uuid
 import json
 from http import HTTPStatus
 
-from common.pg_utilities import execute_query, execute_non_query
-from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-    validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
-
-from user import get_user_by_id
+if 'api.endpoints' in __name__:
+    from .common.pg_utilities import execute_query, execute_non_query
+    from .common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+    from .user import get_user_by_id
+else:
+    from common.pg_utilities import execute_query, execute_non_query
+    from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+    from user import get_user_by_id
 
 
 STATUS_CHOICES = (
