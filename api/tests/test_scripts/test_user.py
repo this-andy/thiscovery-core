@@ -24,36 +24,44 @@ from dateutil import parser
 from datetime import timedelta
 import testing.postgresql
 from unittest import TestCase
-from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 10
 
+TEST_ON_AWS = True  # set to False for local testing
+
 class TestUser(TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.postgresql = testing.postgresql.Postgresql(port=7654)
+        if not TEST_ON_AWS:
+            self.postgresql = testing.postgresql.Postgresql(port=7654)
 
-        # setup environment variable for get_connection to use
-        os.environ["TEST_DSN"] = str(self.postgresql.dsn())
+            # setup environment variable for get_connection to use
+            os.environ["TEST_DSN"] = str(self.postgresql.dsn())
 
-        self.conn = _get_connection()
-        self.cursor = self.conn.cursor()
+            self.conn = _get_connection()
+            self.cursor = self.conn.cursor()
 
-        correlation_id = new_correlation_id()
-        run_sql_script_file(TEST_SQL_FOLDER + 'entity_update_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
-        insert_data_from_csv(self.cursor, self.conn, TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
+            correlation_id = new_correlation_id()
+            run_sql_script_file(TEST_SQL_FOLDER + 'entity_update_create.sql', correlation_id)
+            run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
+
+        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
 
 
     @classmethod
     def tearDownClass(self):
-        self.conn.close()
-        os.unsetenv("TEST_DSN")
-        self.postgresql.stop()
+        if TEST_ON_AWS:
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_entityupdate')
+        else:
+            self.conn.close()
+            os.unsetenv("TEST_DSN")
+            self.postgresql.stop()
 
 
     def test_get_user_by_uuid_api_exists(self):
@@ -62,7 +70,7 @@ class TestUser(TestCase):
         event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.OK
-        expected_body = {
+        expected_body_bst = {
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
@@ -74,6 +82,21 @@ class TestUser(TestCase):
             "auth0_id": None,
             "status": None
         }
+
+        expected_body_gmt = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T12:10:56.798192+00:00",
+            "modified": "2018-08-17T12:10:56.833885+00:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body = expected_body_gmt
 
         result = get_user_by_id_api(event, None)
         result_status = result['statusCode']
@@ -123,7 +146,8 @@ class TestUser(TestCase):
         event = {'queryStringParameters': querystring_parameters}
 
         expected_status = HTTPStatus.OK
-        expected_body = {
+
+        expected_body_bst = {
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
@@ -135,6 +159,21 @@ class TestUser(TestCase):
             "auth0_id": None,
             "status": None
         }
+
+        expected_body_gmt = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T12:10:56.798192+00:00",
+            "modified": "2018-08-17T12:10:56.833885+00:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body = expected_body_gmt
 
         result = get_user_by_email_api(event, None)
         result_status = result['statusCode']
@@ -190,7 +229,7 @@ class TestUser(TestCase):
         path_parameters = {'id': user_id}
         event = {'pathParameters': path_parameters}
 
-        expected_body = {
+        expected_body_bst = {
             "id": user_id,
             "created": "2018-08-17T13:10:56.798192+01:00",
             "email": "simon.smith@dancingbear.com",
@@ -201,6 +240,20 @@ class TestUser(TestCase):
             "auth0_id": "new-auth0-id",
             "status": "singing"
         }
+
+        expected_body_gmt = {
+            "id": user_id,
+            "created": "2018-08-17T12:10:56.798192+00:00",
+            "email": "simon.smith@dancingbear.com",
+            "email_address_verified": True,
+            "title": "Sir",
+            "first_name": "simon",
+            "last_name": "smith",
+            "auth0_id": "new-auth0-id",
+            "status": "singing"
+        }
+
+        expected_body = expected_body_gmt
 
         result = get_user_by_id_api(event, None)
         result_json = json.loads(result['body'])

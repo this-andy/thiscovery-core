@@ -21,45 +21,61 @@ import json
 from http import HTTPStatus
 import testing.postgresql
 from unittest import TestCase
-from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv
+from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 
+TEST_ON_AWS = True  # set to False for local testing
 
 class TestProject(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = None
-        cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
-        # setup environment variable for get_connection to use
-        os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
+        if not TEST_ON_AWS:
+            cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
-        cls.conn = _get_connection()
-        cls.cursor = cls.conn.cursor()
+            # setup environment variable for get_connection to use
+            os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
 
-        correlation_id = new_correlation_id()
-        run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
-        run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
+            cls.conn = _get_connection()
+            cls.cursor = cls.conn.cursor()
 
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        insert_data_from_csv(cls.cursor, cls.conn, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
+            correlation_id = new_correlation_id()
+            run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
+            run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
+            run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
+            run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
+            run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
+
+        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
+        insert_data_from_csv(TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
+        insert_data_from_csv(TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
+        insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
+        insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
+
+        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
+        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
+        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
+        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
+        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
 
 
     @classmethod
     def tearDownClass(cls):
-        cls.conn.close()
-        os.unsetenv("TEST_DSN")
-        cls.postgresql.stop()
+        if TEST_ON_AWS:
+            truncate_table('public.projects_projecttask')
+            truncate_table('public.projects_externalsystem')
+            truncate_table('public.projects_tasktype')
+            truncate_table('public.projects_project')
+            truncate_table('public.projects_usergroup')
+        else:
+            cls.conn.close()
+            os.unsetenv("TEST_DSN")
+            cls.postgresql.stop()
 
 
     def test_1_list_projects_api(self):
@@ -98,7 +114,38 @@ class TestProject(TestCase):
                   "external_task_id": "8e368360-a708-4336-8feb-a8903fde0210", "status": "complete"}]
              }]
 
-        expected_body = expected_body_bst
+        expected_body_gmt = [
+            {"id": "3ffc498f-8add-4448-b452-4fc7f463aa21", "name": "CTG Monitoring", "short_name": "CTG Monitoring",
+             "created": "2018-08-17T12:10:56.084487+00:00", "modified": "2018-08-17T12:10:56.119612+00:00", "status": "complete",
+             "visibility":"public",
+             "tasks": [
+                 {"id": "c92c8289-3590-4a85-b699-98bc8171ccde", "description": "Systematic review for CTG monitoring",
+                  "created": "2018-08-17T12:10:56.98669+00:00", "modified": "2018-08-17T12:10:57.023286+00:00",
+                  "earliest_start_date": "2018-09-15T12:00:00+00:00", "closing_date": "2018-08-17T12:00:00+00:00", "signup_status": "not-open",
+                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "visibility": "public", "external_system_id": None,
+                  "external_task_id": "1234", "status": "active"},
+                 {"id": "4ee70544-6797-4e21-8cec-5653c8d5b234", "description": "Midwife assessment for CTG monitoring",
+                  "created": "2018-08-17T12:10:57.074321+00:00", "modified": "2018-08-17T12:10:57.111495+00:00",
+                  "earliest_start_date": None, "closing_date": "2018-08-17T09:30:00+00:00", "signup_status": "open",
+                  "task_type_id": "d92d9935-cb9e-4422-9dbb-65c3423599b1", "visibility": "public", "external_system_id": None,
+                  "external_task_id": None, "status": "active"}]},
+            {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
+             "created": "2018-08-17T12:10:56.173198+00:00", "modified": "2018-08-17T12:10:56.209544+00:00", "status": "active",
+             "visibility":"private",
+             "tasks": [
+                 {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag",
+                  "created": "2018-08-17T12:10:57.162016+00:00", "modified": "2018-08-17T12:10:57.198223+00:00",
+                  "earliest_start_date": "2018-11-12T20:00:00+00:00", "closing_date": None, "signup_status": "invitation",
+                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "visibility": "private", "external_system_id": None,
+                  "external_task_id": "abcd", "status": "active"},
+                 {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment",
+                  "created": "2018-08-17T12:10:57.275273+00:00", "modified": "2018-08-17T12:10:57.311031+00:00",
+                  "earliest_start_date": None, "closing_date": None, "signup_status": "closed",
+                  "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "visibility": "private", "external_system_id": None,
+                  "external_task_id": "8e368360-a708-4336-8feb-a8903fde0210", "status": "complete"}]
+             }]
+
+        expected_body = expected_body_gmt
         result = list_projects_api(None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -138,7 +185,25 @@ class TestProject(TestCase):
              ]}
         ]
 
-        expected_body = expected_body_bst
+        expected_body_gmt = [
+            {"id": "0c137d9d-e087-448b-ba8d-24141b6ceecd", "name": "Ambulance equipment", "short_name": "Ambulance equipment",
+             "created": "2018-08-17T12:10:56.173198+00:00", "modified": "2018-08-17T12:10:56.209544+00:00", "status": "active",
+             "visibility":"private",
+             "tasks": [
+                 {"id": "6f1c63e2-fbe8-4d24-8680-c68a30b407e3", "description": "Systematic review for ambulance bag",
+                  "created": "2018-08-17T12:10:57.162016+00:00", "modified": "2018-08-17T12:10:57.198223+00:00",
+                  "earliest_start_date": "2018-11-12T20:00:00+00:00", "closing_date": None, "signup_status": "invitation",
+                  "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6", "visibility": "private", "external_system_id": None,
+                  "external_task_id": "abcd", "status": "active"},
+                 {"id": "f3316529-e073-435e-b5c7-053da4127e96", "description": "Photos of ambulance equipment",
+                  "created": "2018-08-17T12:10:57.275273+00:00", "modified": "2018-08-17T12:10:57.311031+00:00",
+                  "earliest_start_date": None, "closing_date": None, "signup_status": "closed",
+                  "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f", "visibility": "private", "external_system_id": None,
+                  "external_task_id": "8e368360-a708-4336-8feb-a8903fde0210", "status": "complete"}
+             ]}
+        ]
+
+        expected_body = expected_body_gmt
         result = get_project_api(event, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
