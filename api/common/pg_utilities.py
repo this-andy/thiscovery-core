@@ -167,12 +167,30 @@ def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     execute_non_query(sql, None, correlation_id)
 
 
-def insert_data_from_csv(cursor, conn, source_file, destination_table, header_row=False):
+def insert_data_from_csv_old(cursor, conn, source_file, destination_table, header_row=False):
+    if conn is None:
+        conn = _get_connection()
+
     with open(source_file, 'r') as f:
         if header_row:
             next(f)  # Skip the header row.
         cursor.copy_from(f, destination_table, sep=',', null='')
     conn.commit()
+
+
+def insert_data_from_csv(source_file, destination_table, header_row=False):
+    conn = _get_connection()
+
+    with open(source_file, 'r') as f:
+        if header_row:
+            next(f)  # Skip the header row.
+        conn.cursor().copy_from(f, destination_table, sep=',', null='')
+    conn.commit()
+
+
+def truncate_table(table_name):
+    sql = 'TRUNCATE TABLE ' + table_name + ' CASCADE'
+    execute_non_query(sql, None)
 
 
 def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_correlation_id()):
