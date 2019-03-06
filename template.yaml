@@ -826,7 +826,7 @@ Resources:
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: false
-      PubliclyAccessible: false
+      PubliclyAccessible: true
       StorageType: gp2
       Tags:
         - Key: Name
