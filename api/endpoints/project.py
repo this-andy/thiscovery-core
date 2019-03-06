@@ -175,6 +175,7 @@ def get_project_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+    a = correlation_id
 
     try:
         correlation_id = get_correlation_id(event)
