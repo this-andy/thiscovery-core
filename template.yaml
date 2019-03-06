@@ -1,39 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  TestDatabase:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      AllocatedStorage: '6'
-      AllowMajorVersionUpgrade: true
-      AutoMinorVersionUpgrade: true
-      BackupRetentionPeriod: '0'
-      CopyTagsToSnapshot: true
-      DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
-      DBSubnetGroupName: !Ref TestDatabasePublicSubnetGroup
-      Engine: postgres
-      EngineVersion: '10.3'
-      MasterUsername: root
-      MasterUserPassword: !Ref EnvConfigdbpasswordAsString
-      MultiAZ: false
-      PubliclyAccessible: true
-      StorageEncrypted: !Ref EnvConfigencryptionAsString
-      StorageType: gp2
-      Tags:
-        - Key: Name
-          Value: !Sub
-            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName}
-            - ResourceName: Test-db
-      VPCSecurityGroups:
-        - !Ref TestDatabaseSecurityGroup
-    Metadata:
-      StackeryName: Test-db
-  TestDatabasePrivateSubnetGroup:
+  ThiscoveryDBPrivateSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupDescription: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Private Subnets
-        - ResourceName: TestDatabase
+        - ResourceName: ThiscoveryDB
       SubnetIds:
         - !Ref VirtualNetworkPrivateSubnet1
         - !Ref VirtualNetworkPrivateSubnet2
@@ -41,36 +14,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Private Subnets
-            - ResourceName: TestDatabase
-  TestDatabasePublicSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Public Subnets
-        - ResourceName: TestDatabase
-      SubnetIds:
-        - !Ref VirtualNetworkPublicSubnet1
-        - !Ref VirtualNetworkPublicSubnet2
-      Tags:
-        - Key: Name
-          Value: !Sub
-            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Public Subnets
-            - ResourceName: TestDatabase
-  TestDatabaseSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Database Security Group
-      SecurityGroupIngress:
-        CidrIp: 0.0.0.0/0
-        FromPort: 5432
-        IpProtocol: tcp
-        ToPort: 5432
-      Tags:
-        - Key: Name
-          Value: !Sub
-            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Security Group
-            - ResourceName: Test-db
-      VpcId: !Ref VirtualNetwork
+            - ResourceName: ThiscoveryDB
   VirtualNetwork:
     Type: AWS::EC2::VPC
     Properties:
@@ -79,10 +23,10 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName}
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       EnableDnsHostnames: true
     Metadata:
-      StackeryName: Test-vpc
+      StackeryName: Thiscovery VPC
   VirtualNetworkPrivateSubnet1:
     Metadata:
       StackeryManaged: true
@@ -101,7 +45,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Private Subnet 1
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPrivateSubnet2:
     Metadata:
@@ -121,7 +65,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Private Subnet 2
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPublicSubnet1:
     Metadata:
@@ -142,7 +86,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Public Subnet 1
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPublicSubnet2:
     Metadata:
@@ -163,7 +107,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Public Subnet 2
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPrivateSubnet1NatGatewayEIP:
     Metadata:
@@ -187,7 +131,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Private Subnet 1 Route Table
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPrivateSubnet1NatGatewayRoute:
     Metadata:
@@ -226,7 +170,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Private Subnet 2 Route Table
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPrivateSubnet2NatGatewayRoute:
     Metadata:
@@ -252,7 +196,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Public Subnets Internet Gateway
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
   VirtualNetworkPublicSubnetsInternetGatewayAttachment:
     Metadata:
       StackeryManaged: true
@@ -269,7 +213,7 @@ Resources:
         - Key: Name
           Value: !Sub
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Virtual Network ${ResourceName} Public Subnets Route Table
-            - ResourceName: Test-vpc
+            - ResourceName: Thiscovery VPC
       VpcId: !Ref VirtualNetwork
   VirtualNetworkPublicSubnetsInternetGatewayRoute:
     Metadata:
@@ -414,10 +358,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
       Events:
         CoreAPIGETv1userid:
           Type: Api
@@ -461,10 +405,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
     Metadata:
       StackeryName: get-user-by-email
   createuserapi:
@@ -500,10 +444,10 @@ Resources:
             RestApiId: !Ref CoreAPI
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: create-user
@@ -541,10 +485,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
     Metadata:
       StackeryName: patch-user-api
   listprojects:
@@ -580,10 +524,10 @@ Resources:
             RestApiId: !Ref CoreAPI
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: list-projects
@@ -620,10 +564,10 @@ Resources:
             RestApiId: !Ref CoreAPI
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: get-project-by-uuid
@@ -660,10 +604,10 @@ Resources:
             RestApiId: !Ref CoreAPI
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: get-project-statuses
@@ -694,10 +638,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
       Events:
         CoreAPIPOSTv1userexternalaccount:
           Type: Api
@@ -734,10 +678,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
       Events:
         CoreAPIGETv1userproject:
           Type: Api
@@ -773,10 +717,10 @@ Resources:
           - !Ref VirtualNetworkPrivateSubnet2
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
       Events:
         CoreAPIPOSTv1userproject:
@@ -814,10 +758,10 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
       Events:
         CoreAPIGETv1usertask:
           Type: Api
@@ -853,10 +797,10 @@ Resources:
           - !Ref VirtualNetworkPrivateSubnet2
       Environment:
         Variables:
-          DB_ID: !Ref TestDatabase
-          DB_ADDRESS: !GetAtt TestDatabase.Endpoint.Address
-          DB_PORT: !GetAtt TestDatabase.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${TestDatabase}
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
       Events:
         CoreAPIPOSTv1usertask:
@@ -867,6 +811,61 @@ Resources:
             RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: create-user-task
+  ThiscoveryDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: '6'
+      AllowMajorVersionUpgrade: true
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: '0'
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
+      DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
+      Engine: postgres
+      EngineVersion: '10.3'
+      MasterUsername: root
+      MasterUserPassword: !Ref EnvConfigdbpasswordAsString
+      MultiAZ: false
+      PubliclyAccessible: false
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName}
+            - ResourceName: Thiscovery DB
+      VPCSecurityGroups:
+        - !Ref ThiscoveryDBSecurityGroup
+    Metadata:
+      StackeryName: Thiscovery DB
+  ThiscoveryDBPublicSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Public Subnets
+        - ResourceName: ThiscoveryDB
+      SubnetIds:
+        - !Ref VirtualNetworkPublicSubnet1
+        - !Ref VirtualNetworkPublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Public Subnets
+            - ResourceName: ThiscoveryDB
+  ThiscoveryDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Database Security Group
+      SecurityGroupIngress:
+        CidrIp: 0.0.0.0/0
+        FromPort: 5432
+        IpProtocol: tcp
+        ToPort: 5432
+      Tags:
+        - Key: Name
+          Value: !Sub
+            - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Security Group
+            - ResourceName: Thiscovery DB
+      VpcId: !Ref VirtualNetwork
 Parameters:
   StackTagName:
     Type: String
@@ -877,21 +876,17 @@ Parameters:
   EnvConfigdbpasswordAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/password
-  EnvConfigdbinstancetypeAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/instance-type
-  EnvConfigencryptionAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/encryption
   EnvironmentAPIGatewayStageName:
     Type: String
     Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
+  EnvConfigdbinstancetypeAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/instance-type
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
-    EnvConfigencryptionAsString: db.encryption
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
-    Value: !GetAtt TestDatabase.Endpoint.Address
+    Value: !GetAtt ThiscoveryDB.Endpoint.Address
