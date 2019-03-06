@@ -16,12 +16,14 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import os
 from api.common.pg_utilities import execute_query, execute_non_query, run_sql_script_file
 
-VIEW_SQL_FOLDER = './database-view-sql/'
+VIEW_SQL_FOLDER = './'
 
 
 def create_all_views():
+    print (os.getcwd())
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_group_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_testgroup_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_group_users_create.sql', None)

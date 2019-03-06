@@ -124,7 +124,8 @@ def get_aws_secrets_namespace():
     try:
         secrets_namespace = os.environ['SECRETS_NAMESPACE']
     except:
-        secrets_namespace = '/dev/'
+        # secrets_namespace = '/dev/'
+        secrets_namespace = '/staging/'
     return secrets_namespace
 
 
@@ -285,9 +286,9 @@ def get_aws_secret(secret_name):
 
 
 if __name__ == "__main__":
-    # result = get_aws_secret('database-connection')
+    result = get_aws_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
-    result = now_with_tz()
-    result = str(result)
+    # result = now_with_tz()
+    # result = str(result)
     print(result)
 
