@@ -882,10 +882,14 @@ Parameters:
   EnvConfigdbinstancetypeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/instance-type
+  EnvConfigmultiAZAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/multiAZ
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
+    EnvConfigmultiAZAsString: db.multiAZ
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
