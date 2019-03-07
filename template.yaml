@@ -825,7 +825,7 @@ Resources:
       EngineVersion: '10.3'
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
-      MultiAZ: false
+      MultiAZ: !Ref EnvConfigmultiAZAsString
       PubliclyAccessible: true
       StorageType: gp2
       Tags:
