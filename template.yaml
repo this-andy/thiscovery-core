@@ -241,7 +241,7 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub
-        - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
+        - ${ResourceName} Env ${EnvironmentTagName}
         - ResourceName: Core Thiscovery API
       StageName: !Ref EnvironmentAPIGatewayStageName
       DefinitionBody:
