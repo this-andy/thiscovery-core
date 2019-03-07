@@ -110,24 +110,6 @@ def get_elapsed_ms(start_time):
 
 # endregion
 
-DEFAULT_AWS_REGION = 'eu-west-1'
-
-def get_aws_region():
-    try:
-        region = os.environ['AWS_REGION']
-    except:
-        region = DEFAULT_AWS_REGION
-    return region
-
-
-def get_aws_secrets_namespace():
-    try:
-        secrets_namespace = os.environ['SECRETS_NAMESPACE']
-    except:
-        # secrets_namespace = '/dev/'
-        secrets_namespace = '/staging/'
-    return secrets_namespace
-
 
 # region Validation methods
 
@@ -217,6 +199,26 @@ except FileNotFoundError:
         pass
 
 
+DEFAULT_AWS_REGION = 'eu-west-1'
+
+def get_aws_region():
+    try:
+        region = os.environ['AWS_REGION']
+    except:
+        region = DEFAULT_AWS_REGION
+    return region
+
+
+def get_aws_secrets_namespace():
+    try:
+        secrets_namespace = os.environ['SECRETS_NAMESPACE']
+    except:
+        # secrets_namespace = '/dev/'
+        # secrets_namespace = '/staging/'
+        secrets_namespace = '/prod/'
+    return secrets_namespace
+
+
 def get_local_secret(secret_name):
     try:
         return secrets[secret_name]
@@ -238,6 +240,9 @@ def get_aws_secret(secret_name):
     namespace = get_aws_secrets_namespace()
     if namespace is not None:
         secret_name = namespace + secret_name
+        # temporary hack because of AWS secrets clash
+        if namespace == '/prod/':
+            secret_name += '-p'
 
     region = get_aws_region()
     endpoint_url = "https://secretsmanager." + region + ".amazonaws.com"
