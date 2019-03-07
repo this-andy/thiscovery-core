@@ -243,6 +243,7 @@ Resources:
       Name: !Sub
         - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
         - ResourceName: Core Thiscovery API
+      Description: ${EnvironmentTagName}
       StageName: !Ref EnvironmentAPIGatewayStageName
       DefinitionBody:
         swagger: '2.0'
