@@ -214,8 +214,8 @@ def get_aws_secrets_namespace():
         secrets_namespace = os.environ['SECRETS_NAMESPACE']
     except:
         # secrets_namespace = '/dev/'
-        # secrets_namespace = '/staging/'
-        secrets_namespace = '/prod/'
+        secrets_namespace = '/staging/'
+        # secrets_namespace = '/prod/'
     return secrets_namespace
 
 

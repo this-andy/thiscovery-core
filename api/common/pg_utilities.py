@@ -167,15 +167,25 @@ def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     execute_non_query(sql, None, correlation_id)
 
 
-def insert_data_from_csv(source_file, destination_table, header_row=False):
+def insert_data_from_csv(source_file, destination_table, separator= ',', header_row=False):
     conn = _get_connection()
 
     with open(source_file, 'r') as f:
         if header_row:
             next(f)  # Skip the header row.
-        conn.cursor().copy_from(f, destination_table, sep=',', null='')
+        conn.cursor().copy_from(f, destination_table, sep=separator, null='')
     conn.commit()
     conn.close()
+
+
+def populate_table_from_csv(source_folder, destination_table_name, separator= ','):
+    if separator == ',':
+        extn = '.csv'
+    else:
+        extn = '.tsv'
+    source_file = source_folder + destination_table_name + extn
+    destination_table = 'public.' + destination_table_name
+    insert_data_from_csv(source_file, destination_table, separator)
 
 
 def truncate_table(table_name):

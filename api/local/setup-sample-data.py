@@ -16,7 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from api.common.pg_utilities import insert_data_from_csv, truncate_table
+from api.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
 
 TEST_DATA_FOLDER = '../tests/test_data/'
 
@@ -35,6 +35,23 @@ def populate_database():
     insert_data_from_csv(TEST_DATA_FOLDER + 'usertask_PSFU.csv', 'public.projects_usertask')
 
 
+def populate_database_london_dev():
+    data_folder = '../local/london_data/'
+    populate_table_from_csv(data_folder,'projects_usergroup')
+    populate_table_from_csv(data_folder,'projects_project')
+    populate_table_from_csv(data_folder,'projects_tasktype')
+    populate_table_from_csv(data_folder,'projects_externalsystem')
+    populate_table_from_csv(data_folder,'projects_projecttask')
+    populate_table_from_csv(data_folder,'projects_projectgroupvisibility')
+    populate_table_from_csv(data_folder,'projects_projecttaskgroupvisibility')
+    populate_table_from_csv(data_folder,'projects_user')
+    populate_table_from_csv(data_folder,'projects_usergroupmembership')
+    populate_table_from_csv(data_folder,'projects_userproject')
+    populate_table_from_csv(data_folder,'projects_usertask')
+    populate_table_from_csv(data_folder,'projects_userexternalaccount')
+    populate_table_from_csv(data_folder,'projects_entityupdate', '\t')
+
+
 def clear_database():
     truncate_table('public.projects_usergroupmembership')
     truncate_table('public.projects_usergroup')
@@ -48,10 +65,11 @@ def clear_database():
     truncate_table('public.projects_projectgroupvisibility')
     truncate_table('public.projects_project')
     truncate_table('public.projects_externalsystem')
-
     truncate_table('public.projects_entityupdate')
 
 
 if __name__ == "__main__":
-    populate_database()
+    # populate_database()
     # clear_database()
+    # populate_database_london_dev()
+    pass
