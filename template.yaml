@@ -241,21 +241,30 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub
-        - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
+        - ${ResourceName} Env ${EnvironmentTagName}
         - ResourceName: Core Thiscovery API
       StageName: !Ref EnvironmentAPIGatewayStageName
       DefinitionBody:
         swagger: '2.0'
         info: {}
+        securityDefinitions:
+          api_key:
+            type: apiKey
+            name: x-api-key
+            in: header
         paths:
           /v1/user/{id}:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyuuid.Arn}/invocations
               responses: {}
             patch:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -263,12 +272,16 @@ Resources:
               responses: {}
           /v1/user:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyemail.Arn}/invocations
               responses: {}
             post:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -276,6 +289,8 @@ Resources:
               responses: {}
           /v1/project:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -283,6 +298,8 @@ Resources:
               responses: {}
           /v1/project/{id}:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -290,6 +307,8 @@ Resources:
               responses: {}
           /v1/project-user-status:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -297,6 +316,8 @@ Resources:
               responses: {}
           /v1/userexternalaccount:
             post:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -304,12 +325,16 @@ Resources:
               responses: {}
           /v1/userproject:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${listuserprojects.Arn}/invocations
               responses: {}
             post:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -317,12 +342,16 @@ Resources:
               responses: {}
           /v1/usertask:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${listusertasks.Arn}/invocations
               responses: {}
             post:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -825,7 +854,7 @@ Resources:
       EngineVersion: '10.3'
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
-      MultiAZ: false
+      MultiAZ: !Ref EnvConfigmultiAZAsString
       PubliclyAccessible: true
       StorageType: gp2
       Tags:
@@ -882,10 +911,14 @@ Parameters:
   EnvConfigdbinstancetypeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/instance-type
+  EnvConfigmultiAZAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/multiAZ
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
+    EnvConfigmultiAZAsString: db.multiAZ
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
