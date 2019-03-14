@@ -434,7 +434,7 @@ Resources:
         Timer:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: rate(2 minutes)
           Metadata:
             StackeryName: Heartbeat
       Environment:
