@@ -291,7 +291,8 @@ def get_aws_secret(secret_name):
 
 
 def triggered_by_heartbeat(event):
-    return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
+    # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
+    return ('heartbeat' in event)
 
 
 if __name__ == "__main__":
