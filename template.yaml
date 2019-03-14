@@ -434,7 +434,9 @@ Resources:
         Timer:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: rate(3 minutes)
+            EventPattern:
+              heartbeat: 'Y'
           Metadata:
             StackeryName: Heartbeat
       Environment:
