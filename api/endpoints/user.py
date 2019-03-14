@@ -118,6 +118,7 @@ def get_user_by_email_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+    logger.info('debugging', extra={'event': event})
 
     if triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
