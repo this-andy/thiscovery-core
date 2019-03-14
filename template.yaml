@@ -398,6 +398,12 @@ Resources:
             Path: /v1/user/{id}
             Method: GET
             RestApiId: !Ref CoreAPI
+        Timer5:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-get-user-by-uuid
     Metadata:
       StackeryName: get-user-by-uuid
   getuserbyemail:
@@ -434,9 +440,9 @@ Resources:
         Timer:
           Type: Schedule
           Properties:
-            Schedule: rate(2 minutes)
+            Schedule: rate(5 minutes)
           Metadata:
-            StackeryName: Heartbeat
+            StackeryName: timer-get-user-by-email
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -477,6 +483,12 @@ Resources:
             Path: /v1/user
             Method: POST
             RestApiId: !Ref CoreAPI
+        Timer6:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-create-user
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
@@ -517,6 +529,12 @@ Resources:
             Path: /v1/user/{id}
             Method: PATCH
             RestApiId: !Ref CoreAPI
+        Timer4:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-patch-user-api
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -724,6 +742,12 @@ Resources:
             Path: /v1/userproject
             Method: GET
             RestApiId: !Ref CoreAPI
+        Timer2:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-list-user-projects
     Metadata:
       StackeryName: list-user-projects
   createuserproject:
@@ -844,6 +868,12 @@ Resources:
             Path: /v1/usertask
             Method: POST
             RestApiId: !Ref CoreAPI
+        Timer3:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-create-user-task
     Metadata:
       StackeryName: create-user-task
   ThiscoveryDB:
