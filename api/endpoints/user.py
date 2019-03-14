@@ -109,13 +109,21 @@ def get_user_by_email(user_email, correlation_id):
 
     return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
 
+def triggered_by_heartbeat(event):
+    if 'detail-type' in event and event['detail-type'] == 'Scheduled Event':
+        return True
+    else:
+        return False
+
 
 def get_user_by_email_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
-    logger.info('get_user_by_email_api', extra={'event': event})
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         user_email = event['queryStringParameters']['email']
@@ -352,12 +360,11 @@ def validate_user_email(user_id, email_verification_token_to_check, correlation_
     result = execute_query(sql, (str(user_id),), correlation_id)
 
 
-
 if __name__ == "__main__":
-    # qsp = {'email': 'andy.paterson@thisinstitute.cam.ac.uk'}
-    # ev = {'queryStringParameters': qsp}
-    # result = get_user_by_email_api(ev, None)
-    # print(result)
+    qsp = {'email': 'andy.paterson@thisinstitute.cam.ac.uk'}
+    ev = {'queryStringParameters': qsp, "detail-type": "Scheduled Event"}
+    result = get_user_by_email_api(ev, None)
+    print(result)
 
     # pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
     # ev = {'pathParameters': pp}
@@ -379,17 +386,17 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    user_json = {
-        "email": "an@email.addr",
-        "title": "Mr",
-        "first_name": "Albert",
-        "last_name": "Narlcorn",
-        "status": "new"}
+    # user_json = {
+    #     "email": "an@email.addr",
+    #     "title": "Mr",
+    #     "first_name": "Albert",
+    #     "last_name": "Narlcorn",
+    #     "status": "new"}
 
     # correlation_id = None
     # print(create_user(user_json,correlation_id))
 
-    ev = {'body': json.dumps(user_json)}
-    print(create_user_api(ev, None))
+    # ev = {'body': json.dumps(user_json)}
+    # print(create_user_api(ev, None))
 
 
