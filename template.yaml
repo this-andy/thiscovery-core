@@ -431,12 +431,6 @@ Resources:
             Path: /v1/user
             Method: GET
             RestApiId: !Ref CoreAPI
-        Timer:
-          Type: Schedule
-          Properties:
-            Schedule: rate(3 minutes)
-          Metadata:
-            StackeryName: Heartbeat
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
