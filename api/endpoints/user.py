@@ -115,6 +115,8 @@ def get_user_by_email_api(event, context):
     logger = get_logger()
     correlation_id = None
 
+    logger.info('get_user_by_email_api', extra={'event': event})
+
     try:
         user_email = event['queryStringParameters']['email']
         correlation_id = get_correlation_id(event)
