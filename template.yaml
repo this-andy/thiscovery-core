@@ -402,6 +402,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(5 minutes)
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-get-user-by-uuid
     Metadata:
@@ -488,6 +489,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(5 minutes)
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-create-user
       Environment:
