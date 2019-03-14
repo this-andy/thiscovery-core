@@ -23,12 +23,14 @@ from http import HTTPStatus
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
     from .user import get_user_by_id
 else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
     from user import get_user_by_id
 
 
@@ -80,6 +82,10 @@ def list_user_projects_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         params = event['queryStringParameters']
@@ -206,6 +212,10 @@ def create_user_project_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         up_json = json.loads(event['body'])

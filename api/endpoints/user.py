@@ -26,13 +26,13 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
     from .common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat
     from .common.entity_update import EntityUpdate
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
     from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat
     from common.entity_update import EntityUpdate
 
 
@@ -75,6 +75,10 @@ def get_user_by_id_api(event, context):
     logger = get_logger()
     correlation_id = None
 
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
+
     try:
         correlation_id = get_correlation_id(event)
         user_id = event['pathParameters']['id']
@@ -108,12 +112,6 @@ def get_user_by_email(user_email, correlation_id):
     sql_where_clause = " WHERE email = %s"
 
     return execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
-
-def triggered_by_heartbeat(event):
-    if 'detail-type' in event and event['detail-type'] == 'Scheduled Event':
-        return True
-    else:
-        return False
 
 
 def get_user_by_email_api(event, context):
@@ -183,6 +181,10 @@ def patch_user_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         correlation_id = get_correlation_id(event)
@@ -323,6 +325,10 @@ def create_user_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         user_json = json.loads(event['body'])

@@ -23,14 +23,16 @@ from http import HTTPStatus
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
     from .user import get_user_by_id
     from .project import get_project_task
     from .user_project import create_user_project_if_not_exists
 else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms
+        validate_uuid, validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
     from user import get_user_by_id
     from project import get_project_task
     from user_project import create_user_project_if_not_exists
@@ -111,6 +113,10 @@ def list_user_tasks_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         params = event['queryStringParameters']
@@ -325,6 +331,10 @@ def create_user_task_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         ut_json = json.loads(event['body'])

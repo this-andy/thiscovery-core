@@ -23,10 +23,12 @@ print ('name:' + __name__)
 
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
-    from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
+    from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
 else:
     from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
-    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
+    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
@@ -129,6 +131,10 @@ def list_projects_api(event, context):
     logger = get_logger()
     correlation_id = None
 
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
+
     try:
         correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
@@ -175,7 +181,10 @@ def get_project_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
-    a = correlation_id
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         correlation_id = get_correlation_id(event)
@@ -388,6 +397,10 @@ def get_project_status_for_user_api(event, context):
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
 
     try:
         params = event['queryStringParameters']

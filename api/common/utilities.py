@@ -290,6 +290,10 @@ def get_aws_secret(secret_name):
 # endregion
 
 
+def triggered_by_heartbeat(event):
+    return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
+
+
 if __name__ == "__main__":
     result = get_aws_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
