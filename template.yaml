@@ -441,6 +441,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(5 minutes)
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-get-user-by-email
       Environment:
