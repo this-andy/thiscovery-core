@@ -536,6 +536,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: !Ref EnvConfigheartbeatintervalAsString
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-patch-user-api
       Environment:
@@ -749,6 +750,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: !Ref EnvConfigheartbeatintervalAsString
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-list-user-projects
     Metadata:
@@ -875,6 +877,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: !Ref EnvConfigheartbeatintervalAsString
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-create-user-task
     Metadata:
@@ -953,7 +956,7 @@ Parameters:
   EnvConfigmultiAZAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/multiAZ
-  EnvConfigheartbeatinterval:
+  EnvConfigheartbeatintervalAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/heartbeat-interval
 Metadata:
