@@ -893,7 +893,7 @@ Resources:
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
       Engine: postgres
-      EngineVersion: '10.3'
+      EngineVersion: '10.6'
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
