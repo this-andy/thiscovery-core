@@ -108,6 +108,10 @@ def get_elapsed_ms(start_time):
     return elapsed_ms
 
 
+def triggered_by_heartbeat(event):
+    # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
+    return ('heartbeat' in event)
+
 # endregion
 
 
@@ -241,8 +245,8 @@ def get_aws_secret(secret_name):
     if namespace is not None:
         secret_name = namespace + secret_name
         # temporary hack because of AWS secrets clash
-        if namespace == '/prod/':
-            secret_name += '-p'
+        # if namespace == '/prod/':
+        #     secret_name += '-p'
 
     region = get_aws_region()
     endpoint_url = "https://secretsmanager." + region + ".amazonaws.com"
@@ -288,11 +292,6 @@ def get_aws_secret(secret_name):
         return secret
 
 # endregion
-
-
-def triggered_by_heartbeat(event):
-    # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
-    return ('heartbeat' in event)
 
 
 if __name__ == "__main__":
