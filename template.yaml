@@ -18,7 +18,7 @@ Resources:
   VirtualNetwork:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: 10.0.0.0/16
+      CidrBlock: 10.0.0.0/16m
       Tags:
         - Key: Name
           Value: !Sub
@@ -401,7 +401,7 @@ Resources:
         Timer5:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
             Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-get-user-by-uuid
@@ -441,7 +441,7 @@ Resources:
         Timer:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
             Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-get-user-by-email
@@ -488,7 +488,7 @@ Resources:
         Timer6:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
             Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-create-user
@@ -535,7 +535,7 @@ Resources:
         Timer4:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
           Metadata:
             StackeryName: timer-patch-user-api
       Environment:
@@ -748,7 +748,7 @@ Resources:
         Timer2:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
           Metadata:
             StackeryName: timer-list-user-projects
     Metadata:
@@ -874,7 +874,7 @@ Resources:
         Timer3:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
           Metadata:
             StackeryName: timer-create-user-task
     Metadata:
@@ -955,13 +955,13 @@ Parameters:
     Default: /<EnvironmentName>/db/multiAZ
   EnvConfigheartbeatinterval:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/multiAZ
+    Default: /<EnvironmentName>/lambda/heartbeat-interval
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
-    EnvConfigheartbeatinterval: db.heartbeat-interval
+    EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
