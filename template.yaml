@@ -418,7 +418,7 @@ Resources:
       Handler: user.get_user_by_email_api
       Runtime: python3.6
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: 30
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -962,6 +962,9 @@ Parameters:
   EnvConfiglambdamemorysizeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/memory-size
+  EnvConfiglambdatimeoutAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/timeout
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
@@ -969,6 +972,7 @@ Metadata:
     EnvConfigmultiAZAsString: db.multiAZ
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
+    EnvConfiglambdatimeoutAsString: lambda.timeout
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
