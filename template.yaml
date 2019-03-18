@@ -968,7 +968,7 @@ Metadata:
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
-    EnvConfigmemory-sizeAsString: lambda.heartbeat-interval
+    EnvConfigmemory-sizeAsString: lambda.memory-size
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
