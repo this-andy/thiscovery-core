@@ -959,12 +959,16 @@ Parameters:
   EnvConfigheartbeatintervalAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/heartbeat-interval
+  EnvConfigmemory-sizeAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/memory-size
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
+    EnvConfigmemory-sizeAsString: lambda.heartbeat-interval
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
