@@ -898,6 +898,7 @@ Resources:
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
       PubliclyAccessible: true
+      StorageEncryption: !Ref EnvConfigencryptionAsString
       StorageType: gp2
       Tags:
         - Key: Name
@@ -956,6 +957,9 @@ Parameters:
   EnvConfigmultiAZAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/multiAZ
+  EnvConfigencryptionAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/encryption
   EnvConfigheartbeatintervalAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/heartbeat-interval
@@ -970,6 +974,7 @@ Metadata:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
+    EnvConfigencryptionAsString: db.encryption
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
