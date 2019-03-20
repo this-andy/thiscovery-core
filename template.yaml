@@ -899,7 +899,7 @@ Resources:
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
-      PubliclyAccessible: false
+      PubliclyAccessible: true
       StorageEncrypted: !Ref EnvConfigStorageEncryptedAsString
       StorageType: gp2
       Tags:
