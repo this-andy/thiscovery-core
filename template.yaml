@@ -451,7 +451,7 @@ Resources:
           DB_ID: !Ref ThiscoveryDB
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
     Metadata:
       StackeryName: get-user-by-email
   createuserapi:
@@ -888,18 +888,17 @@ Resources:
       AllocatedStorage: '6'
       AllowMajorVersionUpgrade: true
       AutoMinorVersionUpgrade: true
-      BackupRetentionPeriod: '0'
+      BackupRetentionPeriod: '15'
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
-      DeletionProtection: !Ref EnvConfigdeleteprotectionAsString
+      DeletionProtection: true
       Engine: postgres
       EngineVersion: '10.6'
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
-      PubliclyAccessible: true
-      StorageEncrypted: !Ref EnvConfigencryptedAsString
+      PubliclyAccessible: false
       StorageType: gp2
       Tags:
         - Key: Name
@@ -952,18 +951,9 @@ Parameters:
   EnvironmentAPIGatewayStageName:
     Type: String
     Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
-  EnvConfigdbinstancetypeAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/instance-type
-  EnvConfigmultiAZAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/multiAZ
   EnvConfigdeleteprotectionAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/delete-protection
-  EnvConfigencryptedAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/encrypted
   EnvConfigheartbeatintervalAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/heartbeat-interval
@@ -973,16 +963,21 @@ Parameters:
   EnvConfiglambdatimeoutAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/timeout
+  EnvConfigdbinstancetypeAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/instance-type
+  EnvConfigmultiAZAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/multiAZ
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
-    EnvConfigdbinstancetypeAsString: db.instance-type
-    EnvConfigmultiAZAsString: db.multiAZ
     EnvConfigdeleteprotectionAsString: db.delete-protection
-    EnvConfigencryptedAsString: db.encrypted
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
+    EnvConfigdbinstancetypeAsString: db.instance-type
+    EnvConfigmultiAZAsString: db.multiAZ
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
