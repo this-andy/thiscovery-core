@@ -951,9 +951,9 @@ Parameters:
   EnvironmentAPIGatewayStageName:
     Type: String
     Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
-  EnvConfigdeleteprotectionAsString:
+  EnvConfigdeletionprotectionAsString:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/db/delete-protection
+    Default: /<EnvironmentName>/db/deletion-protection
   EnvConfigheartbeatintervalAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/heartbeat-interval
@@ -972,7 +972,7 @@ Parameters:
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
-    EnvConfigdeleteprotectionAsString: db.delete-protection
+    EnvConfigdeletionprotectionAsString: db.deletion-protection
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
