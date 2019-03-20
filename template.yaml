@@ -899,6 +899,7 @@ Resources:
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
       PubliclyAccessible: false
+      StorageEncrypted: !Ref EnvConfigStorageEncryptedAsString
       StorageType: gp2
       Tags:
         - Key: Name
@@ -969,6 +970,9 @@ Parameters:
   EnvConfigmultiAZAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/multiAZ
+  EnvConfigStorageEncryptedAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/storage-encrypted
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
@@ -978,6 +982,7 @@ Metadata:
     EnvConfiglambdatimeoutAsString: lambda.timeout
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
+    EnvConfigStorageEncryptedAsString: db.storage-encrypted
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
