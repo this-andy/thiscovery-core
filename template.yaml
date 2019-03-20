@@ -892,7 +892,7 @@ Resources:
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
-      DeletionProtection: true
+      DeletionProtection: !Ref EnvConfigdeleteprotectionAsString
       Engine: postgres
       EngineVersion: '10.6'
       MasterUsername: root
@@ -958,6 +958,9 @@ Parameters:
   EnvConfigmultiAZAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/multiAZ
+  EnvConfigdeleteprotectionAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/delete-protection
   EnvConfigencryptedAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/encrypted
@@ -975,6 +978,7 @@ Metadata:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
+    EnvConfigdeleteprotectionAsString: db.delete-protection
     EnvConfigencryptedAsString: db.encrypted
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
