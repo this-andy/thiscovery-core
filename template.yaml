@@ -892,6 +892,7 @@ Resources:
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
+      DeletionProtection: true
       Engine: postgres
       EngineVersion: '10.6'
       MasterUsername: root
