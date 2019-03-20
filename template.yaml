@@ -891,7 +891,6 @@ Resources:
       BackupRetentionPeriod: '15'
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
-      DBName: !Sub ${StackTagName}db${EnvironmentTagName}
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
       DeletionProtection: !Ref EnvConfigDeletionProtectionAsString
       Engine: postgres
