@@ -890,7 +890,6 @@ Resources:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: '15'
       CopyTagsToSnapshot: true
-      DBName: !Sub ThiscoveryDB${EnvironmentTagName}
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
       DeletionProtection: !Ref EnvConfigDeletionProtectionAsString
