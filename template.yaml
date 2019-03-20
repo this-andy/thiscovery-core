@@ -892,7 +892,7 @@ Resources:
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
-      DeletionProtection: true
+      DeletionProtection: !Ref EnvConfigDeletionProtectionAsString
       Engine: postgres
       EngineVersion: '10.6'
       MasterUsername: root
@@ -952,7 +952,7 @@ Parameters:
   EnvironmentAPIGatewayStageName:
     Type: String
     Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
-  EnvConfigdeletionprotectionAsString:
+  EnvConfigDeletionProtectionAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/deletion-protection
   EnvConfigheartbeatintervalAsString:
@@ -976,7 +976,7 @@ Parameters:
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
-    EnvConfigdeletionprotectionAsString: db.deletion-protection
+    EnvConfigDeletionProtectionAsString: db.deletion-protection
     EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
