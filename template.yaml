@@ -357,6 +357,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusertask.Arn}/invocations
               responses: {}
+          /v1/raise-error:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${raiseerror.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -939,6 +946,37 @@ Resources:
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Security Group
             - ResourceName: Thiscovery DB
       VpcId: !Ref VirtualNetwork
+  raiseerror:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-raiseerror
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: raise-error
+      CodeUri: api/endpoints
+      Handler: misc.raise_error_api
+      Runtime: python3.6
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1raiseerror:
+          Type: Api
+          Properties:
+            Path: /v1/raise-error
+            Method: POST
+            RestApiId: !Ref CoreAPI
+    Metadata:
+      StackeryName: raise-error
 Parameters:
   StackTagName:
     Type: String
