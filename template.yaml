@@ -364,6 +364,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${raiseerror.Arn}/invocations
               responses: {}
+          /v1/ping:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ping.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -977,6 +984,37 @@ Resources:
             RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: raise-error
+  ping:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ping
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: ping
+      CodeUri: api/endpoints
+      Handler: misc.ping
+      Runtime: python3.6
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1ping:
+          Type: Api
+          Properties:
+            Path: /v1/ping
+            Method: GET
+            RestApiId: !Ref CoreAPI
+    Metadata:
+      StackeryName: ping
 Parameters:
   StackTagName:
     Type: String
