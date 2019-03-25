@@ -357,6 +357,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusertask.Arn}/invocations
               responses: {}
+          /v1/raise-error:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${raiseerror.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -370,8 +377,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user.get_user_by_id_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -417,8 +424,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user.get_user_by_email_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -451,7 +458,7 @@ Resources:
           DB_ID: !Ref ThiscoveryDB
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
     Metadata:
       StackeryName: get-user-by-email
   createuserapi:
@@ -464,8 +471,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user.create_user_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -511,8 +518,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user.patch_user_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -558,8 +565,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: project.list_projects_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -598,8 +605,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: project.get_project_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -638,8 +645,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: project.get_project_status_for_user_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -678,8 +685,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user_external_account.create_user_external_account_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -718,8 +725,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user_project.list_user_projects_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -765,8 +772,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user_project.create_user_project_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -805,8 +812,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user_task.list_user_tasks_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -845,8 +852,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: user_task.create_user_task_api
       Runtime: python3.6
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -888,16 +895,18 @@ Resources:
       AllocatedStorage: '6'
       AllowMajorVersionUpgrade: true
       AutoMinorVersionUpgrade: true
-      BackupRetentionPeriod: '0'
+      BackupRetentionPeriod: '15'
       CopyTagsToSnapshot: true
       DBInstanceClass: !Ref EnvConfigdbinstancetypeAsString
       DBSubnetGroupName: !Ref ThiscoveryDBPublicSubnetGroup
+      DeletionProtection: !Ref EnvConfigDeletionProtectionAsString
       Engine: postgres
-      EngineVersion: '10.3'
+      EngineVersion: '10.6'
       MasterUsername: root
       MasterUserPassword: !Ref EnvConfigdbpasswordAsString
       MultiAZ: !Ref EnvConfigmultiAZAsString
       PubliclyAccessible: true
+      StorageEncrypted: !Ref EnvConfigStorageEncryptedAsString
       StorageType: gp2
       Tags:
         - Key: Name
@@ -937,6 +946,37 @@ Resources:
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Security Group
             - ResourceName: Thiscovery DB
       VpcId: !Ref VirtualNetwork
+  raiseerror:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-raiseerror
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: raise-error
+      CodeUri: api/endpoints
+      Handler: misc.raise_error_api
+      Runtime: python3.6
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1raiseerror:
+          Type: Api
+          Properties:
+            Path: /v1/raise-error
+            Method: POST
+            RestApiId: !Ref CoreAPI
+    Metadata:
+      StackeryName: raise-error
 Parameters:
   StackTagName:
     Type: String
@@ -950,21 +990,37 @@ Parameters:
   EnvironmentAPIGatewayStageName:
     Type: String
     Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
+  EnvConfigDeletionProtectionAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/db/deletion-protection
+  EnvConfigheartbeatintervalAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/heartbeat-interval
+  EnvConfiglambdamemorysizeAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/memory-size
+  EnvConfiglambdatimeoutAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/timeout
   EnvConfigdbinstancetypeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/instance-type
   EnvConfigmultiAZAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/multiAZ
-  EnvConfigheartbeatintervalAsString:
+  EnvConfigStorageEncryptedAsString:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/lambda/heartbeat-interval
+    Default: /<EnvironmentName>/db/storage-encrypted
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
+    EnvConfigDeletionProtectionAsString: db.deletion-protection
+    EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
+    EnvConfiglambdamemorysizeAsString: lambda.memory-size
+    EnvConfiglambdatimeoutAsString: lambda.timeout
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
-    EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
+    EnvConfigStorageEncryptedAsString: db.storage-encrypted
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
