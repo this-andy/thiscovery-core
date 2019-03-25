@@ -110,7 +110,7 @@ def get_elapsed_ms(start_time):
 
 def triggered_by_heartbeat(event):
     # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
-    return ('heartbeat' in event)
+    return (event is not None and 'heartbeat' in event)
 
 # endregion
 
@@ -153,6 +153,7 @@ def validate_utc_datetime(s):
 # region Logging
 
 logger = None
+
 
 def get_logger():
     global logger
@@ -205,6 +206,7 @@ except FileNotFoundError:
 
 DEFAULT_AWS_REGION = 'eu-west-1'
 
+
 def get_aws_region():
     try:
         region = os.environ['AWS_REGION']
@@ -218,8 +220,8 @@ def get_aws_secrets_namespace():
         secrets_namespace = os.environ['SECRETS_NAMESPACE']
     except:
         # secrets_namespace = '/dev/'
-        secrets_namespace = '/staging/'
-        # secrets_namespace = '/prod/'
+        # secrets_namespace = '/staging/'
+        secrets_namespace = '/prod/'
     return secrets_namespace
 
 
