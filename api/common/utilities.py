@@ -158,7 +158,7 @@ logger = None
 def get_logger():
     global logger
     if logger is None:
-        logger = logging.getLogger()
+        logger = logging.getLogger('thiscovery')
         # print('creating logger')
         log_handler = logging.StreamHandler()
         formatter = jsonlogger.JsonFormatter('%(asctime)s %(module)s %(funcName)s %(lineno)d %(name)-2s %(levelname)-8s %(message)s')
