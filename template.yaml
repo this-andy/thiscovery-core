@@ -506,11 +506,6 @@ Resources:
             Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-create-user
-        HubSpotEventQueue:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt HubSpotEventQueue.Arn
-            BatchSize: 1
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
