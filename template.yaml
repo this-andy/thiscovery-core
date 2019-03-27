@@ -867,6 +867,8 @@ Resources:
         - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt HubSpotEventQueue.QueueName
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -880,6 +882,9 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          QUEUE_NAME: !GetAtt HubSpotEventQueue.QueueName
+          QUEUE_ARN: !GetAtt HubSpotEventQueue.Arn
+          QUEUE_URL: !Ref HubSpotEventQueue
       Events:
         CoreAPIPOSTv1usertask:
           Type: Api
