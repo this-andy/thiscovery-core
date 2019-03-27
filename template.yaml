@@ -1015,6 +1015,51 @@ Resources:
             RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: ping
+  HubSpotEventQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub ${AWS::StackName}-HubSpotEventQueue
+    Metadata:
+      StackeryName: HubSpot Queue
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-Function
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: hubspot-event-despatcher
+      CodeUri: src/Function
+      Handler: handler.handler
+      Runtime: python3.6
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        HubSpotEventQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt HubSpotEventQueue.Arn
+            BatchSize: 1
+      Environment:
+        Variables:
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+    Metadata:
+      StackeryName: hubspot-event-despatcher
 Parameters:
   StackTagName:
     Type: String
