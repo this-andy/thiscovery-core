@@ -682,6 +682,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: !Ref EnvConfigheartbeatintervalAsString
+            Input: '{"heartbeat": "Y"}'
           Metadata:
             StackeryName: timer-get-project-statuses
       Environment:
