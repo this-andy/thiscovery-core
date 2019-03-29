@@ -678,6 +678,12 @@ Resources:
             Path: /v1/project-user-status
             Method: GET
             RestApiId: !Ref CoreAPI
+        Timer5:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref EnvConfigheartbeatintervalAsString
+          Metadata:
+            StackeryName: timer-get-project-statuses
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
@@ -765,13 +771,6 @@ Resources:
             Path: /v1/userproject
             Method: GET
             RestApiId: !Ref CoreAPI
-        Timer2:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-list-user-projects
     Metadata:
       StackeryName: list-user-projects
   createuserproject:
