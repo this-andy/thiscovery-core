@@ -147,6 +147,17 @@ def validate_utc_datetime(s):
         errorjson = {'datetime': s}
         raise DetailedValueError('invalid utc format datetime', errorjson)
 
+
+def validate_country_code(s):
+    try:
+        if len(s) > 2:
+            errorjson = {'country_code': s}
+            raise DetailedValueError('invalid country code', errorjson)
+        return s
+    except ValueError:
+        errorjson = {'country_code': s}
+        raise DetailedValueError('invalid country code', errorjson)
+
 # endregion
 
 
@@ -247,9 +258,6 @@ def get_aws_secret(secret_name):
     namespace = get_aws_secrets_namespace()
     if namespace is not None:
         secret_name = namespace + secret_name
-        # temporary hack because of AWS secrets clash
-        # if namespace == '/prod/':
-        #     secret_name += '-p'
 
     region = get_aws_region()
     endpoint_url = "https://secretsmanager." + region + ".amazonaws.com"

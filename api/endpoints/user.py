@@ -26,13 +26,13 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
     from .common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, validate_country_code
     from .common.entity_update import EntityUpdate
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
     from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, validate_country_code
     from common.entity_update import EntityUpdate
 
 
@@ -46,6 +46,8 @@ BASE_USER_SELECT_SQL = '''
     title, 
     first_name, 
     last_name, 
+    'UK' as country_code,
+    'United Kingdom' as country_name,
     auth0_id, 
     status
   FROM 
@@ -271,6 +273,15 @@ def create_user(user_json, correlation_id):
     else:
         created = str(now_with_tz())
 
+    if 'country_code' in user_json:
+        try:
+            country_code = validate_country_code(user_json['country_code'])
+        except DetailedValueError as err:
+            err.add_correlation_id(correlation_id)
+            raise err
+    else:
+        country_code = user_json['country_code']
+
     if 'auth0_id' in user_json:
         auth0_id = user_json['auth0_id']
     else:
@@ -297,11 +308,12 @@ def create_user(user_json, correlation_id):
             title,
             first_name,
             last_name,
+            country_code,
             auth0_id,
             status
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
+        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry, title, first_name, last_name, auth0_id, status)
+    params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry, title, first_name, last_name, country_code, auth0_id, status)
     execute_non_query(sql, params, correlation_id)
 
     new_user = {
@@ -368,7 +380,7 @@ def validate_user_email(user_id, email_verification_token_to_check, correlation_
 
 
 if __name__ == "__main__":
-    qsp = {'email': 'andy.paterson@thisinstitute.cam.ac.uk'}
+    qsp = {'email': "delia@email.addr"}
     ev = {'queryStringParameters': qsp, "detail-type": "Scheduled Event"}
     result = get_user_by_email_api(ev, None)
     print(result)
