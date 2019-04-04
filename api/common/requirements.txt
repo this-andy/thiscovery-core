@@ -1,4 +1,5 @@
 boto3
+pip	>= 19.0.1
 psycopg2
 jsonpatch
 python-json-logger

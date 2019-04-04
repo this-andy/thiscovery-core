@@ -3,7 +3,7 @@ attrs >= 18.1.0
 coverage
 jsonpatch >= 1.23
 more-itertools	>= 4.2.0
-pip	>= 10.0.1
+pip	>= 19.0.1
 pluggy	>=	0.6.0
 psycopg2	>=	2.7.5
 py	>=	1.5.4
