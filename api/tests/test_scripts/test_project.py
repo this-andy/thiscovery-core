@@ -35,6 +35,7 @@ class TestProject(TestCase):
     def setUpClass(cls):
         cls.maxDiff = None
 
+        os.environ["TESTING"] = 'true'
         if not TEST_ON_AWS:
             cls.postgresql = testing.postgresql.Postgresql(port=7654)
 
@@ -66,6 +67,7 @@ class TestProject(TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        os.unsetenv("TESTING")
         if TEST_ON_AWS:
             truncate_table('public.projects_projecttask')
             truncate_table('public.projects_externalsystem')

@@ -147,17 +147,6 @@ def validate_utc_datetime(s):
         errorjson = {'datetime': s}
         raise DetailedValueError('invalid utc format datetime', errorjson)
 
-
-def validate_country_code(s):
-    try:
-        if len(s) > 2:
-            errorjson = {'country_code': s}
-            raise DetailedValueError('invalid country code', errorjson)
-        return s
-    except ValueError:
-        errorjson = {'country_code': s}
-        raise DetailedValueError('invalid country code', errorjson)
-
 # endregion
 
 
@@ -305,10 +294,65 @@ def get_aws_secret(secret_name):
 # endregion
 
 
+# region Country code/name processing
+
+def append_country_name_to_list(entity_list):
+    for entity in entity_list:
+        append_country_name(entity)
+    return entity_list
+
+
+def append_country_name(entity):
+    country_code = entity['country_code']
+    entity['country_name'] = get_country_name(country_code)
+
+
+def load_countries():
+    import os
+    country_list_filename = 'countries.json'
+
+    testing = os.getenv("TESTING")
+    print('dir:' + os.getcwd())
+    if testing == 'true':
+        country_list_filename = '../../common/' + country_list_filename
+
+    try:
+        country_list = json.loads(get_file_as_string(country_list_filename))
+    except FileNotFoundError:
+        try:
+            country_list_filename = '../common/' + country_list_filename
+            country_list = json.loads(get_file_as_string(country_list_filename))
+        except FileNotFoundError as err:
+            try:
+                country_list_filename = '../' + country_list_filename
+                country_list = json.loads(get_file_as_string(country_list_filename))
+            except FileNotFoundError as err:
+                raise err
+
+    countries_dict = {}
+    for country in country_list:
+        countries_dict[country['Code']] = country['Name']
+    return countries_dict
+
+
+def get_country_name(country_code):
+    try:
+        return countries[country_code]
+    except KeyError as err:
+        errorjson = {'country_code': country_code}
+        raise DetailedValueError('invalid country code', errorjson)
+
+
+countries = load_countries()
+
+# endregion
+
+
 if __name__ == "__main__":
-    result = get_aws_secret('database-connection')
+    # result = get_aws_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
+    result = get_country_name('US')
     print(result)
 

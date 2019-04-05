@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import os
 from unittest import TestCase
 
 
@@ -86,3 +87,29 @@ class TestMinimise_white_space(TestCase):
         str1 = 'hello world world'
         str2 = 'hello world world'
         self.assertEqual(str2, minimise_white_space(str1))
+
+
+class TestCountry(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        os.environ["TESTING"] = 'true'
+
+
+    @classmethod
+    def tearDownClass(cls):
+        os.unsetenv("TESTING")
+
+
+    def test_get_country_name_ok(self):
+        from api.common.utilities import get_country_name
+        self.assertEqual('France', get_country_name('FR'))
+        self.assertEqual('United Kingdom', get_country_name('GB'))
+
+
+    def test_get_country_name_fail(self):
+        from api.common.utilities import get_country_name, DetailedValueError
+        self.assertRaises(DetailedValueError, get_country_name, 'ZX')
+        self.assertRaises(DetailedValueError, get_country_name, '')
+        self.assertRaises(DetailedValueError, get_country_name, 'abcdef')
+

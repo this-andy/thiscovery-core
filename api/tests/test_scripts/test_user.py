@@ -37,6 +37,7 @@ class TestUser(TestCase):
 
     @classmethod
     def setUpClass(self):
+        os.environ["TESTING"] = 'true'
         if not TEST_ON_AWS:
             self.postgresql = testing.postgresql.Postgresql(port=7654)
 
@@ -55,6 +56,7 @@ class TestUser(TestCase):
 
     @classmethod
     def tearDownClass(self):
+        os.unsetenv("TESTING")
         if TEST_ON_AWS:
             truncate_table('public.projects_user')
             truncate_table('public.projects_entityupdate')
@@ -79,6 +81,8 @@ class TestUser(TestCase):
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
             "auth0_id": None,
             "status": None
         }
@@ -92,6 +96,8 @@ class TestUser(TestCase):
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
             "auth0_id": None,
             "status": None
         }
@@ -156,6 +162,8 @@ class TestUser(TestCase):
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
             "auth0_id": None,
             "status": None
         }
@@ -169,6 +177,8 @@ class TestUser(TestCase):
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
             "auth0_id": None,
             "status": None
         }
@@ -215,6 +225,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/email_address_verified', 'value': 'true'},
             {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
+            {'op': 'replace', 'path': '/country_code', 'value': 'IT'},
         ]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': user_id}
@@ -238,6 +249,8 @@ class TestUser(TestCase):
             "first_name": "simon",
             "last_name": "smith",
             "auth0_id": "new-auth0-id",
+            "country_code": "IT",
+            "country_name": "Italy",
             "status": "singing"
         }
 
@@ -250,6 +263,8 @@ class TestUser(TestCase):
             "first_name": "simon",
             "last_name": "smith",
             "auth0_id": "new-auth0-id",
+            "country_code": "IT",
+            "country_name": "Italy",
             "status": "singing"
         }
 
@@ -307,7 +322,8 @@ class TestUser(TestCase):
                 {"op": "replace", "path": "/last_name", "value": "Alcorn"},
                 {"op": "replace", "path": "/status", "value": None},
                 {"op": "replace", "path": "/email", "value": "altha@email.addr"},
-                {"op": "replace", "path": "/email_address_verified", "value": False}
+                {"op": "replace", "path": "/email_address_verified", "value": False},
+                {"op": "replace", "path": "/country_code", "value": "FR"},
             ]
             self.assertCountEqual(expected_json_reverse_patch,result_json_reverse_patch)
 
@@ -403,6 +419,7 @@ class TestUser(TestCase):
             "first_name": "Steven",
             "last_name": "Walcorn",
             "auth0_id": "1234abcd",
+            "country_code": "GB",
             "status": "new"}
         event = {'body': json.dumps(user_json)}
         result = create_user_api(event, None)
@@ -412,6 +429,7 @@ class TestUser(TestCase):
         # modified is not part of body supplied but is returned
         expected_body = dict.copy(user_json)
         expected_body['modified'] = user_json['created']
+        expected_body['country_name'] = 'United Kingdom'
 
         email_verification_token = result_json['email_verification_token']
         del result_json['email_verification_token']
@@ -448,6 +466,7 @@ class TestUser(TestCase):
             "title": "Mr",
             "first_name": "Harry",
             "last_name": "Hippie",
+            "country_code": "GB",
             "status": "new"}
         event = {'body': json.dumps(user_json)}
         result = create_user_api(event, None)
@@ -478,6 +497,7 @@ class TestUser(TestCase):
 
         self.assertEqual(expected_status, result_status)
         # first check what's left in returned data
+        user_json['country_name'] = 'United Kingdom'
         self.assertDictEqual(result_json, user_json)
 
         # now check individual data items
@@ -512,6 +532,7 @@ class TestUser(TestCase):
             "first_name": "Steven",
             "last_name": "Walcorn",
             "auth0_id": "1234abcd",
+            "country_code": "GB",
             "status": "new"}
         event = {'body': json.dumps(user_json)}
         result = create_user_api(event, None)

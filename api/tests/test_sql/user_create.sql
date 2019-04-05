@@ -32,6 +32,7 @@ CREATE TABLE public.projects_user
     email_address_verified boolean NOT NULL,
     email_verification_expiry timestamp with time zone,
     email_verification_token uuid,
+    country_code character varying(2) COLLATE pg_catalog."default",
     CONSTRAINT projects_user_pkey PRIMARY KEY (id)
 )
 WITH (
