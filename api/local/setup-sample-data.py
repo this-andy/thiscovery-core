@@ -69,7 +69,7 @@ def clear_database():
 
 
 if __name__ == "__main__":
-    # populate_database()
-    clear_database()
+    populate_database()
+    # clear_database()
     # populate_database_london_dev()
     pass

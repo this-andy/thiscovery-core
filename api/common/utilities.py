@@ -313,8 +313,13 @@ def load_countries():
 
     testing = os.getenv("TESTING")
     print('dir:' + os.getcwd())
+    print('files:' + os.listdir(os.getcwd()))
+
     if testing == 'true':
         country_list_filename = '../../common/' + country_list_filename
+
+    if running_on_aws():
+        country_list_filename = './' + country_list_filename
 
     try:
         country_list = json.loads(get_file_as_string(country_list_filename))
