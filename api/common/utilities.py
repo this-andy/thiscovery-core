@@ -313,7 +313,7 @@ def load_countries():
 
     testing = os.getenv("TESTING")
     print('dir:' + os.getcwd())
-    print('files:' + os.listdir(os.getcwd()))
+    print('files:' + str(os.listdir(os.getcwd())))
 
     if testing == 'true':
         country_list_filename = '../../common/' + country_list_filename
