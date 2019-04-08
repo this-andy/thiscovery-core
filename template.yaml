@@ -967,7 +967,7 @@ Resources:
   Ingress01:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      GroupId: !GetAtt VirtualNetwork.DefaultSecurityGroup
+      GroupId: !Ref ThiscoveryDBSecurityGroup
       CidrIp: 85.74.57.25/32
       FromPort: 5432
       IpProtocol: tcp
