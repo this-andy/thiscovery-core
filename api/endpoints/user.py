@@ -252,8 +252,8 @@ def create_user(user_json, correlation_id):
         last_name = user_json['last_name']
         status = validate_status(user_json['status'])
         country_code = user_json['country_code']
-        # looking up the name is a way of validating the code - an invalid code will raise an error
         get_country_name(country_code)
+        # looking up the name is a way of validating the code - an invalid code will raise an error
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
@@ -378,10 +378,10 @@ def validate_user_email(user_id, email_verification_token_to_check, correlation_
 
 
 if __name__ == "__main__":
-    qsp = {'email': "delia@email.addr"}
-    ev = {'queryStringParameters': qsp, "detail-type": "Scheduled Event"}
-    result = get_user_by_email_api(ev, None)
-    print(result)
+    # qsp = {'email': "delia@email.addr"}
+    # ev = {'queryStringParameters': qsp, "detail-type": "Scheduled Event"}
+    # result = get_user_by_email_api(ev, None)
+    # print(result)
 
     # pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
     # ev = {'pathParameters': pp}
@@ -403,17 +403,19 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    # user_json = {
-    #     "email": "an@email.addr",
-    #     "title": "Mr",
-    #     "first_name": "Albert",
-    #     "last_name": "Narlcorn",
-    #     "status": "new"}
-    #
-    # correlation_id = None
+    user_json = {
+        "email": "an@email.addr",
+        "title": "Mr",
+        "first_name": "Albert",
+        "last_name": "No-country",
+        "status": "new",
+        "country_code": "FR"
+    }
+
+    correlation_id = None
     # # print(create_user(user_json,correlation_id))
     #
-    # ev = {'body': json.dumps(user_json)}
-    # print(create_user_api(ev, None))
+    ev = {'body': json.dumps(user_json)}
+    print(create_user_api(ev, None))
 
 

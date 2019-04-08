@@ -312,8 +312,8 @@ def load_countries():
     country_list_filename = 'countries.json'
 
     testing = os.getenv("TESTING")
-    print('dir:' + os.getcwd())
-    print('files:' + str(os.listdir('./common')))
+    # print('dir:' + os.getcwd())
+    # print('files:' + str(os.listdir('./common')))
 
     if testing == 'true':
         country_list_filename = '../../common/' + country_list_filename
