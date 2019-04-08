@@ -957,6 +957,12 @@ Resources:
         FromPort: 5432
         IpProtocol: tcp
         ToPort: 5432
+      SecurityGroupIngress:
+        CidrIp: 131.111.0.0/16
+        FromPort: 5432
+        IpProtocol: tcp
+        ToPort: 5432
+        Description: Uni of Cam
       Tags:
         - Key: Name
           Value: !Sub
