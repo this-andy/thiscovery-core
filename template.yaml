@@ -964,6 +964,14 @@ Resources:
             - Stack ${StackTagName} Environment ${EnvironmentTagName} Database ${ResourceName} VPC Security Group
             - ResourceName: Thiscovery DB
       VpcId: !Ref VirtualNetwork
+  Ingress01:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt VirtualNetwork.DefaultSecurityGroup
+      CidrIp: 85.74.57.25/32
+      FromPort: 5432
+      IpProtocol: tcp
+      ToPort: 5432
   raiseerror:
     Type: AWS::Serverless::Function
     Properties:
