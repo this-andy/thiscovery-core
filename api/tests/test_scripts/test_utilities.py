@@ -16,8 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import os
 from unittest import TestCase
+from api.common.utilities import set_running_unit_tests
 
 
 class TestValidate_int(TestCase):
@@ -93,12 +93,12 @@ class TestCountry(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        os.environ["TESTING"] = 'true'
+        set_running_unit_tests(True)
 
 
     @classmethod
     def tearDownClass(cls):
-        os.unsetenv("TESTING")
+        set_running_unit_tests(False)
 
 
     def test_get_country_name_ok(self):

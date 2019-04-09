@@ -16,41 +16,21 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import os
 import json
 from http import HTTPStatus
-import testing.postgresql
 from unittest import TestCase
-from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv, truncate_table
-from api.common.utilities import new_correlation_id
+from api.common.pg_utilities import insert_data_from_csv, truncate_table
+from api.common.utilities import set_running_unit_tests
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-
-TEST_ON_AWS = True  # set to False for local testing
 
 class TestProject(TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.maxDiff = None
-
-        os.environ["TESTING"] = 'true'
-        if not TEST_ON_AWS:
-            cls.postgresql = testing.postgresql.Postgresql(port=7654)
-
-            # setup environment variable for get_connection to use
-            os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
-
-            cls.conn = _get_connection()
-            cls.cursor = cls.conn.cursor()
-
-            correlation_id = new_correlation_id()
-            run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'tasktype_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'external_system_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'projecttask_create.sql', correlation_id)
+        set_running_unit_tests(True)
 
         insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
@@ -58,26 +38,16 @@ class TestProject(TestCase):
         insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
         insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
 
-        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
-        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        # insert_data_from_csv_OLD(None, None, TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
-
 
     @classmethod
     def tearDownClass(cls):
-        os.unsetenv("TESTING")
-        if TEST_ON_AWS:
-            truncate_table('public.projects_projecttask')
-            truncate_table('public.projects_externalsystem')
-            truncate_table('public.projects_tasktype')
-            truncate_table('public.projects_project')
-            truncate_table('public.projects_usergroup')
-        else:
-            cls.conn.close()
-            os.unsetenv("TEST_DSN")
-            cls.postgresql.stop()
+        truncate_table('public.projects_projecttask')
+        truncate_table('public.projects_externalsystem')
+        truncate_table('public.projects_tasktype')
+        truncate_table('public.projects_project')
+        truncate_table('public.projects_usergroup')
+
+        set_running_unit_tests(False)
 
 
     def test_1_list_projects_api(self):

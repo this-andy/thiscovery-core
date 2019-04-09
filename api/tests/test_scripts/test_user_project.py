@@ -16,39 +16,22 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import os
 import json
-import testing.postgresql
 import uuid
 from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
-from api.common.pg_utilities import _get_connection, run_sql_script_file, insert_data_from_csv, truncate_table
-from api.common.utilities import new_correlation_id, now_with_tz
+from api.common.pg_utilities import insert_data_from_csv, truncate_table
+from api.common.utilities import now_with_tz, set_running_unit_tests
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-
-TEST_ON_AWS = True  # set to False for local testing
 
 class TestUserProject(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if not TEST_ON_AWS:
-            cls.postgresql = testing.postgresql.Postgresql(port=7654)
-
-            # setup environment variable for get_connection to use
-            os.environ["TEST_DSN"] = str(cls.postgresql.dsn())
-
-            cls.conn = _get_connection()
-            cls.cursor = cls.conn.cursor()
-
-            correlation_id = new_correlation_id()
-            run_sql_script_file(TEST_SQL_FOLDER + 'usergroup_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'user_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'project_create.sql', correlation_id)
-            run_sql_script_file(TEST_SQL_FOLDER + 'user_project_create.sql', correlation_id)
+        set_running_unit_tests(True)
 
         insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
@@ -58,15 +41,12 @@ class TestUserProject(TestCase):
 
     @classmethod
     def tearDownClass(self):
-        if TEST_ON_AWS:
-            truncate_table('public.projects_userproject')
-            truncate_table('public.projects_project')
-            truncate_table('public.projects_user')
-            truncate_table('public.projects_usergroup')
-        else:
-            self.conn.close()
-            os.unsetenv("TEST_DSN")
-            self.postgresql.stop()
+        truncate_table('public.projects_userproject')
+        truncate_table('public.projects_project')
+        truncate_table('public.projects_user')
+        truncate_table('public.projects_usergroup')
+
+        set_running_unit_tests(False)
 
 
     def test_01_list_user_projects_api_ok(self):

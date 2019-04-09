@@ -74,6 +74,24 @@ def error_as_response_body(error_msg, correlation_id):
 # endregion
 
 
+# region unit test methods
+
+UNIT_TEST_NAMESPACE = '/test/'
+
+def set_running_unit_tests(flag):
+    if flag:
+        os.environ["TESTING"] = 'true'
+    else:
+        os.unsetenv("TESTING")
+
+
+def running_unit_tests():
+    testing = os.getenv("TESTING")
+    return testing == 'true'
+
+# endregion
+
+
 # region Misc utilities
 # removes newlines and multiple spaces
 def minimise_white_space(s):
@@ -221,6 +239,7 @@ def get_aws_secrets_namespace():
         secrets_namespace = os.environ['SECRETS_NAMESPACE']
     except:
         secrets_namespace = '/dev/'
+        # secrets_namespace = '/test/'
         # secrets_namespace = '/staging/'
         # secrets_namespace = '/prod/'
     return secrets_namespace
@@ -234,17 +253,21 @@ def get_local_secret(secret_name):
         raise DetailedValueError('Secret key not found', errorjson)
 
 
-def get_secret(secret_name):
+def get_secret(secret_name, namespace_override=None):
     if True or running_on_aws():
-        return get_aws_secret(secret_name)
+        return get_aws_secret(secret_name, namespace_override)
     else:
         return get_local_secret(secret_name)
 
 
-def get_aws_secret(secret_name):
+def get_aws_secret(secret_name, namespace_override):
     logger = get_logger()
     # need to prepend secret name with namespace...
-    namespace = get_aws_secrets_namespace()
+    if namespace_override is None:
+        namespace = get_aws_secrets_namespace()
+    else:
+        namespace = namespace_override
+
     if namespace is not None:
         secret_name = namespace + secret_name
 
@@ -311,7 +334,7 @@ def load_countries():
     import os
     country_list_filename = 'countries.json'
 
-    testing = os.getenv("TESTING")
+    testing = running_unit_tests()
     # print('dir:' + os.getcwd())
     # print('files:' + str(os.listdir('./common')))
 

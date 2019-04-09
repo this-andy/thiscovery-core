@@ -20,7 +20,7 @@ import psycopg2
 import os
 import ast
 from .utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
-    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id
+    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id, running_unit_tests, UNIT_TEST_NAMESPACE
 
 
 conn = None
@@ -32,20 +32,15 @@ def _get_connection(correlation_id=None):
     # todo sort out connection pooling
     global conn
 
-    if True:  # conn == None:
-        test_dsn = os.getenv("TEST_DSN")
-        if test_dsn is None:
-            # env_dict = get_secret('local-connection')
-            env_dict = get_secret('database-connection')
-        else:
-            env_dict = ast.literal_eval(test_dsn)
-        # print("dsn:" + str(env_dict))
-        conn = psycopg2.connect(**env_dict)
-
-        # using dsn obscures password
-        logger.info('created database connection', extra={'conn_string': conn.dsn, 'correlation_id': correlation_id})
+    if running_unit_tests():
+        env_dict = get_secret('database-connection', UNIT_TEST_NAMESPACE)
     else:
-        logger.info('existing database connection reused')
+        env_dict = get_secret('database-connection')
+
+    conn = psycopg2.connect(**env_dict)
+
+    # using dsn obscures password
+    logger.info('created database connection', extra={'conn_string': conn.dsn, 'correlation_id': correlation_id})
 
     return conn
 
