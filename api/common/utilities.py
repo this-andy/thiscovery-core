@@ -209,20 +209,6 @@ def get_correlation_id(event):
 
 # region Secrets processing
 
-secrets_filename = 'local/secret-settings.json'
-
-try:
-    secrets = json.loads(get_file_as_string(secrets_filename))
-except FileNotFoundError:
-    # legitimate reason for file not being found is that we are running test scripts from different directory or we are running on AWS
-    # d = os.getcwd()
-    secrets_filename = '../' + secrets_filename
-    try:
-        secrets = json.loads(get_file_as_string(secrets_filename))
-    except FileNotFoundError:
-        pass
-
-
 DEFAULT_AWS_REGION = 'eu-west-1'
 
 
@@ -245,19 +231,9 @@ def get_aws_secrets_namespace():
     return secrets_namespace
 
 
-def get_local_secret(secret_name):
-    try:
-        return secrets[secret_name]
-    except KeyError:
-        errorjson = {'secret_name': secret_name}
-        raise DetailedValueError('Secret key not found', errorjson)
-
-
 def get_secret(secret_name, namespace_override=None):
-    if True or running_on_aws():
-        return get_aws_secret(secret_name, namespace_override)
-    else:
-        return get_local_secret(secret_name)
+    return get_aws_secret(secret_name, namespace_override)
+
 
 
 def get_aws_secret(secret_name, namespace_override):
@@ -331,7 +307,7 @@ def append_country_name(entity):
 
 
 def load_countries():
-    import os
+    # import os
     country_list_filename = 'countries.json'
 
     testing = running_unit_tests()
