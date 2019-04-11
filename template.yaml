@@ -1055,19 +1055,16 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        HubSpotEventQueue:
-          Type: SQS
-          Properties:
-            Queue: !GetAtt HubSpotEventQueue.Arn
-            BatchSize: 1
       Environment:
         Variables:
-          DB_ID: !Ref ThiscoveryDB
-          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
-          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        Timer7:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+          Metadata:
+            StackeryName: timer-hubspot-update
     Metadata:
       StackeryName: hubspot-event-despatcher
 Parameters:
