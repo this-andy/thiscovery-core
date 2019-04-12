@@ -371,6 +371,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ping.Arn}/invocations
               responses: {}
+          /v1/sqs-test:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${sqstest.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -1067,6 +1074,48 @@ Resources:
             StackeryName: timer-hubspot-update
     Metadata:
       StackeryName: hubspot-event-despatcher
+  sqstest:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-sqstest
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: sqs-test
+      CodeUri: api/endpoints
+      Handler: misc.sqs_send_example
+      Runtime: python3.6
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt HubSpotEventQueue.QueueName
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1sqstest:
+          Type: Api
+          Properties:
+            Path: /v1/sqs-test
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          QUEUE_NAME: !GetAtt HubSpotEventQueue.QueueName
+          QUEUE_ARN: !GetAtt HubSpotEventQueue.Arn
+          QUEUE_URL: !Ref HubSpotEventQueue
+    Metadata:
+      StackeryName: sqs-test
+  sqstestDeployTrigger:
+    Type: Custom::FunctionDeployTrigger
+    Properties:
+      ServiceToken: !GetAtt sqstest.Arn
 Parameters:
   StackTagName:
     Type: String
