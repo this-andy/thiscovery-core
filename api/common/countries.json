@@ -940,6 +940,22 @@
     "Name": "United Kingdom"
   },
   {
+    "Code": "GB-ENG",
+    "Name": "United Kingdom - England"
+  },
+  {
+    "Code": "GB-SCT",
+    "Name": "United Kingdom - Scotland"
+  },
+  {
+    "Code": "GB-WLS",
+    "Name": "United Kingdom - Wales"
+  },
+  {
+    "Code": "GB-NIR",
+    "Name": "United Kingdom - Northern Ireland"
+  },
+  {
     "Code": "US",
     "Name": "United States"
   },

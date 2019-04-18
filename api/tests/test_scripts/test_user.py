@@ -27,7 +27,7 @@ from api.common.utilities import new_correlation_id, now_with_tz, set_running_un
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-TIME_TOLERANCE_SECONDS = 10
+TIME_TOLERANCE_SECONDS = 15
 
 
 class TestUser(TestCase):
@@ -206,7 +206,7 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/email_address_verified', 'value': 'true'},
             {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
-            {'op': 'replace', 'path': '/country_code', 'value': 'IT'},
+            {'op': 'replace', 'path': '/country_code', 'value': 'GB-SCT'},
         ]
         event = {'body': json.dumps(user_jsonpatch)}
         event['pathParameters'] = {'id': user_id}
@@ -244,8 +244,8 @@ class TestUser(TestCase):
             "first_name": "simon",
             "last_name": "smith",
             "auth0_id": "new-auth0-id",
-            "country_code": "IT",
-            "country_name": "Italy",
+            "country_code": "GB-SCT",
+            "country_name": "United Kingdom - Scotland",
             "status": "singing"
         }
 

@@ -19,14 +19,15 @@
 import json
 import os
 import time
+import logging
 from http import HTTPStatus
 
 if 'api.endpoints' in __name__:
-    from .common.utilities import ObjectDoesNotExistError, DetailedValueError, \
-        get_correlation_id, get_logger, error_as_response_body, get_start_time, get_elapsed_ms
+    from .common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
+        get_elapsed_ms, obfuscate_data, sqs_send
 else:
-    from common.utilities import ObjectDoesNotExistError, DetailedValueError, \
-        get_correlation_id, get_logger, error_as_response_body, get_start_time, get_elapsed_ms
+    from common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
+        get_elapsed_ms, obfuscate_data, sqs_send
 
 
 def ping(event, context):
@@ -66,15 +67,6 @@ def ping(event, context):
     logger.info('API call', extra={'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
 
     return response
-
-
-def obfuscate_data(input, item_key_path):
-    key = item_key_path[0]
-    if key in input:
-        if len(item_key_path) == 1:
-            input[key] = '*****'
-        else:
-            obfuscate_data(input[key], item_key_path[1:])
 
 
 def raise_error_api(event, context):
@@ -124,105 +116,141 @@ def raise_error_api(event, context):
     return response
 
 
-if __name__ == "__main__":
-    ev = {
-        "resource": "/v1/ping",
-        "path": "/v1/ping",
-        "httpMethod": "GET",
-        "headers": {
-            "Accept": "*/*",
-            "accept-encoding": "gzip, deflate",
-            "cache-control": "no-cache",
-            "Host": "dev-api.thiscovery.org",
-            "Postman-Token": "4522af16-c8aa-49b8-aae2-db2320e8a44b",
-            "User-Agent": "PostmanRuntime/7.4.0",
-            "X-Amzn-Trace-Id": "Root=1-5c98eead-5a16e9b022c4b0e834876ca0",
-            "x-api-key": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
-            "X-Forwarded-For": "192.168.100.57",
-            "X-Forwarded-Port": "443",
-            "X-Forwarded-Proto": "https"
-        },
-        "multiValueHeaders": {
-            "Accept": [
-                "*/*"
-            ],
-            "accept-encoding": [
-                "gzip, deflate"
-            ],
-            "cache-control": [
-                "no-cache"
-            ],
-            "Host": [
-                "dev-api.thiscovery.org"
-            ],
-            "Postman-Token": [
-                "4522af16-c8aa-49b8-aae2-db2320e8a44b"
-            ],
-            "User-Agent": [
-                "PostmanRuntime/7.4.0"
-            ],
-            "X-Amzn-Trace-Id": [
-                "Root=1-5c98eead-5a16e9b022c4b0e834876ca0"
-            ],
-            "x-api-key": [
-                "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0"
-            ],
-            "X-Forwarded-For": [
-                "192.168.100.57"
-            ],
-            "X-Forwarded-Port": [
-                "443"
-            ],
-            "X-Forwarded-Proto": [
-                "https"
-            ]
-        },
-        "queryStringParameters": None,
-        "multiValueQueryStringParameters": None,
-        "pathParameters": None,
-        "stageVariables": None,
-        "requestContext": {
-            "resourceId": "mm6l6n",
-            "resourcePath": "/v1/ping",
-            "httpMethod": "GET",
-            "extendedRequestId": "XGo7KHBDjoEFapA=",
-            "requestTime": "25/Mar/2019:15:07:25 +0000",
-            "path": "/v1/ping",
-            "accountId": "1234567890",
-            "protocol": "HTTP/1.1",
-            "stage": "dev",
-            "domainPrefix": "dev-api",
-            "requestTimeEpoch": 1553526445814,
-            "requestId": "b306299f-4f0f-11e9-a8c6-19f48fc11706",
-            "identity": {
-                "cognitoIdentityPoolId": None,
-                "cognitoIdentityId": None,
-                "apiKey": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
-                "cognitoAuthenticationType": None,
-                "userArn": None,
-                "apiKeyId": "ujtgn3be02",
-                "userAgent": "PostmanRuntime/7.4.0",
-                "accountId": None,
-                "caller": None,
-                "sourceIp": "192.168.100.57",
-                "accessKey": None,
-                "cognitoAuthenticationProvider": None,
-                "user": None
+def sqs_send_api(event, context):
+    message_json = json.loads(event['body'])
+    message_text = message_json['text']
+    message_attributes = message_json['attributes']
+
+    sqs_send(message_text, message_attributes)
+
+
+def sqs_send_example():
+    logger = get_logger()
+
+    message_body = (
+            'Information about current NY Times fiction bestseller for '
+            'week of 12/11/2016.'
+        )
+    message_attributes = {
+            'Title': {
+                'DataType': 'String',
+                'StringValue': 'The Whistler'
             },
-            "domainName": "dev-api.thiscovery.org",
-            "apiId": "3dquxzv0a3"
-        },
-        "body": None,
-        "isBase64Encoded": False
-    }
+            'Author': {
+                'DataType': 'String',
+                'StringValue': 'John Grisham'
+            },
+            'WeeksOn': {
+                'DataType': 'Number',
+                'StringValue': '6'
+            }
+        }
+    result = sqs_send(message_body, message_attributes)
 
-    obfuscate_data(ev, ('headers', 'x-api-key'))
-    obfuscate_data(ev, ('headers', 'X-Forwarded-For'))
-    obfuscate_data(ev, ('multiValueHeaders', 'x-api-key'))
-    obfuscate_data(ev, ('multiValueHeaders', 'X-Forwarded-For'))
-    obfuscate_data(ev, ('requestContext', 'identity'))
+    logger.info('sqs_send_example', extra={'result': str(result)})
 
-    print(ev)
+    return result
+
+
+if __name__ == "__main__":
+    # ev = {
+    #     "resource": "/v1/ping",
+    #     "path": "/v1/ping",
+    #     "httpMethod": "GET",
+    #     "headers": {
+    #         "Accept": "*/*",
+    #         "accept-encoding": "gzip, deflate",
+    #         "cache-control": "no-cache",
+    #         "Host": "dev-api.thiscovery.org",
+    #         "Postman-Token": "4522af16-c8aa-49b8-aae2-db2320e8a44b",
+    #         "User-Agent": "PostmanRuntime/7.4.0",
+    #         "X-Amzn-Trace-Id": "Root=1-5c98eead-5a16e9b022c4b0e834876ca0",
+    #         "x-api-key": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
+    #         "X-Forwarded-For": "192.168.100.57",
+    #         "X-Forwarded-Port": "443",
+    #         "X-Forwarded-Proto": "https"
+    #     },
+    #     "multiValueHeaders": {
+    #         "Accept": [
+    #             "*/*"
+    #         ],
+    #         "accept-encoding": [
+    #             "gzip, deflate"
+    #         ],
+    #         "cache-control": [
+    #             "no-cache"
+    #         ],
+    #         "Host": [
+    #             "dev-api.thiscovery.org"
+    #         ],
+    #         "Postman-Token": [
+    #             "4522af16-c8aa-49b8-aae2-db2320e8a44b"
+    #         ],
+    #         "User-Agent": [
+    #             "PostmanRuntime/7.4.0"
+    #         ],
+    #         "X-Amzn-Trace-Id": [
+    #             "Root=1-5c98eead-5a16e9b022c4b0e834876ca0"
+    #         ],
+    #         "x-api-key": [
+    #             "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0"
+    #         ],
+    #         "X-Forwarded-For": [
+    #             "192.168.100.57"
+    #         ],
+    #         "X-Forwarded-Port": [
+    #             "443"
+    #         ],
+    #         "X-Forwarded-Proto": [
+    #             "https"
+    #         ]
+    #     },
+    #     "queryStringParameters": None,
+    #     "multiValueQueryStringParameters": None,
+    #     "pathParameters": None,
+    #     "stageVariables": None,
+    #     "requestContext": {
+    #         "resourceId": "mm6l6n",
+    #         "resourcePath": "/v1/ping",
+    #         "httpMethod": "GET",
+    #         "extendedRequestId": "XGo7KHBDjoEFapA=",
+    #         "requestTime": "25/Mar/2019:15:07:25 +0000",
+    #         "path": "/v1/ping",
+    #         "accountId": "1234567890",
+    #         "protocol": "HTTP/1.1",
+    #         "stage": "dev",
+    #         "domainPrefix": "dev-api",
+    #         "requestTimeEpoch": 1553526445814,
+    #         "requestId": "b306299f-4f0f-11e9-a8c6-19f48fc11706",
+    #         "identity": {
+    #             "cognitoIdentityPoolId": None,
+    #             "cognitoIdentityId": None,
+    #             "apiKey": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
+    #             "cognitoAuthenticationType": None,
+    #             "userArn": None,
+    #             "apiKeyId": "ujtgn3be02",
+    #             "userAgent": "PostmanRuntime/7.4.0",
+    #             "accountId": None,
+    #             "caller": None,
+    #             "sourceIp": "192.168.100.57",
+    #             "accessKey": None,
+    #             "cognitoAuthenticationProvider": None,
+    #             "user": None
+    #         },
+    #         "domainName": "dev-api.thiscovery.org",
+    #         "apiId": "3dquxzv0a3"
+    #     },
+    #     "body": None,
+    #     "isBase64Encoded": False
+    # }
+    #
+    # obfuscate_data(ev, ('headers', 'x-api-key'))
+    # obfuscate_data(ev, ('headers', 'X-Forwarded-For'))
+    # obfuscate_data(ev, ('multiValueHeaders', 'x-api-key'))
+    # obfuscate_data(ev, ('multiValueHeaders', 'X-Forwarded-For'))
+    # obfuscate_data(ev, ('requestContext', 'identity'))
+    #
+    # print(ev)
     # result = ping(ev, None)
 
     # error_id = 'none'
@@ -236,3 +264,6 @@ if __name__ == "__main__":
     # result = raise_error_api(ev, None)
 
     # print(result)
+
+    result = sqs_send_example()
+    print(result)

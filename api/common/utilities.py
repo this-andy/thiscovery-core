@@ -130,6 +130,15 @@ def triggered_by_heartbeat(event):
     # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
     return (event is not None and 'heartbeat' in event)
 
+
+def obfuscate_data(input, item_key_path):
+    key = item_key_path[0]
+    if key in input:
+        if len(item_key_path) == 1:
+            input[key] = '*****'
+        else:
+            obfuscate_data(input[key], item_key_path[1:])
+
 # endregion
 
 
@@ -351,6 +360,30 @@ countries = load_countries()
 
 # endregion
 
+
+# region SQS methods
+
+def sqs_send(message_body, message_attributes):
+    logger = get_logger()
+
+    logger.info('sqs_send: init')
+
+    sqs = boto3.client('sqs')
+
+    queue_url = 'https://sqs.eu-west-1.amazonaws.com/595383251813/thiscovery-core-dev-HubSpotEventQueue'
+
+    logger.info('sqs_send: about to send')
+
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        DelaySeconds=10,
+        MessageAttributes=message_attributes,
+        MessageBody=message_body
+    )
+
+    return response['MessageId']
+
+# endregion
 
 if __name__ == "__main__":
     # result = get_aws_secret('database-connection')
