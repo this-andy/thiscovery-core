@@ -229,7 +229,7 @@ def get_aws_region():
     return region
 
 
-def get_aws_secrets_namespace():
+def get_aws_namespace():
     try:
         secrets_namespace = os.environ['SECRETS_NAMESPACE']
     except:
@@ -244,12 +244,11 @@ def get_secret(secret_name, namespace_override=None):
     return get_aws_secret(secret_name, namespace_override)
 
 
-
 def get_aws_secret(secret_name, namespace_override):
     logger = get_logger()
     # need to prepend secret name with namespace...
     if namespace_override is None:
-        namespace = get_aws_secrets_namespace()
+        namespace = get_aws_namespace()
     else:
         namespace = namespace_override
 
@@ -298,6 +297,37 @@ def get_aws_secret(secret_name, namespace_override):
         secret = json.loads(secret)
     finally:
         return secret
+
+# endregion
+
+
+# region System parameter methods
+
+    ssm = boto3.client('ssm', get_aws_region())
+
+    response = ssm.get_parameters(
+        Names=['/dev/feature-flags']
+    )
+    for parameter in response['Parameters']:
+        print (parameter['Value'])
+
+# endregion
+
+# region System parameter methods
+
+def load_system_params():
+    ssm = boto3.client('ssm', get_aws_region())
+
+    flags_list = ssm.get_parameters(Names=[get_aws_namespace() + 'feature-flags'])
+
+    params = json.loads(flags_list['Parameters'][0]['Value'])
+
+    return params
+
+system_parameters = load_system_params()
+
+def feature_flag(name: str) -> bool:
+    return name in system_parameters and system_parameters[name]
 
 # endregion
 
@@ -385,11 +415,14 @@ def sqs_send(message_body, message_attributes):
 
 # endregion
 
+
 if __name__ == "__main__":
     # result = get_aws_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
-    result = get_country_name('US')
-    print(result)
+    # result = get_country_name('US')
+    # print(result)
 
+    print(feature_flag('hubspot-tle'))
+    print(feature_flag('hubspot-contacts'))

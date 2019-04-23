@@ -32,3 +32,6 @@ node_modules/
 api/.DS_Store
 api/__pycache__/
 api/tests/test_sql/.DS_Store
+
+# data from original dev env
+api/local/london_data/

@@ -28,12 +28,14 @@ if 'api.endpoints' in __name__:
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from .common.entity_update import EntityUpdate
+    from .common.notification import notify_new_user_event
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
     from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from common.entity_update import EntityUpdate
+    from common.notification import notify_new_user_event
 
 
 BASE_USER_SELECT_SQL = '''
@@ -328,6 +330,8 @@ def create_user(user_json, correlation_id):
         'country_name': get_country_name(country_code),
         'status': status,
     }
+
+    notify_new_user_event(new_user)
     
     return new_user
 

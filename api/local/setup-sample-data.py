@@ -17,7 +17,7 @@
 #
 
 from api.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
-from api.common.utilities import get_aws_secrets_namespace
+from api.common.utilities import get_aws_namespace
 
 TEST_DATA_FOLDER = '../tests/test_data/'
 
@@ -70,7 +70,7 @@ def clear_database():
 
 
 if __name__ == "__main__":
-    namespace = get_aws_secrets_namespace()
+    namespace = get_aws_namespace()
     print('***************')
     print('About to update environment: ' + namespace)
     answer = input('To confirm retype environment name (anything else cancels): ')
