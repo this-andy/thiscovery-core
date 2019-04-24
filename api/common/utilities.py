@@ -316,14 +316,14 @@ def get_aws_secret(secret_name, namespace_override):
 
 # region System parameter methods
 
-def load_system_params():
-    ssm = boto3.client('ssm', get_aws_region())
-
-    flags_list = ssm.get_parameters(Names=[get_aws_namespace() + 'feature-flags'])
-
-    params = json.loads(flags_list['Parameters'][0]['Value'])
-
-    return params
+# def load_system_params():
+#     ssm = boto3.client('ssm', get_aws_region())
+#
+#     flags_list = ssm.get_parameters(Names=[get_aws_namespace() + 'feature-flags'])
+#
+#     params = json.loads(flags_list['Parameters'][0]['Value'])
+#
+#     return params
 
 
 def feature_flag(name: str) -> bool:
@@ -331,7 +331,7 @@ def feature_flag(name: str) -> bool:
     return False
 
 
-system_parameters = load_system_params()
+# system_parameters = load_system_params()
 
 # endregion
 
