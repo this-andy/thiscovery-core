@@ -19,11 +19,14 @@
 import json
 import requests
 from urllib.request import urlopen
-from api.common.utilities import get_secret, get_aws_region
+from api.common.utilities import get_secret, get_aws_region, get_logger
 import logging
 import boto3
 import sys
 import datetime
+
+# from api.endpoints.user import patch_user
+from ..endpoints.user import patch_user
 
 
 hubspot_connection = get_secret('hubspot-connection')
@@ -73,7 +76,9 @@ def authorise():
 
 
 def post_new_user_to_crm(new_user):
+    id = new_user['id']
     email = new_user['email']
+
     url =  base_url + '/contacts/v1/contact/createOrUpdate/email/' + email + api_key_string
     headers = {}
     headers['Content-Type'] = 'application/json'
@@ -103,6 +108,12 @@ def post_new_user_to_crm(new_user):
         content = json.loads(content_str)
         vid = content['vid']
         isNew = content['isNew']
+
+        user_jsonpatch = [
+            {'op': 'replace', 'path': '/crm_id', 'value': str(vid)},
+        ]
+
+        patch_user(id, user_jsonpatch)
         pass
     elif result.status_code == 400:
         pass
@@ -118,26 +129,17 @@ if __name__ == "__main__":
     # result = get_hubspot_contact(None)
     # result = update_contact('coolrobot@hubspot.com')
 
-    # new_user = {
-    #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-    #     "created": "2018-08-21T11:16:56+01:00",
-    #     "email": "bh2@hubspot.com",
-    #     "title": "Mr",
-    #     "first_name": "Bernard",
-    #     "last_name": "Harris",
-    #     "auth0_id": "1234abcd",
-    #     "status": "new"
-    #   }
-    #
-    # result = post_new_user_to_crm(new_user)
+    new_user = {
+        "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
+        "created": "2018-08-21T11:16:56+01:00",
+        "email": "bh2@hubspot.com",
+        "title": "Mr",
+        "first_name": "Bernard",
+        "last_name": "Harris",
+        "auth0_id": "1234abcd",
+        "status": "new"
+      }
 
-    ssm = boto3.client('ssm', get_aws_region())
+    result = post_new_user_to_crm(new_user)
 
-
-    response = ssm.get_parameters(
-        Names=['/dev/feature-flags']
-    )
-    for parameter in response['Parameters']:
-        print (parameter['Value'])
-
-    # print(result)
+    print(result)

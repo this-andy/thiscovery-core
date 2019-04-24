@@ -23,14 +23,14 @@ from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
 if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
+    from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from .common.entity_update import EntityUpdate
     from .common.notification import notify_new_user_event
 else:
-    from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query
+    from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from common.utilities import validate_uuid, get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
@@ -154,7 +154,7 @@ def get_user_by_email_api(event, context):
     return response
 
 
-def patch_user(id_to_update, patch_json, modified, correlation_id):
+def patch_user(id_to_update, patch_json, modified_time=now_with_tz(), correlation_id=new_correlation_id()):
     mappings = {
         'email': {'table_name': 'public.projects_user', 'column_name': 'email'},
         'email_address_verified': {'table_name': 'public.projects_user', 'column_name': 'email_address_verified'},
@@ -168,7 +168,7 @@ def patch_user(id_to_update, patch_json, modified, correlation_id):
 
     id_column = 'id'
 
-    execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id)
+    execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_time, correlation_id)
 
 
 def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id):
@@ -201,12 +201,12 @@ def patch_user_api(event, context):
 
         logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
 
-        modified = now_with_tz()
+        modified_time = now_with_tz()
 
         # create an audit record of update, inc 'undo' patch
-        entity_update = create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
+        entity_update = create_user_entity_update(user_id, user_jsonpatch, modified_time, correlation_id)
 
-        patch_user(user_id, user_jsonpatch, modified, correlation_id)
+        patch_user(user_id, user_jsonpatch, modified_time, correlation_id)
 
         response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps('')}
 

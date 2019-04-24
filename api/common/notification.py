@@ -24,12 +24,35 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 
-from api.common.hubspot import post_new_user_to_crm
-from api.common.utilities import feature_flag
+# from api.common.hubspot import post_new_user_to_crm
+from api.common.utilities import feature_flag, get_logger
+
+
+def sqs_send(message_body, message_attributes):
+    logger = get_logger()
+
+    logger.info('sqs_send: init')
+
+    sqs = boto3.client('sqs')
+
+    queue_url = 'https://sqs.eu-west-1.amazonaws.com/595383251813/thiscovery-core-dev-HubSpotEventQueue'
+
+    logger.info('sqs_send: about to send')
+
+    response = sqs.send_message(
+        QueueUrl=queue_url,
+        DelaySeconds=10,
+        MessageAttributes=message_attributes,
+        MessageBody=message_body
+    )
+
+    return response['MessageId']
+
 
 def notify_new_user_event (new_user):
     # this will eventually post new user to SQS queue
 
     # for now it just calls hubspot
-    if feature_flag('hubspot-contacts'):
-        post_new_user_to_crm(new_user)
+    # if feature_flag('hubspot-contacts'):
+    #     post_new_user_to_crm(new_user)
+    pass

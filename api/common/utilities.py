@@ -313,6 +313,7 @@ def get_aws_secret(secret_name, namespace_override):
 
 # endregion
 
+
 # region System parameter methods
 
 def load_system_params():
@@ -324,10 +325,13 @@ def load_system_params():
 
     return params
 
-system_parameters = load_system_params()
 
 def feature_flag(name: str) -> bool:
-    return name in system_parameters and system_parameters[name]
+    # return name in system_parameters and system_parameters[name]
+    return False
+
+
+system_parameters = load_system_params()
 
 # endregion
 
@@ -387,31 +391,6 @@ def get_country_name(country_code):
 
 
 countries = load_countries()
-
-# endregion
-
-
-# region SQS methods
-
-def sqs_send(message_body, message_attributes):
-    logger = get_logger()
-
-    logger.info('sqs_send: init')
-
-    sqs = boto3.client('sqs')
-
-    queue_url = 'https://sqs.eu-west-1.amazonaws.com/595383251813/thiscovery-core-dev-HubSpotEventQueue'
-
-    logger.info('sqs_send: about to send')
-
-    response = sqs.send_message(
-        QueueUrl=queue_url,
-        DelaySeconds=10,
-        MessageAttributes=message_attributes,
-        MessageBody=message_body
-    )
-
-    return response['MessageId']
 
 # endregion
 

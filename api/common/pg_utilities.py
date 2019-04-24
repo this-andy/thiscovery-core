@@ -237,7 +237,7 @@ def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_c
     return tables_to_update, columns_to_update
 
 
-def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified):
+def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified_time):
     sql_updates = []
     for table_name in tables_to_update:
         # create update columns SQL
@@ -250,7 +250,7 @@ def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column,
 
         # add update to modified column
         cols_sql += 'modified = %s'
-        params += (str(modified),)
+        params += (str(modified_time),)
 
         table_sql = 'UPDATE ' + table_name + ' SET ' + cols_sql + ' WHERE ' + id_column + ' = %s'
         params += (id_to_update,)
@@ -258,11 +258,11 @@ def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column,
     return sql_updates
 
 
-def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified, correlation_id=new_correlation_id()):
+def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_time, correlation_id=new_correlation_id()):
     # todo - wrap in transaction if ever extended to multi table updates
     try:
         tables_to_update, columns_to_update = create_updates_list_from_jsonpatch(mappings, patch_json, correlation_id)
-        sql_updates = create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified)
+        sql_updates = create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified_time)
         for (sql_update, params) in sql_updates:
             rowcount = execute_non_query(sql_update, params, correlation_id)
             if rowcount == 0:

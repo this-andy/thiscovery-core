@@ -36,6 +36,9 @@ class TestUser(TestCase):
     def setUpClass(self):
         set_running_unit_tests(True)
 
+        truncate_table('public.projects_user')
+        truncate_table('public.projects_entityupdate')
+
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
 
 
