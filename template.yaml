@@ -1070,21 +1070,6 @@ Resources:
       TableName: !Sub ${AWS::StackName}-notifications
     Metadata:
       StackeryName: Notifications
-  tokens:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
-      TableName: !Sub ${AWS::StackName}-tokens
-    Metadata:
-      StackeryName: Tokens
   processnotifications:
     Type: AWS::Serverless::Function
     Properties:
@@ -1101,18 +1086,12 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
-        - DynamoDBCrudPolicy:
-            TableName: !Ref tokens
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref tokens
-          TABLE_ARN: !GetAtt tokens.Arn
       Events:
         notifications:
           Type: DynamoDB
