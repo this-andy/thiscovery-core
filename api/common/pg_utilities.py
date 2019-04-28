@@ -17,8 +17,6 @@
 #
 
 import psycopg2
-import os
-import ast
 from .utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
     PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id, running_unit_tests, UNIT_TEST_NAMESPACE
 

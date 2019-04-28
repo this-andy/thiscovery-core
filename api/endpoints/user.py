@@ -22,9 +22,6 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
-# temp
-import api.common.hubspot
-
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -32,7 +29,7 @@ if 'api.endpoints' in __name__:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from .common.entity_update import EntityUpdate
     from .utils import validate_uuid
-    # from .common.notification import notify_new_user_event
+    from .common.notification_send import notify_new_user_event
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -40,7 +37,7 @@ else:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from common.entity_update import EntityUpdate
     from utils import validate_uuid
-    # from common.notification import notify_new_user_event
+    from common.notification_send import notify_new_user_event
 
 
 BASE_USER_SELECT_SQL = '''
@@ -337,9 +334,8 @@ def create_user(user_json, correlation_id):
         'status': status,
     }
 
-    # notify_new_user_event(new_user)
-    api.common.hubspot.post_new_user_to_crm(new_user)
-    
+    notify_new_user_event(new_user)
+
     return new_user
 
 
@@ -415,12 +411,12 @@ if __name__ == "__main__":
     #     execute_non_query(sql_update, params, None)
 
     user_json = {
-        "email": "cn@email.co.uk",
+        "email": "fn@email.co.uk",
         "title": "Mr",
-        "first_name": "Cardew",
+        "first_name": "Ferdinand",
         "last_name": "Nobody",
         "status": "new",
-        "country_code": "GB-NIR"
+        "country_code": "GB-ENG"
     }
 
     correlation_id = None

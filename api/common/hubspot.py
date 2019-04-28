@@ -27,7 +27,6 @@ import sys
 import datetime
 
 from api.endpoints.user import patch_user
-# from ..endpoints.user import patch_user
 
 
 hubspot_connection = get_secret('hubspot-connection')

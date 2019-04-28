@@ -24,9 +24,8 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 
-import api.common.hubspot
-from api.common.utilities import feature_flag, get_logger
-
+from .utilities import feature_flag, get_logger
+from .dynamodb_utilities import write
 
 def sqs_send(message_body, message_attributes):
     logger = get_logger()
@@ -50,9 +49,5 @@ def sqs_send(message_body, message_attributes):
 
 
 def notify_new_user_event (new_user):
-    # this will eventually post new user to SQS queue
-
-    # for now it just calls hubspot
-    # if feature_flag('hubspot-contacts'):
-    api.common.hubspot.post_new_user_to_crm(new_user)
+    write(new_user)
     pass
