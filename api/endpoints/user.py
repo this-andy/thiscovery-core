@@ -22,6 +22,9 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
+# temp
+import api.common.hubspot
+
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -29,7 +32,6 @@ if 'api.endpoints' in __name__:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from .common.entity_update import EntityUpdate
     from .utils import validate_uuid
-
     # from .common.notification import notify_new_user_event
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
@@ -38,7 +40,6 @@ else:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
     from common.entity_update import EntityUpdate
     from utils import validate_uuid
-
     # from common.notification import notify_new_user_event
 
 
@@ -168,6 +169,7 @@ def patch_user(id_to_update, patch_json, modified_time=now_with_tz(), correlatio
         'auth0_id': {'table_name': 'public.projects_user', 'column_name': 'auth0_id'},
         'status': {'table_name': 'public.projects_user', 'column_name': 'status'},
         'country_code': {'table_name': 'public.projects_user', 'column_name': 'country_code'},
+        'crm_id': {'table_name': 'public.projects_user', 'column_name': 'crm_id'},
     }
 
     id_column = 'id'
@@ -336,6 +338,7 @@ def create_user(user_json, correlation_id):
     }
 
     # notify_new_user_event(new_user)
+    api.common.hubspot.post_new_user_to_crm(new_user)
     
     return new_user
 
@@ -412,16 +415,16 @@ if __name__ == "__main__":
     #     execute_non_query(sql_update, params, None)
 
     user_json = {
-        "email": "an@email.addr",
+        "email": "cn@email.co.uk",
         "title": "Mr",
-        "first_name": "Albert",
-        "last_name": "No-country",
+        "first_name": "Cardew",
+        "last_name": "Nobody",
         "status": "new",
-        "country_code": "FR"
+        "country_code": "GB-NIR"
     }
 
     correlation_id = None
-    # # print(create_user(user_json,correlation_id))
+    # print(create_user(user_json,correlation_id))
     #
     ev = {'body': json.dumps(user_json)}
     print(create_user_api(ev, None))

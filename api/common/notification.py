@@ -24,7 +24,7 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 
-# from api.common.hubspot import post_new_user_to_crm
+import api.common.hubspot
 from api.common.utilities import feature_flag, get_logger
 
 
@@ -54,5 +54,5 @@ def notify_new_user_event (new_user):
 
     # for now it just calls hubspot
     # if feature_flag('hubspot-contacts'):
-    #     post_new_user_to_crm(new_user)
+    api.common.hubspot.post_new_user_to_crm(new_user)
     pass
