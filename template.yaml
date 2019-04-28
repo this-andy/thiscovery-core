@@ -1113,6 +1113,13 @@ Resources:
         Variables:
           TABLE_NAME: !Ref tokens
           TABLE_ARN: !GetAtt tokens.Arn
+      Events:
+        notifications:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt notifications.StreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
     Metadata:
       StackeryName: process-notifications
 Parameters:
