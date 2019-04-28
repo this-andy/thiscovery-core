@@ -495,6 +495,8 @@ Resources:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
         - SQSSendMessagePolicy:
             QueueName: !GetAtt HubSpotEventQueue.QueueName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -525,6 +527,8 @@ Resources:
           QUEUE_NAME: !GetAtt HubSpotEventQueue.QueueName
           QUEUE_ARN: !GetAtt HubSpotEventQueue.Arn
           QUEUE_URL: !Ref HubSpotEventQueue
+          TABLE_NAME: !Ref notifications
+          TABLE_ARN: !GetAtt notifications.Arn
     Metadata:
       StackeryName: create-user
   patchuser:
@@ -1112,6 +1116,21 @@ Resources:
           QUEUE_URL: !Ref HubSpotEventQueue
     Metadata:
       StackeryName: sqs-test
+  notifications:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-notifications
+    Metadata:
+      StackeryName: Notifications
 Parameters:
   StackTagName:
     Type: String
