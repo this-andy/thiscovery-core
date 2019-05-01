@@ -36,21 +36,18 @@ class TestValidate_int(TestCase):
 class TestValidate_uuid(TestCase):
     def test_validate_uuid_ok(self):
         import uuid
-        # from api.common.utilities import validate_uuid
-        from api.endpoints.utils import validate_uuid
+        from api.common.utilities import validate_uuid
         uuid_str = str(uuid.uuid4())
         self.assertEqual(uuid_str, validate_uuid(uuid_str))
 
     def test_validate_uuid_fail_1(self):
         import uuid
-        from api.common.utilities import DetailedValueError
-        from api.endpoints.utils import validate_uuid
+        from api.common.utilities import DetailedValueError, validate_uuid
         uuid_str = str(uuid.uuid1())
         self.assertRaises(DetailedValueError, validate_uuid, uuid_str)
 
     def test_validate_uuid_fail_string(self):
-        from api.common.utilities import DetailedValueError
-        from api.endpoints.utils import validate_uuid
+        from api.common.utilities import DetailedValueError, validate_uuid
         uuid_str = 'this is not a uuid'
         self.assertRaises(DetailedValueError, validate_uuid, uuid_str)
 

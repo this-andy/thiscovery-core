@@ -78,7 +78,7 @@ def authorise():
 
 def get_token():
     redirect_url = 'https://www.hubspot.com/auth-callback'
-    code = 'd7f2fa01-4988-44f3-98c6-d3aaef0f13f4'
+    code = 'ff874843-19fe-489f-bca5-5015af9c896c'
     formData = {
         "grant_type": "authorization_code",
         "client_id": client_id,
@@ -88,7 +88,28 @@ def get_token():
     };
 
     res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
-    return res.status_code
+    token_text = res.text
+    token_json = json.loads(token_text)
+    print(token_json)
+    return token_json
+
+
+def refresh_token():
+    redirect_url = 'https://www.hubspot.com/auth-callback'
+    refresh_token = 'e21c3c1f-b772-4006-871e-d2904303be97'
+    formData = {
+        "grant_type": "refresh_token",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": redirect_url,
+        "refresh_token": refresh_token
+    };
+
+    res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
+    token_text = res.text
+    token_json = json.loads(token_text)
+    print(token_json)
+    return token_json
 
 
 def post_new_user_to_crm(new_user):
@@ -140,8 +161,41 @@ def post_new_user_to_crm(new_user):
     pass
 
 
+def post_task_signup_to_crm(task_signup):
+    id = task_signup['id']
+
+    url =  base_url + '/contacts/v1/contact/createOrUpdate/email/' + api_key_string
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+
+    data = json.dumps({
+        "properties": [
+            {
+                "property": "firstname",
+                "value": task_signup['first_name']
+            },
+            {
+                "property": "lastname",
+                "value": task_signup['last_name']
+            },
+        ]
+    })
+
+    result = requests.post(data=data, url=url, headers=headers)
+
+    if result.status_code == 200:
+        pass
+    elif result.status_code == 400:
+        pass
+    else:
+        pass
+
+    return result.status_code
+
+
 if __name__ == "__main__":
-    result = get_token()
+    # result = get_token()
+    result = refresh_token()
     # result = get_hubspot_contact(None)
     # result = update_contact('coolrobot@hubspot.com')
 

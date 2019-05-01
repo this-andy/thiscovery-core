@@ -153,7 +153,7 @@ def validate_int(s):
         raise DetailedValueError('invalid integer', errorjson)
 
 
-def validate_uuid_DNU(s):
+def validate_uuid(s):
     try:
         uuid.UUID(s, version=4)
         if uuid.UUID(s).version != 4:

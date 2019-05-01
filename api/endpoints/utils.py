@@ -5,7 +5,7 @@ if 'api.endpoints' in __name__:
 else:
     from common.utilities import DetailedValueError
 
-def validate_uuid(s):
+def validate_uuid_DNU(s):
     try:
         uuid.UUID(s, version=4)
         if uuid.UUID(s).version != 4:

@@ -24,20 +24,22 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat
+        triggered_by_heartbeat, validate_uuid
     from .user import get_user_by_id
     from .project import get_project_task
     from .user_project import create_user_project_if_not_exists
-    from .utils import validate_uuid
+    from .common.notification_send import notify_new_task_signup
+    # from .utils import validate_uuid
 else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat
+        triggered_by_heartbeat, validate_uuid
     from user import get_user_by_id
     from project import get_project_task
     from user_project import create_user_project_if_not_exists
-    from utils import validate_uuid
+    from common.notification_send import notify_new_task_signup
+    # from utils import validate_uuid
 
 
 
@@ -327,6 +329,8 @@ def create_user_task(ut_json, correlation_id):
         'consented': ut_consented,
     }
 
+    notify_new_task_signup(new_user_task)
+
     return new_user_task
 
 
@@ -366,9 +370,9 @@ def create_user_task_api(event, context):
 
 if __name__ == "__main__":
     ut_json = {
-        'user_id': "0bef3b7e-ab4a-437e-936a-6b7b557fb059",
+        'user_id': "eb1c804f-0b19-4a33-b2f3-ec5441f57301",
         'project_task_id': "273b420e-09cb-419c-8b57-b393595dba78",
-        'consented': '2018-06-12 16:16:56.087895+01'
+        'consented': '2019-05-01 16:16:56.087895+01'
     }
     # print(ut_json)
 

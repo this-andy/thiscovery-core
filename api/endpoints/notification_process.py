@@ -24,25 +24,40 @@ import json
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm
+    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from .common.dynamodb_utilities import read, delete
+    from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 else:
     from common.utilities import get_logger, DetailedValueError
     from common.hubspot import post_new_user_to_crm
     from common.dynamodb_utilities import read, delete
+    from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 
 
-def process_new_user_event ():
+def process_notifications():
+    notifications = read()
+    for notification in notifications:
+        notification_type = notification['type']
+        if notification_type == USER_REGISTRATION_NOTIFICATION:
+            process_user_registration(notification)
+        elif notification_type == TASK_SIGNUP_NOTIFICATION:
+            process_task_signup(notification)
 
-    new_users = read()
-    for new_user_notification in new_users:
-        details = new_user_notification['details']
-        post_new_user_to_crm(details)
-        notification_id = new_user_notification['id']
-        delete(notification_id)
-    pass
+
+def process_user_registration (notification):
+    notification_id = notification['id']
+    details = notification['details']
+    post_new_user_to_crm(details)
+    delete(notification_id)
+
+
+def process_task_signup(notification):
+    notification_id = notification['id']
+    details = notification['details']
+    post_task_signup_to_crm(details)
+    delete(notification_id)
 
 
 if __name__ == "__main__":
 
-    process_new_user_event()
+    process_notifications()

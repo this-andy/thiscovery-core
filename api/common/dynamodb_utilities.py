@@ -26,25 +26,36 @@ dynamodb = boto3.resource('dynamodb',region_name=get_aws_region())
 
 notifications_table = dynamodb.Table('thiscovery-core-dev-notifications')
 
-def write(item_details):
-    item = {
-        'id': str(uuid.uuid4()),
-        'type': 'user-registration',
-        'details': item_details,
-    }
 
-    response = notifications_table.put_item(Item=item)
+def write(item_type: str, item_details):
+    try:
+        item = {
+            'id': str(uuid.uuid4()),
+            'type': item_type,
+            'details': item_details,
+        }
+
+        response = notifications_table.put_item(Item=item)
+    except Exception as err:
+        raise err
 
     print(str(response))
 
-def read():
-    response = notifications_table.scan()
-    items = response['Items']
-    return items
 
-def delete(id):
-    response = notifications_table.delete_item(Key={'id':id})
-    pass
+def read():
+    try:
+        response = notifications_table.scan()
+        items = response['Items']
+        return items
+    except Exception as err:
+        raise err
+
+
+def delete(id: str):
+    try:
+        response = notifications_table.delete_item(Key={'id':id})
+    except Exception as err:
+        raise err
 
 
 if __name__ == "__main__":

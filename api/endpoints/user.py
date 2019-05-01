@@ -26,18 +26,18 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, validate_uuid
     from .common.entity_update import EntityUpdate
-    from .utils import validate_uuid
-    from .common.notification_send import notify_new_user_event
+    # from .utils import validate_uuid
+    from .common.notification_send import notify_new_user_registration
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, validate_uuid
     from common.entity_update import EntityUpdate
-    from utils import validate_uuid
-    from common.notification_send import notify_new_user_event
+    # from utils import validate_uuid
+    from common.notification_send import notify_new_user_registration
 
 
 BASE_USER_SELECT_SQL = '''
@@ -334,7 +334,7 @@ def create_user(user_json, correlation_id):
         'status': status,
     }
 
-    notify_new_user_event(new_user)
+    notify_new_user_registration(new_user)
 
     return new_user
 
@@ -411,12 +411,12 @@ if __name__ == "__main__":
     #     execute_non_query(sql_update, params, None)
 
     user_json = {
-        "email": "fn@email.co.uk",
+        "email": "hn@email.co.uk",
         "title": "Mr",
-        "first_name": "Ferdinand",
+        "first_name": "henry",
         "last_name": "Nobody",
         "status": "new",
-        "country_code": "GB-ENG"
+        "country_code": "US"
     }
 
     correlation_id = None
