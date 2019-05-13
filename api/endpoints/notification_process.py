@@ -22,29 +22,29 @@
 # from pythonjsonlogger import jsonlogger
 # import json
 
-# if 'api.endpoints' in __name__:
-#     from .common.utilities import get_logger, DetailedValueError
+if 'api.endpoints' in __name__:
+    from .common.utilities import get_logger, DetailedValueError
 #     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
-#     from .common.dynamodb_utilities import scan
+    from .common.dynamodb_utilities import scan
 #     from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from .user import patch_user
-# else:
-#     from common.utilities import get_logger, DetailedValueError
+else:
+    from common.utilities import get_logger, DetailedValueError
 #     from common.hubspot import post_new_user_to_crm
-#     from common.dynamodb_utilities import scan
+    from common.dynamodb_utilities import scan
 #     from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from user import patch_user
 #
 #
-# NOTIFICATION_TABLE_NAME = 'notifications'
+NOTIFICATION_TABLE_NAME = 'notifications'
 
 
 def process_notifications(event, context):
     print ('hello from def process_notifications')
 
-    # logger = get_logger()
-    # logger.info('process_notifications')
-    # notifications = scan(NOTIFICATION_TABLE_NAME)
+    logger = get_logger()
+    logger.info('process_notifications')
+    notifications = scan(NOTIFICATION_TABLE_NAME)
     # for notification in notifications:
     #     notification_type = notification['type']
     #     if notification_type == USER_REGISTRATION_NOTIFICATION:
