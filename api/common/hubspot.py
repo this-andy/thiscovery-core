@@ -26,7 +26,8 @@ from .utilities import get_secret
 from .dynamodb_utilities import get_item, put_item
 import logging
 
-# hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+print ('hubspot-connection' + str(hubspot_connection))
 # client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 # base_url = 'http://api.hubapi.com'
