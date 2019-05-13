@@ -57,6 +57,9 @@ def process_user_registration (notification):
     user_id = details['id']
     hubspot_id, isNew = post_new_user_to_crm(details)
 
+    if hubspot_id == -1:
+        raise ValueError
+
     user_jsonpatch = [
         {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
     ]
@@ -74,4 +77,4 @@ def process_task_signup(notification):
 
 if __name__ == "__main__":
 
-    process_notifications()
+    process_notifications(None, None)

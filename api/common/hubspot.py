@@ -34,7 +34,7 @@ base_url = 'http://api.hubapi.com'
 
 # region Contact propert management
 def create_property(property_definition):
-    url = '/contacts/v1/contact/email/' + email + '/profile'
+    url = '/contacts/v1/contact/email/'
 
     data = json.dumps({
         "name": "newcustomproperty",
@@ -43,7 +43,7 @@ def create_property(property_definition):
         "groupName": "contactinformation",
         "type": "string",
         "fieldType": "text",
-        "formField": true,
+        "formField": True,
         "displayOrder": 6,
         "options": [
         ]
@@ -91,8 +91,14 @@ def hubspot_post(url, data):
             headers['Authorization'] = 'Bearer ' + get_current_access_token()
 
             result = requests.post(data=data, url=full_url, headers=headers)
-
-            success = True
+            if result.status_code == HTTPStatus.OK:
+                success = True
+            elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
                 refresh_token()
@@ -218,9 +224,7 @@ def post_new_user_to_crm(new_user):
         return vid, is_new
 
     else:
-        pass
-
-    return result.status_code
+        return -1, False
 
 
 def post_task_signup_to_crm(task_signup):
