@@ -3,3 +3,4 @@ pip	>= 19.0.1
 psycopg2-binary
 jsonpatch
 python-json-logger
+requests
