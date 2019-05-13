@@ -22,57 +22,59 @@ import logging
 from pythonjsonlogger import jsonlogger
 import json
 
-if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
-    from .common.dynamodb_utilities import scan
-    from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
-    from .user import patch_user
-else:
-    from common.utilities import get_logger, DetailedValueError
-    from common.hubspot import post_new_user_to_crm
-    from common.dynamodb_utilities import scan
-    from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
-    from user import patch_user
-
-
-NOTIFICATION_TABLE_NAME = 'notifications'
+# if 'api.endpoints' in __name__:
+#     from .common.utilities import get_logger, DetailedValueError
+#     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
+#     from .common.dynamodb_utilities import scan
+#     from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
+#     from .user import patch_user
+# else:
+#     from common.utilities import get_logger, DetailedValueError
+#     from common.hubspot import post_new_user_to_crm
+#     from common.dynamodb_utilities import scan
+#     from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
+#     from user import patch_user
+#
+#
+# NOTIFICATION_TABLE_NAME = 'notifications'
 
 
 def process_notifications(event, context):
-    logger = get_logger()
-    logger.info('process_notifications')
-    notifications = scan(NOTIFICATION_TABLE_NAME)
-    for notification in notifications:
-        notification_type = notification['type']
-        if notification_type == USER_REGISTRATION_NOTIFICATION:
-            process_user_registration(notification)
-        elif notification_type == TASK_SIGNUP_NOTIFICATION:
-            process_task_signup(notification)
+    print ('hello from def process_notifications')
+
+    # logger = get_logger()
+    # logger.info('process_notifications')
+    # notifications = scan(NOTIFICATION_TABLE_NAME)
+    # for notification in notifications:
+    #     notification_type = notification['type']
+    #     if notification_type == USER_REGISTRATION_NOTIFICATION:
+    #         process_user_registration(notification)
+    #     elif notification_type == TASK_SIGNUP_NOTIFICATION:
+    #         process_task_signup(notification)
 
 
-def process_user_registration (notification):
-    notification_id = notification['id']
-    details = notification['details']
-    user_id = details['id']
-    hubspot_id, isNew = post_new_user_to_crm(details)
+# def process_user_registration (notification):
+#     notification_id = notification['id']
+#     details = notification['details']
+#     user_id = details['id']
+#     hubspot_id, isNew = post_new_user_to_crm(details)
+#
+#     if hubspot_id == -1:
+#         raise ValueError
+#
+#     user_jsonpatch = [
+#         {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+#     ]
+#
+#     patch_user(user_id, user_jsonpatch)
+#     # delete(notification_id)
 
-    if hubspot_id == -1:
-        raise ValueError
 
-    user_jsonpatch = [
-        {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
-    ]
-
-    patch_user(user_id, user_jsonpatch)
-    # delete(notification_id)
-
-
-def process_task_signup(notification):
-    notification_id = notification['id']
-    details = notification['details']
-    # post_task_signup_to_crm(details)
-    # delete(notification_id)
+# def process_task_signup(notification):
+#     notification_id = notification['id']
+#     details = notification['details']
+#     # post_task_signup_to_crm(details)
+#     # delete(notification_id)
 
 
 if __name__ == "__main__":
