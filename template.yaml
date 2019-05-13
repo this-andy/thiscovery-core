@@ -1094,6 +1094,8 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1107,6 +1109,10 @@ Resources:
             Stream: !GetAtt notifications.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 1
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref notifications
+          TABLE_ARN: !GetAtt notifications.Arn
     Metadata:
       StackeryName: process-notifications
   tokens:
