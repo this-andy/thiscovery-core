@@ -19,7 +19,7 @@
 import boto3
 import uuid
 
-from api.common.utilities import get_aws_region, get_environment_name
+from .utilities import get_aws_region, get_environment_name
 
 
 STACK_NAME = 'thiscovery-core'
