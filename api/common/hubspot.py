@@ -190,43 +190,43 @@ import logging
 # hubspot_oauth_token = get_token_from_database()
 #
 # # endregion
-#
-# def post_new_user_to_crm(new_user):
-#     email = new_user['email']
-#
-#     url = '/contacts/v1/contact/createOrUpdate/email/' + email
-#
-#     data = json.dumps({
-#         "properties": [
-#             {
-#                 "property": "email",
-#                 "value": email
-#             },
-#             {
-#                 "property": "firstname",
-#                 "value": new_user['first_name']
-#             },
-#             {
-#                 "property": "lastname",
-#                 "value": new_user['last_name']
-#             }
-#         ]
-#     })
-#
-#     result = hubspot_post(url, data)
-#
-#     if result.status_code == HTTPStatus.OK:
-#
-#         content_str = result.content.decode('utf-8')
-#         content = json.loads(content_str)
-#         vid = content['vid']
-#         is_new = content['isNew']
-#         return vid, is_new
-#
-#     else:
-#         return -1, False
-#
-#
+
+def post_new_user_to_crm(new_user):
+    email = new_user['email']
+
+    url = '/contacts/v1/contact/createOrUpdate/email/' + email
+
+    data = json.dumps({
+        "properties": [
+            {
+                "property": "email",
+                "value": email
+            },
+            {
+                "property": "firstname",
+                "value": new_user['first_name']
+            },
+            {
+                "property": "lastname",
+                "value": new_user['last_name']
+            }
+        ]
+    })
+
+    # result = hubspot_post(url, data)
+
+    # if result.status_code == HTTPStatus.OK:
+    #
+    #     content_str = result.content.decode('utf-8')
+    #     content = json.loads(content_str)
+    #     vid = content['vid']
+    #     is_new = content['isNew']
+    #     return vid, is_new
+    #
+    # else:
+    #     return -1, False
+
+
 # def post_task_signup_to_crm(task_signup):
 #
 #     url =  '/contacts/v1/contact/createOrUpdate/email/'
