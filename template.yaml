@@ -1086,7 +1086,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: process-notifications
       CodeUri: api/endpoints
-      Handler: notification_process.process_new_user_event
+      Handler: notification_process.process_notifications
       Runtime: python3.6
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
