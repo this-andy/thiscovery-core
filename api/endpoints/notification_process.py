@@ -24,13 +24,13 @@
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm
+    # from .common.hubspot import post_new_user_to_crm
     from .common.dynamodb_utilities import scan
     from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError
-    from common.hubspot import post_new_user_to_crm
+    # from common.hubspot import post_new_user_to_crm
     from common.dynamodb_utilities import scan
     from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from user import patch_user
@@ -59,15 +59,15 @@ def process_user_registration (notification):
     details = notification['details']
     user_id = details['id']
     logger.info('process_user_registration', extra={'user_id': str(user_id)})
-    hubspot_id, isNew = post_new_user_to_crm(details)
-    logger.info('process_user_registration', extra={'hubspot_id': str(hubspot_id)})
-
-    if hubspot_id == -1:
-        raise ValueError
-
-    user_jsonpatch = [
-        {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
-    ]
+    # hubspot_id, isNew = post_new_user_to_crm(details)
+    # logger.info('process_user_registration', extra={'hubspot_id': str(hubspot_id)})
+    #
+    # if hubspot_id == -1:
+    #     raise ValueError
+    #
+    # user_jsonpatch = [
+    #     {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+    # ]
 
     # patch_user(user_id, user_jsonpatch)
     # delete(notification_id)
