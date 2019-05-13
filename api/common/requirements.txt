@@ -4,3 +4,4 @@ psycopg2-binary
 jsonpatch
 python-json-logger
 requests
+urllib3
