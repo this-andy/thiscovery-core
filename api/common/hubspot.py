@@ -22,13 +22,16 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 import uuid
 
-from .utilities import get_secret
+from .utilities import get_secret, get_logger
 from .dynamodb_utilities import get_item, put_item
 import logging
 
+logger = get_logger()
 hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+logger.info('hubspot_connection:' + str(hubspot_connection))
+
 print ('hubspot-connection' + str(hubspot_connection))
-# client_id = hubspot_connection['client-id']
+client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 # base_url = 'http://api.hubapi.com'
 
