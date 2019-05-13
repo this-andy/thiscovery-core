@@ -40,6 +40,8 @@ NOTIFICATION_TABLE_NAME = 'notifications'
 
 
 def process_notifications(event, context):
+    logger = get_logger()
+    logger.info('process_notifications')
     notifications = scan(NOTIFICATION_TABLE_NAME)
     for notification in notifications:
         notification_type = notification['type']

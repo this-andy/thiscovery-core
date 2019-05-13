@@ -34,8 +34,25 @@ base_url = 'http://api.hubapi.com'
 
 # region Contact propert management
 def create_property(property_definition):
-    pass
+    url = '/contacts/v1/contact/email/' + email + '/profile'
 
+    data = json.dumps({
+        "name": "newcustomproperty",
+        "label": "A New Custom Property",
+        "description": "A new property for you",
+        "groupName": "contactinformation",
+        "type": "string",
+        "fieldType": "text",
+        "formField": true,
+        "displayOrder": 6,
+        "options": [
+        ]
+
+    })
+
+    r = hubspot_post(url, data)
+
+    return r.status_code
 # endregion
 
 # region core hubspot comms
