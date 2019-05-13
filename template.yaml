@@ -1096,6 +1096,8 @@ Resources:
         - AWSLambdaENIManagementAccess
         - DynamoDBCrudPolicy:
             TableName: !Ref notifications
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1113,6 +1115,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref notifications
           TABLE_ARN: !GetAtt notifications.Arn
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
     Metadata:
       StackeryName: process-notifications
   tokens:
