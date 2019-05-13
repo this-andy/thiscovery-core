@@ -24,13 +24,13 @@
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
-    # from .common.hubspot import post_new_user_to_crm
+    from .common.hubspot import post_new_user_to_crm
     from .common.dynamodb_utilities import scan
     from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError
-    # from common.hubspot import post_new_user_to_crm
+    from common.hubspot import post_new_user_to_crm
     from common.dynamodb_utilities import scan
     from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
 #     from user import patch_user
