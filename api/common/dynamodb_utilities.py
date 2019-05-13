@@ -21,7 +21,6 @@ import uuid
 
 from .utilities import get_aws_region, get_environment_name
 
-
 STACK_NAME = 'thiscovery-core'
 environment_name = get_environment_name()
 dynamodb = boto3.resource('dynamodb',region_name=get_aws_region())

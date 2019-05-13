@@ -22,8 +22,8 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 import uuid
 
-from api.common.utilities import get_secret
-from api.common.dynamodb_utilities import get_item, put_item
+from .utilities import get_secret
+from .dynamodb_utilities import get_item, put_item
 import logging
 
 hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
