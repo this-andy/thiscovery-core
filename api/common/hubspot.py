@@ -17,37 +17,90 @@
 #
 
 import json
-import uuid
 import requests
-from urllib.request import urlopen
-from api.common.utilities import get_secret, get_aws_region, get_logger
+from urllib.request import urlopen, Request, HTTPError
+from http import HTTPStatus
+import uuid
+
+from api.common.utilities import get_secret
+from api.common.dynamodb_utilities import get_item, put_item
 import logging
-import boto3
-import sys
-import datetime
 
-from api.endpoints.user import patch_user
-
-
-hubspot_connection = get_secret('hubspot-connection')
-api_key = hubspot_connection['api-key']
+hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
 client_id = hubspot_connection['client-id']
 client_secret = hubspot_connection['client-secret']
-api_key_string = '?hapikey=' + api_key
 base_url = 'http://api.hubapi.com'
 
 
-def get_hubspot_contact(email):
-    full_url = base_url + '/contacts/v1/lists/all/contacts/all' + api_key_string
-    response = urlopen(full_url).read()
-    data = json.loads(response)
-    return response
+# region Contact propert management
+def create_property(property_definition):
+    pass
+
+# endregion
+
+# region core hubspot comms
+
+def hubspot_get(url):
+    success = False
+    retry_count = 0
+    full_url = base_url + url
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+    while not success:
+        try:
+            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            req = Request(full_url, headers=headers)
+            response = urlopen(req).read()
+            data = json.loads(response)
+            success = True
+        except HTTPError as err:
+            if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+    return data
+
+
+def hubspot_post(url, data):
+    success = False
+    retry_count = 0
+    full_url = base_url + url
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+    while not success:
+        try:
+            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+
+            result = requests.post(data=data, url=full_url, headers=headers)
+
+            success = True
+        except HTTPError as err:
+            if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+
+    return result
+
+
+# endregion
+
+
+def save_token(new_token):
+    put_item('tokens', 'oAuth_token', new_token, 'hubspot')
+
+
+def get_hubspot_contact():
+    url = '/contacts/v1/lists/all/contacts/all'
+    return hubspot_get(url)
 
 
 def update_contact(email):
-    url = 'http://api.hubapi.com/contacts/v1/contact/email/' + email + '/profile' + api_key_string
-    headers = {}
-    headers['Content-Type'] = 'application/json'
+    url = '/contacts/v1/contact/email/' + email + '/profile'
 
     data = json.dumps({
         "properties": [
@@ -58,67 +111,67 @@ def update_contact(email):
         ]
     })
 
-    r = requests.post(data=data, url=url, headers=headers)
+    r = hubspot_post(url, data)
 
     return r.status_code
 
+# region token processing
 
-def authorise():
-    # Build the auth URL
-    scopes = 'contacts'
-    redirect_url = 'http://e1ac49d6.ngrok.io/hubspot'
-    authUrl = 'https://app.hubspot.com/oauth/authorize' + \
-    '?client_id=' + client_id + \
-    '&scope=' + scopes + \
-    '&redirect_uri=' + redirect_url
-
-    res = requests.post(authUrl)
-    return res.status_code
+def get_token_from_database() -> dict:
+    try:
+        token = get_item('tokens', 'hubspot')['details']
+    except:
+        token = None
+    return token
 
 
-def get_token():
+hubspot_oauth_token = None
+
+
+def get_current_access_token() -> str:
+    global hubspot_oauth_token
+    if hubspot_oauth_token is None:
+        hubspot_oauth_token = get_token_from_database()
+    return hubspot_oauth_token['access_token']
+
+
+def get_new_token_from_hubspot(refresh_token, code=None):
+    global hubspot_oauth_token
     redirect_url = 'https://www.hubspot.com/auth-callback'
-    code = 'ff874843-19fe-489f-bca5-5015af9c896c'
     formData = {
-        "grant_type": "authorization_code",
         "client_id": client_id,
         "client_secret": client_secret,
         "redirect_uri": redirect_url,
-        "code": code
     };
+
+    if refresh_token:
+        formData['grant_type'] = "refresh_token"
+        formData['refresh_token'] = refresh_token
+    else:
+        formData['grant_type'] = "authorization_code"
+        formData['code'] = code
 
     res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
     token_text = res.text
-    token_json = json.loads(token_text)
-    print(token_json)
-    return token_json
+    token = json.loads(token_text)
+    save_token(token)
+    hubspot_oauth_token = token
+    return token
 
 
 def refresh_token():
-    redirect_url = 'https://www.hubspot.com/auth-callback'
-    refresh_token = 'e21c3c1f-b772-4006-871e-d2904303be97'
-    formData = {
-        "grant_type": "refresh_token",
-        "client_id": client_id,
-        "client_secret": client_secret,
-        "redirect_uri": redirect_url,
-        "refresh_token": refresh_token
-    };
+    refresh_token = hubspot_oauth_token['refresh_token']
+    return get_new_token_from_hubspot(refresh_token)
 
-    res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
-    token_text = res.text
-    token_json = json.loads(token_text)
-    print(token_json)
-    return token_json
 
+hubspot_oauth_token = get_token_from_database()
+
+# endregion
 
 def post_new_user_to_crm(new_user):
-    id = new_user['id']
     email = new_user['email']
 
-    url =  base_url + '/contacts/v1/contact/createOrUpdate/email/' + email + api_key_string
-    headers = {}
-    headers['Content-Type'] = 'application/json'
+    url = '/contacts/v1/contact/createOrUpdate/email/' + email
 
     data = json.dumps({
         "properties": [
@@ -137,36 +190,25 @@ def post_new_user_to_crm(new_user):
         ]
     })
 
-    result = requests.post(data=data, url=url, headers=headers)
+    result = hubspot_post(url, data)
 
-    if result.status_code == 200:
-        pass
+    if result.status_code == HTTPStatus.OK:
+
         content_str = result.content.decode('utf-8')
         content = json.loads(content_str)
         vid = content['vid']
-        isNew = content['isNew']
+        is_new = content['isNew']
+        return vid, is_new
 
-        user_jsonpatch = [
-            {'op': 'replace', 'path': '/crm_id', 'value': str(vid)},
-        ]
-
-        patch_user(id, user_jsonpatch)
-        pass
-    elif result.status_code == 400:
-        pass
     else:
         pass
 
     return result.status_code
-    pass
 
 
 def post_task_signup_to_crm(task_signup):
-    id = task_signup['id']
 
-    url =  base_url + '/contacts/v1/contact/createOrUpdate/email/' + api_key_string
-    headers = {}
-    headers['Content-Type'] = 'application/json'
+    url =  '/contacts/v1/contact/createOrUpdate/email/'
 
     data = json.dumps({
         "properties": [
@@ -181,35 +223,30 @@ def post_task_signup_to_crm(task_signup):
         ]
     })
 
-    result = requests.post(data=data, url=url, headers=headers)
-
-    if result.status_code == 200:
-        pass
-    elif result.status_code == 400:
-        pass
-    else:
-        pass
-
-    return result.status_code
+    return hubspot_post(url, data)
 
 
 if __name__ == "__main__":
-    # result = get_token()
-    result = refresh_token()
-    # result = get_hubspot_contact(None)
+    # result = get_token_from_hubspot()
+    # token = get_token_from_database()
+    # result = get_new_token_from_hubspot(token['refresh_token'])
+    result = get_hubspot_contact()
     # result = update_contact('coolrobot@hubspot.com')
 
     # new_user = {
     #     "id": str(uuid.uuid4()),
     #     "created": "2018-08-21T11:16:56+01:00",
-    #     "email": "dh@hubspot.com",
-    #     "title": "Mr",
-    #     "first_name": "David",
+    #     "email": "eh@hubspot.com",
+    #     "title": "Ms",
+    #     "first_name": "Erica",
     #     "last_name": "Harris",
     #     "auth0_id": "1235abcd",
     #     "status": "new"
     #   }
-
+    #
     # result = post_new_user_to_crm(new_user)
 
+    # result = get_token_from_database()
     print(result)
+
+    # save_token(result_2019_05_10_12_11)

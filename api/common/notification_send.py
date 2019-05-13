@@ -25,7 +25,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .utilities import feature_flag, get_logger
-from .dynamodb_utilities import write
+from .dynamodb_utilities import put_item
 
 USER_REGISTRATION_NOTIFICATION = 'user-registration'
 TASK_SIGNUP_NOTIFICATION = 'task-signup'
@@ -53,9 +53,9 @@ def sqs_send_DNU(message_body, message_attributes):
 
 def notify_new_user_registration (new_user):
     notification_type = USER_REGISTRATION_NOTIFICATION
-    write(notification_type, new_user)
+    put_item(notification_type, new_user)
 
 
 def notify_new_task_signup (task_signup):
     notification_type = TASK_SIGNUP_NOTIFICATION
-    write(notification_type, task_signup)
+    put_item(notification_type, task_signup)

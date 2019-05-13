@@ -27,11 +27,13 @@ if 'api.endpoints' in __name__:
     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from .common.dynamodb_utilities import read, delete
     from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
+    from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError
     from common.hubspot import post_new_user_to_crm
     from common.dynamodb_utilities import read, delete
     from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
+    from user import patch_user
 
 
 def process_notifications():
@@ -47,15 +49,21 @@ def process_notifications():
 def process_user_registration (notification):
     notification_id = notification['id']
     details = notification['details']
-    post_new_user_to_crm(details)
+    hubspot_id, isNew = post_new_user_to_crm(details)
+
+    user_jsonpatch = [
+        {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+    ]
+
+    patch_user(id, user_jsonpatch)
     delete(notification_id)
 
 
 def process_task_signup(notification):
     notification_id = notification['id']
     details = notification['details']
-    post_task_signup_to_crm(details)
-    delete(notification_id)
+    # post_task_signup_to_crm(details)
+    # delete(notification_id)
 
 
 if __name__ == "__main__":

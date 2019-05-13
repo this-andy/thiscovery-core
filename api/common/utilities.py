@@ -240,6 +240,12 @@ def get_aws_namespace():
     return secrets_namespace
 
 
+def get_environment_name():
+    namespace = get_aws_namespace()
+    # strip leading and trailing '/' chars
+    return namespace[1:-1]
+
+
 def get_secret(secret_name, namespace_override=None):
     return get_aws_secret(secret_name, namespace_override)
 
