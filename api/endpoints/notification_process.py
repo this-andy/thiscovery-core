@@ -89,15 +89,23 @@ def dateformattest(event, context):
         logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
         datetime_obj = datetime.strptime(date_string, format_string)
         created_timestamp = int(datetime_obj.timestamp() * 1000)
+        return created_timestamp
     except:
         logger.error(sys.exc_info()[0])
 
 
 if __name__ == "__main__":
 
-    process_notifications(None, None)
+    # process_notifications(None, None)
     # notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
     # print(str(notifications))
     # notification_id = notifications[0]['id']
     # update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
 
+    date_json = {
+        "date": "2019-05-16 15:20:51.264658+00:00",
+        "format": "%Y-%m-%d %H:%M:%S.%f%z"
+    }
+
+    ev = {'body': json.dumps(date_json)}
+    print(dateformattest(ev, None))
