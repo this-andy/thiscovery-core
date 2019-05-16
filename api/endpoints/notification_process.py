@@ -91,7 +91,9 @@ def dateformattest(event, context):
         logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
         datetime_obj = datetime.strptime(date_string, format_string)
         created_timestamp = int(datetime_obj.timestamp() * 1000)
-        return created_timestamp
+
+        response = {"statusCode": 200, "body": json.dumps({"created_timestamp": str(created_timestamp)})}
+        return response
     except:
         logger.error(sys.exc_info()[0])
 
