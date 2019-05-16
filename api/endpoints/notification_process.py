@@ -20,7 +20,9 @@
 # import uuid
 # import logging
 # from pythonjsonlogger import jsonlogger
-# import json
+import sys
+import json
+from datetime import datetime
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
@@ -76,6 +78,19 @@ def process_task_signup(notification):
     details = notification['details']
     # post_task_signup_to_crm(details)
     # delete(notification_id)
+
+
+def dateformattest(event, context):
+    logger = get_logger()
+    try:
+        test_json = json.loads(event['body'])
+        date_string = test_json['date']
+        format_string = test_json['format']
+        logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
+        datetime_obj = datetime.strptime(date_string, format_string)
+        created_timestamp = int(datetime_obj.timestamp() * 1000)
+    except:
+        logger.error(sys.exc_info()[0])
 
 
 if __name__ == "__main__":
