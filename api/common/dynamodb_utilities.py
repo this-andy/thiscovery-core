@@ -17,6 +17,7 @@
 #
 
 import boto3
+from boto3.dynamodb.conditions import Attr
 import uuid
 
 from .utilities import get_aws_region, get_environment_name
@@ -31,14 +32,18 @@ def get_table(table_name):
     return table
 
 
-def put_item(table_name: str, item_type: str, item_details, id=uuid.uuid4()):
+def put_item(table_name: str, item_type: str, item_details, item: dict = {}, id=uuid.uuid4()):
     try:
         table = get_table(table_name)
-        item = {
-            'id': str(id),
-            'type': item_type,
-            'details': item_details,
-        }
+        # item = {
+        #     'id': str(id),
+        #     'type': item_type,
+        #     'details': item_details,
+        # }
+
+        item['id'] = str(id)
+        item['type'] = item_type
+        item['details'] = item_details
 
         response = table.put_item(Item=item)
     except Exception as err:
@@ -47,12 +52,12 @@ def put_item(table_name: str, item_type: str, item_details, id=uuid.uuid4()):
     print(str(response))
 
 
-def update_item(table_name: str, key: str, item_details):
+def update_item(table_name: str, key: str, attr_name: str, attr_value):
     try:
         table = get_table(table_name)
         key_json = {'id': key}
-        update = 'SET details = :item_details'
-        expression_json = {':item_details': item_details}
+        update = 'SET ' + attr_name + ' = :new_value'
+        expression_json = {':new_value': attr_value}
 
         response = table.update_item(
             Key=key_json,
@@ -63,10 +68,13 @@ def update_item(table_name: str, key: str, item_details):
         raise err
 
 
-def scan(table_name: str):
+def scan(table_name: str, filter_attr_name: str = None, filter_attr_value=None):
     try:
         table = get_table(table_name)
-        response = table.scan()
+        if filter_attr_name is None:
+            response = table.scan()
+        else:
+            response = table.scan(FilterExpression=Attr(filter_attr_name).eq(filter_attr_value))
         items = response['Items']
         return items
     except Exception as err:

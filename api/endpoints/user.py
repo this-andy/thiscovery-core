@@ -22,6 +22,7 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
+
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -411,12 +412,12 @@ if __name__ == "__main__":
     #     execute_non_query(sql_update, params, None)
 
     user_json = {
-        "email": "hn@email.co.uk",
-        "title": "Mr",
-        "first_name": "henry",
+        "email": "ln@email.co.uk",
+        "title": "Ms",
+        "first_name": "Laura",
         "last_name": "Nobody",
         "status": "new",
-        "country_code": "US"
+        "country_code": "BE"
     }
 
     correlation_id = None

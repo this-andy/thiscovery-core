@@ -20,13 +20,19 @@ import json
 import requests
 from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
+from datetime import datetime
 import uuid
 
-from .utilities import get_secret, get_logger
-from .dynamodb_utilities import get_item, put_item
-import logging
+from api.common.utilities import get_secret, get_logger, now_with_tz
+from api.common.dynamodb_utilities import get_item, put_item
+
+# from .utilities import get_secret, get_logger, now_with_tz
+# from .dynamodb_utilities import get_item, put_item
+
+ISO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f%z'
 
 logger = get_logger()
+# use namespace_override to enable using dev hubspot with production Thiscovery
 hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
 logger.info('hubspot_connection:' + str(hubspot_connection))
 
@@ -35,56 +41,103 @@ client_id = hubspot_connection['client-id']
 client_secret = hubspot_connection['client-secret']
 base_url = 'http://api.hubapi.com'
 
-#
-# # region Contact propert management
-# def create_property(property_definition):
-#     url = '/contacts/v1/contact/email/'
-#
-#     data = json.dumps({
-#         "name": "newcustomproperty",
-#         "label": "A New Custom Property",
-#         "description": "A new property for you",
-#         "groupName": "contactinformation",
-#         "type": "string",
-#         "fieldType": "text",
-#         "formField": True,
-#         "displayOrder": 6,
-#         "options": [
-#         ]
-#
-#     })
-#
-#     r = hubspot_post(url, data)
-#
-#     return r.status_code
-# # endregion
 
-# region core hubspot comms
+# region Contact property and group management
 
-# def hubspot_get(url):
-#     success = False
-#     retry_count = 0
-#     full_url = base_url + url
-#     headers = {}
-#     headers['Content-Type'] = 'application/json'
-#     while not success:
-#         try:
-#             headers['Authorization'] = 'Bearer ' + get_current_access_token()
-#             req = Request(full_url, headers=headers)
-#             response = urlopen(req).read()
-#             data = json.loads(response)
-#             success = True
-#         except HTTPError as err:
-#             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-#                 refresh_token()
-#                 retry_count += 1
-#                 # and loop to retry
-#             else:
-#                 raise err
-#     return data
+def create_property1(property_definition):
+    url = '/properties/v1/contacts/properties'
+
+    data = {
+        "name": "thiscovery_id",
+        "label": "Thiscovery ID",
+        "description": "Contact's unique user ID in Thiscovery API",
+        "groupName": "thiscovery",
+        "type": "string",
+        "fieldType": "text",
+        "formField": False
+    }
+
+    r = hubspot_post(url, data)
+
+    return r.status_code
+
+def create_property2(property_definition):
+    url = '/properties/v1/contacts/properties'
+
+    data = {
+        "name": "thiscovery_registered_date",
+        "label": "Registered on Thiscovery date",
+        "description": "The date on which a person first registered on Thiscovery.  Automatically set when someone registers.",
+        "groupName": "thiscovery",
+        "type": "datetime",
+        "fieldType": "text",
+        "formField": False
+    }
+
+    r = hubspot_post(url, data)
+
+    return r.status_code
 
 
-def hubspot_post(url, data):
+def update_property(property_definition):
+    url = '/properties/v1/contacts/properties/named/newapicustomproperty4'
+
+    data = json.dumps({
+        "name": "newapicustomproperty4",
+        "label": "Api Custom Property4",
+        "description": "A new property for you",
+        "groupName": "contactinformation",
+        "type": "datetime",
+        "fieldType": "text",
+        "formField": False,
+        "displayOrder": 6,
+        "readOnlyValue": True
+    })
+
+    r = hubspot_put(url, data)
+
+    return r.status_code
+
+
+def create_group(group_definition):
+    url = '/properties/v1/contacts/groups'
+
+    data = {
+        "name": "thiscovery",
+        "displayName": "Thiscovery"
+    }
+
+    r = hubspot_post(url, data)
+
+    return r.status_code
+# endregion
+
+# region core hubspot crud methods
+
+def hubspot_get(url):
+    success = False
+    retry_count = 0
+    full_url = base_url + url
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+    while not success:
+        try:
+            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            req = Request(full_url, headers=headers)
+            response = urlopen(req).read()
+            data = json.loads(response)
+            success = True
+        except HTTPError as err:
+            if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+    return data
+
+
+def hubspot_post(url: str, data: dict):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -94,8 +147,8 @@ def hubspot_post(url, data):
         try:
             headers['Authorization'] = 'Bearer ' + get_current_access_token()
 
-            result = requests.post(data=data, url=full_url, headers=headers)
-            if result.status_code == HTTPStatus.OK:
+            result = requests.post(data=json.dumps(data), url=full_url, headers=headers)
+            if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                 success = True
             elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
                 refresh_token()
@@ -114,34 +167,53 @@ def hubspot_post(url, data):
     return result
 
 
+def hubspot_put(url, data):
+    success = False
+    retry_count = 0
+    full_url = base_url + url
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+    while not success:
+        try:
+            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+
+            result = requests.put(data=data, url=full_url, headers=headers)
+            if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
+                success = True
+            elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+        except HTTPError as err:
+            if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+
+    return result
+
 # endregion
 
 
-def save_token(new_token):
-    put_item('tokens', 'oAuth_token', new_token, 'hubspot')
+def get_hubspot_contact():
+    url = '/contacts/v1/lists/all/contacts/all'
+    return hubspot_get(url)
 
 
-# def get_hubspot_contact():
-#     url = '/contacts/v1/lists/all/contacts/all'
-#     return hubspot_get(url)
-#
-#
-# def update_contact(email):
-#     url = '/contacts/v1/contact/email/' + email + '/profile'
-#
-#     data = json.dumps({
-#         "properties": [
-#             {
-#                 "property": "lastname",
-#                 "value": "hello world!"
-#             },
-#         ]
-#     })
-#
-#     r = hubspot_post(url, data)
-#
-#     return r.status_code
-#
+def update_contact(email: str, property_changes: list):
+    url = '/contacts/v1/contact/email/' + email + '/profile'
+
+    data = {"properties": property_changes}
+
+    r = hubspot_post(url, data)
+
+    return r.status_code
+
+
 # region token processing
 
 def get_token_from_database() -> dict:
@@ -153,6 +225,10 @@ def get_token_from_database() -> dict:
 
 
 hubspot_oauth_token = None
+
+
+def save_token(new_token):
+    put_item('tokens', 'oAuth_token', new_token, {}, 'hubspot')
 
 
 def get_current_access_token() -> str:
@@ -169,7 +245,7 @@ def get_new_token_from_hubspot(refresh_token, code=None):
         "client_id": client_id,
         "client_secret": client_secret,
         "redirect_uri": redirect_url,
-    };
+    }
 
     if refresh_token:
         formData['grant_type'] = "refresh_token"
@@ -191,31 +267,33 @@ def refresh_token():
     return get_new_token_from_hubspot(refresh_token)
 
 
+def get_initial_token_from_hubspot():
+    code = "ef5a69d0-4578-4fa8-8137-abf691d691a4"   # paste this from thiscovery admin
+    return get_new_token_from_hubspot(None, code)
+
 hubspot_oauth_token = get_token_from_database()
 
 # endregion
+
 
 def post_new_user_to_crm(new_user):
     email = new_user['email']
 
     url = '/contacts/v1/contact/createOrUpdate/email/' + email
 
-    data = json.dumps({
+    created_time = datetime.strptime(new_user['created'], ISO_DATE_FORMAT)
+    created_timestamp = int(created_time.timestamp() * 1000)
+
+    data = {
         "properties": [
-            {
-                "property": "email",
-                "value": email
-            },
-            {
-                "property": "firstname",
-                "value": new_user['first_name']
-            },
-            {
-                "property": "lastname",
-                "value": new_user['last_name']
-            }
+            {"property": "email", "value": email},
+            {"property": "firstname", "value": new_user['first_name']},
+            {"property": "lastname", "value": new_user['last_name']},
+            {"property": "thiscovery_id", "value": new_user['id']},
+            {"property": "thiscovery_registered_date", "value": created_timestamp},
+            {"property": "country", "value": new_user['country_name']},
         ]
-    })
+    }
 
     result = hubspot_post(url, data)
 
@@ -235,7 +313,7 @@ def post_new_user_to_crm(new_user):
 #
 #     url =  '/contacts/v1/contact/createOrUpdate/email/'
 #
-#     data = json.dumps({
+#     data = {
 #         "properties": [
 #             {
 #                 "property": "firstname",
@@ -246,18 +324,30 @@ def post_new_user_to_crm(new_user):
 #                 "value": task_signup['last_name']
 #             },
 #         ]
-#     })
+#     }
 #
 #     return hubspot_post(url, data)
 
 
 if __name__ == "__main__":
     pass
-    # result = get_token_from_hubspot()
+
+    # result = create_group(None)
+
+    result = create_property1(None)
+    # result = update_property(None)
+
+    # result = get_initial_token_from_hubspot()
     # token = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
     # result = get_hubspot_contact()
-    # result = update_contact('coolrobot@hubspot.com')
+
+    # n = now_with_tz()
+    # tsn = n.timestamp() * 1000
+    # changes = [
+    #         {"property": "thiscovery_registered_date", "value": int(tsn)},
+    #     ]
+    # result = update_contact('aw@email.co.uk', changes)
 
     # new_user = {
     #     "id": str(uuid.uuid4()),
@@ -273,6 +363,6 @@ if __name__ == "__main__":
     # result = post_new_user_to_crm(new_user)
 
     # result = get_token_from_database()
-    # print(result)
+    print(result)
 
     # save_token(result_2019_05_10_12_11)

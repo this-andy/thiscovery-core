@@ -25,18 +25,15 @@
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
     from .common.hubspot import post_new_user_to_crm
-    from .common.dynamodb_utilities import scan
-    from .common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
-#     from .user import patch_user
+    from .common.dynamodb_utilities import scan, update_item
+    from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
+    from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError
     from common.hubspot import post_new_user_to_crm
-    from common.dynamodb_utilities import scan
-    from common.notification_send import TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION
-#     from user import patch_user
-#
-#
-NOTIFICATION_TABLE_NAME = 'notifications'
+    from common.dynamodb_utilities import scan, update_item
+    from common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
+    from user import patch_user
 
 
 def process_notifications(event, context):
@@ -59,18 +56,19 @@ def process_user_registration (notification):
     details = notification['details']
     user_id = details['id']
     logger.info('process_user_registration', extra={'user_id': str(user_id)})
-    # hubspot_id, isNew = post_new_user_to_crm(details)
-    # logger.info('process_user_registration', extra={'hubspot_id': str(hubspot_id)})
-    #
-    # if hubspot_id == -1:
-    #     raise ValueError
-    #
-    # user_jsonpatch = [
-    #     {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
-    # ]
+    hubspot_id, isNew = post_new_user_to_crm(details)
+    logger.info('process_user_registration', extra={'hubspot_id': str(hubspot_id)})
 
-    # patch_user(user_id, user_jsonpatch)
-    # delete(notification_id)
+    if hubspot_id == -1:
+        raise ValueError
+
+    user_jsonpatch = [
+        {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+    ]
+
+    patch_user(user_id, user_jsonpatch)
+
+    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
 
 
 def process_task_signup(notification):
@@ -83,3 +81,8 @@ def process_task_signup(notification):
 if __name__ == "__main__":
 
     process_notifications(None, None)
+    # notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
+    # print(str(notifications))
+    # notification_id = notifications[0]['id']
+    # update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+
