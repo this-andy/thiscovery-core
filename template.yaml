@@ -373,6 +373,10 @@ Resources:
               responses: {}
           /v1/dateformattest:
             post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${dateformattest.Arn}/invocations
               responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
@@ -1144,10 +1148,10 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: dateformattest
       CodeUri: api/endpoints
-      Handler: notification_process. dateformattest
+      Handler: notification_process.dateformattest
       Runtime: python3.6
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      MemorySize: 1408
+      Timeout: 22
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -1158,6 +1162,13 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1dateformattest:
+          Type: Api
+          Properties:
+            Path: /v1/dateformattest
+            Method: POST
+            RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: dateformattest
 Parameters:
