@@ -82,9 +82,10 @@ def process_task_signup(notification):
 
 def dateformattest(event, context):
     logger = get_logger()
-    logger.info('dateformattest')
+    logger.info('dateformattest', extra=event)
     try:
         test_json = json.loads(event['body'])
+        logger.info('body:', extra=test_json)
         date_string = test_json['date']
         format_string = test_json['format']
         logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
