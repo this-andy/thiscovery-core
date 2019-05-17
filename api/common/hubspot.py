@@ -237,7 +237,7 @@ def get_current_access_token() -> str:
 
 def get_new_token_from_hubspot(refresh_token, code=None):
     global hubspot_oauth_token
-    hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+    hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
     client_secret = hubspot_connection['client-secret']
 
