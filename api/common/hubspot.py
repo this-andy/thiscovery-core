@@ -21,7 +21,6 @@ import requests
 from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 from datetime import datetime
-import uuid
 
 # from api.common.utilities import get_secret, get_logger, now_with_tz
 # from api.common.dynamodb_utilities import get_item, put_item
