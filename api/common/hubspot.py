@@ -58,6 +58,7 @@ def create_property1(property_definition):
 
     return r.status_code
 
+
 def create_property2(property_definition):
     url = '/properties/v1/contacts/properties'
 
@@ -107,6 +108,7 @@ def create_group(group_definition):
     r = hubspot_post(url, data)
 
     return r.status_code
+
 # endregion
 
 # region core hubspot crud methods
@@ -194,7 +196,6 @@ def hubspot_put(url, data):
     return result
 
 # endregion
-
 
 def get_hubspot_contact():
     url = '/contacts/v1/lists/all/contacts/all'

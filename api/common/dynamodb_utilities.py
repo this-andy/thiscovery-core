@@ -20,83 +20,89 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 import uuid
 
-from .utilities import get_aws_region, get_environment_name
+from .utilities import get_aws_region, get_environment_name, get_logger
 
 STACK_NAME = 'thiscovery-core'
-environment_name = get_environment_name()
-dynamodb = boto3.resource('dynamodb',region_name=get_aws_region())
 
 
 def get_table(table_name):
-    table = dynamodb.Table('-'.join([STACK_NAME, environment_name, table_name]))
-    return table
+    try:
+        environment_name = get_environment_name()
+        dynamodb = boto3.resource('dynamodb', region_name=get_aws_region())
+        table = dynamodb.Table('-'.join([STACK_NAME, environment_name, table_name]))
+        return table
+    except Exception as ex:
+        raise ex
 
 
 def put_item(table_name: str, item_type: str, item_details, item: dict = {}, id=uuid.uuid4()):
     try:
+        logger = get_logger()
         table = get_table(table_name)
-        # item = {
-        #     'id': str(id),
-        #     'type': item_type,
-        #     'details': item_details,
-        # }
 
         item['id'] = str(id)
         item['type'] = item_type
         item['details'] = item_details
 
+        logger.info('dynamodb put', extra = {'table_name': table_name,'item': item})
         response = table.put_item(Item=item)
-    except Exception as err:
-        raise err
-
-    print(str(response))
+    except Exception as ex:
+        raise ex
 
 
 def update_item(table_name: str, key: str, attr_name: str, attr_value):
     try:
+        logger = get_logger()
         table = get_table(table_name)
         key_json = {'id': key}
         update = 'SET ' + attr_name + ' = :new_value'
         expression_json = {':new_value': attr_value}
 
+        logger.info('dynamodb update', extra = {'table_name': table_name,'key': key, 'attr_name': attr_name, 'attr_value': attr_value})
         response = table.update_item(
             Key=key_json,
             UpdateExpression = update,
             ExpressionAttributeValues = expression_json
         )
-    except Exception as err:
-        raise err
+    except Exception as ex:
+        raise ex
 
 
 def scan(table_name: str, filter_attr_name: str = None, filter_attr_value=None):
     try:
+        logger = get_logger()
         table = get_table(table_name)
+        logger.info('dynamodb scan', extra = {'table_name': table_name,'filter_attr_name': filter_attr_name, 'filter_attr_value': filter_attr_value})
         if filter_attr_name is None:
             response = table.scan()
         else:
             response = table.scan(FilterExpression=Attr(filter_attr_name).eq(filter_attr_value))
         items = response['Items']
+        logger.info('dynamodb scan result', extra = {'count': str(len(items))})
         return items
-    except Exception as err:
-        raise err
+    except Exception as ex:
+        raise ex
 
 
 def get_item(table_name: str, key: str):
-
     try:
+        logger = get_logger()
         table = get_table(table_name)
         key_json = {'id': key}
+        logger.info('dynamodb get', extra = {'table_name': table_name,'key': key})
         response = table.get_item(Key=key_json)
         item = response['Item']
         return item
-    except Exception as err:
-        raise err
+    except Exception as ex:
+        raise ex
 
 
 def delete_item(table_name: str, key: str):
     try:
+        logger = get_logger()
         table = get_table(table_name)
         key_json = {'id': key}
+        logger.info('dynamodb delete', extra = {'table_name': table_name,'key': key})
         response = table.delete_item(Key=key_json)
     except Exception as err:
         raise err

@@ -39,11 +39,9 @@ else:
 
 
 def process_notifications(event, context):
-    print ('hello from def process_notifications')
-
     logger = get_logger()
-    logger.info('process_notifications')
     notifications = scan(NOTIFICATION_TABLE_NAME)
+    logger.info('process_notifications', extra = {'count': str(len(notifications))})
     for notification in notifications:
         notification_type = notification['type']
         if notification_type == USER_REGISTRATION_NOTIFICATION:
@@ -53,24 +51,27 @@ def process_notifications(event, context):
 
 
 def process_user_registration (notification):
-    logger = get_logger()
-    notification_id = notification['id']
-    details = notification['details']
-    user_id = details['id']
-    logger.info('process_user_registration', extra={'user_id': str(user_id)})
-    hubspot_id, isNew = post_new_user_to_crm(details)
-    logger.info('process_user_registration', extra={'hubspot_id': str(hubspot_id)})
+    try:
+        logger = get_logger()
+        notification_id = notification['id']
+        details = notification['details']
+        user_id = details['id']
+        logger.info('process_user_registration: post to hubspot', extra={'user_id': str(user_id)})
+        hubspot_id, isNew = post_new_user_to_crm(details)
+        logger.info('process_user_registration: hubspot details', extra={'hubspot_id': str(hubspot_id), 'isNew': str(isNew)})
 
-    if hubspot_id == -1:
-        raise ValueError
+        if hubspot_id == -1:
+            raise ValueError
 
-    user_jsonpatch = [
-        {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
-    ]
+        user_jsonpatch = [
+            {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+        ]
 
-    patch_user(user_id, user_jsonpatch)
+        patch_user(user_id, user_jsonpatch)
 
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+        update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+    except Exception as ex:
+        raise ex
 
 
 def process_task_signup(notification):

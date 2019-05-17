@@ -339,7 +339,10 @@ def create_user(user_json, correlation_id):
         'status': status,
     }
 
-    notify_new_user_registration(new_user)
+    try:
+        notify_new_user_registration(new_user)
+    except Exception as ex:
+        raise ex
 
     return new_user
 
