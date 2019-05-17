@@ -30,14 +30,12 @@ from .dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-logger = get_logger()
 # use namespace_override to enable using dev hubspot with production Thiscovery
-hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
-logger.info('hubspot_connection:' + str(hubspot_connection))
+# hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+#
+# client_id = hubspot_connection['client-id']
+# client_secret = hubspot_connection['client-secret']
 
-print ('hubspot-connection' + str(hubspot_connection))
-client_id = hubspot_connection['client-id']
-client_secret = hubspot_connection['client-secret']
 base_url = 'http://api.hubapi.com'
 
 
@@ -239,6 +237,10 @@ def get_current_access_token() -> str:
 
 def get_new_token_from_hubspot(refresh_token, code=None):
     global hubspot_oauth_token
+    hubspot_connection = get_secret('hubspot-connection', namespace_override='/dev/')
+    client_id = hubspot_connection['client-id']
+    client_secret = hubspot_connection['client-secret']
+
     redirect_url = 'https://www.hubspot.com/auth-callback'
     formData = {
         "client_id": client_id,
@@ -334,11 +336,11 @@ if __name__ == "__main__":
 
     # result = create_group(None)
 
-    result = create_property1(None)
+    # result = create_property1(None)
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
-    # token = get_token_from_database()
+    result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
     # result = get_hubspot_contact()
 
