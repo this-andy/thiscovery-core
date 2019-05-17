@@ -40,7 +40,7 @@ else:
 
 def process_notifications(event, context):
     logger = get_logger()
-    notifications = scan(NOTIFICATION_TABLE_NAME)
+    notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
     logger.info('process_notifications', extra = {'count': str(len(notifications))})
     for notification in notifications:
         notification_type = notification['type']
