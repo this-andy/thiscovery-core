@@ -246,14 +246,13 @@ def patch_user_api(event, context):
 #   }
 
 def create_user(user_json, correlation_id):
-    # json MUST contain: email, title, first_name, last_name, status
-    # json may OPTIONALLY include: id, created, auth0_id
+    # json MUST contain: email, first_name, last_name, status
+    # json may OPTIONALLY include: id, title, created, auth0_id
     # note that users will always be created with email_address_verified = false
 
     # extract mandatory data from json
     try:
         email = user_json['email']
-        title = user_json['title']
         first_name = user_json['first_name']
         last_name = user_json['last_name']
         status = validate_status(user_json['status'])
@@ -288,6 +287,11 @@ def create_user(user_json, correlation_id):
         auth0_id = user_json['auth0_id']
     else:
         auth0_id = None
+
+    if 'title' in user_json:
+        title = user_json['title']
+    else:
+        title = None
 
     # set up default values
     email_address_verified = False
