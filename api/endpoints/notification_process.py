@@ -87,6 +87,7 @@ def dateformattest(event, context):
         test_json = json.loads(event['body'])
         logger.info('body:', extra=test_json)
         date_string = test_json['date']
+        date_string = date_string[:19] # strip timezone and milliseconds
         format_string = test_json['format']
         logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
         datetime_obj = datetime.strptime(date_string, format_string)

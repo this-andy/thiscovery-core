@@ -29,7 +29,7 @@ import uuid
 from .utilities import get_secret, get_logger, now_with_tz
 from .dynamodb_utilities import get_item, put_item
 
-ISO_DATE_FORMAT = '%Y-%m-%d %H:%M:%S.%f%z'
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 logger = get_logger()
 # use namespace_override to enable using dev hubspot with production Thiscovery
@@ -281,7 +281,8 @@ def post_new_user_to_crm(new_user):
 
     url = '/contacts/v1/contact/createOrUpdate/email/' + email
 
-    created_time = datetime.strptime(new_user['created'], ISO_DATE_FORMAT)
+    created_time_string = new_user['created'][:19] # strip milliseconds and timezone
+    created_time = datetime.strptime(created_time_string, DATE_FORMAT)
     created_timestamp = int(created_time.timestamp() * 1000)
 
     data = {
