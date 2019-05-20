@@ -16,7 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from .utilities import feature_flag, get_logger
+from .utilities import feature_flag, get_logger, now_with_tz
 from .dynamodb_utilities import put_item
 
 NOTIFICATION_TABLE_NAME = 'notifications'
@@ -46,11 +46,20 @@ NOTIFICATION_PROCESSED_FLAG = 'notification_processed'
 #     return response['MessageId']
 
 
+def create_notification(label: str):
+    notification_item = {
+        NOTIFICATION_PROCESSED_FLAG: False,
+        'created': str(now_with_tz()),
+        'label': label
+    }
+    return notification_item
+
+
 def notify_new_user_registration (new_user):
-    notification_item = {NOTIFICATION_PROCESSED_FLAG: False}
+    notification_item = create_notification(new_user['email'])
     put_item(NOTIFICATION_TABLE_NAME, USER_REGISTRATION_NOTIFICATION, new_user, notification_item)
 
 
 def notify_new_task_signup (task_signup):
-    notification_item = {NOTIFICATION_PROCESSED_FLAG: False}
+    notification_item = create_notification(task_signup['user_id'])
     put_item(NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item)
