@@ -35,12 +35,12 @@ def get_table(table_name):
         raise ex
 
 
-def put_item(table_name: str, item_type: str, item_details, item: dict = {}, id=uuid.uuid4()):
+def put_item(table_name: str, item_type: str, item_details, item: dict = {}):
     try:
         logger = get_logger()
         table = get_table(table_name)
 
-        item['id'] = str(id)
+        item['id'] = str(uuid.uuid4())
         item['type'] = item_type
         item['details'] = item_details
 
