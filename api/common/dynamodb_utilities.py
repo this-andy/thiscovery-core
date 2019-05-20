@@ -17,7 +17,7 @@
 #
 
 import boto3
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Key, Attr
 import uuid
 
 from .utilities import get_aws_region, get_environment_name, get_logger
@@ -35,12 +35,12 @@ def get_table(table_name):
         raise ex
 
 
-def put_item(table_name: str, item_type: str, item_details, item: dict = {}):
+def put_item(table_name: str, item_type: str, item_details, item: dict, id):
     try:
         logger = get_logger()
         table = get_table(table_name)
 
-        item['id'] = str(uuid.uuid4())
+        item['id'] = str(id)
         item['type'] = item_type
         item['details'] = item_details
 
