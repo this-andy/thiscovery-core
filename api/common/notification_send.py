@@ -56,7 +56,7 @@ def create_notification(label: str):
 
 
 def notify_new_user_registration (new_user):
-    notification_item = create_notification(new_user['email'])
+    notification_item = create_notification(new_user['email'] + '-' + new_user['id'])
     put_item(NOTIFICATION_TABLE_NAME, USER_REGISTRATION_NOTIFICATION, new_user, notification_item)
 
 
