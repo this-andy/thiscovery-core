@@ -22,11 +22,11 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-# from api.common.utilities import get_secret, get_logger, now_with_tz
-# from api.common.dynamodb_utilities import get_item, put_item
+from api.common.utilities import get_secret, get_logger, now_with_tz, DetailedValueError
+from api.common.dynamodb_utilities import get_item, put_item
 
-from .utilities import get_secret, get_logger, now_with_tz
-from .dynamodb_utilities import get_item, put_item
+# from .utilities import get_secret, get_logger, now_with_tz
+# from .dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -80,7 +80,7 @@ def create_property2(property_definition):
 def update_property(property_definition):
     url = '/properties/v1/contacts/properties/named/newapicustomproperty4'
 
-    data = json.dumps({
+    data = {
         "name": "newapicustomproperty4",
         "label": "Api Custom Property4",
         "description": "A new property for you",
@@ -90,7 +90,7 @@ def update_property(property_definition):
         "formField": False,
         "displayOrder": 6,
         "readOnlyValue": True
-    })
+    }
 
     r = hubspot_put(url, data)
 
@@ -108,6 +108,73 @@ def create_group(group_definition):
     r = hubspot_post(url, data)
 
     return r.status_code
+
+# endregion
+
+# region Timeline Events
+
+def create_timeline_event(event_data: dict):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event'
+
+    result = hubspot_put(url, event_data)
+
+    return result.status_code
+
+
+def create_timeline_event_type(type_defn: dict):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    type_defn['applicationId'] = app_id
+    url = '/integrations/v1/' + app_id + '/timeline/event-types'
+
+    response = hubspot_post(url, type_defn)
+    content = json.loads(response.content)
+
+    return content['id']
+
+
+def delete_timeline_event_type(tle_type_id: str):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event-types/' + tle_type_id
+
+    result = hubspot_delete(url)
+
+    return result.status_code
+
+
+def get_timeline_event_properties(tle_type_id: str):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event-types/' + tle_type_id + '/properties'
+
+    result = hubspot_get(url)
+
+    return result
+
+
+def create_timeline_event_properties(tle_type_id: str, property_defns: list):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event-types/' + tle_type_id + '/properties'
+
+    for property_defn in property_defns:
+        result = hubspot_post(url, property_defn)
+
+    return result.status_code
+
+
+def delete_timeline_event_property(tle_type_id: str, property_id: str):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event-types/' + tle_type_id + '/properties/' + property_id
+
+    result = hubspot_delete(url)
+
+    return result.status_code
+
 
 # endregion
 
@@ -154,7 +221,7 @@ def hubspot_post(url: str, data: dict):
                 retry_count += 1
                 # and loop to retry
             else:
-                raise err
+                raise Exception
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
                 refresh_token()
@@ -163,10 +230,11 @@ def hubspot_post(url: str, data: dict):
             else:
                 raise err
 
+
     return result
 
 
-def hubspot_put(url, data):
+def hubspot_put(url: str, data: dict):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -176,7 +244,7 @@ def hubspot_put(url, data):
         try:
             headers['Authorization'] = 'Bearer ' + get_current_access_token()
 
-            result = requests.put(data=data, url=full_url, headers=headers)
+            result = requests.put(data=json.dumps(data), url=full_url, headers=headers)
             if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                 success = True
             elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
@@ -194,6 +262,43 @@ def hubspot_put(url, data):
                 raise err
 
     return result
+
+
+def hubspot_delete(url):
+    success = False
+    retry_count = 0
+    full_url = base_url + url
+    headers = {}
+    headers['Content-Type'] = 'application/json'
+    while not success:
+        try:
+            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+
+            response = requests.delete(url=full_url, headers=headers)
+            if response.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT]:
+                success = True
+            elif response.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                errorjson = {'url': url}
+                content = json.loads(response.content)
+                if 'message' in content:
+                    msg = content['message']
+                else:
+                    msg = str(response.status_code)
+
+                raise DetailedValueError(msg, errorjson)
+        except HTTPError as err:
+            if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
+                refresh_token()
+                retry_count += 1
+                # and loop to retry
+            else:
+                raise err
+
+    return response
 
 # endregion
 
@@ -226,7 +331,7 @@ hubspot_oauth_token = None
 
 
 def save_token(new_token):
-    put_item('tokens', 'oAuth_token', new_token, {}, 'hubspot')
+    put_item('tokens', 'oAuth_token', new_token, {}, 'hubspot', True)
 
 
 def get_current_access_token() -> str:
@@ -270,7 +375,7 @@ def refresh_token():
 
 
 def get_initial_token_from_hubspot():
-    code = "ef5a69d0-4578-4fa8-8137-abf691d691a4"   # paste this from thiscovery admin
+    code = "c841b8c9-930c-4967-8387-2fbdad393cb0"   # paste this from thiscovery admin
     return get_new_token_from_hubspot(None, code)
 
 hubspot_oauth_token = get_token_from_database()
@@ -341,7 +446,7 @@ if __name__ == "__main__":
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
-    result = get_token_from_database()
+    # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
     # result = get_hubspot_contact()
 
@@ -366,6 +471,73 @@ if __name__ == "__main__":
     # result = post_new_user_to_crm(new_user)
 
     # result = get_token_from_database()
+
+    type_defn = {
+            "name": "Task sign-up",
+            "objectType": "CONTACT",
+            "headerTemplate": "sample header template",
+            "detailTemplate": "sample detail template"
+        }
+
+    # result = create_timeline_event_type(type_defn)
+
+    data = [
+        {
+            "name": "project_id",
+            "label": "Project Id",
+            "propertyType": "String"
+        },
+        {
+            "name": "project_name",
+            "label": "Project Name",
+            "propertyType": "String"
+        },
+        {
+            "name": "task_id",
+            "label": "Task Id",
+            "propertyType": "String"
+        },
+        {
+            "name": "task_name",
+            "label": "Task Name",
+            "propertyType": "String"
+        },
+        {
+            "name": "task_type_id",
+            "label": "Task Type Id",
+            "propertyType": "String"
+        },
+        {
+            "name": "task_type_name",
+            "label": "Task Type",
+            "propertyType": "String"
+        },
+        {
+            "name": "signup_event_type",
+            "label": "Event Type",
+            "propertyType": "String"
+        },
+    ]
+
+    # result = create_timeline_event_properties('279633', data)
+
+    # result = delete_timeline_event_property('279633', '480994')
+
+    # result = get_timeline_event_properties ('279633')
+
+    # result = delete_timeline_event_type('390467')
+    event_data = {
+        "id": "17",
+        "objectId": 1101,
+        "eventTypeId": "279633",
+        "study-name": "Test from API with date",
+        "study-type": "SR",
+        "project-name": "IMMO",
+        "timestamp": 1416852689573
+    }
+
+    result = create_timeline_event(event_data)
+
     print(result)
 
     # save_token(result_2019_05_10_12_11)

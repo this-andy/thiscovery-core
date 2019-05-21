@@ -18,6 +18,7 @@
 
 from .utilities import feature_flag, get_logger, now_with_tz
 from .dynamodb_utilities import put_item
+import uuid
 
 NOTIFICATION_TABLE_NAME = 'notifications'
 USER_REGISTRATION_NOTIFICATION = 'user-registration'
@@ -57,9 +58,9 @@ def create_notification(label: str):
 
 def notify_new_user_registration (new_user):
     notification_item = create_notification(new_user['email'] + ':' + new_user['id'])
-    put_item(NOTIFICATION_TABLE_NAME, USER_REGISTRATION_NOTIFICATION, new_user, notification_item)
+    put_item(NOTIFICATION_TABLE_NAME, USER_REGISTRATION_NOTIFICATION, new_user, notification_item, uuid.uuid4())
 
 
 def notify_new_task_signup (task_signup):
     notification_item = create_notification(task_signup['user_id'])
-    put_item(NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item)
+    put_item(NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item, uuid.uuid4())

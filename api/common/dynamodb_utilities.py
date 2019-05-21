@@ -17,10 +17,12 @@
 #
 
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Attr
+from botocore.exceptions import ClientError
 import uuid
 
-from .utilities import get_aws_region, get_environment_name, get_logger
+# from .utilities import get_aws_region, get_environment_name, get_logger
+from api.common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
 
 STACK_NAME = 'thiscovery-core'
 
@@ -35,7 +37,7 @@ def get_table(table_name):
         raise ex
 
 
-def put_item(table_name: str, item_type: str, item_details, item: dict, id):
+def put_item(table_name: str, item_type: str, item_details, item: dict, id, update_allowed=False):
     try:
         logger = get_logger()
         table = get_table(table_name)
@@ -45,9 +47,14 @@ def put_item(table_name: str, item_type: str, item_details, item: dict, id):
         item['details'] = item_details
 
         logger.info('dynamodb put', extra = {'table_name': table_name,'item': item})
-        response = table.put_item(Item=item)
-    except Exception as ex:
-        raise ex
+        if update_allowed:
+            response = table.put_item(Item=item)
+        else:
+            response = table.put_item(Item=item, ConditionExpression='attribute_not_exists(id)')
+    except ClientError as ex:
+        error_code = ex.response['Error']['Code']
+        errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(id)}
+        raise DuplicateInsertError('item already exists', errorjson)
 
 
 def update_item(table_name: str, key: str, attr_name: str, attr_value):
@@ -109,10 +116,13 @@ def delete_item(table_name: str, key: str):
 
 
 if __name__ == "__main__":
-    # item_details = {'hello': 'world'}
+    item_details = {'hello': 'world'}
+    put_item('notifications', 'test', item_details, {}, 'abd')
+
+
     # write(item_details)
     # print(str(read()))
     # delete('e847d0e6-8c08-4ffd-bade-dc55196b51a4')
     # print(get('notifications', '821ee279-18d5-4873-ba94-81c39b932a81'))
 
-    update_item('tokens', 'abc', {"hello": "world", "more": "data!"})
+    # update_item('tokens', 'abc', {"hello": "world", "more": "data!"})
