@@ -22,7 +22,7 @@ from botocore.exceptions import ClientError
 import uuid
 
 # from .utilities import get_aws_region, get_environment_name, get_logger
-from .common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
+from .utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
 
 STACK_NAME = 'thiscovery-core'
 
