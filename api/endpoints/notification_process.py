@@ -27,6 +27,7 @@ from datetime import datetime
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
     from .common.hubspot import post_new_user_to_crm
+    from .common.pg_utilities import execute_query
     from .common.dynamodb_utilities import scan, update_item
     from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
     from .user import patch_user
@@ -72,6 +73,30 @@ def process_user_registration (notification):
         update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
     except Exception as ex:
         raise ex
+
+SIGNUP_DETAILS_SELECT_SQL = '''
+  SELECT 
+    p.id as project_id,
+    p.name as project_name,
+    pt.description as project_task_desc,
+    tt.id as task_type_id,
+    tt.name as task_type_name    
+  FROM 
+    public.projects_project p
+    JOIN projects_projecttask pt on p.id = pt.project_id
+    JOIN projects_tasktype tt on pt.task_type_id = tt.id
+    JOIN projects_usertask ut on pt.id = ut.project_task_id
+    JOIN projects_userproject up on ut.user_project_id = up.id
+    JOIN projects_user pu on up.user_id = pu.id
+  WHERE
+    ut.id = %s
+    '''
+
+
+def get_task_signup_data_for_drm(signup_details: dict):
+    user_task_id = signup_details['id']
+    result = execute_query(SIGNUP_DETAILS_SELECT_SQL, str(user_task_id))
+
 
 
 def process_task_signup(notification):
