@@ -1111,8 +1111,6 @@ Resources:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
         - DynamoDBCrudPolicy:
             TableName: !Ref tokens
-        - DynamoDBCrudPolicy:
-            TableName: !Ref lookups
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1133,8 +1131,6 @@ Resources:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
           TABLE_NAME_2: !Ref tokens
           TABLE_ARN_2: !GetAtt tokens.Arn
-          TABLE_NAME_3: !Ref lookups
-          TABLE_ARN_3: !GetAtt lookups.Arn
     Metadata:
       StackeryName: process-notifications
   tokens:
@@ -1183,21 +1179,6 @@ Resources:
             RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: dateformattest
-  lookups:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
-      TableName: !Sub ${AWS::StackName}-lookups
-    Metadata:
-      StackeryName: Lookups
 Parameters:
   StackTagName:
     Type: String
