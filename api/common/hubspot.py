@@ -23,11 +23,12 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-# from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
-# from api.common.dynamodb_utilities import get_item, put_item
-
-from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
-from .dynamodb_utilities import get_item, put_item
+if __name__ == "__main__":
+    from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
+    from api.common.dynamodb_utilities import get_item, put_item
+else:
+    from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
+    from .dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -186,8 +187,8 @@ def create_TLE_for_task_signup():
     type_defn = {
             "name": TASK_SIGNUP_TLE_TYPE_NAME,
             "objectType": "CONTACT",
-            "headerTemplate": "sample header template",
-            "detailTemplate": "sample detail template"
+            "headerTemplate": "{{signup_event_type}} for {{task_name}}",
+            "detailTemplate": "Project: {{project_name}}  {{project_id}}\nTask type: {{task_type_name}}  {{task_type_id}}"
         }
 
     tle_type_id = create_timeline_event_type(type_defn)
@@ -526,7 +527,7 @@ if __name__ == "__main__":
     # result = create_property1(None)
     # result = update_property(None)
 
-    result = get_initial_token_from_hubspot()
+    # result = get_initial_token_from_hubspot()
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
     # result = get_hubspot_contact()
@@ -617,7 +618,7 @@ if __name__ == "__main__":
 
     # result = delete_timeline_event_type(390568)
 
-    # result = create_TLE_for_task_signup()
+    result = create_TLE_for_task_signup()
 
     # save_TLE_type_id('test', 1234)
 

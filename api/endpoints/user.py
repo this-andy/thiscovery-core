@@ -433,7 +433,7 @@ if __name__ == "__main__":
     # ev = {'body': json.dumps(user_json)}
     # print(create_user_api(ev, None))
 
-    user_id = "5a57947a-66ee-486c-97a5-796546e18d86"
+    user_id = "401997d7-46e2-4ecb-9497-ea4aab9a0042"
     user_json = get_user_by_id(user_id, None)
     notify_new_user_registration(user_json[0])
 
