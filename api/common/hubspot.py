@@ -461,7 +461,7 @@ def hubspot_timestamp(datetime_string: str):
     # strip milliseconds and timezone
     datetime_string = datetime_string[:19]
     # date string may contain 'T' - if so then replace with space
-    datetime_string.replace('T', ' ')
+    datetime_string = datetime_string.replace('T', ' ')
     datetime_value = datetime.strptime(datetime_string, DATE_FORMAT)
     datetime_timestamp = int(datetime_value.timestamp() * 1000)
     return datetime_timestamp
