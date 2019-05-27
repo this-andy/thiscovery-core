@@ -64,9 +64,9 @@ def process_user_registration (notification):
         notification_id = notification['id']
         details = notification['details']
         user_id = details['id']
-        logger.info('process_user_registration: post to hubspot', extra={'user_id': str(user_id), 'email': details['email']})
+        logger.info('process_user_registration: post to hubspot', extra={'notification_id': str(notification_id), 'user_id': str(user_id), 'email': details['email']})
         hubspot_id, isNew = post_new_user_to_crm(details)
-        logger.info('process_user_registration: hubspot details', extra={'hubspot_id': str(hubspot_id), 'isNew': str(isNew)})
+        logger.info('process_user_registration: hubspot details', extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(isNew)})
 
         if hubspot_id == -1:
             raise ValueError
