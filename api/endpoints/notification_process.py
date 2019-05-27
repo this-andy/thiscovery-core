@@ -26,14 +26,15 @@ from datetime import datetime
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm
+    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from .common.pg_utilities import execute_query
     from .common.dynamodb_utilities import scan, update_item
     from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
     from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError
-    from common.hubspot import post_new_user_to_crm
+    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
+    from common.pg_utilities import execute_query
     from common.dynamodb_utilities import scan, update_item
     from common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
     from user import patch_user
@@ -43,12 +44,18 @@ def process_notifications(event, context):
     logger = get_logger()
     notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
     logger.info('process_notifications', extra = {'count': str(len(notifications))})
+
+    # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
+    signup_notifications = []
     for notification in notifications:
         notification_type = notification['type']
         if notification_type == USER_REGISTRATION_NOTIFICATION:
             process_user_registration(notification)
         elif notification_type == TASK_SIGNUP_NOTIFICATION:
-            process_task_signup(notification)
+            signup_notifications.append(notification)
+
+    for signup_notification in signup_notifications:
+        process_task_signup(signup_notification)
 
 
 def process_user_registration (notification):
@@ -70,40 +77,61 @@ def process_user_registration (notification):
 
         patch_user(user_id, user_jsonpatch)
 
-        update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+        mark_notification_processed(notification_id)
     except Exception as ex:
         raise ex
+
+
+def mark_notification_processed(notification_id):
+    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+
 
 SIGNUP_DETAILS_SELECT_SQL = '''
   SELECT 
     p.id as project_id,
     p.name as project_name,
-    pt.description as project_task_desc,
+    pt.id as task_id,
+    pt.description as task_name,
     tt.id as task_type_id,
-    tt.name as task_type_name    
+    tt.name as task_type_name,
+    u.crm_id
   FROM 
     public.projects_project p
     JOIN projects_projecttask pt on p.id = pt.project_id
     JOIN projects_tasktype tt on pt.task_type_id = tt.id
     JOIN projects_usertask ut on pt.id = ut.project_task_id
     JOIN projects_userproject up on ut.user_project_id = up.id
-    JOIN projects_user pu on up.user_id = pu.id
+    JOIN projects_user u on up.user_id = u.id
   WHERE
     ut.id = %s
     '''
 
 
-def get_task_signup_data_for_drm(signup_details: dict):
-    user_task_id = signup_details['id']
-    result = execute_query(SIGNUP_DETAILS_SELECT_SQL, str(user_task_id))
-
+def get_task_signup_data_for_crm(user_task_id):
+    extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),))
+    if len(extra_data) == 1:
+        return extra_data[0]
+    else:
+        raise Exception
 
 
 def process_task_signup(notification):
+    logger = get_logger()
+
+    # get basic data out of notification
     notification_id = notification['id']
-    details = notification['details']
-    # post_task_signup_to_crm(details)
-    # delete(notification_id)
+    signup_details = notification['details']
+    user_task_id = signup_details['id']
+
+    # get additional data that hubspot needs from database
+    extra_data = get_task_signup_data_for_crm(user_task_id)
+
+    # put it all together for dispatch to HubSpot
+    signup_details.update(extra_data)
+    signup_details['signup_event_type'] = 'Sign-up'
+
+    post_task_signup_to_crm(signup_details)
+    mark_notification_processed(notification_id)
 
 
 def dateformattest(event, context):
@@ -127,16 +155,19 @@ def dateformattest(event, context):
 
 if __name__ == "__main__":
 
-    # process_notifications(None, None)
+    result = process_notifications(None, None)
     # notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
     # print(str(notifications))
     # notification_id = notifications[0]['id']
     # update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
 
-    date_json = {
-        "date": "2019-05-16 15:20:51.264658+00:00",
-        "format": "%Y-%m-%d %H:%M:%S.%f%z"
-    }
+    # date_json = {
+    #     "date": "2019-05-16 15:20:51.264658+00:00",
+    #     "format": "%Y-%m-%d %H:%M:%S.%f%z"
+    # }
+    # ev = {'body': json.dumps(date_json)}
+    # print(dateformattest(ev, None))
 
-    ev = {'body': json.dumps(date_json)}
-    print(dateformattest(ev, None))
+    # details = {'id': '010d3058-d329-448a-b155-4e574e9e2e57'}
+    # result = get_task_signup_data_for_crm(details)
+    print(result)

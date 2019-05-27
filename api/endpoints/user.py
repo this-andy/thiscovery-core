@@ -418,19 +418,23 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    user_json = {
-        "email": "ln@email.co.uk",
-        "title": "Ms",
-        "first_name": "Laura",
-        "last_name": "Nobody",
-        "status": "new",
-        "country_code": "BE"
-    }
-
-    correlation_id = None
+    # user_json = {
+    #     "email": "ln@email.co.uk",
+    #     "title": "Ms",
+    #     "first_name": "Laura",
+    #     "last_name": "Nobody",
+    #     "status": "new",
+    #     "country_code": "BE"
+    # }
+    #
+    # correlation_id = None
     # print(create_user(user_json,correlation_id))
     #
-    ev = {'body': json.dumps(user_json)}
-    print(create_user_api(ev, None))
+    # ev = {'body': json.dumps(user_json)}
+    # print(create_user_api(ev, None))
+
+    user_id = "899dfe6e-8646-4514-ab81-f2b2081c6b02"
+    user_json = get_user_by_id(user_id, None)
+    notify_new_user_registration(user_json[0])
 
 

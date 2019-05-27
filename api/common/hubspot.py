@@ -23,10 +23,10 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-# from api.common.utilities import get_secret, get_logger, now_with_tz, DetailedValueError
+# from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
 # from api.common.dynamodb_utilities import get_item, put_item
 
-from .utilities import get_secret, get_logger, now_with_tz
+from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
 from .dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -114,7 +114,7 @@ def create_group(group_definition):
 
 # region Timeline Events
 
-def create_timeline_event(event_data: dict):
+def create_or_update_timeline_event(event_data: dict):
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event'
@@ -179,15 +179,18 @@ def delete_timeline_event_property(tle_type_id, property_id):
 
 # endregion
 
+TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
+
 def create_TLE_for_task_signup():
+
     type_defn = {
-            "name": "Task sign-up",
+            "name": TASK_SIGNUP_TLE_TYPE_NAME,
             "objectType": "CONTACT",
             "headerTemplate": "sample header template",
             "detailTemplate": "sample detail template"
         }
 
-    TLE_type_id = create_timeline_event_type(type_defn)
+    tle_type_id = create_timeline_event_type(type_defn)
 
     properties = [
         {
@@ -227,7 +230,25 @@ def create_TLE_for_task_signup():
         },
     ]
 
-    result = create_timeline_event_properties(TLE_type_id, properties)
+    result = create_timeline_event_properties(tle_type_id, properties)
+
+    save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id)
+
+
+def save_TLE_type_id(name: str, hubspot_id):
+    table_id = get_aws_namespace() + name
+    details = {
+        'hubspot_id': str(hubspot_id),
+        'name': str(name),
+    }
+    put_item('lookups', 'tle_type', details, {}, table_id, True)
+
+
+def get_TLE_type_id(name: str):
+    table_id = get_aws_namespace() + name
+    item = get_item('lookups', table_id)
+
+    return item['details']['hubspot_id']
 
 
 # region core hubspot crud methods
@@ -281,7 +302,6 @@ def hubspot_post(url: str, data: dict):
                 # and loop to retry
             else:
                 raise err
-
 
     return result
 
@@ -353,6 +373,7 @@ def hubspot_delete(url):
     return response
 
 # endregion
+
 
 def get_hubspot_contact():
     url = '/contacts/v1/lists/all/contacts/all'
@@ -427,7 +448,7 @@ def refresh_token():
 
 
 def get_initial_token_from_hubspot():
-    code = "c841b8c9-930c-4967-8387-2fbdad393cb0"   # paste this from thiscovery admin
+    code = "2ba50d60-9965-41af-890b-10c78e75b2a5"   # paste this from thiscovery admin
     return get_new_token_from_hubspot(None, code)
 
 hubspot_oauth_token = get_token_from_database()
@@ -435,14 +456,23 @@ hubspot_oauth_token = get_token_from_database()
 # endregion
 
 
+
+def hubspot_timestamp(datetime_string: str):
+    # strip milliseconds and timezone
+    datetime_string = datetime_string[:19]
+    # date string may contain 'T' - if so then replace with space
+    datetime_string.replace('T', ' ')
+    datetime_value = datetime.strptime(datetime_string, DATE_FORMAT)
+    datetime_timestamp = int(datetime_value.timestamp() * 1000)
+    return datetime_timestamp
+
+
 def post_new_user_to_crm(new_user):
     email = new_user['email']
 
     url = '/contacts/v1/contact/createOrUpdate/email/' + email
 
-    created_time_string = new_user['created'][:19] # strip milliseconds and timezone
-    created_time = datetime.strptime(created_time_string, DATE_FORMAT)
-    created_timestamp = int(created_time.timestamp() * 1000)
+    created_timestamp = hubspot_timestamp(new_user['created'])
 
     data = {
         "properties": [
@@ -469,24 +499,23 @@ def post_new_user_to_crm(new_user):
         return -1, False
 
 
-# def post_task_signup_to_crm(task_signup):
-#
-#     url =  '/contacts/v1/contact/createOrUpdate/email/'
-#
-#     data = {
-#         "properties": [
-#             {
-#                 "property": "firstname",
-#                 "value": task_signup['first_name']
-#             },
-#             {
-#                 "property": "lastname",
-#                 "value": task_signup['last_name']
-#             },
-#         ]
-#     }
-#
-#     return hubspot_post(url, data)
+def post_task_signup_to_crm(signup_details):
+    eventTypeId = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME)
+    tle_details = {
+        'id': str(uuid.uuid4()),
+        'objectId': signup_details['crm_id'],
+        'eventTypeId': eventTypeId,
+        'project_id': signup_details['project_id'],
+        'project_name': signup_details['project_name'],
+        'task_id': signup_details['task_id'],
+        'task_name': signup_details['task_name'],
+        'task_type_id': signup_details['task_type_id'],
+        'task_type_name': signup_details['task_type_name'],
+        'signup_event_type': signup_details['signup_event_type'],
+        'timestamp': hubspot_timestamp(signup_details['created'])
+    }
+
+    return create_or_update_timeline_event(tle_details)
 
 
 if __name__ == "__main__":
@@ -497,7 +526,7 @@ if __name__ == "__main__":
     # result = create_property1(None)
     # result = update_property(None)
 
-    # result = get_initial_token_from_hubspot()
+    result = get_initial_token_from_hubspot()
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
     # result = get_hubspot_contact()
@@ -577,19 +606,22 @@ if __name__ == "__main__":
 
     # result = get_timeline_event_properties ('279633')
 
-    event_data = {
-        "id": str(uuid.uuid4()),
-        "objectId": 1101,
-        "eventTypeId": "279633",
-        "study-name": "Test 6 from API with date",
-    }
+    # event_data = {
+    #     "id": str(uuid.uuid4()),
+    #     "objectId": 1101,
+    #     "eventTypeId": "279633",
+    #     "study-name": "Test 6 from API with date",
+    # }
 
-    # result = create_timeline_event(event_data)
+    # result = create_or_update_timeline_event(event_data)
 
-    # result = delete_timeline_event_type(390519)
+    # result = delete_timeline_event_type(390568)
 
-    result = create_TLE_for_task_signup()
+    # result = create_TLE_for_task_signup()
 
+    # save_TLE_type_id('test', 1234)
+
+    # result = get_TLE_type_id('test')
     print(result)
 
     # save_token(result_2019_05_10_12_11)

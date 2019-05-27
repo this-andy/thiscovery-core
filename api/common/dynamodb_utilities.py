@@ -16,13 +16,16 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import uuid
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-import uuid
 
-# from .utilities import get_aws_region, get_environment_name, get_logger
-from .utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
+if __name__ == "__main__":
+    from api.common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
+else:
+    from .utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError
+
 
 STACK_NAME = 'thiscovery-core'
 
