@@ -28,6 +28,7 @@ def create_all_views():
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_testgroup_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_group_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_testgroup_users_create.sql', None)
+    run_sql_script_file(VIEW_SQL_FOLDER + 'view_task_signups.sql', None)
 
 if __name__ == "__main__":
     create_all_views()

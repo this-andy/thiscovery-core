@@ -20,6 +20,8 @@ import uuid
 import json
 from http import HTTPStatus
 
+from api.common.notification_send import notify_new_task_signup
+
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
@@ -63,19 +65,22 @@ def get_user_task(ut_id, correlation_id):
 
     base_sql = '''
         SELECT 
-            id,
-            user_project_id,
-            project_task_id,
-            created,
-            modified,               
-            status,
-            consented                
+            ut.id,
+            ut.user_project_id,
+            ut.project_task_id,
+            ut.created,
+            ut.modified,               
+            ut.status,
+            ut.consented,
+            up.user_id              
         FROM 
-            public.projects_usertask
-        WHERE id = %s
+            public.projects_usertask ut
+        JOIN projects_userproject up on ut.user_project_id = up.id
+        WHERE ut.id = %s
     '''
 
-    return execute_query(base_sql, (str(ut_id),), correlation_id)
+    result = execute_query(base_sql, (str(ut_id),), correlation_id)
+    return result
 
 
 def list_user_tasks(user_id, correlation_id):
@@ -329,7 +334,7 @@ def create_user_task(ut_json, correlation_id):
         'consented': ut_consented,
     }
 
-    notify_new_task_signup(new_user_task)
+    notify_new_task_signup(new_user_task, correlation_id)
 
     return new_user_task
 
@@ -370,9 +375,9 @@ def create_user_task_api(event, context):
 
 if __name__ == "__main__":
     ut_json = {
-        'user_id': "eb1c804f-0b19-4a33-b2f3-ec5441f57301",
+        'user_id': "82b4577a-07bb-4de6-bd55-129e5db6578c",
         'project_task_id': "273b420e-09cb-419c-8b57-b393595dba78",
-        'consented': '2019-05-01 16:16:56.087895+01'
+        'consented': '2019-05-26 17:30:56.087895+01'
     }
     # print(ut_json)
 
@@ -380,3 +385,8 @@ if __name__ == "__main__":
     print(create_user_task_api(ev, None))
 
     # print(list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None))
+
+    # user_task_id = "524c8b64-c63b-437d-bb6f-b9503f980fa5"
+    # user_task_json = get_user_task(user_task_id, None)
+    # notify_new_task_signup(user_task_json[0], None)
+    pass

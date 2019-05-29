@@ -56,7 +56,7 @@ def create_property1(property_definition):
         "formField": False
     }
 
-    r = hubspot_post(url, data)
+    r = hubspot_post(url, data, None)
 
     return r.status_code
 
@@ -74,7 +74,7 @@ def create_property2(property_definition):
         "formField": False
     }
 
-    r = hubspot_post(url, data)
+    r = hubspot_post(url, data, None)
 
     return r.status_code
 
@@ -94,7 +94,7 @@ def update_property(property_definition):
         "readOnlyValue": True
     }
 
-    r = hubspot_put(url, data)
+    r = hubspot_put(url, data, None)
 
     return r.status_code
 
@@ -107,7 +107,7 @@ def create_group(group_definition):
         "displayName": "Thiscovery"
     }
 
-    r = hubspot_post(url, data)
+    r = hubspot_post(url, data, None)
 
     return r.status_code
 
@@ -115,12 +115,12 @@ def create_group(group_definition):
 
 # region Timeline Events
 
-def create_or_update_timeline_event(event_data: dict):
+def create_or_update_timeline_event(event_data: dict, correlation_id):
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event'
 
-    result = hubspot_put(url, event_data)
+    result = hubspot_put(url, event_data, correlation_id)
 
     return result.status_code
 
@@ -131,7 +131,7 @@ def create_timeline_event_type(type_defn: dict):
     type_defn['applicationId'] = app_id
     url = '/integrations/v1/' + app_id + '/timeline/event-types'
 
-    response = hubspot_post(url, type_defn)
+    response = hubspot_post(url, type_defn, None)
     content = json.loads(response.content)
 
     return content['id']
@@ -142,7 +142,7 @@ def delete_timeline_event_type(tle_type_id):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id)
 
-    result = hubspot_delete(url)
+    result = hubspot_delete(url, None)
 
     return result.status_code
 
@@ -152,7 +152,7 @@ def get_timeline_event_properties(tle_type_id):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
-    result = hubspot_get(url)
+    result = hubspot_get(url, None)
 
     return result
 
@@ -163,9 +163,7 @@ def create_timeline_event_properties(tle_type_id, property_defns: list):
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
     for property_defn in property_defns:
-        result = hubspot_post(url, property_defn)
-
-    return result.status_code
+        result = hubspot_post(url, property_defn, None)
 
 
 def delete_timeline_event_property(tle_type_id, property_id):
@@ -173,7 +171,7 @@ def delete_timeline_event_property(tle_type_id, property_id):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties/' + str(property_id)
 
-    result = hubspot_delete(url)
+    result = hubspot_delete(url, None)
 
     return result.status_code
 
@@ -181,6 +179,7 @@ def delete_timeline_event_property(tle_type_id, property_id):
 # endregion
 
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
+
 
 def create_TLE_for_task_signup():
 
@@ -233,28 +232,28 @@ def create_TLE_for_task_signup():
 
     result = create_timeline_event_properties(tle_type_id, properties)
 
-    save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id)
+    save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
 
 
-def save_TLE_type_id(name: str, hubspot_id):
+def save_TLE_type_id(name: str, hubspot_id, correlation_id):
     table_id = get_aws_namespace() + name
     details = {
         'hubspot_id': str(hubspot_id),
         'name': str(name),
     }
-    put_item('lookups', 'tle_type', details, {}, table_id, True)
+    put_item('lookups', table_id, 'tle_type', details, {}, True, correlation_id)
 
 
-def get_TLE_type_id(name: str):
+def get_TLE_type_id(name: str, correlation_id):
     table_id = get_aws_namespace() + name
-    item = get_item('lookups', table_id)
+    item = get_item('lookups', table_id, correlation_id)
 
     return item['details']['hubspot_id']
 
 
 # region core hubspot crud methods
 
-def hubspot_get(url):
+def hubspot_get(url, correlation_id):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -262,14 +261,14 @@ def hubspot_get(url):
     headers['Content-Type'] = 'application/json'
     while not success:
         try:
-            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
             req = Request(full_url, headers=headers)
             response = urlopen(req).read()
             data = json.loads(response)
             success = True
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
@@ -277,7 +276,7 @@ def hubspot_get(url):
     return data
 
 
-def hubspot_post(url: str, data: dict):
+def hubspot_post(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -285,20 +284,20 @@ def hubspot_post(url: str, data: dict):
     headers['Content-Type'] = 'application/json'
     while not success:
         try:
-            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
 
             result = requests.post(data=json.dumps(data), url=full_url, headers=headers)
             if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                 success = True
             elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
                 raise Exception
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
@@ -307,7 +306,7 @@ def hubspot_post(url: str, data: dict):
     return result
 
 
-def hubspot_put(url: str, data: dict):
+def hubspot_put(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -315,20 +314,20 @@ def hubspot_put(url: str, data: dict):
     headers['Content-Type'] = 'application/json'
     while not success:
         try:
-            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
 
             result = requests.put(data=json.dumps(data), url=full_url, headers=headers)
             if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                 success = True
             elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
-                raise err
+                raise Exception(result.status_code)
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
@@ -337,7 +336,7 @@ def hubspot_put(url: str, data: dict):
     return result
 
 
-def hubspot_delete(url):
+def hubspot_delete(url, correlation_id):
     success = False
     retry_count = 0
     full_url = base_url + url
@@ -345,13 +344,13 @@ def hubspot_delete(url):
     headers['Content-Type'] = 'application/json'
     while not success:
         try:
-            headers['Authorization'] = 'Bearer ' + get_current_access_token()
+            headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
 
             response = requests.delete(url=full_url, headers=headers)
             if response.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT]:
                 success = True
             elif response.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
@@ -365,7 +364,7 @@ def hubspot_delete(url):
                 raise DetailedValueError(msg, errorjson)
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                refresh_token()
+                refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
             else:
@@ -378,24 +377,24 @@ def hubspot_delete(url):
 
 def get_hubspot_contact():
     url = '/contacts/v1/lists/all/contacts/all'
-    return hubspot_get(url)
+    return hubspot_get(url, None)
 
 
-def update_contact(email: str, property_changes: list):
+def update_contact(email: str, property_changes: list, correlation_id):
     url = '/contacts/v1/contact/email/' + email + '/profile'
 
     data = {"properties": property_changes}
 
-    r = hubspot_post(url, data)
+    r = hubspot_post(url, data, correlation_id)
 
     return r.status_code
 
 
 # region token processing
 
-def get_token_from_database() -> dict:
+def get_token_from_database(correlation_id) -> dict:
     try:
-        token = get_item('tokens', 'hubspot')['details']
+        token = get_item('tokens', 'hubspot', correlation_id)['details']
     except:
         token = None
     return token
@@ -404,18 +403,18 @@ def get_token_from_database() -> dict:
 hubspot_oauth_token = None
 
 
-def save_token(new_token):
-    put_item('tokens', 'oAuth_token', new_token, {}, 'hubspot', True)
+def save_token(new_token, correlation_id):
+    put_item('tokens', 'hubspot', 'oAuth_token', new_token, {}, True, correlation_id)
 
 
-def get_current_access_token() -> str:
+def get_current_access_token(correlation_id) -> str:
     global hubspot_oauth_token
     if hubspot_oauth_token is None:
-        hubspot_oauth_token = get_token_from_database()
+        hubspot_oauth_token = get_token_from_database(correlation_id)
     return hubspot_oauth_token['access_token']
 
 
-def get_new_token_from_hubspot(refresh_token, code=None):
+def get_new_token_from_hubspot(refresh_token, code, correlation_id):
     global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
@@ -438,21 +437,21 @@ def get_new_token_from_hubspot(refresh_token, code=None):
     res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
     token_text = res.text
     token = json.loads(token_text)
-    save_token(token)
+    save_token(token, correlation_id)
     hubspot_oauth_token = token
     return token
 
 
-def refresh_token():
+def refresh_token(correlation_id):
     refresh_token = hubspot_oauth_token['refresh_token']
-    return get_new_token_from_hubspot(refresh_token)
+    return get_new_token_from_hubspot(refresh_token, None, correlation_id)
 
 
 def get_initial_token_from_hubspot():
     code = "2ba50d60-9965-41af-890b-10c78e75b2a5"   # paste this from thiscovery admin
-    return get_new_token_from_hubspot(None, code)
+    return get_new_token_from_hubspot(None, code, None)
 
-hubspot_oauth_token = get_token_from_database()
+hubspot_oauth_token = get_token_from_database(None)
 
 # endregion
 
@@ -468,7 +467,7 @@ def hubspot_timestamp(datetime_string: str):
     return datetime_timestamp
 
 
-def post_new_user_to_crm(new_user):
+def post_new_user_to_crm(new_user, correlation_id):
     email = new_user['email']
 
     url = '/contacts/v1/contact/createOrUpdate/email/' + email
@@ -486,7 +485,7 @@ def post_new_user_to_crm(new_user):
         ]
     }
 
-    result = hubspot_post(url, data)
+    result = hubspot_post(url, data, correlation_id)
 
     if result.status_code == HTTPStatus.OK:
 
@@ -500,12 +499,12 @@ def post_new_user_to_crm(new_user):
         return -1, False
 
 
-def post_task_signup_to_crm(signup_details):
-    eventTypeId = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME)
+def post_task_signup_to_crm(signup_details, correlation_id):
+    tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
     tle_details = {
-        'id': str(uuid.uuid4()),
+        'id': signup_details['id'],
         'objectId': signup_details['crm_id'],
-        'eventTypeId': eventTypeId,
+        'eventTypeId': tle_type_id,
         'project_id': signup_details['project_id'],
         'project_name': signup_details['project_name'],
         'task_id': signup_details['task_id'],
@@ -516,7 +515,7 @@ def post_task_signup_to_crm(signup_details):
         'timestamp': hubspot_timestamp(signup_details['created'])
     }
 
-    return create_or_update_timeline_event(tle_details)
+    return create_or_update_timeline_event(tle_details, correlation_id)
 
 
 if __name__ == "__main__":
@@ -530,7 +529,7 @@ if __name__ == "__main__":
     # result = get_initial_token_from_hubspot()
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
-    # result = get_hubspot_contact()
+    result = get_hubspot_contact()
 
     # n = now_with_tz()
     # tsn = n.timestamp() * 1000
@@ -618,7 +617,7 @@ if __name__ == "__main__":
 
     # result = delete_timeline_event_type(390568)
 
-    result = create_TLE_for_task_signup()
+    # result = create_TLE_for_task_signup()
 
     # save_TLE_type_id('test', 1234)
 

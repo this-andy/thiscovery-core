@@ -340,7 +340,7 @@ def create_user(user_json, correlation_id):
     }
 
     try:
-        notify_new_user_registration(new_user)
+        notify_new_user_registration(new_user, correlation_id)
     except Exception as ex:
         raise ex
 
@@ -418,23 +418,23 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    # user_json = {
-    #     "email": "ln@email.co.uk",
-    #     "title": "Ms",
-    #     "first_name": "Laura",
-    #     "last_name": "Nobody",
-    #     "status": "new",
-    #     "country_code": "BE"
-    # }
-    #
-    # correlation_id = None
-    # print(create_user(user_json,correlation_id))
+    user_json = {
+        "email": "ln@email.co.uk",
+        "title": "Ms",
+        "first_name": "Laura",
+        "last_name": "Nobody",
+        "status": "new",
+        "country_code": "BE"
+    }
+
+    correlation_id = None
+    print(create_user(user_json, correlation_id))
     #
     # ev = {'body': json.dumps(user_json)}
     # print(create_user_api(ev, None))
 
-    user_id = "401997d7-46e2-4ecb-9497-ea4aab9a0042"
-    user_json = get_user_by_id(user_id, None)
-    notify_new_user_registration(user_json[0])
+    # user_id = "401997d7-46e2-4ecb-9497-ea4aab9a0042"
+    # user_json = get_user_by_id(user_id, None)
+    # notify_new_user_registration(user_json[0], None)
 
 

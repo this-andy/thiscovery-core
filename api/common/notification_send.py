@@ -50,17 +50,19 @@ NOTIFICATION_PROCESSED_FLAG = 'notification_processed'
 def create_notification(label: str):
     notification_item = {
         NOTIFICATION_PROCESSED_FLAG: False,
-        'created': str(now_with_tz()),
         'label': label
     }
     return notification_item
 
 
-def notify_new_user_registration (new_user):
-    notification_item = create_notification(new_user['email'] + ':' + new_user['id'])
-    put_item(NOTIFICATION_TABLE_NAME, USER_REGISTRATION_NOTIFICATION, new_user, notification_item, uuid.uuid4())
+def notify_new_user_registration(new_user, correlation_id):
+    notification_item = create_notification(new_user['email'])
+    key = new_user['id']
+    put_item(NOTIFICATION_TABLE_NAME, key, USER_REGISTRATION_NOTIFICATION, new_user, notification_item, correlation_id)
 
 
-def notify_new_task_signup (task_signup):
+def notify_new_task_signup(task_signup, correlation_id):
     notification_item = create_notification(task_signup['user_id'])
-    put_item(NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item, uuid.uuid4())
+    # use existing user_task id as notification id
+    key = task_signup['id']
+    put_item(NOTIFICATION_TABLE_NAME, key, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item, correlation_id)

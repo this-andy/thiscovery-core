@@ -25,14 +25,14 @@ import json
 from datetime import datetime
 
 if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, DetailedValueError
+    from .common.utilities import get_logger, DetailedValueError, new_correlation_id
     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from .common.pg_utilities import execute_query
     from .common.dynamodb_utilities import scan, update_item
     from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
     from .user import patch_user
 else:
-    from common.utilities import get_logger, DetailedValueError
+    from common.utilities import get_logger, DetailedValueError, new_correlation_id
     from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from common.pg_utilities import execute_query
     from common.dynamodb_utilities import scan, update_item
@@ -52,6 +52,7 @@ def process_notifications(event, context):
         if notification_type == USER_REGISTRATION_NOTIFICATION:
             process_user_registration(notification)
         elif notification_type == TASK_SIGNUP_NOTIFICATION:
+            # add to list for later processing
             signup_notifications.append(notification)
 
     for signup_notification in signup_notifications:
@@ -61,12 +62,15 @@ def process_notifications(event, context):
 def process_user_registration (notification):
     try:
         logger = get_logger()
+        correlation_id = new_correlation_id()
         notification_id = notification['id']
         details = notification['details']
         user_id = details['id']
-        logger.info('process_user_registration: post to hubspot', extra={'notification_id': str(notification_id), 'user_id': str(user_id), 'email': details['email']})
-        hubspot_id, isNew = post_new_user_to_crm(details)
-        logger.info('process_user_registration: hubspot details', extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(isNew)})
+        logger.info('process_user_registration: post to hubspot', \
+                    extra={'notification_id': str(notification_id), 'user_id': str(user_id), 'email': details['email'], 'correlation_id': str(correlation_id)})
+        hubspot_id, isNew = post_new_user_to_crm(details, correlation_id)
+        logger.info('process_user_registration: hubspot details', \
+                    extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(isNew), 'correlation_id': str(correlation_id)})
 
         if hubspot_id == -1:
             raise ValueError
@@ -75,15 +79,15 @@ def process_user_registration (notification):
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
         ]
 
-        patch_user(user_id, user_jsonpatch)
+        patch_user(user_id, user_jsonpatch, correlation_id)
 
-        mark_notification_processed(notification_id)
+        mark_notification_processed(notification_id, correlation_id)
     except Exception as ex:
         raise ex
 
 
-def mark_notification_processed(notification_id):
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
+def mark_notification_processed(notification_id, correlation_id):
+    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True, correlation_id)
 
 
 SIGNUP_DETAILS_SELECT_SQL = '''
@@ -107,8 +111,8 @@ SIGNUP_DETAILS_SELECT_SQL = '''
     '''
 
 
-def get_task_signup_data_for_crm(user_task_id):
-    extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),))
+def get_task_signup_data_for_crm(user_task_id, correlation_id):
+    extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),), correlation_id)
     if len(extra_data) == 1:
         return extra_data[0]
     else:
@@ -117,6 +121,7 @@ def get_task_signup_data_for_crm(user_task_id):
 
 def process_task_signup(notification):
     logger = get_logger()
+    correlation_id = new_correlation_id()
 
     # get basic data out of notification
     notification_id = notification['id']
@@ -124,14 +129,14 @@ def process_task_signup(notification):
     user_task_id = signup_details['id']
 
     # get additional data that hubspot needs from database
-    extra_data = get_task_signup_data_for_crm(user_task_id)
+    extra_data = get_task_signup_data_for_crm(user_task_id, correlation_id)
 
     # put it all together for dispatch to HubSpot
     signup_details.update(extra_data)
     signup_details['signup_event_type'] = 'Sign-up'
 
-    post_task_signup_to_crm(signup_details)
-    mark_notification_processed(notification_id)
+    post_task_signup_to_crm(signup_details, correlation_id)
+    mark_notification_processed(notification_id, correlation_id)
 
 
 def dateformattest(event, context):

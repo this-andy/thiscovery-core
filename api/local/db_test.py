@@ -17,7 +17,9 @@
 #
 
 import psycopg2
-from api.common.pg_utilities import execute_non_query, execute_query_multiple
+from api.common.pg_utilities import execute_non_query, execute_query_multiple, execute_query
+from api.common.dynamodb_utilities import scan
+from api.common.notification_send import NOTIFICATION_TABLE_NAME
 
 
 def duplicate_insert():
@@ -38,6 +40,24 @@ def multiple_query():
     return execute_query_multiple((sql1,sql2), (None,None))
 
 
+def check_task_signups():
+    sql = 'select * from public.task_signups'
+    signups_in_db = execute_query(sql)
+
+    signups_notifications = scan(NOTIFICATION_TABLE_NAME, 'type', 'task-signup')
+
+    print('Database:' + str(len(signups_in_db)) + ', notifications:' + str(len(signups_notifications)))
+
+    for db_signup in signups_in_db:
+        user_task_id = db_signup['user_task_id']
+        found = False
+        for notification in signups_notifications:
+            if not found and notification['details']['id'] == user_task_id:
+                # print ('match: ' + db_signup['email'])
+                found = True
+        if not found:
+            print('no match: ' + db_signup['user_task_id'] + ', ' + db_signup['email'] + ', ' + db_signup['created'])
+
 if __name__ == "__main__":
-    result = multiple_query()
-    print('result=' + str(result))
+    result = check_task_signups()
+    # print('result=' + str(result))
