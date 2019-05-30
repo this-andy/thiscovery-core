@@ -18,7 +18,7 @@
 
 import psycopg2
 from .utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
-    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id, running_unit_tests, UNIT_TEST_NAMESPACE
+    PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id
 
 
 conn = None
@@ -29,12 +29,7 @@ def _get_connection(correlation_id=None):
 
     # todo sort out connection pooling
     global conn
-
-    if running_unit_tests():
-        env_dict = get_secret('database-connection', UNIT_TEST_NAMESPACE)
-    else:
-        env_dict = get_secret('database-connection')
-
+    env_dict = get_secret('database-connection')
     conn = psycopg2.connect(**env_dict)
 
     # using dsn obscures password
@@ -72,11 +67,11 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
             sql = base_sql
         sql = minimise_white_space(sql)
         param_str = str(params)
-        logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+        logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
 
         cursor.execute(sql, params)
         records = cursor.fetchall()
-        logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+        logger.info('postgres result', extra={'rows returned': str(len(records)), 'correlation_id': correlation_id})
 
         if return_json:
             return _get_json_from_tuples(records)
@@ -95,7 +90,7 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
     except Exception as ex:
         raise ex
 
-    results= []
+    results = []
 
     try:
         # conn.cursor will return a cursor object, you can use this cursor to perform queries
@@ -160,7 +155,7 @@ def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     execute_non_query(sql, None, correlation_id)
 
 
-def insert_data_from_csv(source_file, destination_table, separator= ',', header_row=False):
+def insert_data_from_csv(source_file, destination_table, separator=',', header_row=False):
     conn = _get_connection()
 
     with open(source_file, 'r') as f:
@@ -171,7 +166,7 @@ def insert_data_from_csv(source_file, destination_table, separator= ',', header_
     conn.close()
 
 
-def populate_table_from_csv(source_folder, destination_table_name, separator= ','):
+def populate_table_from_csv(source_folder, destination_table_name, separator=','):
     if separator == ',':
         extn = '.csv'
     else:
@@ -197,7 +192,7 @@ def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_c
                 attribute = update['path'][1:]
             else:
                 attribute = update['path']
-        except KeyError as err:
+        except KeyError:
             errorjson = {'update': update, 'correlation_id': str(correlation_id)}
             raise PatchInvalidJsonError('path not found in jsonpatch', errorjson)
 
@@ -210,7 +205,7 @@ def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_c
 
         try:
             operation = update['op']
-        except KeyError as err:
+        except KeyError:
             errorjson = {'update': update, 'correlation_id': str(correlation_id)}
             raise PatchInvalidJsonError('op not found in jsonpatch', errorjson)
 
@@ -220,7 +215,7 @@ def create_updates_list_from_jsonpatch(mappings, jsonpatch, correlation_id=new_c
 
         try:
             value = update['value']
-        except KeyError as err:
+        except KeyError:
             errorjson = {'update': update, 'correlation_id': str(correlation_id)}
             raise PatchInvalidJsonError('value not found in jsonpatch', errorjson)
 

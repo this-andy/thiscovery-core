@@ -456,7 +456,6 @@ hubspot_oauth_token = get_token_from_database(None)
 # endregion
 
 
-
 def hubspot_timestamp(datetime_string: str):
     # strip milliseconds and timezone
     datetime_string = datetime_string[:19]

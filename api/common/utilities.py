@@ -230,14 +230,17 @@ def get_aws_region():
 
 
 def get_aws_namespace():
-    try:
-        secrets_namespace = os.environ['SECRETS_NAMESPACE']
-    except:
-        secrets_namespace = '/dev/'
-        # secrets_namespace = '/test/'
-        # secrets_namespace = '/staging/'
-        # secrets_namespace = '/prod/'
-    return secrets_namespace
+    if running_unit_tests():
+        return UNIT_TEST_NAMESPACE
+    else:
+        try:
+            secrets_namespace = os.environ['SECRETS_NAMESPACE']
+        except:
+            secrets_namespace = '/dev/'
+            # secrets_namespace = '/test/'
+            # secrets_namespace = '/staging/'
+            # secrets_namespace = '/prod/'
+        return secrets_namespace
 
 
 def get_environment_name():
@@ -247,10 +250,6 @@ def get_environment_name():
 
 
 def get_secret(secret_name, namespace_override=None):
-    return get_aws_secret(secret_name, namespace_override)
-
-
-def get_aws_secret(secret_name, namespace_override):
     logger = get_logger()
     # need to prepend secret name with namespace...
     if namespace_override is None:
