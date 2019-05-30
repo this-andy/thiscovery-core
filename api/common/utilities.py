@@ -358,11 +358,10 @@ def load_countries():
     # import os
     country_list_filename = 'countries.json'
 
-    testing = running_unit_tests()
     # print('dir:' + os.getcwd())
     # print('files:' + str(os.listdir('./common')))
 
-    if testing == 'true':
+    if running_unit_tests():
         country_list_filename = '../../common/' + country_list_filename
 
     if running_on_aws():

@@ -103,8 +103,11 @@ def get_item(table_name: str, key: str, correlation_id=new_correlation_id()):
         key_json = {'id': key}
         logger.info('dynamodb get', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
         response = table.get_item(Key=key_json)
-        item = response['Item']
-        return item
+        if 'Item' in response:
+            return response['Item']
+        else:
+            # not found
+            return None
     except Exception as ex:
         raise ex
 
@@ -116,6 +119,20 @@ def delete_item(table_name: str, key: str, correlation_id=new_correlation_id()):
         key_json = {'id': key}
         logger.info('dynamodb delete', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
         response = table.delete_item(Key=key_json)
+    except Exception as err:
+        raise err
+
+
+def delete_all(table_name: str, correlation_id=new_correlation_id()):
+    try:
+        logger = get_logger()
+        table = get_table(table_name)
+        items = scan(table_name)
+        for item in items:
+            key = item['id']
+            key_json = {'id': key}
+            logger.info('dynamodb delete_all', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
+            table.delete_item(Key=key_json)
     except Exception as err:
         raise err
 
