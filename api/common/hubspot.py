@@ -294,7 +294,8 @@ def hubspot_post(url: str, data: dict, correlation_id):
                 retry_count += 1
                 # and loop to retry
             else:
-                raise Exception
+                errorjson = {'result': result}
+                raise DetailedValueError('HTTP code ' + result.status_code, errorjson)
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
                 refresh_token(correlation_id)
@@ -448,7 +449,7 @@ def refresh_token(correlation_id):
 
 
 def get_initial_token_from_hubspot():
-    code = "2ba50d60-9965-41af-890b-10c78e75b2a5"   # paste this from thiscovery admin
+    code = "305f233c-8f14-43cc-ac1c-a7c629393c5b"   # paste this from thiscovery admin
     return get_new_token_from_hubspot(None, code, None)
 
 hubspot_oauth_token = get_token_from_database(None)
@@ -528,7 +529,7 @@ if __name__ == "__main__":
     # result = get_initial_token_from_hubspot()
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
-    result = get_hubspot_contact()
+    # result = get_hubspot_contact()
 
     # n = now_with_tz()
     # tsn = n.timestamp() * 1000
@@ -616,7 +617,7 @@ if __name__ == "__main__":
 
     # result = delete_timeline_event_type(390568)
 
-    # result = create_TLE_for_task_signup()
+    result = create_TLE_for_task_signup()
 
     # save_TLE_type_id('test', 1234)
 
