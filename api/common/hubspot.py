@@ -295,7 +295,7 @@ def hubspot_post(url: str, data: dict, correlation_id):
                 # and loop to retry
             else:
                 errorjson = {'result': result}
-                raise DetailedValueError('HTTP code ' + result.status_code, errorjson)
+                raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
         except HTTPError as err:
             if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
                 refresh_token(correlation_id)
