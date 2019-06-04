@@ -966,12 +966,12 @@ Resources:
     Properties:
       GroupDescription: Database Security Group
       SecurityGroupIngress:
-        CidrIp: 0.0.0.0/0
+      - CidrIp: 0.0.0.0/0
         FromPort: 5432
         IpProtocol: tcp
         ToPort: 5432
       SecurityGroupIngress:
-        CidrIp: 80.229.4.106/32
+      - CidrIp: 80.229.4.106/32
         Description: Andy at home
         FromPort: 5432
         IpProtocol: tcp
