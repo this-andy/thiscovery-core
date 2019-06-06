@@ -971,8 +971,18 @@ Resources:
           FromPort: 5432
           IpProtocol: tcp
           ToPort: 5432
-        - CidrIp: 80.229.4.106/32
-          Description: Andy at home
+        - CidrIp: !Ref EnvConfigVPCIngressCidr2AsString
+          Description: !Ref EnvConfigVPCIngressDesc2AsString
+          FromPort: 5432
+          IpProtocol: tcp
+          ToPort: 5432
+        - CidrIp: !Ref EnvConfigVPCIngressCidr3AsString
+          Description: !Ref EnvConfigVPCIngressDesc3AsString
+          FromPort: 5432
+          IpProtocol: tcp
+          ToPort: 5432
+        - CidrIp: !Ref EnvConfigVPCIngressCidr4AsString
+          Description: !Ref EnvConfigVPCIngressDesc4AsString
           FromPort: 5432
           IpProtocol: tcp
           ToPort: 5432
@@ -1244,6 +1254,24 @@ Parameters:
   EnvConfigVPCIngressDesc1AsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/vpc-ingress/desc1
+  EnvConfigVPCIngressCidr2AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/cidr2
+  EnvConfigVPCIngressDesc2AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/desc2
+  EnvConfigVPCIngressCidr3AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/cidr3
+  EnvConfigVPCIngressDesc3AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/desc3
+  EnvConfigVPCIngressCidr4AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/cidr4
+  EnvConfigVPCIngressDesc4AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/desc4
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
@@ -1256,6 +1284,12 @@ Metadata:
     EnvConfigStorageEncryptedAsString: db.storage-encrypted
     EnvConfigVPCIngressCidr1AsString: vpc-ingress.cidr1
     EnvConfigVPCIngressDesc1AsString: vpc-ingress.desc1
+    EnvConfigVPCIngressCidr2AsString: vpc-ingress.cidr2
+    EnvConfigVPCIngressDesc2AsString: vpc-ingress.desc2
+    EnvConfigVPCIngressCidr3AsString: vpc-ingress.cidr3
+    EnvConfigVPCIngressDesc3AsString: vpc-ingress.desc3
+    EnvConfigVPCIngressCidr4AsString: vpc-ingress.cidr4
+    EnvConfigVPCIngressDesc4AsString: vpc-ingress.desc4
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
