@@ -966,7 +966,8 @@ Resources:
     Properties:
       GroupDescription: Database Security Group
       SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: !Ref EnvConfigVPCIngressCidr1AsString
+          Description: !Ref EnvConfigVPCIngressDesc1AsString
           FromPort: 5432
           IpProtocol: tcp
           ToPort: 5432
@@ -1237,7 +1238,12 @@ Parameters:
   EnvConfigStorageEncryptedAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/storage-encrypted
-Metadata:
+  EnvConfigVPCIngressCidr1AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/cidr1
+  EnvConfigVPCIngressDesc1AsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/vpc-ingress/desc1Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigDeletionProtectionAsString: db.deletion-protection
@@ -1247,6 +1253,8 @@ Metadata:
     EnvConfigdbinstancetypeAsString: db.instance-type
     EnvConfigmultiAZAsString: db.multiAZ
     EnvConfigStorageEncryptedAsString: db.storage-encrypted
+    EnvConfigVPCIngressCidr1AsString: vpc-ingress.cidr1
+    EnvConfigVPCIngressDesc1AsString: vpc-ingress.desc1
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
