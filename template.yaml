@@ -1243,7 +1243,8 @@ Parameters:
     Default: /<EnvironmentName>/vpc-ingress/cidr1
   EnvConfigVPCIngressDesc1AsString:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/vpc-ingress/desc1Metadata:
+    Default: /<EnvironmentName>/vpc-ingress/desc1
+Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigDeletionProtectionAsString: db.deletion-protection
