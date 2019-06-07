@@ -24,6 +24,7 @@ from datetime import timedelta
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -88,7 +89,8 @@ class TestUser(TestCase):
 
         expected_body = expected_body_gmt
 
-        result = get_user_by_id_api(event, None)
+        # result = get_user_by_id_api(event, None)
+        result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -103,7 +105,8 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = get_user_by_id_api(event, None)
+        # result = get_user_by_id_api(event, None)
+        result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -119,7 +122,8 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
 
-        result = get_user_by_id_api(event, None)
+        # result = get_user_by_id_api(event, None)
+        result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -169,7 +173,8 @@ class TestUser(TestCase):
 
         expected_body = expected_body_gmt
 
-        result = get_user_by_email_api(event, None)
+        # result = get_user_by_email_api(event, None)
+        result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -185,7 +190,8 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = get_user_by_email_api(event, None)
+        # result = get_user_by_email_api(event, None)
+        result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -535,4 +541,103 @@ class TestUser(TestCase):
         result =  execute_query(sql, None, 'abc')
         return result
 
+
+    def test_aws_get_user_by_uuid_api_exists(self):
+        from api.endpoints.user import get_user_by_id_api
+        from api.tests.test_scripts.testing_utilities import test_get
+
+        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
+        event = {'pathParameters': path_parameters}
+
+        expected_status = HTTPStatus.OK
+        expected_body_bst = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T13:10:56.798192+01:00",
+            "modified": "2018-08-17T13:10:56.833885+01:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body_gmt = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T12:10:56.798192+00:00",
+            "modified": "2018-08-17T12:10:56.833885+00:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body = expected_body_gmt
+
+        aws_url = 'user'
+
+        result = test_get(get_user_by_id_api, aws_url, path_parameters, None, None)
+
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(result_json, expected_body)
+
+
+
+    def test_aws_get_user_email_exists(self):
+        from api.endpoints.user import get_user_by_email_api
+        from api.tests.test_scripts.testing_utilities import test_get
+
+        querystring_parameters = {'email': 'altha@email.addr'}
+
+        expected_status = HTTPStatus.OK
+
+        expected_body_bst = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T13:10:56.798192+01:00",
+            "modified": "2018-08-17T13:10:56.833885+01:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body_gmt = {
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T12:10:56.798192+00:00",
+            "modified": "2018-08-17T12:10:56.833885+00:00",
+            "email": "altha@email.addr",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
+            "auth0_id": None,
+            "status": None
+        }
+
+        expected_body = expected_body_gmt
+
+        result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(result_json, expected_body)
 

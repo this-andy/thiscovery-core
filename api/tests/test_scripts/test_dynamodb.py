@@ -37,9 +37,12 @@ class TestDynamoDB(TestCase):
         set_running_unit_tests(False)
 
     def test_01_get_table_ok(self):
-        from api.common.dynamodb_utilities import get_table
+        from api.common.dynamodb_utilities import get_table, scan
         table = get_table(TEST_TABLE_NAME)
-        self.assertEqual(table.item_count, 0)
+        items = scan(TEST_TABLE_NAME)
+
+        self.assertEqual(table.table_status, 'ACTIVE')
+        self.assertEqual(len(items), 0)
 
     def test_02_put_and_get_ok(self):
         from api.common.dynamodb_utilities import put_item, get_item
