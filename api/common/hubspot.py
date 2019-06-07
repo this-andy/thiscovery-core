@@ -24,10 +24,10 @@ from http import HTTPStatus
 from datetime import datetime
 
 if __name__ == "__main__":
-    from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
+    from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
     from api.common.dynamodb_utilities import get_item, put_item
 else:
-    from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError
+    from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
     from .dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -43,10 +43,27 @@ base_url = 'http://api.hubapi.com'
 
 # region Contact property and group management
 
-def create_property1(property_definition):
-    url = '/properties/v1/contacts/properties'
 
-    data = {
+def create_group(group_definition):
+    url = '/properties/v1/contacts/groups'
+    r = hubspot_post(url, group_definition, None)
+    return r.status_code
+
+
+def create_contact_property(property_definition):
+    url = '/properties/v1/contacts/properties'
+    r = hubspot_post(url, property_definition, None)
+    return r.status_code
+
+
+def create_thiscovery_contact_properties():
+    group_definition = {
+        "name": "thiscovery",
+        "displayName": "Thiscovery"
+    }
+    create_group(group_definition)
+
+    property_definition = {
         "name": "thiscovery_id",
         "label": "Thiscovery ID",
         "description": "Contact's unique user ID in Thiscovery API",
@@ -55,16 +72,9 @@ def create_property1(property_definition):
         "fieldType": "text",
         "formField": False
     }
+    create_contact_property(property_definition)
 
-    r = hubspot_post(url, data, None)
-
-    return r.status_code
-
-
-def create_property2(property_definition):
-    url = '/properties/v1/contacts/properties'
-
-    data = {
+    property_definition = {
         "name": "thiscovery_registered_date",
         "label": "Registered on Thiscovery date",
         "description": "The date on which a person first registered on Thiscovery.  Automatically set when someone registers.",
@@ -73,13 +83,10 @@ def create_property2(property_definition):
         "fieldType": "text",
         "formField": False
     }
-
-    r = hubspot_post(url, data, None)
-
-    return r.status_code
+    create_contact_property(property_definition)
 
 
-def update_property(property_definition):
+def update_property_DNU(property_definition):
     url = '/properties/v1/contacts/properties/named/newapicustomproperty4'
 
     data = {
@@ -98,18 +105,6 @@ def update_property(property_definition):
 
     return r.status_code
 
-
-def create_group(group_definition):
-    url = '/properties/v1/contacts/groups'
-
-    data = {
-        "name": "thiscovery",
-        "displayName": "Thiscovery"
-    }
-
-    r = hubspot_post(url, data, None)
-
-    return r.status_code
 
 # endregion
 
@@ -174,6 +169,16 @@ def delete_timeline_event_property(tle_type_id, property_id):
     result = hubspot_delete(url, None)
 
     return result.status_code
+
+
+def get_timeline_event(tle_type_id, tle_id, correlation_id):
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+    url = '/integrations/v1/' + app_id + '/timeline/event/' + str(tle_type_id) + '/' + str(tle_id)
+
+    result = hubspot_get(url, correlation_id)
+
+    return result
 
 
 # endregion
@@ -251,7 +256,7 @@ def get_TLE_type_id(name: str, correlation_id):
     return item['details']['hubspot_id']
 
 
-# region core hubspot crud methods
+# region common hubspot get/post/put/delete methods
 
 def hubspot_get(url, correlation_id):
     success = False
@@ -271,6 +276,8 @@ def hubspot_get(url, correlation_id):
                 refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
+            elif err.code == HTTPStatus.NOT_FOUND:
+                return None
             else:
                 raise err
     return data
@@ -368,6 +375,8 @@ def hubspot_delete(url, correlation_id):
                 refresh_token(correlation_id)
                 retry_count += 1
                 # and loop to retry
+            elif err.code == HTTPStatus.NOT_FOUND:
+                return None
             else:
                 raise err
 
@@ -376,20 +385,49 @@ def hubspot_delete(url, correlation_id):
 # endregion
 
 
-def get_hubspot_contact():
+# region contact methods
+
+def get_contact_property(contact, property_name):
+    return contact['properties'][property_name]['value']
+
+
+def get_hubspot_contact_by_id(id, correlation_id):
+    url = '/contacts/v1/contact/vid/' + str(id) + '/profile'
+    return hubspot_get(url, correlation_id)
+
+
+def get_hubspot_contact_by_email(email: str, correlation_id):
+    url = '/contacts/v1/contact/email/' + str(email) + '/profile'
+    return hubspot_get(url, correlation_id)
+
+
+def get_hubspot_contacts(correlation_id):
     url = '/contacts/v1/lists/all/contacts/all'
-    return hubspot_get(url, None)
+    return hubspot_get(url, correlation_id)
 
 
-def update_contact(email: str, property_changes: list, correlation_id):
-    url = '/contacts/v1/contact/email/' + email + '/profile'
-
+def update_contact_core(url, property_changes, correlation_id):
     data = {"properties": property_changes}
-
     r = hubspot_post(url, data, correlation_id)
-
     return r.status_code
 
+
+def update_contact_by_email(email: str, property_changes: list, correlation_id):
+    url = '/contacts/v1/contact/email/' + email + '/profile'
+    return update_contact_core(url, property_changes, correlation_id)
+
+
+def update_contact_by_id(hubspot_id, property_changes: list, correlation_id):
+    url = '/contacts/v1/contact/vid/' + str(hubspot_id) + '/profile'
+    return update_contact_core(url, property_changes, correlation_id)
+
+
+def delete_hubspot_contact(id, correlation_id):
+    url = '/contacts/v1/contact/vid/' + str(id)
+    return hubspot_delete(url, correlation_id)
+
+
+# endregion
 
 # region token processing
 
@@ -456,6 +494,7 @@ hubspot_oauth_token = get_token_from_database(None)
 
 # endregion
 
+# region hubspot timestamp methods
 
 def hubspot_timestamp(datetime_string: str):
     # strip milliseconds and timezone
@@ -466,6 +505,13 @@ def hubspot_timestamp(datetime_string: str):
     datetime_timestamp = int(datetime_value.timestamp() * 1000)
     return datetime_timestamp
 
+
+def hubspot_timestamp_to_datetime(hubspot_timestamp: int):
+    timestamp = hubspot_timestamp/1000
+    dt = datetime.fromtimestamp(timestamp)
+    return dt
+
+# endregion
 
 def post_new_user_to_crm(new_user, correlation_id):
     email = new_user['email']
@@ -523,20 +569,30 @@ if __name__ == "__main__":
 
     # result = create_group(None)
 
-    # result = create_property1(None)
+    # result = create_property2(None)
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
-    # result = get_hubspot_contact()
 
-    # n = now_with_tz()
-    # tsn = n.timestamp() * 1000
-    # changes = [
-    #         {"property": "thiscovery_registered_date", "value": int(tsn)},
-    #     ]
-    # result = update_contact('aw@email.co.uk', changes)
+    hubspot_id = 1301
+    tsn = hubspot_timestamp(str(now_with_tz()))
+    changes = [
+            {"property": "thiscovery_registered_date", "value": int(tsn)},
+        ]
+    result = update_contact_by_id(hubspot_id, changes, None)
+
+    contact = get_hubspot_contact(hubspot_id, None)
+
+    thiscovery_registered_timestamp = get_contact_property(contact, 'thiscovery_registered_date')
+
+    thiscovery_registered_date = hubspot_timestamp_to_datetime(int(thiscovery_registered_timestamp))
+
+    print(thiscovery_registered_date)
+
+    pass
+
 
     # new_user = {
     #     "id": str(uuid.uuid4()),
@@ -617,11 +673,15 @@ if __name__ == "__main__":
 
     # result = delete_timeline_event_type(390568)
 
-    result = create_TLE_for_task_signup()
+    # result = create_TLE_for_task_signup()
 
     # save_TLE_type_id('test', 1234)
 
     # result = get_TLE_type_id('test')
+
+    # result = get_hubspot_contact(1101, None)
+    # result = get_hubspot_contacts()
+    # props = result['properties']
     print(result)
 
     # save_token(result_2019_05_10_12_11)

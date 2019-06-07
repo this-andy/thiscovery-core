@@ -25,14 +25,14 @@ import json
 from datetime import datetime
 
 if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, DetailedValueError, new_correlation_id
+    from .common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from .common.pg_utilities import execute_query
     from .common.dynamodb_utilities import scan, update_item
     from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
     from .user import patch_user
 else:
-    from common.utilities import get_logger, DetailedValueError, new_correlation_id
+    from common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
     from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from common.pg_utilities import execute_query
     from common.dynamodb_utilities import scan, update_item
@@ -79,7 +79,7 @@ def process_user_registration (notification):
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
         ]
 
-        patch_user(user_id, user_jsonpatch, correlation_id)
+        patch_user(user_id, user_jsonpatch, now_with_tz(), correlation_id)
 
         mark_notification_processed(notification_id, correlation_id)
     except Exception as ex:
