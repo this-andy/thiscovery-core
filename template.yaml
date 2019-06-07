@@ -1054,42 +1054,6 @@ Resources:
             RestApiId: !Ref CoreAPI
     Metadata:
       StackeryName: ping
-  Function:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-Function
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: hubspot-event-despatcher
-      CodeUri: src/Function
-      Handler: handler.handler
-      Runtime: python3.6
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Environment:
-        Variables:
-          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-      Events:
-        Timer7:
-          Type: Schedule
-          Properties:
-            Schedule: rate(1 day)
-          Metadata:
-            StackeryName: timer-hubspot-update
-    Metadata:
-      StackeryName: hubspot-event-despatcher
   notifications:
     Type: AWS::DynamoDB::Table
     Properties:
