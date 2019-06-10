@@ -24,11 +24,12 @@ from datetime import timedelta
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
-from api.tests.test_scripts.testing_utilities import test_get
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
+DELETE_TEST_DATA = True
 
 
 class TestUser(TestCase):
@@ -45,8 +46,9 @@ class TestUser(TestCase):
 
     @classmethod
     def tearDownClass(self):
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_entityupdate')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_entityupdate')
 
         set_running_unit_tests(False)
 
@@ -54,7 +56,6 @@ class TestUser(TestCase):
     def test_get_user_by_uuid_api_exists(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
-        event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.OK
         expected_body_bst = {
@@ -89,7 +90,6 @@ class TestUser(TestCase):
 
         expected_body = expected_body_gmt
 
-        # result = get_user_by_id_api(event, None)
         result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -101,11 +101,9 @@ class TestUser(TestCase):
     def test_get_user_by_uuid_api_not_exists(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
-        event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        # result = get_user_by_id_api(event, None)
         result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -118,11 +116,9 @@ class TestUser(TestCase):
     def test_get_user_by_uuid_api_bad_uuid(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
-        event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.BAD_REQUEST
 
-        # result = get_user_by_id_api(event, None)
         result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -137,7 +133,6 @@ class TestUser(TestCase):
         from api.endpoints.user import get_user_by_email_api
 
         querystring_parameters = {'email': 'altha@email.addr'}
-        event = {'queryStringParameters': querystring_parameters}
 
         expected_status = HTTPStatus.OK
 
@@ -170,10 +165,8 @@ class TestUser(TestCase):
             "auth0_id": None,
             "status": None
         }
-
         expected_body = expected_body_gmt
 
-        # result = get_user_by_email_api(event, None)
         result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -186,11 +179,8 @@ class TestUser(TestCase):
         from api.endpoints.user import get_user_by_email_api
 
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
-        event = {'queryStringParameters': querystring_parameters}
-
         expected_status = HTTPStatus.NOT_FOUND
 
-        # result = get_user_by_email_api(event, None)
         result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -217,10 +207,10 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
             {'op': 'replace', 'path': '/country_code', 'value': 'GB-SCT'},
         ]
-        event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': user_id}
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': user_id}
 
-        result = patch_user_api(event, None)
+        result = test_patch(patch_user_api, 'user', path_parameters, body, None)
         result_status = result['statusCode']
 
         self.assertEqual(expected_status, result_status)
@@ -228,7 +218,6 @@ class TestUser(TestCase):
         # now check database values...
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': user_id}
-        event = {'pathParameters': path_parameters}
 
         expected_body_bst = {
             "id": user_id,
@@ -260,7 +249,7 @@ class TestUser(TestCase):
 
         expected_body = expected_body_gmt
 
-        result = get_user_by_id_api(event, None)
+        result = test_get(get_user_by_id_api, 'user', path_parameters, None, None)
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
@@ -333,10 +322,10 @@ class TestUser(TestCase):
             {'op': 'replace', 'path': '/title', 'value': 'Sir'},
             {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
         ]
-        event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdd'}
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdd'}
 
-        result = patch_user_api(event, None)
+        result = test_patch(patch_user_api, 'user', path_parameters, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -350,10 +339,10 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'replace', 'path': '/non-existent-attribute', 'value': 'simon'}]
-        event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = patch_user_api(event, None)
+        result = test_patch(patch_user_api, 'user', path_parameters, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -367,10 +356,10 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': '/first_name', 'value': 'simon'}]
-        event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = patch_user_api(event, None)
+        result = test_patch(patch_user_api, 'user', path_parameters, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -384,10 +373,10 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'this': 'is', 'not': '/a', 'valid': 'jsonpatch'}]
-        event = {'body': json.dumps(user_jsonpatch)}
-        event['pathParameters'] = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = patch_user_api(event, None)
+        result = test_patch(patch_user_api, 'user', path_parameters, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -411,8 +400,9 @@ class TestUser(TestCase):
             "auth0_id": "1234abcd",
             "country_code": "GB",
             "status": "new"}
-        event = {'body': json.dumps(user_json)}
-        result = create_user_api(event, None)
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, 'user', None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -438,7 +428,8 @@ class TestUser(TestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
-        result = create_user_api(event, None)
+        result = test_post(create_user_api, 'user', None, body, None)
+
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -458,8 +449,9 @@ class TestUser(TestCase):
             "last_name": "Hippie",
             "country_code": "GB",
             "status": "new"}
-        event = {'body': json.dumps(user_json)}
-        result = create_user_api(event, None)
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, 'user', None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -524,8 +516,9 @@ class TestUser(TestCase):
             "auth0_id": "1234abcd",
             "country_code": "GB",
             "status": "new"}
-        event = {'body': json.dumps(user_json)}
-        result = create_user_api(event, None)
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, 'user', None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -540,104 +533,3 @@ class TestUser(TestCase):
         sql = 'Select NOW()'
         result =  execute_query(sql, None, 'abc')
         return result
-
-
-    def test_aws_get_user_by_uuid_api_exists(self):
-        from api.endpoints.user import get_user_by_id_api
-        from api.tests.test_scripts.testing_utilities import test_get
-
-        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
-        event = {'pathParameters': path_parameters}
-
-        expected_status = HTTPStatus.OK
-        expected_body_bst = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.addr",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "status": None
-        }
-
-        expected_body_gmt = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T12:10:56.798192+00:00",
-            "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.addr",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "status": None
-        }
-
-        expected_body = expected_body_gmt
-
-        aws_url = 'user'
-
-        result = test_get(get_user_by_id_api, aws_url, path_parameters, None, None)
-
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
-
-        self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
-
-
-
-    def test_aws_get_user_email_exists(self):
-        from api.endpoints.user import get_user_by_email_api
-        from api.tests.test_scripts.testing_utilities import test_get
-
-        querystring_parameters = {'email': 'altha@email.addr'}
-
-        expected_status = HTTPStatus.OK
-
-        expected_body_bst = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.addr",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "status": None
-        }
-
-        expected_body_gmt = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T12:10:56.798192+00:00",
-            "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.addr",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "status": None
-        }
-
-        expected_body = expected_body_gmt
-
-        result = test_get(get_user_by_email_api, 'user', None, querystring_parameters, None)
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
-
-        self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
-

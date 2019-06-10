@@ -23,6 +23,7 @@ from dateutil import parser
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -198,7 +199,8 @@ class TestUserExternalAccount(TestCase):
             'status': 'active'
         }
         event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        # result = create_user_external_account_api(event, None)
+        result = test_post(create_user_external_account_api, 'userexternalaccount', None, json.dumps(uea_json), 'abc123')
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

@@ -16,49 +16,95 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from urllib.request import urlopen, Request, HTTPError
+# from urllib.request import urlopen, Request, HTTPError
+from requests import get, post, patch, put, delete, HTTPError
 from http import HTTPStatus
 from api.common.utilities import get_secret
 
-TEST_ON_AWS = True
+TEST_ON_AWS = False
+
 
 def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
     if TEST_ON_AWS:
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
-        elif querystring_parameters is not None:
-            query_string = ''
-            for param_name, param_value in querystring_parameters.items():
-                if query_string == '':
-                    query_string = '?'
-                else:
-                    query_string += ','
-                query_string += param_name + '=' + param_value
-            url = aws_url + '/' + query_string
         else:
             url = aws_url
-        return aws_get(url, correlation_id)
+        return aws_get(url, querystring_parameters, correlation_id)
     else:
         if path_parameters is not None:
             event = {'pathParameters': path_parameters}
-        if querystring_parameters is not None:
+        elif querystring_parameters is not None:
             event = {'queryStringParameters': querystring_parameters}
+        else:
+            event = None
         return local_method(event, correlation_id)
 
 
-def aws_get(url, correlation_id):
+def aws_get(url, params, correlation_id):
+    aws_connection = get_secret('aws-connection')
+    aws_api_key = aws_connection['aws-api-key']
+    full_url = 'https://test-api.thiscovery.org/v1/' + url
+    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
+    print (aws_api_key)
+    try:
+        response = get(full_url, params=params, headers=headers)
+        return {'statusCode': response.status_code, 'body': response.text}
+    except Exception as err:
+        raise err
+
+
+def test_post(local_method, aws_url, path_parameters, request_body, correlation_id):
+    if TEST_ON_AWS:
+        if path_parameters is not None:
+            url = aws_url + '/' + path_parameters['id']
+        else:
+            url = aws_url
+        return aws_post(url, request_body, correlation_id)
+    else:
+        event = {}
+        if path_parameters is not None:
+            event['pathParameters'] = path_parameters
+        if request_body is not None:
+            event['body'] = request_body
+        return local_method(event, correlation_id)
+
+
+def aws_post(url, request_body, correlation_id):
     aws_connection = get_secret('aws-connection')
     aws_api_key = aws_connection['aws-api-key']
     full_url = 'https://test-api.thiscovery.org/v1/' + url
     headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
     try:
-        req = Request(full_url, headers=headers)
-        response = urlopen(req)
-        return {'statusCode': response.status, 'body': response.read()}
-    except HTTPError as err:
-        if err.code == HTTPStatus.NOT_FOUND:
-            return {'statusCode': HTTPStatus.NOT_FOUND, 'body': ''}
+        response = post(full_url, data=request_body, headers=headers)
+        return {'statusCode': response.status_code, 'body': response.text}
+    except Exception as err:
+        raise err
+
+
+def test_patch(local_method, aws_url, path_parameters, request_body, correlation_id):
+    if TEST_ON_AWS:
+        if path_parameters is not None:
+            url = aws_url + '/' + path_parameters['id']
         else:
-            raise err
+            url = aws_url
+        return aws_patch(url, request_body, correlation_id)
+    else:
+        event = {}
+        if path_parameters is not None:
+            event['pathParameters'] = path_parameters
+        if request_body is not None:
+            event['body'] = request_body
+        return local_method(event, correlation_id)
+
+
+def aws_patch(url, request_body, correlation_id):
+    aws_connection = get_secret('aws-connection')
+    aws_api_key = aws_connection['aws-api-key']
+    full_url = 'https://test-api.thiscovery.org/v1/' + url
+    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
+    try:
+        response = patch(full_url, data=request_body, headers=headers)
+        return {'statusCode': response.status_code, 'body': response.text}
     except Exception as err:
         raise err
