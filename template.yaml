@@ -966,6 +966,11 @@ Resources:
     Properties:
       GroupDescription: Database Security Group
       SecurityGroupIngress:
+        - CidrIp: 10.0.0.0/16
+          Description: Lambda access
+          FromPort: 5432
+          IpProtocol: tcp
+          ToPort: 5432
         - CidrIp: !Ref EnvConfigVPCIngressCidr1AsString
           Description: !Ref EnvConfigVPCIngressDesc1AsString
           FromPort: 5432
