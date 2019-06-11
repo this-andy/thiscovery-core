@@ -16,9 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-# from urllib.request import urlopen, Request, HTTPError
-from requests import get, post, patch, put, delete, HTTPError
-from http import HTTPStatus
+from requests import get, post, patch
 from api.common.utilities import get_secret
 
 TEST_ON_AWS = True
@@ -46,7 +44,6 @@ def aws_get(url, params, correlation_id):
     aws_api_key = aws_connection['aws-api-key']
     full_url = 'https://test-api.thiscovery.org/v1/' + url
     headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
-    print (aws_api_key)
     try:
         response = get(full_url, params=params, headers=headers)
         return {'statusCode': response.status_code, 'body': response.text}

@@ -18,7 +18,6 @@
 
 from .utilities import feature_flag, get_logger, now_with_tz
 from .dynamodb_utilities import put_item
-import uuid
 
 NOTIFICATION_TABLE_NAME = 'notifications'
 USER_REGISTRATION_NOTIFICATION = 'user-registration'

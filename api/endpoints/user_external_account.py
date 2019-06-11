@@ -181,7 +181,7 @@ def create_user_external_account_api(event, context):
 
 
 def get_or_create_user_external_account(user_id, external_system_id, correlation_id):
-    # see if it exists
+    # to do - add automated tests for this if ever used
 
     existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
     if len(existing) > 0:

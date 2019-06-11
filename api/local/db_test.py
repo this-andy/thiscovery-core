@@ -16,21 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import psycopg2
 from api.common.pg_utilities import execute_non_query, execute_query_multiple, execute_query
 from api.common.dynamodb_utilities import scan
 from api.common.notification_send import NOTIFICATION_TABLE_NAME
-
-
-def duplicate_insert():
-    sql = 'INSERT INTO public.test_refs(int_id, fk) VALUES (%s, %s);'
-    params = (2, "226435d7-e36a-4b0b-a0bd-63e0216cbc0c")
-
-    try:
-        result = execute_non_query(sql, params, None)
-        return result
-    except psycopg2.IntegrityError as ex:
-        print('integrity error' + str(ex.args))
 
 
 def multiple_query():
