@@ -21,10 +21,14 @@ from http import HTTPStatus
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 VIEW_SQL_FOLDER = '../../local/database-view-sql/'
+DELETE_TEST_DATA = True
+
+ENTITY_BASE_URL = 'project-user-status'
 
 
 class ProjectTaskTestResult:
@@ -57,17 +61,18 @@ class TestProjectStatusForUser(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        truncate_table('public.projects_usertask')
-        truncate_table('public.projects_userproject')
-        truncate_table('public.projects_usergroupmembership')
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_projecttaskgroupvisibility')
-        truncate_table('public.projects_projectgroupvisibility')
-        truncate_table('public.projects_projecttask')
-        truncate_table('public.projects_externalsystem')
-        truncate_table('public.projects_tasktype')
-        truncate_table('public.projects_project')
-        truncate_table('public.projects_usergroup')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_usertask')
+            truncate_table('public.projects_userproject')
+            truncate_table('public.projects_usergroupmembership')
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_projecttaskgroupvisibility')
+            truncate_table('public.projects_projectgroupvisibility')
+            truncate_table('public.projects_projecttask')
+            truncate_table('public.projects_externalsystem')
+            truncate_table('public.projects_tasktype')
+            truncate_table('public.projects_project')
+            truncate_table('public.projects_usergroup')
 
         set_running_unit_tests(False)
 
@@ -76,11 +81,12 @@ class TestProjectStatusForUser(TestCase):
         from api.endpoints.project import get_project_status_for_user_api
 
         querystring_parameters = {'user_id': user_id}
-        event = {'queryStringParameters': querystring_parameters}
+        # event = {'queryStringParameters': querystring_parameters}
 
         expected_status = HTTPStatus.OK
 
-        result = get_project_status_for_user_api(event, None)
+        # result = get_project_status_for_user_api(event, None)
+        result = test_get(get_project_status_for_user_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

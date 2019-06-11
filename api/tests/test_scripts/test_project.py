@@ -21,9 +21,14 @@ from http import HTTPStatus
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
+
+ENTITY_BASE_URL = 'project'
+
 
 class TestProject(TestCase):
 
@@ -41,11 +46,12 @@ class TestProject(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        truncate_table('public.projects_projecttask')
-        truncate_table('public.projects_externalsystem')
-        truncate_table('public.projects_tasktype')
-        truncate_table('public.projects_project')
-        truncate_table('public.projects_usergroup')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_projecttask')
+            truncate_table('public.projects_externalsystem')
+            truncate_table('public.projects_tasktype')
+            truncate_table('public.projects_project')
+            truncate_table('public.projects_usergroup')
 
         set_running_unit_tests(False)
 
@@ -118,7 +124,8 @@ class TestProject(TestCase):
              }]
 
         expected_body = expected_body_gmt
-        result = list_projects_api(None, None)
+        # result = list_projects_api(None, None)
+        result = test_get(list_projects_api, ENTITY_BASE_URL, None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -135,7 +142,7 @@ class TestProject(TestCase):
         from api.endpoints.project import get_project_api
 
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
-        event = {'pathParameters': path_parameters}
+        # event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.OK
         # todo figure out how do do this properly!
@@ -176,7 +183,9 @@ class TestProject(TestCase):
         ]
 
         expected_body = expected_body_gmt
-        result = get_project_api(event, None)
+        # result = get_project_api(event, None)
+
+        result = test_get(get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -188,11 +197,10 @@ class TestProject(TestCase):
         from api.endpoints.project import get_project_api
 
         path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceece"}
-        event = {'pathParameters': path_parameters}
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = get_project_api(event, None)
+        result = test_get(get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

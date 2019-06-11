@@ -23,9 +23,13 @@ from dateutil import parser
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
+
+ENTITY_BASE_URL = 'userproject'
 
 class TestUserProject(TestCase):
 
@@ -41,10 +45,11 @@ class TestUserProject(TestCase):
 
     @classmethod
     def tearDownClass(self):
-        truncate_table('public.projects_userproject')
-        truncate_table('public.projects_project')
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_usergroup')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_userproject')
+            truncate_table('public.projects_project')
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_usergroup')
 
         set_running_unit_tests(False)
 
@@ -73,8 +78,8 @@ class TestUserProject(TestCase):
         expected_body = expected_body_gmt
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_projects_api(event, None)
+
+        result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -88,8 +93,8 @@ class TestUserProject(TestCase):
         expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_projects_api(event, None)
+
+        result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -105,8 +110,8 @@ class TestUserProject(TestCase):
         expected_body = []
 
         querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_projects_api(event, None)
+
+        result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -125,8 +130,10 @@ class TestUserProject(TestCase):
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
+
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -139,7 +146,8 @@ class TestUserProject(TestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
-        result = create_user_project_api(event, None)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -156,8 +164,9 @@ class TestUserProject(TestCase):
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
             'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -201,8 +210,9 @@ class TestUserProject(TestCase):
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
             'status': 'A'
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -220,8 +230,9 @@ class TestUserProject(TestCase):
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",
             'status': 'active'
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -239,8 +250,9 @@ class TestUserProject(TestCase):
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa22",
             'status': 'active'
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -268,8 +280,9 @@ class TestUserProject(TestCase):
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516"
         }
-        event = {'body': json.dumps(up_json)}
-        result = create_user_project_api(event, None)
+        body = json.dumps(up_json)
+
+        result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

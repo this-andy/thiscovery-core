@@ -27,6 +27,9 @@ from api.tests.test_scripts.testing_utilities import test_get, test_post, test_p
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
+
+ENTITY_BASE_URL = 'userexternalaccount'
 
 class TestUserExternalAccount(TestCase):
 
@@ -41,9 +44,10 @@ class TestUserExternalAccount(TestCase):
 
     @classmethod
     def tearDownClass(self):
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_externalsystem')
-        truncate_table('public.projects_userexternalaccount')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_externalsystem')
+            truncate_table('public.projects_userexternalaccount')
 
         set_running_unit_tests(False)
 
@@ -60,8 +64,9 @@ class TestUserExternalAccount(TestCase):
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -74,7 +79,7 @@ class TestUserExternalAccount(TestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
-        result = create_user_external_account_api(event, None)
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
 
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -93,8 +98,9 @@ class TestUserExternalAccount(TestCase):
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
             'external_user_id': 'abc74'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -138,8 +144,9 @@ class TestUserExternalAccount(TestCase):
             'external_user_id': 'cc02',
             'status': 'active'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -157,8 +164,9 @@ class TestUserExternalAccount(TestCase):
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'external_user_id': 'cc02'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -177,8 +185,9 @@ class TestUserExternalAccount(TestCase):
             'external_user_id': 'cc02',
             'status': 'active'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -198,9 +207,9 @@ class TestUserExternalAccount(TestCase):
             'external_user_id': 'cc02',
             'status': 'active'
         }
-        event = {'body': json.dumps(uea_json)}
-        # result = create_user_external_account_api(event, None)
-        result = test_post(create_user_external_account_api, 'userexternalaccount', None, json.dumps(uea_json), 'abc123')
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -221,8 +230,9 @@ class TestUserExternalAccount(TestCase):
             'status': 'active',
             'created': '2018-26-23 14:15:16.171819+00'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -242,8 +252,9 @@ class TestUserExternalAccount(TestCase):
             'external_user_id': 'cc02',
             'status': 'rubbish'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -261,8 +272,9 @@ class TestUserExternalAccount(TestCase):
             'external_system_id': "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
             'external_user_id': 'cc02'
         }
-        event = {'body': json.dumps(uea_json)}
-        result = create_user_external_account_api(event, None)
+        body = json.dumps(uea_json)
+
+        result = test_post(create_user_external_account_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

@@ -24,9 +24,13 @@ from dateutil import parser
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
+from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
+
+ENTITY_BASE_URL = 'usertask'
 
 class TestUserTask(TestCase):
 
@@ -46,14 +50,15 @@ class TestUserTask(TestCase):
 
     @classmethod
     def tearDownClass(self):
-        truncate_table('public.projects_usertask')
-        truncate_table('public.projects_projecttask')
-        truncate_table('public.projects_tasktype')
-        truncate_table('public.projects_userproject')
-        truncate_table('public.projects_externalsystem')
-        truncate_table('public.projects_project')
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_usergroup')
+        if DELETE_TEST_DATA:
+            truncate_table('public.projects_usertask')
+            truncate_table('public.projects_projecttask')
+            truncate_table('public.projects_tasktype')
+            truncate_table('public.projects_userproject')
+            truncate_table('public.projects_externalsystem')
+            truncate_table('public.projects_project')
+            truncate_table('public.projects_user')
+            truncate_table('public.projects_usergroup')
 
         set_running_unit_tests(False)
 
@@ -95,8 +100,8 @@ class TestUserTask(TestCase):
         expected_body = expected_body_gmt
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_tasks_api(event, None)
+
+        result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -112,8 +117,8 @@ class TestUserTask(TestCase):
         expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_projects_api(event, None)
+
+        result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -129,8 +134,8 @@ class TestUserTask(TestCase):
         expected_body = []
 
         querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
-        event = {'queryStringParameters': querystring_parameters}
-        result = list_user_projects_api(event, None)
+
+        result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -150,8 +155,9 @@ class TestUserTask(TestCase):
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
         }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -168,7 +174,8 @@ class TestUserTask(TestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
-        result = create_user_task_api(event, None)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -186,8 +193,9 @@ class TestUserTask(TestCase):
             'project_task_id': 'f3316529-e073-435e-b5c7-053da4127e96',
             'consented': '2018-07-19 16:16:56.087895+01'
         }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -231,8 +239,9 @@ class TestUserTask(TestCase):
             'status': 'invalid',
             'consented': '2018-06-12 16:16:56.087895+01'
         }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -251,8 +260,9 @@ class TestUserTask(TestCase):
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01'
         }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -268,8 +278,9 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
         }
-        event = {'body': json.dumps(ut_json)}
-        result = create_user_task_api(event, None)
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

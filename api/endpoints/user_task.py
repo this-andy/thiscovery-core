@@ -20,8 +20,6 @@ import uuid
 import json
 from http import HTTPStatus
 
-from api.common.notification_send import notify_new_task_signup
-
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
@@ -31,7 +29,6 @@ if 'api.endpoints' in __name__:
     from .project import get_project_task
     from .user_project import create_user_project_if_not_exists
     from .common.notification_send import notify_new_task_signup
-    # from .utils import validate_uuid
 else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
@@ -41,8 +38,6 @@ else:
     from project import get_project_task
     from user_project import create_user_project_if_not_exists
     from common.notification_send import notify_new_task_signup
-    # from utils import validate_uuid
-
 
 
 STATUS_CHOICES = (
