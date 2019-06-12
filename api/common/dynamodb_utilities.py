@@ -20,6 +20,8 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
+print('NAME:' + __name__)
+
 if __name__ == "__main__":
     from api.common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError, now_with_tz, new_correlation_id
 else:
@@ -62,7 +64,7 @@ def put_item(table_name: str, key, item_type: str, item_details, item: dict, upd
         raise DuplicateInsertError('item already exists', errorjson)
 
 
-def update_item(table_name: str, key: str, attr_name: str, attr_value, correlation_id=new_correlation_id()):
+def update_item_old(table_name: str, key: str, attr_name: str, attr_value, correlation_id=new_correlation_id()):
     try:
         logger = get_logger()
         table = get_table(table_name)
@@ -80,7 +82,45 @@ def update_item(table_name: str, key: str, attr_name: str, attr_value, correlati
         raise ex
 
 
-def scan(table_name: str, filter_attr_name: str = None, filter_attr_value=None, correlation_id=new_correlation_id()):
+def update_item(table_name: str, key: str, name_value_pairs: dict, correlation_id=new_correlation_id()):
+    try:
+        logger = get_logger()
+        table = get_table(table_name)
+        key_json = {'id': key}
+        update_expr = 'SET #modified = :m '
+        values_expr = {':m': str(now_with_tz())}
+        attr_names_expr = {'#modified': 'modified'}  # not strictly necessary, but allows easy addition of names later
+        param_count = 1
+        for name,  value in name_value_pairs.items():
+            param_name = ':p' + str(param_count)
+            map_name = None
+            if 'status' in name:   # todo generalise this to other reserved words, and ensure it only catches whole words
+                if '.' in name:
+                    map_name = name.split('.')[0]
+                attr_name = '#a' + str(param_count)
+                attr_names_expr[attr_name] = 'status'
+            else:
+                attr_name = name
+            if map_name is not None:
+                attr_name = map_name + '.' + attr_name
+            update_expr += ', ' + attr_name + ' = ' + param_name
+
+            values_expr[param_name] = str(value)
+
+            param_count += 1
+
+        logger.info('dynamodb update', extra={'table_name': table_name, 'key': key, 'update_expr': update_expr, 'values_expr': values_expr, 'correlation_id': correlation_id})
+        response = table.update_item(
+            Key=key_json,
+            UpdateExpression = update_expr,
+            ExpressionAttributeValues = values_expr,
+            ExpressionAttributeNames = attr_names_expr,
+        )
+    except Exception as ex:
+        raise ex
+
+
+def scan_old(table_name: str, filter_attr_name: str = None, filter_attr_value=None, correlation_id=new_correlation_id()):
     try:
         logger = get_logger()
         table = get_table(table_name)
@@ -89,6 +129,29 @@ def scan(table_name: str, filter_attr_name: str = None, filter_attr_value=None, 
             response = table.scan()
         else:
             response = table.scan(FilterExpression=Attr(filter_attr_name).eq(filter_attr_value))
+        items = response['Items']
+        logger.info('dynamodb scan result', extra={'count': str(len(items)), 'correlation_id': correlation_id})
+        return items
+    except Exception as ex:
+        raise ex
+
+
+def scan(table_name: str, filter_attr_name: str = None, filter_attr_values=None, correlation_id=new_correlation_id()):
+    try:
+        logger = get_logger()
+        table = get_table(table_name)
+        logger.info('dynamodb scan', extra={
+            'table_name': table_name,
+            'filter_attr_name': filter_attr_name,
+            'filter_attr_value': str(filter_attr_values),
+            'correlation_id': correlation_id})
+        if filter_attr_name is None:
+            response = table.scan()
+        else:
+            filter_expr = Attr(filter_attr_name).eq(filter_attr_values[0])
+            for value in filter_attr_values[1:]:
+                filter_expr = filter_expr | Attr(filter_attr_name).eq(value)
+            response = table.scan(FilterExpression=filter_expr)
         items = response['Items']
         logger.info('dynamodb scan result', extra={'count': str(len(items)), 'correlation_id': correlation_id})
         return items
@@ -138,7 +201,8 @@ def delete_all(table_name: str, correlation_id=new_correlation_id()):
 
 
 if __name__ == "__main__":
-    item_details = {'hello': 'world'}
+    pass
+    # item_details = {'hello': 'world'}
     # put_item('notifications', 'abd', 'test', item_details, {})
 
 
@@ -146,4 +210,15 @@ if __name__ == "__main__":
     # delete('e847d0e6-8c08-4ffd-bade-dc55196b51a4')
     # print(get('notifications', '821ee279-18d5-4873-ba94-81c39b932a81'))
 
-    update_item('notifications', 'abd', 'details', {"hello": "world", "more": "data!"})
+    # update_item('notifications', 'abd', 'details', {"hello": "world", "more": "data!"})
+
+    result = scan('notifications', 'processing.status', ['new', 'retrying'])
+    print(len(result))
+    print(result)
+
+    # av_pairs = {
+    #     'label': 'there',
+    #     'status': 'not updated',
+    #     'processing.status': 'testing done?!'
+    # }
+    # result = update_item('notifications', '8345331b-9416-45bc-9223-01435e45d36e', av_pairs )

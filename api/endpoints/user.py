@@ -419,9 +419,8 @@ if __name__ == "__main__":
     #     execute_non_query(sql_update, params, None)
 
     user_json = {
-        "email": "ln@email.co.uk",
-        "title": "Ms",
-        "first_name": "Laura",
+        "email": "3ln@email.co.uk",
+        "first_name": "3Laura",
         "last_name": "Nobody",
         "status": "new",
         "country_code": "BE"

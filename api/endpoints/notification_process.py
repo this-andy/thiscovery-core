@@ -19,39 +19,43 @@
 # import os
 # import uuid
 # import logging
-# from pythonjsonlogger import jsonlogger
+
 import sys
 import json
 from datetime import datetime
+
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from .common.pg_utilities import execute_query
     from .common.dynamodb_utilities import scan, update_item
-    from .common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
+    from .common.notification_send import NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, NotificationType, NotificationStatus, NotificationAttributes
     from .user import patch_user
 else:
     from common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
     from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
     from common.pg_utilities import execute_query
     from common.dynamodb_utilities import scan, update_item
-    from common.notification_send import NOTIFICATION_TABLE_NAME, TASK_SIGNUP_NOTIFICATION, USER_REGISTRATION_NOTIFICATION, NOTIFICATION_PROCESSED_FLAG
+    from common.notification_send import NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, NotificationType, NotificationStatus, NotificationAttributes
     from user import patch_user
 
 
+MAX_RETRIES = 2
+
 def process_notifications(event, context):
     logger = get_logger()
-    notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
+    notifications = scan(NOTIFICATION_TABLE_NAME, NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
+
     logger.info('process_notifications', extra = {'count': str(len(notifications))})
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
     signup_notifications = []
     for notification in notifications:
         notification_type = notification['type']
-        if notification_type == USER_REGISTRATION_NOTIFICATION:
+        if notification_type == NotificationType.USER_REGISTRATION.value:
             process_user_registration(notification)
-        elif notification_type == TASK_SIGNUP_NOTIFICATION:
+        elif notification_type == NotificationType.TASK_SIGNUP.value:
             # add to list for later processing
             signup_notifications.append(notification)
 
@@ -75,19 +79,49 @@ def process_user_registration (notification):
         if hubspot_id == -1:
             raise ValueError
 
+        raise ValueError('just testing')
+
         user_jsonpatch = [
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
         ]
 
         patch_user(user_id, user_jsonpatch, now_with_tz(), correlation_id)
 
-        mark_notification_processed(notification_id, correlation_id)
+        mark_notification_processed(notification, correlation_id)
     except Exception as ex:
-        raise ex
+        error_message = str(ex)
+        mark_notification_failure(notification, error_message,correlation_id)
 
 
-def mark_notification_processed(notification_id, correlation_id):
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True, correlation_id)
+def mark_notification_processed(notification, correlation_id):
+    notification_id = notification['id']
+    notification_updates = {
+        NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value
+    }
+    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+
+
+def get_fail_count(notification):
+    if 'fail_count' in notification['processing']:
+        return int(notification['processing']['fail_count'])
+    else:
+        return 0
+
+
+def mark_notification_failure(notification, error_message, correlation_id):
+    notification_id = notification['id']
+    fail_count = get_fail_count(notification) + 1
+    if fail_count > MAX_RETRIES:
+        status = NotificationStatus.DLQ.value
+    else:
+        status = NotificationStatus.RETRYING.value
+    notification_updates = {
+        NotificationAttributes.STATUS.value: status,
+        NotificationAttributes.FAIL_COUNT.value: fail_count,
+        NotificationAttributes.ERROR_MESSAGE.value: error_message
+    }
+
+    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
 
 SIGNUP_DETAILS_SELECT_SQL = '''
@@ -136,7 +170,7 @@ def process_task_signup(notification):
     signup_details['signup_event_type'] = 'Sign-up'
 
     post_task_signup_to_crm(signup_details, correlation_id)
-    mark_notification_processed(notification_id, correlation_id)
+    mark_notification_processed(notification, correlation_id)
 
 
 def dateformattest(event, context):
@@ -161,7 +195,6 @@ def dateformattest(event, context):
 if __name__ == "__main__":
 
     result = process_notifications(None, None)
-    # notifications = scan(NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, False)
     # print(str(notifications))
     # notification_id = notifications[0]['id']
     # update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)

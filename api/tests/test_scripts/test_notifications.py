@@ -20,9 +20,10 @@ from unittest import TestCase
 from dateutil import parser
 from api.common.utilities import set_running_unit_tests, now_with_tz
 from api.common.dynamodb_utilities import delete_all
+from api.common.notification_send import NOTIFICATION_TABLE_NAME, NotificationStatus, NotificationAttributes
 
-TEST_TABLE_NAME = 'notifications'
 TIME_TOLERANCE_SECONDS = 10
+DELETE_TEST_DATA = True
 
 
 class TestNotifications(TestCase):
@@ -30,10 +31,12 @@ class TestNotifications(TestCase):
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        delete_all(TEST_TABLE_NAME)
+        delete_all(NOTIFICATION_TABLE_NAME)
 
     @classmethod
     def tearDownClass(cls):
+        if DELETE_TEST_DATA:
+            delete_all(NOTIFICATION_TABLE_NAME)
         set_running_unit_tests(False)
 
     def test_01_post_registration(self):
@@ -53,14 +56,16 @@ class TestNotifications(TestCase):
             "status": "new"}
         notify_new_user_registration(user_json, None)
 
-        notifications = scan(TEST_TABLE_NAME)
+        notifications = scan(NOTIFICATION_TABLE_NAME)
         self.assertEqual(len(notifications), 1)
 
         notification = notifications[0]
         self.assertEqual(notification['id'], user_id)
         self.assertEqual(notification['type'], 'user-registration')
         self.assertEqual(notification['label'], user_email)
-        self.assertEqual(notification['notification_processed'], False)
+        self.assertEqual(notification['processing'], {
+            'status': NotificationStatus.NEW.value,
+        })
         self.assertEqual(notification['details']['email'], user_email)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
@@ -86,14 +91,16 @@ class TestNotifications(TestCase):
         }
         notify_new_task_signup(ut_json, None)
 
-        notifications = scan(TEST_TABLE_NAME)
+        notifications = scan(NOTIFICATION_TABLE_NAME)
         self.assertEqual(len(notifications), 2)
 
         notification = notifications[1]
         self.assertEqual(notification['id'], ut_id)
         self.assertEqual(notification['type'], 'task-signup')
         self.assertEqual(notification['label'], user_id)
-        self.assertEqual(notification['notification_processed'], False)
+        self.assertEqual(notification['processing'], {
+            'status': NotificationStatus.NEW.value,
+        })
         self.assertEqual(notification['details']['id'], ut_id)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference

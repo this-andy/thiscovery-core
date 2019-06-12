@@ -114,7 +114,7 @@ class TestDynamoDB(TestCase):
     def test_06_scan_filter(self):
         from api.common.dynamodb_utilities import scan
 
-        items = scan(TEST_TABLE_NAME, 'id', 'test03')
+        items = scan(TEST_TABLE_NAME, 'id', ['test03'])
 
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]['details'], {'att1': 'val1.3', 'att2': 'val2.3'})

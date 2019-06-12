@@ -16,13 +16,34 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from .utilities import feature_flag, get_logger, now_with_tz
-from .dynamodb_utilities import put_item
+from enum import Enum
+
+if 'api.endpoints' in __name__:
+    from .dynamodb_utilities import put_item
+else:
+    from api.common.dynamodb_utilities import put_item
+
 
 NOTIFICATION_TABLE_NAME = 'notifications'
-USER_REGISTRATION_NOTIFICATION = 'user-registration'
-TASK_SIGNUP_NOTIFICATION = 'task-signup'
 NOTIFICATION_PROCESSED_FLAG = 'notification_processed'
+
+
+class NotificationType(Enum):
+    USER_REGISTRATION = 'user-registration'
+    TASK_SIGNUP = 'task-signup'
+
+
+class NotificationStatus(Enum):
+    NEW = 'new'
+    PROCESSED = 'processed'
+    RETRYING = 'retrying'
+    DLQ = 'dlq'
+
+
+class NotificationAttributes(Enum):
+    STATUS = 'processing.status'
+    FAIL_COUNT = 'processing.fail_count'
+    ERROR_MESSAGE = 'processing.error_message'
 
 
 # def sqs_send_DNU(message_body, message_attributes):
@@ -49,6 +70,9 @@ NOTIFICATION_PROCESSED_FLAG = 'notification_processed'
 def create_notification(label: str):
     notification_item = {
         NOTIFICATION_PROCESSED_FLAG: False,
+        'processing': {
+            'status': NotificationStatus.NEW.value
+        },
         'label': label
     }
     return notification_item
@@ -57,11 +81,16 @@ def create_notification(label: str):
 def notify_new_user_registration(new_user, correlation_id):
     notification_item = create_notification(new_user['email'])
     key = new_user['id']
-    put_item(NOTIFICATION_TABLE_NAME, key, USER_REGISTRATION_NOTIFICATION, new_user, notification_item, correlation_id)
+    put_item(NOTIFICATION_TABLE_NAME, key, NotificationType.USER_REGISTRATION.value, new_user, notification_item, correlation_id)
 
 
 def notify_new_task_signup(task_signup, correlation_id):
     notification_item = create_notification(task_signup['user_id'])
     # use existing user_task id as notification id
     key = task_signup['id']
-    put_item(NOTIFICATION_TABLE_NAME, key, TASK_SIGNUP_NOTIFICATION, task_signup, notification_item, correlation_id)
+    put_item(NOTIFICATION_TABLE_NAME, key, NotificationType.TASK_SIGNUP.value, task_signup, notification_item, correlation_id)
+
+
+if __name__ == "__main__":
+    pass
+    print(NotificationStatus.NEW.value)

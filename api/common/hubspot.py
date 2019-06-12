@@ -583,7 +583,7 @@ if __name__ == "__main__":
         ]
     result = update_contact_by_id(hubspot_id, changes, None)
 
-    contact = get_hubspot_contact(hubspot_id, None)
+    contact = get_hubspot_contact_by_id(hubspot_id, None)
 
     thiscovery_registered_timestamp = get_contact_property(contact, 'thiscovery_registered_date')
 

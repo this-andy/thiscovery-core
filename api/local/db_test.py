@@ -32,7 +32,7 @@ def check_task_signups():
     sql = 'select * from public.task_signups'
     signups_in_db = execute_query(sql)
 
-    signups_notifications = scan(NOTIFICATION_TABLE_NAME, 'type', 'task-signup')
+    signups_notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['task-signup'])
 
     print('Database:' + str(len(signups_in_db)) + ', notifications:' + str(len(signups_notifications)))
 
