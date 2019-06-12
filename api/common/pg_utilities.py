@@ -17,6 +17,7 @@
 #
 
 import psycopg2
+
 from .utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
     PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id
 

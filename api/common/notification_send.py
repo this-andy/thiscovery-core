@@ -21,7 +21,7 @@ from enum import Enum
 if 'api.endpoints' in __name__:
     from .dynamodb_utilities import put_item
 else:
-    from api.common.dynamodb_utilities import put_item
+    from common.dynamodb_utilities import put_item
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'
