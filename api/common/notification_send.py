@@ -18,10 +18,15 @@
 
 from enum import Enum
 
-if 'api.endpoints' in __name__:
-    from .dynamodb_utilities import put_item
+# if 'api.endpoints' in __name__:
+#     from .dynamodb_utilities import put_item
+# else:
+#     from common.dynamodb_utilities import put_item
+
+if __name__ == "__main__":
+    from api.common.dynamodb_utilities import put_item
 else:
-    from common.dynamodb_utilities import put_item
+    from .dynamodb_utilities import put_item
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'
