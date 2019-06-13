@@ -341,7 +341,6 @@ def feature_flag(name: str) -> bool:
 
 # endregion
 
-
 # region Country code/name processing
 
 def append_country_name_to_list(entity_list):
@@ -398,6 +397,7 @@ def get_country_name(country_code):
 countries = load_countries()
 
 # endregion
+
 
 
 if __name__ == "__main__":

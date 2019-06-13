@@ -27,7 +27,7 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, validate_uuid
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
     from .common.entity_update import EntityUpdate
     # from .utils import validate_uuid
     from .common.notification_send import notify_new_user_registration
@@ -35,7 +35,7 @@ else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
         PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, validate_uuid
+        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
     from common.entity_update import EntityUpdate
     # from utils import validate_uuid
     from common.notification_send import notify_new_user_registration
@@ -63,6 +63,40 @@ def validate_status(s):
     return s
 
 
+def append_avatar_to_list(user_list):
+    for user in user_list:
+        append_avatar(user)
+    return user_list
+
+
+def append_avatar(user):
+    try:
+        first_name = user['first_name']
+        last_name = user['last_name']
+        if len(first_name) == 0:
+            avatar_string = last_name[0:2]
+        elif len(last_name) == 0:
+            avatar_string = first_name[0:2]
+        else:
+            avatar_string = first_name[0] + last_name[0]
+    except:
+        avatar_string = '??'
+    user['avatar_string'] = avatar_string
+    return user
+
+
+def append_calculated_properties_to_list(user_list):
+    user_list = append_country_name_to_list(user_list)
+    user_list = append_avatar_to_list(user_list)
+    return user_list
+
+
+def append_calculated_properties(user):
+    append_country_name(user)
+    append_avatar(user)
+    return user
+
+
 def get_user_by_id(user_id, correlation_id):
 
     try:
@@ -74,7 +108,7 @@ def get_user_by_id(user_id, correlation_id):
     sql_where_clause = " WHERE id = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
-    return append_country_name_to_list(user_json)
+    return append_calculated_properties_to_list(user_json)
 
 
 def get_user_by_id_api(event, context):
@@ -119,7 +153,7 @@ def get_user_by_email(user_email, correlation_id):
     sql_where_clause = " WHERE email = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
-    return append_country_name_to_list(user_json)
+    return append_calculated_properties_to_list(user_json)
 
 
 def get_user_by_email_api(event, context):
@@ -328,16 +362,15 @@ def create_user(user_json, correlation_id):
         'modified': created,        
         'email': email,
         'email_address_verified': email_address_verified,
-        'email_verification_token': email_verification_token,
-        'email_verification_expiry': email_verification_expiry,
         'title': title,
         'first_name': first_name,
         'last_name': last_name,
         'auth0_id': auth0_id,
         'country_code': country_code,
-        'country_name': get_country_name(country_code),
         'status': status,
     }
+
+    new_user = append_calculated_properties(new_user)
 
     try:
         notify_new_user_registration(new_user, correlation_id)

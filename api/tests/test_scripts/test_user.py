@@ -25,6 +25,7 @@ from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from api.common.dynamodb_utilities import delete_all
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -50,6 +51,7 @@ class TestUser(TestCase):
         if DELETE_TEST_DATA:
             truncate_table('public.projects_user')
             truncate_table('public.projects_entityupdate')
+            delete_all('notifications')
 
         set_running_unit_tests(False)
 
@@ -71,7 +73,8 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
-            "status": None
+            "status": None,
+            "avatar_string": "AA"
         }
 
         expected_body_gmt = {
@@ -86,7 +89,8 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
-            "status": None
+            "status": None,
+            "avatar_string": "AA",
         }
 
         expected_body = expected_body_gmt
@@ -149,6 +153,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "avatar_string": "AA",
             "status": None
         }
 
@@ -164,6 +169,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "avatar_string": "AA",
             "status": None
         }
         expected_body = expected_body_gmt
@@ -231,6 +237,7 @@ class TestUser(TestCase):
             "auth0_id": "new-auth0-id",
             "country_code": "IT",
             "country_name": "Italy",
+            "avatar_string": "ss",
             "status": "singing"
         }
 
@@ -245,6 +252,7 @@ class TestUser(TestCase):
             "auth0_id": "new-auth0-id",
             "country_code": "GB-SCT",
             "country_name": "United Kingdom - Scotland",
+            "avatar_string": "ss",
             "status": "singing"
         }
 
@@ -411,21 +419,23 @@ class TestUser(TestCase):
         expected_body = dict.copy(user_json)
         expected_body['modified'] = user_json['created']
         expected_body['country_name'] = 'United Kingdom'
+        expected_body['avatar_string'] = 'SW'
+        # expected_body['avatar_image_url'] = ''
 
-        email_verification_token = result_json['email_verification_token']
-        del result_json['email_verification_token']
-
-        email_verification_expiry = result_json['email_verification_expiry']
-        del result_json['email_verification_expiry']
+        # email_verification_token = result_json['email_verification_token']
+        # del result_json['email_verification_token']
+        #
+        # email_verification_expiry = result_json['email_verification_expiry']
+        # del result_json['email_verification_expiry']
 
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(result_json, expected_body)
 
-        self.assertTrue(uuid.UUID(email_verification_token).version == 4)
-
-        result_datetime = parser.parse(email_verification_expiry)
-        difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        # self.assertTrue(uuid.UUID(email_verification_token).version == 4)
+        #
+        # result_datetime = parser.parse(email_verification_expiry)
+        # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
+        # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
@@ -445,7 +455,6 @@ class TestUser(TestCase):
         expected_status = HTTPStatus.CREATED
         user_json = {
             "email": "hh@email.addr",
-            "title": "Mr",
             "first_name": "Harry",
             "last_name": "Hippie",
             "country_code": "GB",
@@ -472,15 +481,18 @@ class TestUser(TestCase):
         email_address_verified = result_json['email_address_verified']
         del result_json['email_address_verified']
 
-        email_verification_token = result_json['email_verification_token']
-        del result_json['email_verification_token']
-
-        email_verification_expiry = result_json['email_verification_expiry']
-        del result_json['email_verification_expiry']
+        # email_verification_token = result_json['email_verification_token']
+        # del result_json['email_verification_token']
+        #
+        # email_verification_expiry = result_json['email_verification_expiry']
+        # del result_json['email_verification_expiry']
 
         self.assertEqual(expected_status, result_status)
         # first check what's left in returned data
         user_json['country_name'] = 'United Kingdom'
+        user_json['avatar_string'] = "HH"
+        user_json['title'] = None
+
         self.assertDictEqual(result_json, user_json)
 
         # now check individual data items
@@ -496,11 +508,11 @@ class TestUser(TestCase):
 
         self.assertIsNone(auth0_id)
         self.assertFalse(email_address_verified)
-        self.assertTrue(uuid.UUID(email_verification_token).version == 4)
-
-        result_datetime = parser.parse(email_verification_expiry)
-        difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        # self.assertTrue(uuid.UUID(email_verification_token).version == 4)
+        #
+        # result_datetime = parser.parse(email_verification_expiry)
+        # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
+        # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
 
     def test_create_user_api_bad_uuid(self):
