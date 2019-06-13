@@ -79,8 +79,6 @@ def process_user_registration (notification):
         if hubspot_id == -1:
             raise ValueError
 
-        raise ValueError('just testing')
-
         user_jsonpatch = [
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
         ]
@@ -169,8 +167,12 @@ def process_task_signup(notification):
     signup_details.update(extra_data)
     signup_details['signup_event_type'] = 'Sign-up'
 
-    post_task_signup_to_crm(signup_details, correlation_id)
-    mark_notification_processed(notification, correlation_id)
+    # check here that we have a hubspot id
+    if signup_details['crm_id'] is None:
+        mark_notification_failure(notification, 'user does not have crm_id set', correlation_id)
+    else:
+        post_task_signup_to_crm(signup_details, correlation_id)
+        mark_notification_processed(notification, correlation_id)
 
 
 def dateformattest(event, context):
