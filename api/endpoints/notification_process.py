@@ -24,24 +24,21 @@ import sys
 import json
 from datetime import datetime
 
-
 if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
-    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
+    from .common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from .common.pg_utilities import execute_query
-    from .common.dynamodb_utilities import scan, update_item
-    from .common.notification_send import NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, NotificationType, NotificationStatus, NotificationAttributes
+    from .common.dynamodb_utilities import scan
+    from .common.notifications import NOTIFICATION_TABLE_NAME, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from .user import patch_user
 else:
-    from common.utilities import get_logger, DetailedValueError, new_correlation_id, now_with_tz
-    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, TASK_SIGNUP_TLE_TYPE_NAME
+    from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from common.pg_utilities import execute_query
-    from common.dynamodb_utilities import scan, update_item
-    from common.notification_send import NOTIFICATION_TABLE_NAME, NOTIFICATION_PROCESSED_FLAG, NotificationType, NotificationStatus, NotificationAttributes
+    from common.dynamodb_utilities import scan
+    from common.notifications import NOTIFICATION_TABLE_NAME, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from user import patch_user
 
-
-MAX_RETRIES = 2
 
 def process_notifications(event, context):
     logger = get_logger()
@@ -63,21 +60,22 @@ def process_notifications(event, context):
         process_task_signup(signup_notification)
 
 
-def process_user_registration (notification):
+def process_user_registration(notification):
+    logger = get_logger()
+    correlation_id = new_correlation_id()
     try:
-        logger = get_logger()
-        correlation_id = new_correlation_id()
         notification_id = notification['id']
         details = notification['details']
         user_id = details['id']
-        logger.info('process_user_registration: post to hubspot', \
+        logger.info('process_user_registration: post to hubspot',
                     extra={'notification_id': str(notification_id), 'user_id': str(user_id), 'email': details['email'], 'correlation_id': str(correlation_id)})
-        hubspot_id, isNew = post_new_user_to_crm(details, correlation_id)
-        logger.info('process_user_registration: hubspot details', \
-                    extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(isNew), 'correlation_id': str(correlation_id)})
+        hubspot_id, is_new = post_new_user_to_crm(details, correlation_id)
+        logger.info('process_user_registration: hubspot details',
+                    extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(is_new), 'correlation_id': str(correlation_id)})
 
         if hubspot_id == -1:
-            raise ValueError
+            errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+            raise DetailedValueError('could not find user in HubSpot', errorjson)
 
         user_jsonpatch = [
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
@@ -88,38 +86,7 @@ def process_user_registration (notification):
         mark_notification_processed(notification, correlation_id)
     except Exception as ex:
         error_message = str(ex)
-        mark_notification_failure(notification, error_message,correlation_id)
-
-
-def mark_notification_processed(notification, correlation_id):
-    notification_id = notification['id']
-    notification_updates = {
-        NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value
-    }
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
-
-
-def get_fail_count(notification):
-    if 'fail_count' in notification['processing']:
-        return int(notification['processing']['fail_count'])
-    else:
-        return 0
-
-
-def mark_notification_failure(notification, error_message, correlation_id):
-    notification_id = notification['id']
-    fail_count = get_fail_count(notification) + 1
-    if fail_count > MAX_RETRIES:
-        status = NotificationStatus.DLQ.value
-    else:
-        status = NotificationStatus.RETRYING.value
-    notification_updates = {
-        NotificationAttributes.STATUS.value: status,
-        NotificationAttributes.FAIL_COUNT.value: fail_count,
-        NotificationAttributes.ERROR_MESSAGE.value: error_message
-    }
-
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+        mark_notification_failure(notification, error_message, correlation_id)
 
 
 SIGNUP_DETAILS_SELECT_SQL = '''
@@ -148,31 +115,36 @@ def get_task_signup_data_for_crm(user_task_id, correlation_id):
     if len(extra_data) == 1:
         return extra_data[0]
     else:
-        raise Exception
+        errorjson = {'user_task_id': user_task_id, 'correlation_id': str(correlation_id)}
+        raise DetailedValueError('could not load details for user task', errorjson)
 
 
 def process_task_signup(notification):
     logger = get_logger()
     correlation_id = new_correlation_id()
 
-    # get basic data out of notification
-    notification_id = notification['id']
-    signup_details = notification['details']
-    user_task_id = signup_details['id']
+    try:
+        # get basic data out of notification
+        signup_details = notification['details']
+        user_task_id = signup_details['id']
 
-    # get additional data that hubspot needs from database
-    extra_data = get_task_signup_data_for_crm(user_task_id, correlation_id)
+        # get additional data that hubspot needs from database
+        extra_data = get_task_signup_data_for_crm(user_task_id, correlation_id)
 
-    # put it all together for dispatch to HubSpot
-    signup_details.update(extra_data)
-    signup_details['signup_event_type'] = 'Sign-up'
+        # put it all together for dispatch to HubSpot
+        signup_details.update(extra_data)
+        signup_details['signup_event_type'] = 'Sign-up'
 
-    # check here that we have a hubspot id
-    if signup_details['crm_id'] is None:
-        mark_notification_failure(notification, 'user does not have crm_id set', correlation_id)
-    else:
-        post_task_signup_to_crm(signup_details, correlation_id)
-        mark_notification_processed(notification, correlation_id)
+        # check here that we have a hubspot id
+        if signup_details['crm_id'] is None:
+            errorjson = {'user_task_id': user_task_id, 'correlation_id': str(correlation_id)}
+            raise DetailedValueError('user does not have crm_id', errorjson)
+        else:
+            post_task_signup_to_crm(signup_details, correlation_id)
+            mark_notification_processed(notification, correlation_id)
+    except Exception as ex:
+        error_message = str(ex)
+        mark_notification_failure(notification, error_message, correlation_id)
 
 
 def dateformattest(event, context):
@@ -182,7 +154,7 @@ def dateformattest(event, context):
         test_json = json.loads(event['body'])
         logger.info('body:', extra=test_json)
         date_string = test_json['date']
-        date_string = date_string[:19] # strip timezone and milliseconds
+        date_string = date_string[:19]   # strip timezone and milliseconds
         format_string = test_json['format']
         logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
         datetime_obj = datetime.strptime(date_string, format_string)
@@ -199,7 +171,6 @@ if __name__ == "__main__":
     result = process_notifications(None, None)
     # print(str(notifications))
     # notification_id = notifications[0]['id']
-    # update_item(NOTIFICATION_TABLE_NAME, notification_id, NOTIFICATION_PROCESSED_FLAG, True)
 
     # date_json = {
     #     "date": "2019-05-16 15:20:51.264658+00:00",

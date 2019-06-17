@@ -19,7 +19,7 @@
 from requests import get, post, patch
 from api.common.utilities import get_secret
 
-TEST_ON_AWS = True
+TEST_ON_AWS = False
 
 
 def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):

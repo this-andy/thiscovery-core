@@ -18,7 +18,7 @@
 
 from api.common.pg_utilities import execute_non_query, execute_query_multiple, execute_query
 from api.common.dynamodb_utilities import scan
-from api.common.notification_send import NOTIFICATION_TABLE_NAME
+from api.common.notifications import NOTIFICATION_TABLE_NAME
 
 
 def multiple_query():

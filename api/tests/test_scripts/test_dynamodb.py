@@ -111,7 +111,7 @@ class TestDynamoDB(TestCase):
         self.assertEqual(len(items), 4)
         self.assertEqual(items[3]['id'], 'test04')
 
-    def test_06_scan_filter(self):
+    def test_06_scan_filter_list(self):
         from api.common.dynamodb_utilities import scan
 
         items = scan(TEST_TABLE_NAME, 'id', ['test03'])
@@ -119,7 +119,15 @@ class TestDynamoDB(TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]['details'], {'att1': 'val1.3', 'att2': 'val2.3'})
 
-    def test_07_delete_ok(self):
+    def test_07_scan_filter_string(self):
+        from api.common.dynamodb_utilities import scan
+
+        items = scan(TEST_TABLE_NAME, 'id', 'test04')
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['details'], {'att1': 'val1.4', 'att2': 'val2.4'})
+
+    def test_08_delete_ok(self):
         from api.common.dynamodb_utilities import delete_item, get_item
 
         key = 'test01'

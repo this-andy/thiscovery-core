@@ -94,7 +94,7 @@ def update_item(table_name: str, key: str, name_value_pairs: dict, correlation_i
         for name,  value in name_value_pairs.items():
             param_name = ':p' + str(param_count)
             map_name = None
-            if 'status' in name:   # todo generalise this to other reserved words, and ensure it only catches whole words
+            if name == 'status':   # todo generalise this to other reserved words, and ensure it only catches whole words
                 if '.' in name:
                     map_name = name.split('.')[0]
                 attr_name = '#a' + str(param_count)
@@ -140,6 +140,10 @@ def scan(table_name: str, filter_attr_name: str = None, filter_attr_values=None,
     try:
         logger = get_logger()
         table = get_table(table_name)
+
+        # accept string but make it into a list for later processing
+        if isinstance(filter_attr_values, str):
+            filter_attr_values = [filter_attr_values]
         logger.info('dynamodb scan', extra={
             'table_name': table_name,
             'filter_attr_name': filter_attr_name,
@@ -212,7 +216,7 @@ if __name__ == "__main__":
 
     # update_item('notifications', 'abd', 'details', {"hello": "world", "more": "data!"})
 
-    result = scan('notifications', 'processing.status', ['new', 'retrying'])
+    result = scan('notifications', 'processing_status', ['new', 'retrying'])
     print(len(result))
     print(result)
 

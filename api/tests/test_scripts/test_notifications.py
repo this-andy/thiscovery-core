@@ -20,10 +20,10 @@ from unittest import TestCase
 from dateutil import parser
 from api.common.utilities import set_running_unit_tests, now_with_tz
 from api.common.dynamodb_utilities import delete_all
-from api.common.notification_send import NOTIFICATION_TABLE_NAME, NotificationStatus, NotificationAttributes
+from api.common.notifications import NOTIFICATION_TABLE_NAME, NotificationStatus, NotificationAttributes
 
 TIME_TOLERANCE_SECONDS = 10
-DELETE_TEST_DATA = True
+DELETE_TEST_DATA = False
 
 
 class TestNotifications(TestCase):
@@ -63,9 +63,7 @@ class TestNotifications(TestCase):
         self.assertEqual(notification['id'], user_id)
         self.assertEqual(notification['type'], 'user-registration')
         self.assertEqual(notification['label'], user_email)
-        self.assertEqual(notification['processing'], {
-            'status': NotificationStatus.NEW.value,
-        })
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
         self.assertEqual(notification['details']['email'], user_email)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
@@ -98,9 +96,7 @@ class TestNotifications(TestCase):
         self.assertEqual(notification['id'], ut_id)
         self.assertEqual(notification['type'], 'task-signup')
         self.assertEqual(notification['label'], user_id)
-        self.assertEqual(notification['processing'], {
-            'status': NotificationStatus.NEW.value,
-        })
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
         self.assertEqual(notification['details']['id'], ut_id)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
@@ -108,3 +104,34 @@ class TestNotifications(TestCase):
         created_datetime = parser.parse(notification['created'])
         difference = abs(now - created_datetime)
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+
+    def test_03_fail_processing(self):
+        from api.common.notifications import mark_notification_failure
+        from api.common.dynamodb_utilities import scan
+        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+
+        self.assertEqual(len(notifications), 1)
+
+        notification = notifications[0]
+        test_error_message = 'test_03_fail_processing - 01'
+        mark_notification_failure(notification, test_error_message, None)
+
+        # read it and check
+        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+        notification = notifications[0]
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.RETRYING.value)
+        self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '1')
+        self.assertEqual(notification[NotificationAttributes.ERROR_MESSAGE.value], test_error_message)
+
+        mark_notification_failure(notification, test_error_message, None)
+        test_error_message = 'test_03_fail_processing - DLQ'
+        mark_notification_failure(notification, test_error_message, None)
+
+        # read it and check
+        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+        notification = notifications[0]
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.DLQ.value)
+        self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '3')
+        self.assertEqual(notification[NotificationAttributes.ERROR_MESSAGE.value], test_error_message)
+
+

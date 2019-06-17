@@ -16,71 +16,12 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from enum import Enum
-
-# if 'api.endpoints' in __name__:
-#     from .dynamodb_utilities import put_item
-# else:
-#     from common.dynamodb_utilities import put_item
-
 if __name__ == "__main__":
     from api.common.dynamodb_utilities import put_item
+    from api.common.notifications import NotificationStatus, NotificationType, NOTIFICATION_TABLE_NAME, create_notification
 else:
     from .dynamodb_utilities import put_item
-
-
-NOTIFICATION_TABLE_NAME = 'notifications'
-NOTIFICATION_PROCESSED_FLAG = 'notification_processed'
-
-
-class NotificationType(Enum):
-    USER_REGISTRATION = 'user-registration'
-    TASK_SIGNUP = 'task-signup'
-
-
-class NotificationStatus(Enum):
-    NEW = 'new'
-    PROCESSED = 'processed'
-    RETRYING = 'retrying'
-    DLQ = 'dlq'
-
-
-class NotificationAttributes(Enum):
-    STATUS = 'processing.status'
-    FAIL_COUNT = 'processing.fail_count'
-    ERROR_MESSAGE = 'processing.error_message'
-
-
-# def sqs_send_DNU(message_body, message_attributes):
-#     logger = get_logger()
-#
-#     logger.info('sqs_send: init')
-#
-#     sqs = boto3.client('sqs')
-#
-#     queue_url = 'https://sqs.eu-west-1.amazonaws.com/595383251813/thiscovery-core-dev-HubSpotEventQueue'
-#
-#     logger.info('sqs_send: about to send')
-#
-#     response = sqs.send_message(
-#         QueueUrl=queue_url,
-#         DelaySeconds=10,
-#         MessageAttributes=message_attributes,
-#         MessageBody=message_body
-#     )
-#
-#     return response['MessageId']
-
-
-def create_notification(label: str):
-    notification_item = {
-        NOTIFICATION_PROCESSED_FLAG: False,
-        'processing': {
-            'status': NotificationStatus.NEW.value
-        },
-        'label': label
-    }
-    return notification_item
+    from .notifications import NotificationStatus, NotificationType, NOTIFICATION_TABLE_NAME, create_notification
 
 
 def notify_new_user_registration(new_user, correlation_id):
