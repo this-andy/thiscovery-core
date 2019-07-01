@@ -18,11 +18,10 @@
 
 from enum import Enum
 if 'api.endpoints' in __name__:
-    from api.common.dynamodb_utilities import scan, update_item
+    from api.common.dynamodb_utilities import scan, update_item, delete_all, put_item
 else:
 
-    from .dynamodb_utilities import scan, update_item
-
+    from .dynamodb_utilities import scan, update_item, delete_all, put_item
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'
@@ -47,12 +46,25 @@ class NotificationAttributes(Enum):
     ERROR_MESSAGE = 'processing_error_message'
 
 
+def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
+    notifications = scan(NOTIFICATION_TABLE_NAME, filter_attr_name, filter_attr_values, correlation_id)
+    return notifications
+
+
+def delete_all_notifications():
+    delete_all(NOTIFICATION_TABLE_NAME)
+
+
 def create_notification(label: str):
     notification_item = {
         NotificationAttributes.STATUS.value: NotificationStatus.NEW.value,
         'label': label
     }
     return notification_item
+
+
+def save_notification(key, task_type, task_signup, notification_item, correlation_id):
+    put_item(NOTIFICATION_TABLE_NAME, key, task_type, task_signup, notification_item, correlation_id)
 
 
 def get_fail_count(notification):

@@ -28,21 +28,19 @@ if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
     from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from .common.pg_utilities import execute_query
-    from .common.dynamodb_utilities import scan
-    from .common.notifications import NOTIFICATION_TABLE_NAME, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+    from .common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from .user import patch_user
 else:
     from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
     from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
     from common.pg_utilities import execute_query
-    from common.dynamodb_utilities import scan
-    from common.notifications import NOTIFICATION_TABLE_NAME, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+    from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from user import patch_user
 
 
 def process_notifications(event, context):
     logger = get_logger()
-    notifications = scan(NOTIFICATION_TABLE_NAME, NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
+    notifications = get_notifications(NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
 
     logger.info('process_notifications', extra = {'count': str(len(notifications))})
 

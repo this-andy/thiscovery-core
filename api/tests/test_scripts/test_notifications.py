@@ -19,11 +19,10 @@
 from unittest import TestCase
 from dateutil import parser
 from api.common.utilities import set_running_unit_tests, now_with_tz
-from api.common.dynamodb_utilities import delete_all
-from api.common.notifications import NOTIFICATION_TABLE_NAME, NotificationStatus, NotificationAttributes
+from api.common.notifications import NotificationStatus, NotificationAttributes, delete_all_notifications, get_notifications
 
 TIME_TOLERANCE_SECONDS = 10
-DELETE_TEST_DATA = False
+DELETE_TEST_DATA = True
 
 
 class TestNotifications(TestCase):
@@ -31,17 +30,16 @@ class TestNotifications(TestCase):
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        delete_all(NOTIFICATION_TABLE_NAME)
+        delete_all_notifications()
 
     @classmethod
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
-            delete_all(NOTIFICATION_TABLE_NAME)
+            delete_all_notifications()
         set_running_unit_tests(False)
 
     def test_01_post_registration(self):
         from api.common.notification_send import notify_new_user_registration
-        from api.common.dynamodb_utilities import scan
 
         user_id = "fae88a51-0053-4ba7-b74e-f68b31e82785"
         user_email = 'sw.test@email.co.uk'
@@ -53,10 +51,13 @@ class TestNotifications(TestCase):
             "last_name": "Walcorn",
             "auth0_id": "1234abcd",
             "country_code": "GB",
+            "country_name": "United Kingdom",
+            "avatar_string": "SW",
             "status": "new"}
+
         notify_new_user_registration(user_json, None)
 
-        notifications = scan(NOTIFICATION_TABLE_NAME)
+        notifications = get_notifications()
         self.assertEqual(len(notifications), 1)
 
         notification = notifications[0]
@@ -74,7 +75,6 @@ class TestNotifications(TestCase):
 
     def test_02_post_signup(self):
         from api.common.notification_send import notify_new_task_signup
-        from api.common.dynamodb_utilities import scan
 
         ut_id = "9620089b-e9a4-46fd-bb78-091c8449d777"
         user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'
@@ -89,7 +89,7 @@ class TestNotifications(TestCase):
         }
         notify_new_task_signup(ut_json, None)
 
-        notifications = scan(NOTIFICATION_TABLE_NAME)
+        notifications = get_notifications()
         self.assertEqual(len(notifications), 2)
 
         notification = notifications[1]
@@ -107,8 +107,7 @@ class TestNotifications(TestCase):
 
     def test_03_fail_processing(self):
         from api.common.notifications import mark_notification_failure
-        from api.common.dynamodb_utilities import scan
-        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+        notifications = get_notifications('type', ['user-registration'])
 
         self.assertEqual(len(notifications), 1)
 
@@ -117,7 +116,7 @@ class TestNotifications(TestCase):
         mark_notification_failure(notification, test_error_message, None)
 
         # read it and check
-        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+        notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]
         self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.RETRYING.value)
         self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '1')
@@ -128,7 +127,7 @@ class TestNotifications(TestCase):
         mark_notification_failure(notification, test_error_message, None)
 
         # read it and check
-        notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['user-registration'])
+        notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]
         self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.DLQ.value)
         self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '3')

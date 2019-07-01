@@ -17,24 +17,22 @@
 #
 
 if __name__ == "__main__":
-    from api.common.dynamodb_utilities import put_item
-    from api.common.notifications import NotificationStatus, NotificationType, NOTIFICATION_TABLE_NAME, create_notification
+    from api.common.notifications import NotificationStatus, NotificationType, save_notification, create_notification
 else:
-    from .dynamodb_utilities import put_item
-    from .notifications import NotificationStatus, NotificationType, NOTIFICATION_TABLE_NAME, create_notification
+    from .notifications import NotificationStatus, NotificationType, save_notification, create_notification
 
 
 def notify_new_user_registration(new_user, correlation_id):
     notification_item = create_notification(new_user['email'])
     key = new_user['id']
-    put_item(NOTIFICATION_TABLE_NAME, key, NotificationType.USER_REGISTRATION.value, new_user, notification_item, correlation_id)
+    save_notification(key, NotificationType.USER_REGISTRATION.value, new_user, notification_item, correlation_id)
 
 
 def notify_new_task_signup(task_signup, correlation_id):
     notification_item = create_notification(task_signup['user_id'])
     # use existing user_task id as notification id
     key = task_signup['id']
-    put_item(NOTIFICATION_TABLE_NAME, key, NotificationType.TASK_SIGNUP.value, task_signup, notification_item, correlation_id)
+    save_notification(key, NotificationType.TASK_SIGNUP.value, task_signup, notification_item, correlation_id)
 
 
 if __name__ == "__main__":

@@ -22,9 +22,11 @@ from http import HTTPStatus
 
 from dateutil import parser
 from unittest import TestCase
+from time import sleep
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, NotificationAttributes
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -59,6 +61,7 @@ class TestUserTask(TestCase):
             truncate_table('public.projects_project')
             truncate_table('public.projects_user')
             truncate_table('public.projects_usergroup')
+            delete_all_notifications()
 
         set_running_unit_tests(False)
 
@@ -145,14 +148,38 @@ class TestUserTask(TestCase):
 
     def test_4_create_user_task_api_ok_and_duplicate(self):
         from api.endpoints.user_task import create_user_task_api
+        from api.endpoints.user import create_user_api
+        from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
 
         expected_status = HTTPStatus.CREATED
+        user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
+        user_email = 'sw@email.co.uk'
+        user_json = {
+            "id": user_id,
+            "created": "2018-08-21T11:16:56+01:00",
+            "email": user_email,
+            "email_address_verified": False,
+            "title": "Mr",
+            "first_name": "Steven",
+            "last_name": "Walcorn",
+            "auth0_id": "1234abcd",
+            "country_code": "GB",
+            "crm_id": None,
+            "status": "new"}
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        expected_status = HTTPStatus.CREATED
+        ut_id = '9620089b-e9a4-46fd-bb78-091c8449d777'
         ut_json = {
-            'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
+            'user_id': user_id,
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
-            'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
+            'id': ut_id,
             'created': '2018-06-13 14:15:16.171819+00'
         }
         body = json.dumps(ut_json)
@@ -172,6 +199,30 @@ class TestUserTask(TestCase):
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, expected_body)
 
+        # check that notification message exists
+        notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
+        notification = notifications[0]  # should be only one
+        self.assertEqual(notification['id'], ut_id)
+        self.assertEqual(notification['type'], NotificationType.TASK_SIGNUP.value)
+        # self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
+
+        # check user now has sign-up timeline event
+        sleep(10)
+        tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
+        result = get_timeline_event(tle_type_id, ut_id, None)
+        self.assertEqual(result['id'], ut_id)
+        notification_details = notification['details']
+        self.assertEqual(result['task_id'], notification_details['project_task_id'])
+        self.assertEqual(result['objectType'], 'CONTACT')
+        self.assertEqual(result['project_name'], 'CTG Monitoring')
+
+        # check that notification message has been processewd
+        notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
+        notification = notifications[0]  # should be only one
+        self.assertEqual(notification['id'], ut_id)
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.PROCESSED.value)
+
+        # duplicate checking...
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
 

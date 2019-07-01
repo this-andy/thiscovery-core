@@ -53,6 +53,7 @@ BASE_USER_SELECT_SQL = '''
     last_name, 
     country_code,
     auth0_id, 
+    crm_id,
     status
   FROM 
     public.projects_user
@@ -366,6 +367,7 @@ def create_user(user_json, correlation_id):
         'first_name': first_name,
         'last_name': last_name,
         'auth0_id': auth0_id,
+        'crm_id': None,
         'country_code': country_code,
         'status': status,
     }

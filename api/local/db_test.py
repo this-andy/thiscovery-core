@@ -16,9 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from api.common.pg_utilities import execute_non_query, execute_query_multiple, execute_query
-from api.common.dynamodb_utilities import scan
-from api.common.notifications import NOTIFICATION_TABLE_NAME
+from api.common.pg_utilities import execute_query_multiple, execute_query
+from api.common.notifications import get_notifications
 
 
 def multiple_query():
@@ -32,7 +31,7 @@ def check_task_signups():
     sql = 'select * from public.task_signups'
     signups_in_db = execute_query(sql)
 
-    signups_notifications = scan(NOTIFICATION_TABLE_NAME, 'type', ['task-signup'])
+    signups_notifications = get_notifications('type', ['task-signup'])
 
     print('Database:' + str(len(signups_in_db)) + ', notifications:' + str(len(signups_notifications)))
 

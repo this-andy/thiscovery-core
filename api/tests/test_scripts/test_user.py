@@ -20,12 +20,12 @@ import json
 import uuid
 from http import HTTPStatus
 from dateutil import parser
-from datetime import timedelta
+from time import sleep
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
+from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationAttributes
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
-from api.common.dynamodb_utilities import delete_all
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -51,12 +51,12 @@ class TestUser(TestCase):
         if DELETE_TEST_DATA:
             truncate_table('public.projects_user')
             truncate_table('public.projects_entityupdate')
-            delete_all('notifications')
+            delete_all_notifications()
 
         set_running_unit_tests(False)
 
 
-    def test_get_user_by_uuid_api_exists(self):
+    def test_01_get_user_by_uuid_api_exists(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
 
@@ -65,7 +65,7 @@ class TestUser(TestCase):
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.addr",
+            "email": "altha@email.co.uk",
             "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
@@ -73,6 +73,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "crm_id": None,
             "status": None,
             "avatar_string": "AA"
         }
@@ -81,7 +82,7 @@ class TestUser(TestCase):
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T12:10:56.798192+00:00",
             "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.addr",
+            "email": "altha@email.co.uk",
             "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
@@ -89,6 +90,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "crm_id": None,
             "status": None,
             "avatar_string": "AA",
         }
@@ -103,7 +105,7 @@ class TestUser(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
 
-    def test_get_user_by_uuid_api_not_exists(self):
+    def test_02_get_user_by_uuid_api_not_exists(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
 
@@ -118,7 +120,7 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_get_user_by_uuid_api_bad_uuid(self):
+    def test_03_get_user_by_uuid_api_bad_uuid(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
 
@@ -134,10 +136,10 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
 
-    def test_get_user_email_exists(self):
+    def test_04_get_user_email_exists(self):
         from api.endpoints.user import get_user_by_email_api
 
-        querystring_parameters = {'email': 'altha@email.addr'}
+        querystring_parameters = {'email': 'altha@email.co.uk'}
 
         expected_status = HTTPStatus.OK
 
@@ -145,7 +147,7 @@ class TestUser(TestCase):
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T13:10:56.798192+01:00",
             "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.addr",
+            "email": "altha@email.co.uk",
             "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
@@ -153,6 +155,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "crm_id": None,
             "avatar_string": "AA",
             "status": None
         }
@@ -161,7 +164,7 @@ class TestUser(TestCase):
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T12:10:56.798192+00:00",
             "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.addr",
+            "email": "altha@email.co.uk",
             "email_address_verified": False,
             "title": "Mrs",
             "first_name": "Altha",
@@ -169,6 +172,7 @@ class TestUser(TestCase):
             "country_code": "FR",
             "country_name": "France",
             "auth0_id": None,
+            "crm_id": None,
             "avatar_string": "AA",
             "status": None
         }
@@ -182,7 +186,7 @@ class TestUser(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
 
-    def test_get_user_email_not_exists(self):
+    def test_05_get_user_email_not_exists(self):
         from api.endpoints.user import get_user_by_email_api
 
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
@@ -197,7 +201,7 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_patch_user_api_ok(self):
+    def test_06_patch_user_api_ok(self):
         from api.endpoints.user import patch_user_api
         from api.common.entity_update import EntityUpdate
 
@@ -237,6 +241,7 @@ class TestUser(TestCase):
             "auth0_id": "new-auth0-id",
             "country_code": "IT",
             "country_name": "Italy",
+            "crm_id": None,
             "avatar_string": "ss",
             "status": "singing"
         }
@@ -252,6 +257,7 @@ class TestUser(TestCase):
             "auth0_id": "new-auth0-id",
             "country_code": "GB-SCT",
             "country_name": "United Kingdom - Scotland",
+            "crm_id": None,
             "avatar_string": "ss",
             "status": "singing"
         }
@@ -309,7 +315,7 @@ class TestUser(TestCase):
                 {"op": "replace", "path": "/title", "value": "Mrs"},
                 {"op": "replace", "path": "/last_name", "value": "Alcorn"},
                 {"op": "replace", "path": "/status", "value": None},
-                {"op": "replace", "path": "/email", "value": "altha@email.addr"},
+                {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
                 {"op": "replace", "path": "/email_address_verified", "value": False},
                 {"op": "replace", "path": "/country_code", "value": "FR"},
             ]
@@ -323,7 +329,7 @@ class TestUser(TestCase):
             self.assertDictEqual(expected_body, last_entity_update)
 
 
-    def test_patch_user_api_user_not_exists(self):
+    def test_07_patch_user_api_user_not_exists(self):
         from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.NOT_FOUND
@@ -343,7 +349,7 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
 
-    def test_patch_user_api_bad_attribute(self):
+    def test_08_patch_user_api_bad_attribute(self):
         from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -360,7 +366,7 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
 
-    def test_patch_user_api_bad_operation(self):
+    def test_09_patch_user_api_bad_operation(self):
         from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -377,7 +383,7 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
 
-    def test_patch_user_api_bad_jsonpatch(self):
+    def test_10_patch_user_api_bad_jsonpatch(self):
         from api.endpoints.user import patch_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -394,20 +400,24 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'].endswith('invalid jsonpatch'))
 
 
-    def test_create_user_api_ok_and_duplicate(self):
-        from api.endpoints.user import create_user_api
+    def test_11_create_user_api_ok_and_duplicate(self):
+        from api.endpoints.user import create_user_api, get_user_by_id_api
+        from api.common.hubspot import get_hubspot_contact_by_id, get_contact_property
 
         expected_status = HTTPStatus.CREATED
+        user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
+        user_email = 'sw@email.co.uk'
         user_json = {
-            "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
+            "id": user_id,
             "created": "2018-08-21T11:16:56+01:00",
-            "email": "sw@email.addr",
+            "email": user_email,
             "email_address_verified": False,
             "title": "Mr",
             "first_name": "Steven",
             "last_name": "Walcorn",
             "auth0_id": "1234abcd",
             "country_code": "GB",
+            "crm_id": None,
             "status": "new"}
         body = json.dumps(user_json)
 
@@ -422,21 +432,37 @@ class TestUser(TestCase):
         expected_body['avatar_string'] = 'SW'
         # expected_body['avatar_image_url'] = ''
 
-        # email_verification_token = result_json['email_verification_token']
-        # del result_json['email_verification_token']
-        #
-        # email_verification_expiry = result_json['email_verification_expiry']
-        # del result_json['email_verification_expiry']
-
+        # test results returned from api call
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(result_json, expected_body)
 
-        # self.assertTrue(uuid.UUID(email_verification_token).version == 4)
-        #
-        # result_datetime = parser.parse(email_verification_expiry)
-        # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
-        # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        # check that notification message exists
+        notifications = get_notifications('type', ['user-registration'])
+        notification = notifications[0]  # should be only one
+        self.assertEqual(notification['id'], user_id)
+        self.assertEqual(notification['type'], 'user-registration')
+        self.assertEqual(notification['label'], user_email)
+        # self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
+        self.assertEqual(notification['details']['email'], user_email)
 
+        # check user now has crm (hubspot) id
+        sleep(10)
+        result = test_get(get_user_by_id_api, 'user', {'id': user_id}, None, None)
+        result_json = json.loads(result['body'])
+        self.assertIsNotNone(result_json['crm_id'])
+
+        # and check that hubspot has thiscovery id
+        contact = get_hubspot_contact_by_id(result_json['crm_id'], None)
+        thiscovery_id = get_contact_property(contact, 'thiscovery_id')
+        self.assertEqual(thiscovery_id, user_id)
+
+        # check that notification message has been processewd
+        notifications = get_notifications('type', ['user-registration'])
+        notification = notifications[0]  # should be only one
+        self.assertEqual(notification['id'], user_id)
+        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.PROCESSED.value)
+
+        # duplicate checking...
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
         result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
@@ -449,12 +475,12 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
 
-    def test_create_user_api_with_defaults(self):
+    def test_12_create_user_api_with_defaults(self):
         from api.endpoints.user import create_user_api
 
         expected_status = HTTPStatus.CREATED
         user_json = {
-            "email": "hh@email.addr",
+            "email": "hh@email.co.uk",
             "first_name": "Harry",
             "last_name": "Hippie",
             "country_code": "GB",
@@ -491,6 +517,7 @@ class TestUser(TestCase):
         # first check what's left in returned data
         user_json['country_name'] = 'United Kingdom'
         user_json['avatar_string'] = "HH"
+        user_json['crm_id'] = None
         user_json['title'] = None
 
         self.assertDictEqual(result_json, user_json)
@@ -515,14 +542,14 @@ class TestUser(TestCase):
         # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
 
-    def test_create_user_api_bad_uuid(self):
+    def test_13_create_user_api_bad_uuid(self):
         from api.endpoints.user import create_user_api
 
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b13m",
             "created": "2018-08-21T11:16:56+01:00",
-            "email": "sw@email.addr",
+            "email": "sw@email.co.uk",
             "title": "Mr",
             "first_name": "Steven",
             "last_name": "Walcorn",
@@ -540,9 +567,8 @@ class TestUser(TestCase):
         self.assertTrue('uuid' in result_json)
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
-
-    def test_timezone(self):
-        from api.common.pg_utilities import execute_query
-        sql = 'Select NOW()'
-        result =  execute_query(sql, None, 'abc')
-        return result
+    # def test_14_timezone(self):
+    #     from api.common.pg_utilities import execute_query
+    #     sql = 'Select NOW()'
+    #     result =  execute_query(sql, None, 'abc')
+    #     return result
