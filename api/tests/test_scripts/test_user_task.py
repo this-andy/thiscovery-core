@@ -33,6 +33,7 @@ TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usertask'
+USER_BASE_URL = 'user'
 
 class TestUserTask(TestCase):
 
@@ -168,7 +169,7 @@ class TestUserTask(TestCase):
             "status": "new"}
         body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, USER_BASE_URL, None, body, None)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 

@@ -183,6 +183,7 @@ def create_user_external_account_api(event, context):
 def get_or_create_user_external_account(user_id, external_system_id, correlation_id):
     # to do - add automated tests for this if ever used
 
+    raise Exception('This methid needs to be reviewed before use - see TP ')
     existing = check_user_id_and_external_account(user_id, external_system_id, correlation_id)
     if len(existing) > 0:
         # already exists - return id

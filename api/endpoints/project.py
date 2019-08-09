@@ -55,7 +55,8 @@ BASE_PROJECT_SELECT_SQL = '''
                         signup_status,
                         visibility,
                         external_system_id,                       
-                        external_task_id,                       
+                        external_task_id, 
+                        base_url,                      
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
@@ -224,20 +225,23 @@ PROJECT_USER_SELECT_SQL = '''
                 select coalesce(json_agg(task_row), '[]'::json)
                 from (
                     select 
-                        id,
+                        task.id,
                         description,
                         signup_status,
                         visibility,   
-                        external_task_id,                    
+                        external_task_id,
+                        base_url as url,                    
                         status,
+                        es.short_name as task_provider_name,
                         FALSE as task_is_visible,
                         FALSE as user_is_signedup,
                         FALSE as signup_available,
                         null as user_task_status
                     from public.projects_projecttask task
+                    join public.projects_externalsystem es on task.external_system_id = es.id
                     where task.project_id = project.id
-                        AND task.status != 'planned'
-                    order by created
+                        AND task.status != 'planned'                   
+                    order by task.created
                     ) task_row
             ) as tasks
         from public.projects_project project
@@ -347,7 +351,7 @@ def get_project_status_for_user(user_id, correlation_id):
     """
 
     sql5 = """
-        SELECT project_task_id, ut.status
+        SELECT project_task_id, ut.id, ut.status
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
@@ -389,6 +393,12 @@ def get_project_status_for_user(user_id, correlation_id):
                 or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
             if task['user_is_signedup']:
                 task['user_task_status'] = projects_usertasks_dict[task_id]['status']
+            if task['task_is_visible']:
+                user_task_id = projects_usertasks_dict[task_id]['id']
+                task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
+            else:
+                task['url'] = None
+                task['task_provider_name'] = None
 
     return project_list
 
@@ -432,7 +442,7 @@ if __name__ == "__main__":
     # ev = {'pathParameters': pp}
     # result = get_project_api(ev, None)
 
-    result = list_projects_api(None, None)
+    # result = list_projects_api(None, None)
     # result_status = result['statusCode']
     # result_json = json.loads(result['body'])
 
@@ -442,10 +452,13 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    # qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
-    # ev = {'queryStringParameters': qsp}
-    # result = get_project_status_for_user_api(ev, None)
-    # print(result)
+    qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
+    ev = {'queryStringParameters': qsp}
+    result = get_project_status_for_user_api(ev, None)
+    print(json.dumps(result, indent=2))
+    body = result['body']
+    body_json = json.loads(body)
+    print(json.dumps(body_json, indent=2))
     # if len(result) == 0:
     #     print(result)
     # else:

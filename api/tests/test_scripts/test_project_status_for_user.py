@@ -33,11 +33,13 @@ ENTITY_BASE_URL = 'project-user-status'
 
 class ProjectTaskTestResult:
 
-    def __init__(self, task_is_visible, user_is_signedup, signup_available, user_task_status):
+    def __init__(self, task_is_visible, user_is_signedup, signup_available, user_task_status, task_provider_name, url):
         self.task_is_visible = task_is_visible
         self.user_is_signedup = user_is_signedup
         self.signup_available = signup_available
         self.user_task_status = user_task_status
+        self.task_provider_name = task_provider_name
+        self.url = url
 
 
 class TestProjectStatusForUser(TestCase):
@@ -94,7 +96,7 @@ class TestProjectStatusForUser(TestCase):
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):
-            print(user_id, expected_project_is_visible, project_result['project_is_visible'])
+            # print(user_id, expected_project_is_visible, project_result['project_is_visible'])
             self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
             for (task) in project_result['tasks']:
                 task_desc = task['description']
@@ -105,21 +107,25 @@ class TestProjectStatusForUser(TestCase):
                     self.assertFalse(task['user_is_signedup'])
                     self.assertFalse(task['signup_available'])
                     self.assertIsNone(task['user_task_status'])
+                    self.assertIsNone(task['url'])
+                    self.assertIsNone(task['task_provider_name'])
                 else:
                     # print(expected_task_result)
                     self.assertEqual(task['task_is_visible'], expected_task_result.task_is_visible, user_id + ":" + task_desc + ":task_is_visible")
                     self.assertEqual(task['user_is_signedup'], expected_task_result.user_is_signedup, user_id + ":" + task_desc + ":user_is_signedup")
                     self.assertEqual(task['signup_available'], expected_task_result.signup_available, user_id + ":" + task_desc + ":signup_available")
                     self.assertEqual(task['user_task_status'], expected_task_result.user_task_status, user_id + ":" + task_desc + ":user_task_status")
+                    self.assertEqual(task['url'], expected_task_result.url, user_id + ":" + task_desc + ":url")
+                    self.assertEqual(task['task_provider_name'], expected_task_result.task_provider_name, user_id + ":" + task_desc + ":task_provider_name")
 
 
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
         expected_results = {}
         expected_results['project_visibility'] = [False, False, False, True, False, True, False]
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete')
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane', 'https://www.bbc.co.uk/news')
+        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', 'https://www.thedailymash.co.uk')
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics', None)
         self.check_project_status_for_single_user(user_id, expected_results)
 
 
@@ -127,11 +133,11 @@ class TestProjectStatusForUser(TestCase):
         user_id = '851f7b34-f76c-49de-a382-7e4089b744e2'  # bernie@email.addr
         expected_results = {}
         expected_results['project_visibility'] = [False, True, True, True, False, True, False]
-        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'complete')
-        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None)
+        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics', None)
+        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, False, True, None, 'Qualtrics', None)
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane', 'https://www.bbc.co.uk/news')
+        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', 'https://www.thedailymash.co.uk')
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         self.check_project_status_for_single_user(user_id, expected_results)
 
 
@@ -139,13 +145,13 @@ class TestProjectStatusForUser(TestCase):
         user_id = '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'  # clive@email.addr
         expected_results = {}
         expected_results['project_visibility'] = [False, True, True, True, True, True, True]
-        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-05-B'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'complete')
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None)
+        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics', None)
+        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics', None)
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', 'https://www.bbc.co.uk/news')
+        expected_results['PSFU-05-B'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics', None)
+        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', 'https://www.thedailymash.co.uk')
+        expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane', None)
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         self.check_project_status_for_single_user(user_id, expected_results)
 
 
@@ -153,15 +159,15 @@ class TestProjectStatusForUser(TestCase):
         user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'  # delia@email.addr
         expected_results = {}
         expected_results['project_visibility'] = [False, True, True, True, True, True, True]
-        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, True, False, 'complete')
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-05-B'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'complete')
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, True, False, 'complete')
+        expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, False, True, None, 'Qualtrics', None)
+        expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics', None)
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', 'https://www.bbc.co.uk/news')
+        expected_results['PSFU-05-B'] = ProjectTaskTestResult(True, False, True, None, 'Qualtrics', None)
+        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', 'https://www.thedailymash.co.uk')
+        expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane', None)
+        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics', 'https://www.theguardian.com/uk')
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane', None)
         self.check_project_status_for_single_user(user_id, expected_results)
 
 
@@ -169,9 +175,9 @@ class TestProjectStatusForUser(TestCase):
         user_id = '1cbe9aad-b29f-46b5-920e-b4c496d42515'  # eddie@email.addr
         expected_results = {}
         expected_results['project_visibility'] = [False, False, False, True, True, True, True]
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None)
-        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None)
-        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'active')
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete')
-        expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, False, False, None)
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', 'https://www.bbc.co.uk/news')
+        expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', 'https://www.thedailymash.co.uk')
+        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics', 'https://www.theguardian.com/uk')
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics', None)
+        expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, False, False, None, 'Cochrane', None)
         self.check_project_status_for_single_user(user_id, expected_results)

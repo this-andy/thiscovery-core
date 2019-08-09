@@ -35,6 +35,7 @@ CREATE TABLE public.projects_projecttask
     testing_group_id uuid,
     external_task_id character varying(50) COLLATE pg_catalog."default",
     external_system_id uuid,
+    base_url character varying(100) COLLATE pg_catalog."default",
     CONSTRAINT projects_projecttask_pkey PRIMARY KEY (id),
     CONSTRAINT projects_projecttask_external_system_id_0d9467a7_fk_projects_ FOREIGN KEY (external_system_id)
         REFERENCES public.projects_externalsystem (id) MATCH SIMPLE
