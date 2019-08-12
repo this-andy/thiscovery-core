@@ -24,7 +24,7 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid
+        triggered_by_heartbeat, validate_uuid, append_nonprodenv_to_url
     from .user import get_user_by_id
     from .project import get_project_task
     from .user_project import create_user_project_if_not_exists
@@ -33,7 +33,7 @@ else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid
+        triggered_by_heartbeat, validate_uuid, append_nonprodenv_to_url
     from user import get_user_by_id
     from project import get_project_task
     from user_project import create_user_project_if_not_exists
@@ -178,70 +178,6 @@ def check_if_user_task_exists(user_id, project_task_id, correlation_id):
     return execute_query(base_sql, (str(user_id), str(project_task_id)), correlation_id, False)
 
 
-def create_user_task_ORIGINAL(ut_json, correlation_id):
-    # json MUST contain: user_project_id, project_task_id, ut_status, ut_consented
-    # json may OPTIONALLY include: id, created,
-
-    # extract mandatory data from json
-    try:
-        user_project_id = validate_uuid(ut_json['user_project_id'])
-        project_task_id = validate_uuid(ut_json['project_task_id'])
-        ut_status = validate_status(ut_json['status'])
-        ut_consented = validate_utc_datetime(ut_json['consented'])
-    except DetailedValueError as err:
-        err.add_correlation_id(correlation_id)
-        raise err
-
-    # now process optional json data
-    if 'id' in ut_json:
-        try:
-            id = validate_uuid(ut_json['id'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        id = str(uuid.uuid4())
-
-    if 'created' in ut_json:
-        try:
-            created = validate_utc_datetime(ut_json['created'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        created = str(now_with_tz())
-
-    # check external account does not already exist
-    existing = check_if_user_task_exists(user_project_id, project_task_id, correlation_id)
-    if int(existing[0][0]) > 0:
-        errorjson = {'user_project_id': user_project_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
-        raise DuplicateInsertError('user_task already exists', errorjson)
-
-    sql = '''INSERT INTO public.projects_usertask (
-            id,
-            created,
-            modified,
-            user_project_id,
-            project_task_id,
-            status,
-            consented
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
-
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
-
-    new_user_task = {
-        'id': id,
-        'created': created,
-        'modified': created,
-        'user_project_id': user_project_id,
-        'project_task_id': project_task_id,
-        'status': ut_status,
-        'consented': ut_consented,
-    }
-
-    return new_user_task
-
-
 def create_user_task(ut_json, correlation_id):
     # json MUST contain: user_id, project_task_id, ut_consented
     # json may OPTIONALLY include: id, created, ut_status
@@ -320,6 +256,9 @@ def create_user_task(ut_json, correlation_id):
 
     execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
 
+    url = base_url + '?user_id=' + user_id + '&user_task_id=' + id
+    url = append_nonprodenv_to_url(url)
+
     new_user_task = {
         'id': id,
         'created': created,
@@ -328,7 +267,7 @@ def create_user_task(ut_json, correlation_id):
         'user_project_id': user_project_id,
         'project_task_id': project_task_id,
         'task_provider_name': task_provider_name,
-        'url': base_url + '?user_id=' + user_id + '&user_task_id=' + id,
+        'url': url,
         'status': ut_status,
         'consented': ut_consented,
     }

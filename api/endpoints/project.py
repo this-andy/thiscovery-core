@@ -24,11 +24,11 @@ print ('name:' + __name__)
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
     from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat
+        triggered_by_heartbeat, append_nonprodenv_to_url
 else:
     from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
     from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat
+        triggered_by_heartbeat, append_nonprodenv_to_url
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
@@ -402,6 +402,7 @@ def get_project_status_for_user(user_id, correlation_id):
                     if task['url'] is not None:
                         user_task_id = projects_usertasks_dict[task_id]['id']
                         task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
+                        task['url'] = append_nonprodenv_to_url(task['url'])
                 else:
                     task['url'] = None
                     # task['task_provider_name'] = None

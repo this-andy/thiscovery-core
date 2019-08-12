@@ -238,7 +238,7 @@ def get_aws_namespace():
         except:
             secrets_namespace = '/dev/'
             # secrets_namespace = '/exp/'
-            secrets_namespace = '/test/'
+            # secrets_namespace = '/test/'
             # secrets_namespace = '/staging/'
             # secrets_namespace = '/prod/'
         return secrets_namespace
@@ -248,6 +248,17 @@ def get_environment_name():
     namespace = get_aws_namespace()
     # strip leading and trailing '/' chars
     return namespace[1:-1]
+
+
+def append_env_to_url(url):
+    return url + '&env=' + get_environment_name()
+
+
+def append_nonprodenv_to_url(url):
+    if get_environment_name() == 'prod':
+        return url
+    else:
+        return append_env_to_url(url)
 
 
 def get_secret(secret_name, namespace_override=None):
