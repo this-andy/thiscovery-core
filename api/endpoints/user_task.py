@@ -291,7 +291,7 @@ def create_user_task(ut_json, correlation_id):
     try:
         project_id = project_task[0]['project_id']
         base_url = project_task[0]['base_url']
-
+        task_provider_name = project_task[0]['task_provider_name']
     except:
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise DetailedIntegrityError('project_task does not exist', errorjson)
@@ -327,6 +327,8 @@ def create_user_task(ut_json, correlation_id):
         'user_id': user_id,
         'user_project_id': user_project_id,
         'project_task_id': project_task_id,
+        'task_provider_name': task_provider_name,
+        'url': base_url + '?user_id=' + user_id + '&user_task_id=' + id,
         'status': ut_status,
         'consented': ut_consented,
     }

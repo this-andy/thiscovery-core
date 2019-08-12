@@ -161,7 +161,7 @@ def get_project_task(project_task_id, correlation_id):
             base_url,
             external_system_id,
             external_task_id,
-            es.short_name
+            es.short_name as task_provider_name
         FROM public.projects_projecttask pt
         JOIN projects_externalsystem es on pt.external_system_id = es.id
         WHERE pt.id = %s'''

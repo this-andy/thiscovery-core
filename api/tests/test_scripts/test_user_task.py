@@ -189,9 +189,13 @@ class TestUserTask(TestCase):
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
-        # user_project_id is returned but not in ut_json, so test separately
+        # these properties are returned but not in ut_json, so test separately
         user_project_id = result_json['user_project_id']
         del result_json['user_project_id']
+        task_provider_name = result_json['task_provider_name']
+        del result_json['task_provider_name']
+        url = result_json['url']
+        del result_json['url']
 
         # modified is not part of body supplied but is returned
         expected_body = dict.copy(ut_json)
@@ -199,6 +203,9 @@ class TestUserTask(TestCase):
 
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, expected_body)
+
+        self.assertEqual(task_provider_name, 'Cochrane')
+        self.assertEqual(url,'http://crowd.cochrane.org/index.html?user_id=' + user_id + '&user_task_id=' + ut_id)
 
         # check that notification message exists
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
@@ -240,8 +247,9 @@ class TestUserTask(TestCase):
         from api.endpoints.user_task import create_user_task_api
 
         expected_status = HTTPStatus.CREATED
+        user_id = "851f7b34-f76c-49de-a382-7e4089b744e2"
         ut_json = {
-            'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2",
+            'user_id': user_id,
             'project_task_id': 'f3316529-e073-435e-b5c7-053da4127e96',
             'consented': '2018-07-19 16:16:56.087895+01'
         }
@@ -252,7 +260,7 @@ class TestUserTask(TestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        id = result_json['id']
+        ut_id = result_json['id']
         del result_json['id']
 
         created = result_json['created']
@@ -264,11 +272,19 @@ class TestUserTask(TestCase):
         status = result_json['status']
         del result_json['status']
 
+        task_provider_name = result_json['task_provider_name']
+        del result_json['task_provider_name']
+
+        url = result_json['url']
+        del result_json['url']
+
         self.assertEqual(result_status, expected_status)
         self.assertDictEqual(result_json, result_json)
 
         # now check individual data items
-        self.assertTrue(uuid.UUID(id).version == 4)
+        self.assertTrue(uuid.UUID(ut_id).version == 4)
+        self.assertEqual(task_provider_name, 'Qualtrics')
+        self.assertEqual(url,'https://www.qualtrics.com?user_id=' + user_id + '&user_task_id=' + ut_id)
 
         result_datetime = parser.parse(created)
         difference = abs(now_with_tz() - result_datetime)
