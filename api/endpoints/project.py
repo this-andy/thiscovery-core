@@ -158,10 +158,13 @@ def get_project_task(project_task_id, correlation_id):
         SELECT
             project_id,
             task_type_id,
+            base_url,
             external_system_id,
-            external_task_id
-        FROM public.projects_projecttask
-        WHERE id = %s'''
+            external_task_id,
+            es.short_name
+        FROM public.projects_projecttask pt
+        JOIN projects_externalsystem es on pt.external_system_id = es.id
+        WHERE pt.id = %s'''
 
     return execute_query(sql, (str(project_task_id),), correlation_id)
 
@@ -373,32 +376,37 @@ def get_project_status_for_user(user_id, correlation_id):
 
     # now add calculated attributes to returned json...
 
-    for project in project_list:
-        project_id = project['id']
-        project['project_is_visible'] = \
-            ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
-            or ((project['status'] != 'testing') and
-                ((project['visibility'] == 'public') or
-                (project_group_users_dict.get(project_id) is not None)))
-        for task in project['tasks']:
-            task_id = task['id']
-            task['task_is_visible'] = \
-                project['project_is_visible'] and (
-                    (task['visibility'] == 'public')
-                    or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
-                    or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
-            task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
-            task['signup_available'] = \
-                (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
-                or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
-            if task['user_is_signedup']:
-                task['user_task_status'] = projects_usertasks_dict[task_id]['status']
-            if task['task_is_visible']:
-                user_task_id = projects_usertasks_dict[task_id]['id']
-                task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
-            else:
-                task['url'] = None
-                task['task_provider_name'] = None
+    try:
+        for project in project_list:
+            project_id = project['id']
+            project['project_is_visible'] = \
+                ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
+                or ((project['status'] != 'testing') and
+                    ((project['visibility'] == 'public') or
+                    (project_group_users_dict.get(project_id) is not None)))
+            for task in project['tasks']:
+                task_id = task['id']
+                task['task_is_visible'] = \
+                    project['project_is_visible'] and (
+                        (task['visibility'] == 'public')
+                        or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
+                        or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
+                task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
+                task['signup_available'] = \
+                    (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
+                    or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
+                if task['user_is_signedup']:
+                    task['user_task_status'] = projects_usertasks_dict[task_id]['status']
+                # only give url if user has signedup (inc if completed)
+                if task['task_is_visible'] and task['user_is_signedup']:
+                    if task['url'] is not None:
+                        user_task_id = projects_usertasks_dict[task_id]['id']
+                        task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
+                else:
+                    task['url'] = None
+                    # task['task_provider_name'] = None
+    except Exception as ex:
+        print(ex.args)
 
     return project_list
 
