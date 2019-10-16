@@ -401,6 +401,9 @@ def get_project_status_for_user(user_id, correlation_id):
                 if task['task_is_visible'] and task['user_is_signedup']:
                     if task['url'] is not None:
                         user_task_id = projects_usertasks_dict[task_id]['id']
+                        # external_task_id functionality not yet needed
+                        # external_task_id = projects_usertasks_dict[task_id]['external_task_id']
+                        # task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id + '&external_task_id=' + external_task_id
                         task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
                         task['url'] = append_nonprodenv_to_url(task['url'])
                 else:

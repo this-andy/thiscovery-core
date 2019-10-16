@@ -470,5 +470,3 @@ if __name__ == "__main__":
     # user_id = "401997d7-46e2-4ecb-9497-ea4aab9a0042"
     # user_json = get_user_by_id(user_id, None)
     # notify_new_user_registration(user_json[0], None)
-
-
