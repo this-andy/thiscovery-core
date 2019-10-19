@@ -31,20 +31,20 @@ else:
 
 
 # todo how best to deal with correlation ids
-
+BASE_SELECT_SQL = '''
+  SELECT 
+    id, 
+    created, 
+    modified, 
+    name, 
+    short_name, 
+    url_code
+  FROM 
+    public.projects_usergroup
+    '''
 
 class UserGroup(EntityBase):
-    BASE_SELECT_SQL = '''
-      SELECT 
-        id, 
-        created, 
-        modified, 
-        name, 
-        short_name, 
-        url_code
-      FROM 
-        public.projects_usergroup
-        '''
+
 
     def __init__(self, name, short_name, url_code, ug_json=[], correlation_id=None):
         super().__init__(ug_json, correlation_id)
@@ -77,7 +77,7 @@ class UserGroup(EntityBase):
             error_json = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
             raise DetailedValueError('mandatory data missing', error_json) from err
 
-        ug = cls(name, short_name, url_code)
+        ug = cls(name, short_name, url_code, ug_json, correlation_id)
 
         return ug
 
@@ -92,7 +92,7 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE id = %s"
 
-        ug_json = execute_query(cls.BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
+        ug_json = execute_query(BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
         if len(ug_json) > 0:
             ug_json = ug_json[0]
             return cls.from_json(ug_json, correlation_id)
@@ -104,13 +104,18 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE url_code = %s"
 
-        ug_json = execute_query(cls.BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
+        ug_json = execute_query(BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
 
         if len(ug_json) > 0:
             ug_json = ug_json[0]
             return cls.from_json(ug_json, correlation_id)
         else:
             return None
+
+    @classmethod
+    def re(cls):
+        error_json = {'parameter': 'err.args[0]', 'correlation_id': str('correlation_id')}
+        raise DetailedValueError('just testing', error_json)
 
 if __name__ == "__main__":
     ug_json = {

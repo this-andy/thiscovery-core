@@ -16,8 +16,10 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import uuid
+from dateutil import parser
 from requests import get, post, patch
-from api.common.utilities import get_secret
+from api.common.utilities import get_secret, now_with_tz
 
 TEST_ON_AWS = False
 
@@ -105,3 +107,20 @@ def aws_patch(url, request_body, correlation_id):
         return {'statusCode': response.status_code, 'body': response.text}
     except Exception as err:
         raise err
+
+
+def test_and_remove_now_datetime(test_case, entity_json, datetime_attribute_name, tolerance=10):
+    datetime_string = entity_json[datetime_attribute_name]
+    del entity_json[datetime_attribute_name]
+
+    # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
+    now = now_with_tz()
+    datetime_value = parser.parse(datetime_string)
+    difference = abs(now - datetime_value)
+    test_case.assertLess(difference.seconds, tolerance)
+
+
+def test_and_remove_new_uuid(test_case, entity_json):
+    id = entity_json['id']
+    del entity_json['id']
+    test_case.assertTrue(uuid.UUID(id).version == 4)

@@ -1,5 +1,6 @@
 import uuid
 import json
+import jsons
 from abc import ABC
 
 if __name__ == "__main__":
@@ -9,7 +10,9 @@ else:
 
 
 class EntityBase(ABC):
-
+    """
+    EntityBase is an abstract base class for all persisted entities that include id (uuid as string) and created, modified (dates as strings)
+    """
     def __init__(self, entity_json=[], correlation_id=None):
         if 'id' in entity_json:
             try:
@@ -41,3 +44,6 @@ class EntityBase(ABC):
     def to_json(self):
         # https://stackoverflow.com/questions/3768895/how-to-make-a-class-json-serializable
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    def to_dict(self):
+        return jsons.dump(self)
