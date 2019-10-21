@@ -1198,8 +1198,8 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: createusergroupmembership
       CodeUri: api/endpoints
-      Handler: user_group_membership.create_user_group_membership_api
-      Runtime: python3.7
+      Handler: handler.handler
+      Runtime: python3.6
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
