@@ -20,10 +20,10 @@ import json
 from http import HTTPStatus
 
 if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_non_query, execute_query_multiple
-    from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+    from api.common.pg_utilities import execute_non_query, execute_query_multiple
+    from api.common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
         triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
-    from .common.entity_base import EntityBase
+    from api.common.entity_base import EntityBase
     from .user_group import UserGroup
 else:
     from common.pg_utilities import execute_non_query, execute_query_multiple
@@ -77,13 +77,18 @@ class UserGroupMembership(EntityBase):
         if 'url_code' in ugm_json:
             url_code = ugm_json['url_code']
             user_group = UserGroup.get_by_url_code(url_code, correlation_id)
-            user_group_id = user_group.id
-            ugm_json['user_group_id'] = user_group_id
-
-        ugm = UserGroupMembership.from_json(ugm_json, correlation_id)
-        ugm.validate(correlation_id)
-        ugm.insert_to_db(correlation_id)
-        return ugm
+            if user_group is not None:
+                ugm_json['user_group_id'] = user_group.id
+            else:  # url_code not found
+                errorjson = {'url_code': url_code, 'correlation_id': str(correlation_id)}
+                raise ObjectDoesNotExistError('user group url_code does not exist', errorjson)
+        try:
+            ugm = UserGroupMembership.from_json(ugm_json, correlation_id)
+            ugm.validate(correlation_id)
+            ugm.insert_to_db(correlation_id)
+            return ugm
+        except Exception as err:
+            raise err
 
     def validate(self, correlation_id):
         """

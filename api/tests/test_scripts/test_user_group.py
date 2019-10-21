@@ -25,8 +25,6 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'usergroup'
-
 
 class TestUserGroup(TestCase):
 
@@ -141,12 +139,13 @@ class TestUserGroup(TestCase):
 
 
     def test_08_user_group_create_from_json_name_missing(self):
-        from api.endpoints.user_group import UserGroup
+        from api.endpoints.user_group import UserGroup, re
         ug_json = {'short_name': 'ug_no_name'}
 
         with self.assertRaises(DetailedValueError):
-            UserGroup.from_json(ug_json, None)
-            UserGroup.re()
+            # UserGroup.from_json(ug_json, None)
+            # UserGroup.re()
+            re(None)
 
 if __name__ == '__main__':
     pass

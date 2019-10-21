@@ -21,9 +21,9 @@ import json
 from http import HTTPStatus
 
 if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query
-    from .common.utilities import validate_uuid, DetailedValueError
-    from .common.entity_base import EntityBase
+    from api.common.pg_utilities import execute_query
+    from api.common.utilities import validate_uuid, DetailedValueError
+    from api.common.entity_base import EntityBase
 else:
     from common.pg_utilities import execute_query
     from common.utilities import validate_uuid, DetailedValueError
@@ -112,10 +112,10 @@ class UserGroup(EntityBase):
         else:
             return None
 
-    @classmethod
-    def re(cls):
-        error_json = {'parameter': 'err.args[0]', 'correlation_id': str('correlation_id')}
-        raise DetailedValueError('just testing', error_json)
+    # @classmethod
+def re(cls):
+    error_json = {'parameter': 'err.args[0]', 'correlation_id': str('correlation_id')}
+    raise DetailedValueError('just testing', error_json)
 
 if __name__ == "__main__":
     ug_json = {
