@@ -206,7 +206,7 @@ class TestUserGroupMembership(TestCase):
         }
         body = json.dumps(ugm_json)
 
-        result = test_post(create_user_group_membership_api(), ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -222,7 +222,7 @@ class TestUserGroupMembership(TestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.NO_CONTENT
-        result = test_post(create_user_group_membership_api(), ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
 
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
