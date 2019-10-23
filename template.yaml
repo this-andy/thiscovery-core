@@ -380,6 +380,8 @@ Resources:
               responses: {}
           /v1/usergroupmembership:
             post:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
