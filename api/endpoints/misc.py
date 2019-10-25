@@ -24,10 +24,10 @@ from http import HTTPStatus
 
 if 'api.endpoints' in __name__:
     from .common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
-        get_elapsed_ms, obfuscate_data, sqs_send
+        get_elapsed_ms, obfuscate_data
 else:
     from common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
-        get_elapsed_ms, obfuscate_data, sqs_send
+        get_elapsed_ms, obfuscate_data
 
 
 def ping(event, context):
