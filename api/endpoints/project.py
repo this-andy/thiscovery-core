@@ -24,11 +24,11 @@ print ('name:' + __name__)
 if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
     from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, append_nonprodenv_to_url
+        triggered_by_heartbeat, non_prod_env_url_param, create_url_params
 else:
     from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
     from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, append_nonprodenv_to_url
+        triggered_by_heartbeat, non_prod_env_url_param, create_url_params
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
@@ -254,113 +254,42 @@ PROJECT_USER_SELECT_SQL = '''
     '''
 
 
-def get_project_status_for_user_NO_LONGER_USED(user_id, correlation_id):
-
-    project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
-
-    sql = """
-        SELECT project_id, project_name, group_id, group_name, user_id, email
-        FROM public.project_group_users
-        WHERE user_id = %s
-    """
-    project_group_users = execute_query(sql, (str(user_id),), correlation_id)
-    project_group_users_dict = dict_from_dataset(project_group_users, 'project_id')
-
-    sql = """
-        SELECT project_id, project_name, testing_group_id, group_name, user_id, email
-        FROM public.project_testgroup_users
-        WHERE user_id = %s
-    """
-    project_testgroup_users = execute_query(sql, (str(user_id),), correlation_id)
-    project_testgroup_users_dict = dict_from_dataset(project_testgroup_users, 'project_id')
-
-    sql = """
-        SELECT project_task_id, description, group_id, group_name, user_id, email
-        FROM public.projecttask_group_users
-        WHERE user_id = %s
-    """
-    projecttask_group_users = execute_query(sql, (str(user_id),), correlation_id)
-    projecttask_group_users_dict = dict_from_dataset(projecttask_group_users,'project_task_id')
-
-    sql = """
-        SELECT project_task_id, description, testing_group_id, group_name, user_id, email
-        FROM public.projecttask_testgroup_users
-        WHERE user_id = %s
-    """
-    projecttask_testgroup_users = execute_query(sql, (str(user_id),), correlation_id)
-    projecttask_testgroup_users_dict = dict_from_dataset(projecttask_testgroup_users,'project_task_id')
-
-    sql = """
-        SELECT project_task_id, ut.status
-        FROM public.projects_usertask ut
-        JOIN public.projects_userproject up ON ut.user_project_id = up.id
-        WHERE up.user_id = %s
-    """
-    projects_usertasks = execute_query(sql, (str(user_id),), correlation_id)
-    projects_usertasks_dict = dict_from_dataset(projects_usertasks,'project_task_id')
-
-    # now add calculated attributes to returned json...
-
-    for project in project_list:
-        project_id = project['id']
-        project['project_is_visible'] = \
-            ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
-            or ((project['status'] != 'testing') and
-                ((project['visibility'] == 'public') or
-                (project_group_users_dict.get(project_id) is not None)))
-        for task in project['tasks']:
-            task_id = task['id']
-            task['task_is_visible'] = \
-                project['project_is_visible'] and (
-                    (task['visibility'] == 'public')
-                    or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
-                    or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
-            task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
-            task['signup_available'] = \
-                (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
-                or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
-            if task['user_is_signedup']:
-                task['user_task_status'] = projects_usertasks_dict[task_id]['status']
-
-    return project_list
-
-
 def get_project_status_for_user(user_id, correlation_id):
 
     project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
-    sql1 = """
+    sql0 = """
         SELECT project_id, project_name, group_id, group_name, user_id, email
         FROM public.project_group_users
         WHERE user_id = %s
     """
 
-    sql2 = """
+    sql1 = """
         SELECT project_id, project_name, testing_group_id, group_name, user_id, email
         FROM public.project_testgroup_users
         WHERE user_id = %s
     """
 
-    sql3 = """
+    sql2 = """
         SELECT project_task_id, description, group_id, group_name, user_id, email
         FROM public.projecttask_group_users
         WHERE user_id = %s
     """
 
-    sql4 = """
+    sql3 = """
         SELECT project_task_id, description, testing_group_id, group_name, user_id, email
         FROM public.projecttask_testgroup_users
         WHERE user_id = %s
     """
 
-    sql5 = """
+    sql4 = """
         SELECT project_task_id, ut.id, ut.status
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
     """
     str_user_id = (str(user_id),)
-    results = execute_query_multiple((sql1, sql2, sql3, sql4, sql5), (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
+    results = execute_query_multiple((sql0, sql1, sql2, sql3, sql4), (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
 
     project_group_users = results[0]
     project_testgroup_users = results[1]
@@ -401,16 +330,14 @@ def get_project_status_for_user(user_id, correlation_id):
                 if task['task_is_visible'] and task['user_is_signedup']:
                     if task['url'] is not None:
                         user_task_id = projects_usertasks_dict[task_id]['id']
-                        # external_task_id functionality not yet needed
-                        # external_task_id = projects_usertasks_dict[task_id]['external_task_id']
-                        # task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id + '&external_task_id=' + external_task_id
-                        task['url'] += '?user_id=' + user_id + '&user_task_id=' + user_task_id
-                        task['url'] = append_nonprodenv_to_url(task['url'])
+                        external_task_id = task['external_task_id']
+                        task['url'] += create_url_params(user_id, user_task_id, external_task_id)
+                        task['url'] += non_prod_env_url_param()
                 else:
                     task['url'] = None
                     # task['task_provider_name'] = None
     except Exception as ex:
-        print(ex.args)
+        raise ex
 
     return project_list
 
@@ -464,7 +391,7 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    qsp = {'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2"}
+    qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
     ev = {'queryStringParameters': qsp}
     result = get_project_status_for_user_api(ev, None)
     print(json.dumps(result, indent=2))

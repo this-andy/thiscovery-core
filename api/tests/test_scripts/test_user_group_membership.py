@@ -201,7 +201,7 @@ class TestUserGroupMembership(TestCase):
 
         expected_status = HTTPStatus.CREATED
         ugm_json = {
-            'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
+            'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515',
             'user_group_id': 'de1192a0-bce9-4a74-b177-2a209c8deeb4',
         }
         body = json.dumps(ugm_json)

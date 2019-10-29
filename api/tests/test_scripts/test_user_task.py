@@ -205,7 +205,7 @@ class TestUserTask(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
         self.assertEqual(task_provider_name, 'Cochrane')
-        self.assertEqual(url,'http://crowd.cochrane.org/index.html?user_id=' + user_id + '&user_task_id=' + ut_id + '&env=test')
+        self.assertEqual(url,'http://crowd.cochrane.org/index.html?user_id=' + user_id + '&user_task_id=' + ut_id + '&external_task_id=1234&env=test')
 
         # check that notification message exists
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
@@ -284,7 +284,7 @@ class TestUserTask(TestCase):
         # now check individual data items
         self.assertTrue(uuid.UUID(ut_id).version == 4)
         self.assertEqual(task_provider_name, 'Qualtrics')
-        self.assertEqual(url,'https://www.qualtrics.com?user_id=' + user_id + '&user_task_id=' + ut_id + '&env=test')
+        self.assertEqual(url,'https://www.qualtrics.com?user_id=' + user_id + '&user_task_id=' + ut_id + '&external_task_id=8e368360-a708-4336-8feb-a8903fde0210&env=test')
 
         result_datetime = parser.parse(created)
         difference = abs(now_with_tz() - result_datetime)

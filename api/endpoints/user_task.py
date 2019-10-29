@@ -24,7 +24,7 @@ if 'api.endpoints' in __name__:
     from .common.pg_utilities import execute_query, execute_non_query
     from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, append_nonprodenv_to_url
+        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
     from .user import get_user_by_id
     from .project import get_project_task
     from .user_project import create_user_project_if_not_exists
@@ -33,7 +33,7 @@ else:
     from common.pg_utilities import execute_query, execute_non_query
     from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
         validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, append_nonprodenv_to_url
+        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
     from user import get_user_by_id
     from project import get_project_task
     from user_project import create_user_project_if_not_exists
@@ -150,20 +150,6 @@ def list_user_tasks_api(event, context):
     return response
 
 
-def check_if_user_task_exists_ORIGINAL(user_project_id, project_task_id, correlation_id):
-
-    base_sql = '''
-      SELECT 
-        COUNT(id)
-      FROM public.projects_usertask 
-      WHERE
-        user_project_id = %s
-        AND project_task_id = %s
-    '''
-
-    return execute_query(base_sql, (str(user_project_id), str(project_task_id)), correlation_id, False)
-
-
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):
     base_sql = '''
       SELECT 
@@ -228,6 +214,7 @@ def create_user_task(ut_json, correlation_id):
         project_id = project_task[0]['project_id']
         base_url = project_task[0]['base_url']
         task_provider_name = project_task[0]['task_provider_name']
+        external_task_id = project_task[0]['external_task_id']
     except:
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise DetailedIntegrityError('project_task does not exist', errorjson)
@@ -256,8 +243,7 @@ def create_user_task(ut_json, correlation_id):
 
     execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
 
-    url = base_url + '?user_id=' + user_id + '&user_task_id=' + id
-    url = append_nonprodenv_to_url(url)
+    url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
     new_user_task = {
         'id': id,

@@ -19,7 +19,6 @@
 import json
 import os
 import time
-import logging
 from http import HTTPStatus
 
 if 'api.endpoints' in __name__:

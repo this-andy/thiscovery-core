@@ -250,15 +250,29 @@ def get_environment_name():
     return namespace[1:-1]
 
 
-def append_env_to_url(url):
-    return url + '&env=' + get_environment_name()
+# def append_env_to_url(url):
+#     return url + '&env=' + get_environment_name()
+#
+#
+# def append_nonprodenv_to_url(url):
+#     if get_environment_name() == 'prod':
+#         return url
+#     else:
+#         return append_env_to_url(url)
+
+# this belongs in user_task class as a property - moved here to avoid circular includes
+def create_url_params(user_id, user_task_id, external_task_id):
+    params = '?user_id=' + user_id + '&user_task_id=' + user_task_id
+    if external_task_id is not None:
+        params += '&external_task_id=' + str(external_task_id)
+    return params
 
 
-def append_nonprodenv_to_url(url):
+def non_prod_env_url_param():
     if get_environment_name() == 'prod':
-        return url
+        return ''
     else:
-        return append_env_to_url(url)
+        return '&env=' + get_environment_name()
 
 
 def get_secret(secret_name, namespace_override=None):
