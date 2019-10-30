@@ -28,8 +28,14 @@ if 'api.endpoints' in __name__:
 else:
     from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
         triggered_by_heartbeat, DetailedValueError, DuplicateInsertError
-    from user_group_membership import UserGroupMembership
-    from user import get_user_by_id
+    logger = get_logger()
+    logger.info('name:' + __name__)
+    try:
+        from user_group_membership import UserGroupMembership
+        from user import get_user_by_id
+    except Exception as ex:
+        error_msg = ex.args[0]
+        logger.error(error_msg, extra={'correlation_id': ''})
 #
 
 def create_user_group_membership_api(event, context):
