@@ -1200,7 +1200,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: createusergroupmembership
       CodeUri: api/endpoints
-      Handler: ugm.create_user_group_membership_api
+      Handler: user_group_membership.create_user_group_membership_api
       Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
