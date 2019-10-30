@@ -217,8 +217,8 @@ class TestUserGroupMembership(TestCase):
         test_and_remove_now_datetime(self, result_json, 'created')
         test_and_remove_now_datetime(self, result_json, 'modified')
 
-        self.assertEqual(result_status, expected_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertEqual(expected_status, result_status, 'Return status incorrect')
+        self.assertDictEqual(expected_body, result_json, 'Return body incorrect')
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.NO_CONTENT
