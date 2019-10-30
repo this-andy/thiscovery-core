@@ -52,7 +52,7 @@ def create_user_group_membership_api(event, context):
         # correlation_id = get_correlation_id(event)
         # logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
         #
-        # ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
+        ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
         # response = {"statusCode": HTTPStatus.CREATED, "body": ugm.to_json()}
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps({"test": "value"})}
 
