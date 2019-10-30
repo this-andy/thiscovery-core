@@ -162,11 +162,10 @@ def create_user_group_membership_api(event, context):
         logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
 
         ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
-        # response = {"statusCode": HTTPStatus.CREATED, "body": ugm.to_json()}
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
 
     except DuplicateInsertError as err:
-        response = {"statusCode": HTTPStatus.NO_CONTENT, "body": err.as_response_body()}
+        response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps({'Info': 'membership already exists', 'correlation_id': str(correlation_id), 'details': ugm_json})}
 
     except ObjectDoesNotExistError as err:
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
