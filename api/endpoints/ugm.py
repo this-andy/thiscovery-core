@@ -45,7 +45,7 @@ def create_user_group_membership_api(event, context):
         #
         # ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
         # response = {"statusCode": HTTPStatus.CREATED, "body": ugm.to_json()}
-        response = {"statusCode": HTTPStatus.CREATED, "body": {"test": "value"}}
+        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps({"test": "value"})}
 
     # except DuplicateInsertError as err:
     #     response = {"statusCode": HTTPStatus.NO_CONTENT, "body": err.as_response_body()}
