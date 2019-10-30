@@ -19,20 +19,20 @@
 import json
 from http import HTTPStatus
 
-# if 'api.endpoints' in __name__:
-#     from api.common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-#         triggered_by_heartbeat, DetailedValueError, DuplicateInsertError
+if 'api.endpoints' in __name__:
+    from api.common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat, DetailedValueError, DuplicateInsertError
 #     from .user_group_membership import UserGroupMembership
-# else:
-#     from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-#         triggered_by_heartbeat, DetailedValueError, DuplicateInsertError
+else:
+    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+        triggered_by_heartbeat, DetailedValueError, DuplicateInsertError
 #     from user_group_membership import UserGroupMembership
 #
 
 def create_user_group_membership_api(event, context):
-    # start_time = get_start_time()
-    # logger = get_logger()
-    # correlation_id = None
+    start_time = get_start_time()
+    logger = get_logger()
+    correlation_id = None
     #
     # if triggered_by_heartbeat(event):
     #     logger.info('API call (heartbeat)', extra={'event': event})
@@ -40,7 +40,7 @@ def create_user_group_membership_api(event, context):
 
     try:
         # ugm_json = json.loads(event['body'])
-        # correlation_id = get_correlation_id(event)
+        correlation_id = get_correlation_id(event)
         # logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
         #
         # ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
@@ -62,6 +62,6 @@ def create_user_group_membership_api(event, context):
         # response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": '{"error": "value"}'}
 
-    # logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
