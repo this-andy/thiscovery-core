@@ -121,6 +121,9 @@ def test_and_remove_now_datetime(test_case, entity_json, datetime_attribute_name
 
 
 def test_and_remove_new_uuid(test_case, entity_json):
-    id = entity_json['id']
-    del entity_json['id']
-    test_case.assertTrue(uuid.UUID(id).version == 4)
+    try:
+        id = entity_json['id']
+        del entity_json['id']
+        test_case.assertTrue(uuid.UUID(id).version == 4)
+    except KeyError:
+        test_case.assertTrue(False, 'id missing')

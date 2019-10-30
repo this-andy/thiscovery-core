@@ -208,11 +208,11 @@ class TestUserGroupMembership(TestCase):
 
         result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
-        # result_json = json.loads(result['body'])
-        # 
+        result_json = json.loads(result['body'])
+
         # # modified is not part of body supplied but is returned
-        # expected_body = dict.copy(ugm_json)
-        # 
+        expected_body = dict.copy(ugm_json)
+
         # test_and_remove_new_uuid(self, result_json)
         # test_and_remove_now_datetime(self, result_json, 'created')
         # test_and_remove_now_datetime(self, result_json, 'modified')
