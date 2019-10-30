@@ -197,7 +197,7 @@ class TestUserGroupMembership(TestCase):
         self.assertIn('user group membership already exists', err_msg)
 
     def test_11_create_user_group_membership_api_ok_and_duplicate(self):
-        from api.endpoints.user_group_membership import create_user_group_membership_api
+        from api.endpoints.ugm import create_user_group_membership_api
 
         expected_status = HTTPStatus.CREATED
         ugm_json = {
