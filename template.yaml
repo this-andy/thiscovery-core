@@ -399,7 +399,7 @@ Resources:
         - ResourceName: get-user-by-uuid
       CodeUri: api/endpoints
       Handler: user.get_user_by_id_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -446,7 +446,7 @@ Resources:
         - ResourceName: get-user-by-email
       CodeUri: api/endpoints
       Handler: user.get_user_by_email_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -493,7 +493,7 @@ Resources:
         - ResourceName: create-user
       CodeUri: api/endpoints
       Handler: user.create_user_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -548,7 +548,7 @@ Resources:
         - ResourceName: patch-user-api
       CodeUri: api/endpoints
       Handler: user.patch_user_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -595,7 +595,7 @@ Resources:
         - ResourceName: list-projects
       CodeUri: api/endpoints
       Handler: project.list_projects_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -635,7 +635,7 @@ Resources:
         - ResourceName: get-project-by-uuid
       CodeUri: api/endpoints
       Handler: project.get_project_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -675,7 +675,7 @@ Resources:
         - ResourceName: get-project-statuses
       CodeUri: api/endpoints
       Handler: project.get_project_status_for_user_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -722,7 +722,7 @@ Resources:
         - ResourceName: create-user-external-account
       CodeUri: api/endpoints
       Handler: user_external_account.create_user_external_account_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -762,7 +762,7 @@ Resources:
         - ResourceName: list-user-projects
       CodeUri: api/endpoints
       Handler: user_project.list_user_projects_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -802,7 +802,7 @@ Resources:
         - ResourceName: create-user-project
       CodeUri: api/endpoints
       Handler: user_project.create_user_project_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -842,7 +842,7 @@ Resources:
         - ResourceName: list-user-tasks
       CodeUri: api/endpoints
       Handler: user_task.list_user_tasks_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -882,7 +882,7 @@ Resources:
         - ResourceName: create-user-task
       CodeUri: api/endpoints
       Handler: user_task.create_user_task_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -1015,7 +1015,7 @@ Resources:
         - ResourceName: raise-error
       CodeUri: api/endpoints
       Handler: misc.raise_error_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -1046,7 +1046,7 @@ Resources:
         - ResourceName: ping
       CodeUri: api/endpoints
       Handler: misc.ping
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -1092,7 +1092,7 @@ Resources:
         - ResourceName: process-notifications
       CodeUri: api/endpoints
       Handler: notification_process.process_notifications
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -1155,7 +1155,7 @@ Resources:
         - ResourceName: dateformattest
       CodeUri: api/endpoints
       Handler: notification_process.dateformattest
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: 1408
       Timeout: 22
       Tracing: Active
@@ -1201,7 +1201,7 @@ Resources:
         - ResourceName: createusergroupmembership
       CodeUri: api/endpoints
       Handler: user_group_membership.create_user_group_membership_api
-      Runtime: python3.6
+      Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
