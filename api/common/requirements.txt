@@ -3,6 +3,7 @@ botocore
 pip	>= 19.0.1
 psycopg2-binary
 jsonpatch
+jsons
 python-json-logger
 requests
 urllib3
