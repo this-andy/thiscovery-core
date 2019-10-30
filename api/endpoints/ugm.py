@@ -40,7 +40,7 @@ def create_user_group_membership_api(event, context):
 
     try:
         # ugm_json = json.loads(event['body'])
-        correlation_id = get_correlation_id(event)
+        # correlation_id = get_correlation_id(event)
         # logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
         #
         # ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
