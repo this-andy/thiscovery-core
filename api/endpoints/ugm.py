@@ -32,14 +32,14 @@ from http import HTTPStatus
 def create_user_group_membership_api(event, context):
     # start_time = get_start_time()
     # logger = get_logger()
-    correlation_id = None
+    # correlation_id = None
     #
     # if triggered_by_heartbeat(event):
     #     logger.info('API call (heartbeat)', extra={'event': event})
     #     return
 
     try:
-        ugm_json = json.loads(event['body'])
+        # ugm_json = json.loads(event['body'])
         # correlation_id = get_correlation_id(event)
         # logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
         #
@@ -49,10 +49,10 @@ def create_user_group_membership_api(event, context):
 
     # except DuplicateInsertError as err:
     #     response = {"statusCode": HTTPStatus.NO_CONTENT, "body": err.as_response_body()}
-    #
+
     # except ObjectDoesNotExistError as err:
     #     response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
-    #
+
     # except DetailedValueError as err:
     #     response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
