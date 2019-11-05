@@ -157,7 +157,9 @@ class TestProjectStatusForUser(TestCase):
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane', \
                             'http://crowd.cochrane.org/index.html?user_id='+ user_id + '&user_task_id=d4a47805-fbec-4e43-938c-94af7214326d&external_task_id=ext-6a&env=test')
-        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        # expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics', \
+                            'https://www.qualtrics.com?user_id=' + user_id + '&user_task_id=72d0a70b-5eb4-4fc6-8712-995976f8a896&external_task_id=ext-7a&env=test')
         self.check_project_status_for_single_user(user_id, expected_results)
 
 

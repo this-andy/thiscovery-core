@@ -325,7 +325,10 @@ def get_project_status_for_user(user_id, correlation_id):
                     (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
                     or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
                 if task['user_is_signedup']:
-                    task['user_task_status'] = projects_usertasks_dict[task_id]['status']
+                    if task['status'] == 'complete':
+                        task['user_task_status'] = 'complete'
+                    else:
+                        task['user_task_status'] = projects_usertasks_dict[task_id]['status']
                 # only give url if user has signedup (inc if completed)
                 if task['task_is_visible'] and task['user_is_signedup']:
                     if task['url'] is not None:

@@ -225,7 +225,5 @@ class TestUserGroupMembership(TestCase):
         result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
 
         result_status = result['statusCode']
-        result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertTrue('correlation_id' in result_json)
