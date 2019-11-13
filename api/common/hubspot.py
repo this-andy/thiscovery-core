@@ -46,13 +46,25 @@ base_url = 'http://api.hubapi.com'
 
 def create_group(group_definition):
     url = '/properties/v1/contacts/groups'
-    r = hubspot_post(url, group_definition, None)
+    try:
+        r = hubspot_post(url, group_definition, None)
+    except DetailedValueError as err:
+        if err.details['result'].status_code == HTTPStatus.CONFLICT:
+            return HTTPStatus.CONFLICT
+        else:
+            raise err
     return r.status_code
 
 
 def create_contact_property(property_definition):
     url = '/properties/v1/contacts/properties'
-    r = hubspot_post(url, property_definition, None)
+    try:
+        r = hubspot_post(url, property_definition, None)
+    except DetailedValueError as err:
+        if err.details['result'].status_code == HTTPStatus.CONFLICT:
+            return HTTPStatus.CONFLICT
+        else:
+            raise err
     return r.status_code
 
 
@@ -61,7 +73,12 @@ def create_thiscovery_contact_properties():
         "name": "thiscovery",
         "displayName": "Thiscovery"
     }
-    create_group(group_definition)
+    status = create_group(group_definition)
+    message_base = "Group named '" + group_definition["name"] + "' "
+    if status == HTTPStatus.CONFLICT:
+        print(message_base + 'already exists - no action taken')
+    else:
+        print(message_base + 'created')
 
     property_definition = {
         "name": "thiscovery_id",
@@ -72,7 +89,12 @@ def create_thiscovery_contact_properties():
         "fieldType": "text",
         "formField": False
     }
-    create_contact_property(property_definition)
+    status = create_contact_property(property_definition)
+    message_base = "Property named '" + property_definition["name"] + "' "
+    if status == HTTPStatus.CONFLICT:
+        print(message_base + 'already exists - no action taken')
+    else:
+        print(message_base + 'created')
 
     property_definition = {
         "name": "thiscovery_registered_date",
@@ -83,8 +105,28 @@ def create_thiscovery_contact_properties():
         "fieldType": "text",
         "formField": False
     }
-    create_contact_property(property_definition)
+    status = create_contact_property(property_definition)
+    message_base = "Property named '" + property_definition["name"] + "' "
+    if status == HTTPStatus.CONFLICT:
+        print(message_base + 'already exists - no action taken')
+    else:
+        print(message_base + 'created')
 
+    property_definition = {
+        "name": "thiscovery_last_login_date",
+        "label": "Last login on Thiscovery date",
+        "description": "The date on which a person last logged in to Thiscovery.",
+        "groupName": "thiscovery",
+        "type": "datetime",
+        "fieldType": "text",
+        "formField": False
+    }
+    status = create_contact_property(property_definition)
+    message_base = "Property named '" + property_definition["name"] + "' "
+    if status == HTTPStatus.CONFLICT:
+        print(message_base + 'already exists - no action taken')
+    else:
+        print(message_base + 'created')
 
 def update_property_DNU(property_definition):
     url = '/properties/v1/contacts/properties/named/newapicustomproperty4'
@@ -487,8 +529,8 @@ def refresh_token(correlation_id):
 
 
 def get_initial_token_from_hubspot():
-    code = "305f233c-8f14-43cc-ac1c-a7c629393c5b"   # paste this from thiscovery admin
-    return get_new_token_from_hubspot(None, code, None)
+    temp_code = "b71d4946-80a7-4bb8-a566-2ccd171d0acb"   # paste this from thiscovery admin
+    return get_new_token_from_hubspot(None, temp_code, None)
 
 hubspot_oauth_token = get_token_from_database(None)
 
@@ -573,16 +615,19 @@ if __name__ == "__main__":
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
+    # existing_tle_type_id_from_hubspot =
+    # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
+
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
 
-    hubspot_id = 1301
-    tsn = hubspot_timestamp(str(now_with_tz()))
-    changes = [
-            {"property": "thiscovery_registered_date", "value": int(tsn)},
-        ]
-    result = update_contact_by_id(hubspot_id, changes, None)
-
+    hubspot_id = 1151
+    # tsn = hubspot_timestamp(str(now_with_tz()))
+    # changes = [
+    #         {"property": "thiscovery_registered_date", "value": int(tsn)},
+    #     ]
+    # result = update_contact_by_id(hubspot_id, changes, None)
+    #
     contact = get_hubspot_contact_by_id(hubspot_id, None)
 
     thiscovery_registered_timestamp = get_contact_property(contact, 'thiscovery_registered_date')
@@ -609,52 +654,52 @@ if __name__ == "__main__":
 
     # result = get_token_from_database()
 
-    type_defn = {
-            "name": "Task sign-up",
-            "objectType": "CONTACT",
-            "headerTemplate": "sample header template",
-            "detailTemplate": "sample detail template"
-        }
+    # type_defn = {
+    #         "name": "Task sign-up",
+    #         "objectType": "CONTACT",
+    #         "headerTemplate": "sample header template",
+    #         "detailTemplate": "sample detail template"
+    #     }
 
     # result = create_timeline_event_type(type_defn)
 
-    data = [
-        {
-            "name": "project_id",
-            "label": "Project Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "project_name",
-            "label": "Project Name",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_id",
-            "label": "Task Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_name",
-            "label": "Task Name",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_type_id",
-            "label": "Task Type Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_type_name",
-            "label": "Task Type",
-            "propertyType": "String"
-        },
-        {
-            "name": "signup_event_type",
-            "label": "Event Type",
-            "propertyType": "String"
-        },
-    ]
+    # data = [
+    #     {
+    #         "name": "project_id",
+    #         "label": "Project Id",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "project_name",
+    #         "label": "Project Name",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "task_id",
+    #         "label": "Task Id",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "task_name",
+    #         "label": "Task Name",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "task_type_id",
+    #         "label": "Task Type Id",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "task_type_name",
+    #         "label": "Task Type",
+    #         "propertyType": "String"
+    #     },
+    #     {
+    #         "name": "signup_event_type",
+    #         "label": "Event Type",
+    #         "propertyType": "String"
+    #     },
+    # ]
 
     # result = create_timeline_event_properties('279633', data)
 
@@ -682,6 +727,8 @@ if __name__ == "__main__":
     # result = get_hubspot_contact(1101, None)
     # result = get_hubspot_contacts()
     # props = result['properties']
-    print(result)
+    # print(result)
 
     # save_token(result_2019_05_10_12_11)
+
+    create_thiscovery_contact_properties()
