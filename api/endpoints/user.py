@@ -30,7 +30,7 @@ if 'api.endpoints' in __name__:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
     from .common.entity_update import EntityUpdate
     # from .utils import validate_uuid
-    from .common.notification_send import notify_new_user_registration
+    from .common.notification_send import notify_new_user_registration, notify_user_login
 else:
     from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
     from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
@@ -38,7 +38,7 @@ else:
         now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
     from common.entity_update import EntityUpdate
     # from utils import validate_uuid
-    from common.notification_send import notify_new_user_registration
+    from common.notification_send import notify_new_user_registration, notify_user_login
 
 
 BASE_USER_SELECT_SQL = '''
@@ -154,6 +154,14 @@ def get_user_by_email(user_email, correlation_id):
     sql_where_clause = " WHERE email = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
+
+    login_info = {
+        'email': user_email,
+        'user_id': user_json[0]['id'],
+        'login_datetime': str(now_with_tz())
+    }
+    notify_user_login(login_info, correlation_id)
+
     return append_calculated_properties_to_list(user_json)
 
 
@@ -430,8 +438,8 @@ def validate_user_email(user_id, email_verification_token_to_check, correlation_
 if __name__ == "__main__":
     # qsp = {'email': "delia@email.addr"}
     # ev = {'queryStringParameters': qsp, "detail-type": "Scheduled Event"}
-    # result = get_user_by_email_api(ev, None)
-    # print(result)
+    result = get_user_by_email("tu01@email.co.uk", None)
+    print(result)
 
     # pp = {'id': "1cbe9aad-b29f-46b5-920e-b4c496d42515"}
     # ev = {'pathParameters': pp}
@@ -453,16 +461,16 @@ if __name__ == "__main__":
     # for (sql_update, params) in sql_updates:
     #     execute_non_query(sql_update, params, None)
 
-    user_json = {
-        "email": "3ln@email.co.uk",
-        "first_name": "3Laura",
-        "last_name": "Nobody",
-        "status": "new",
-        "country_code": "BE"
-    }
-
-    correlation_id = None
-    print(create_user(user_json, correlation_id))
+    # user_json = {
+    #     "email": "3ln@email.co.uk",
+    #     "first_name": "3Laura",
+    #     "last_name": "Nobody",
+    #     "status": "new",
+    #     "country_code": "BE"
+    # }
+    #
+    # correlation_id = None
+    # print(create_user(user_json, correlation_id))
     #
     # ev = {'body': json.dumps(user_json)}
     # print(create_user_api(ev, None))

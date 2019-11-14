@@ -26,13 +26,13 @@ from datetime import datetime
 
 if 'api.endpoints' in __name__:
     from .common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
+    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, post_user_login_to_crm
     from .common.pg_utilities import execute_query
     from .common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from .user import patch_user
 else:
     from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
-    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm
+    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, post_user_login_to_crm
     from common.pg_utilities import execute_query
     from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
     from user import patch_user
@@ -46,6 +46,7 @@ def process_notifications(event, context):
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
     signup_notifications = []
+    login_notifications = []
     for notification in notifications:
         notification_type = notification['type']
         if notification_type == NotificationType.USER_REGISTRATION.value:
@@ -53,10 +54,18 @@ def process_notifications(event, context):
         elif notification_type == NotificationType.TASK_SIGNUP.value:
             # add to list for later processing
             signup_notifications.append(notification)
+        elif notification_type == NotificationType.USER_LOGIN.value:
+            # add to list for later processing
+            login_notifications.append(notification)
+        else:
+            # todo details
+            raise Exception
 
     for signup_notification in signup_notifications:
         process_task_signup(signup_notification)
 
+    for login_notification in login_notifications:
+        process_user_login(login_notification)
 
 def process_user_registration(notification):
     logger = get_logger()
@@ -140,6 +149,21 @@ def process_task_signup(notification):
         else:
             post_task_signup_to_crm(signup_details, correlation_id)
             mark_notification_processed(notification, correlation_id)
+    except Exception as ex:
+        error_message = str(ex)
+        mark_notification_failure(notification, error_message, correlation_id)
+
+
+def process_user_login(notification):
+    logger = get_logger()
+    correlation_id = new_correlation_id()
+
+    try:
+        # get basic data out of notification
+        login_details = notification['details']
+        post_user_login_to_crm(login_details, correlation_id)
+        mark_notification_processed(notification, correlation_id)
+
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)

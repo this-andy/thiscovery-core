@@ -128,26 +128,6 @@ def create_thiscovery_contact_properties():
     else:
         print(message_base + 'created')
 
-def update_property_DNU(property_definition):
-    url = '/properties/v1/contacts/properties/named/newapicustomproperty4'
-
-    data = {
-        "name": "newapicustomproperty4",
-        "label": "Api Custom Property4",
-        "description": "A new property for you",
-        "groupName": "contactinformation",
-        "type": "datetime",
-        "fieldType": "text",
-        "formField": False,
-        "displayOrder": 6,
-        "readOnlyValue": True
-    }
-
-    r = hubspot_put(url, data, None)
-
-    return r.status_code
-
-
 # endregion
 
 # region Timeline Events
@@ -604,6 +584,17 @@ def post_task_signup_to_crm(signup_details, correlation_id):
     }
 
     return create_or_update_timeline_event(tle_details, correlation_id)
+
+
+def post_user_login_to_crm(login_details, correlation_id):
+    user_email = login_details['email']
+    login_time_str = login_details['login_datetime']
+    login_timestamp = hubspot_timestamp(login_time_str)
+    property_name = 'thiscovery_last_login_date'
+    changes = [
+        {"property": property_name, "value": int(login_timestamp)},
+    ]
+    update_contact_by_email(user_email, changes, correlation_id)
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ MAX_RETRIES = 2
 class NotificationType(Enum):
     USER_REGISTRATION = 'user-registration'
     TASK_SIGNUP = 'task-signup'
+    USER_LOGIN = 'user-login'
 
 
 class NotificationStatus(Enum):

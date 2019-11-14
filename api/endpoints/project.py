@@ -342,6 +342,7 @@ def get_project_status_for_user(user_id, correlation_id):
     except Exception as ex:
         raise ex
 
+
     return project_list
 
 

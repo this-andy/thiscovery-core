@@ -15,6 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import uuid
 
 if __name__ == "__main__":
     from api.common.notifications import NotificationStatus, NotificationType, save_notification, create_notification
@@ -33,6 +34,12 @@ def notify_new_task_signup(task_signup, correlation_id):
     # use existing user_task id as notification id
     key = task_signup['id']
     save_notification(key, NotificationType.TASK_SIGNUP.value, task_signup, notification_item, correlation_id)
+
+
+def notify_user_login(login_info, correlation_id):
+    notification_item = create_notification(login_info['email'])
+    key = str(uuid.uuid4())
+    save_notification(key, NotificationType.USER_LOGIN.value, login_info, notification_item, correlation_id)
 
 
 if __name__ == "__main__":
