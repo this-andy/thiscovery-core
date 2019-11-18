@@ -102,7 +102,7 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertDictEqual(expected_body, result_json)
 
 
     def test_02_get_user_by_uuid_api_not_exists(self):
@@ -272,7 +272,7 @@ class TestUser(TestCase):
         del result_json['modified']
 
         # check the rest of the result excluding modified
-        self.assertDictEqual(result_json, expected_body)
+        self.assertDictEqual(expected_body, result_json)
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
@@ -319,7 +319,7 @@ class TestUser(TestCase):
                 {"op": "replace", "path": "/email_address_verified", "value": False},
                 {"op": "replace", "path": "/country_code", "value": "FR"},
             ]
-            self.assertCountEqual(expected_json_reverse_patch,result_json_reverse_patch)
+            self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
 
             # and finally check what's left
             expected_body = {
@@ -434,16 +434,16 @@ class TestUser(TestCase):
 
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertDictEqual(expected_body, result_json)
 
         # check that notification message exists
         notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]  # should be only one
-        self.assertEqual(notification['id'], user_id)
-        self.assertEqual(notification['type'], 'user-registration')
-        self.assertEqual(notification['label'], user_email)
+        self.assertEqual(user_id, notification['id'])
+        self.assertEqual('user-registration', notification['type'])
+        self.assertEqual(user_email, notification['label'])
         # self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
-        self.assertEqual(notification['details']['email'], user_email)
+        self.assertEqual(user_email, notification['details']['email'])
 
         # check user now has crm (hubspot) id
         sleep(10)
@@ -459,8 +459,8 @@ class TestUser(TestCase):
         # check that notification message has been processewd
         notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]  # should be only one
-        self.assertEqual(notification['id'], user_id)
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.PROCESSED.value)
+        self.assertEqual(user_id, notification['id'])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
         # duplicate checking...
         # now check we can't insert same record again...
