@@ -240,7 +240,8 @@ def get_aws_namespace():
             # secrets_namespace = '/staging/'
             # secrets_namespace = '/test/'
             # secrets_namespace = '/exp/'
-            secrets_namespace = '/dev/'
+            # secrets_namespace = '/dev/'
+            secrets_namespace = '/dev-afs25/'
         return secrets_namespace
 
 
