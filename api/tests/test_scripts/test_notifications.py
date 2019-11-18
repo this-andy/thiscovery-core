@@ -58,14 +58,14 @@ class TestNotifications(TestCase):
         notify_new_user_registration(user_json, None)
 
         notifications = get_notifications()
-        self.assertEqual(len(notifications), 1)
+        self.assertEqual(1, len(notifications))
 
         notification = notifications[0]
-        self.assertEqual(notification['id'], user_id)
-        self.assertEqual(notification['type'], 'user-registration')
-        self.assertEqual(notification['label'], user_email)
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
-        self.assertEqual(notification['details']['email'], user_email)
+        self.assertEqual(user_id, notification['id'])
+        self.assertEqual('user-registration', notification['type'])
+        self.assertEqual(user_email, notification['label'])
+        self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(user_email, notification['details']['email'])
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
@@ -90,14 +90,14 @@ class TestNotifications(TestCase):
         notify_new_task_signup(ut_json, None)
 
         notifications = get_notifications()
-        self.assertEqual(len(notifications), 2)
+        self.assertEqual(2, len(notifications))
 
         notification = notifications[1]
-        self.assertEqual(notification['id'], ut_id)
-        self.assertEqual(notification['type'], 'task-signup')
-        self.assertEqual(notification['label'], user_id)
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
-        self.assertEqual(notification['details']['id'], ut_id)
+        self.assertEqual(ut_id, notification['id'])
+        self.assertEqual('task-signup', notification['type'])
+        self.assertEqual(user_id, notification['label'])
+        self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(ut_id, notification['details']['id'])
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
@@ -109,7 +109,7 @@ class TestNotifications(TestCase):
         from api.common.notifications import mark_notification_failure
         notifications = get_notifications('type', ['user-registration'])
 
-        self.assertEqual(len(notifications), 1)
+        self.assertEqual(1, len(notifications))
 
         notification = notifications[0]
         test_error_message = 'test_03_fail_processing - 01'
@@ -118,9 +118,9 @@ class TestNotifications(TestCase):
         # read it and check
         notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.RETRYING.value)
-        self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '1')
-        self.assertEqual(notification[NotificationAttributes.ERROR_MESSAGE.value], test_error_message)
+        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual('1', notification[NotificationAttributes.FAIL_COUNT.value])
+        self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
 
         mark_notification_failure(notification, test_error_message, None)
         test_error_message = 'test_03_fail_processing - DLQ'
@@ -129,8 +129,8 @@ class TestNotifications(TestCase):
         # read it and check
         notifications = get_notifications('type', ['user-registration'])
         notification = notifications[0]
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.DLQ.value)
-        self.assertEqual(notification[NotificationAttributes.FAIL_COUNT.value], '3')
-        self.assertEqual(notification[NotificationAttributes.ERROR_MESSAGE.value], test_error_message)
+        self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual('3', notification[NotificationAttributes.FAIL_COUNT.value])
+        self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
 
 
