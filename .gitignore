@@ -20,8 +20,8 @@ var/
 # Serverless directories
 .serverless
 
-# Secret keys
-secret-settings.json
+# individual development config settings
+common/dev_config.py
 
 .idea
 .pytest_cache/
