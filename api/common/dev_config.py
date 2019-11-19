@@ -8,3 +8,5 @@ SECRETS_NAMESPACE = '/dev/'
 
 UNIT_TEST_NAMESPACE = '/test/'
 # UNIT_TEST_NAMESPACE = '/test-afs25/'
+
+TEST_ON_AWS = True

@@ -21,7 +21,8 @@ from dateutil import parser
 from requests import get, post, patch
 from api.common.utilities import get_secret, now_with_tz
 
-TEST_ON_AWS = False
+# TEST_ON_AWS = True
+from api.common.dev_config import TEST_ON_AWS
 
 
 def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):

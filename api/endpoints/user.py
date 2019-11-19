@@ -109,6 +109,15 @@ def get_user_by_id(user_id, correlation_id):
     sql_where_clause = " WHERE id = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
+
+    if user_json:
+        login_info = {
+            'email': user_json[0]['email'],
+            'user_id': user_id,
+            'login_datetime': str(now_with_tz())
+        }
+        notify_user_login(login_info, correlation_id)
+
     return append_calculated_properties_to_list(user_json)
 
 
@@ -154,14 +163,6 @@ def get_user_by_email(user_email, correlation_id):
     sql_where_clause = " WHERE email = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
-
-    if user_json:
-        login_info = {
-            'email': user_email,
-            'user_id': user_json[0]['id'],
-            'login_datetime': str(now_with_tz())
-        }
-        notify_user_login(login_info, correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
