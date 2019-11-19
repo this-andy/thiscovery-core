@@ -1,0 +1,10 @@
+# SECRETS_NAMESPACE = '/prod/'
+# SECRETS_NAMESPACE = '/staging/'
+# SECRETS_NAMESPACE = '/test/'
+# SECRETS_NAMESPACE = '/exp/'
+SECRETS_NAMESPACE = '/dev/'
+# SECRETS_NAMESPACE = '/dev-afs25/'
+# SECRETS_NAMESPACE = '/test-afs25/'
+
+UNIT_TEST_NAMESPACE = '/test/'
+# UNIT_TEST_NAMESPACE = '/test-afs25/'

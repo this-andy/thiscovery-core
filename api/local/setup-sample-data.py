@@ -76,9 +76,9 @@ if __name__ == "__main__":
     answer = input('To confirm retype environment name (anything else cancels): ')
     if answer == namespace:
         print ('Updating ' + namespace)
-        pass
-        clear_database()
-        # populate_database()
+        # pass
+        # clear_database()
+        populate_database()
         # populate_database_london_dev()
     else:
         print ('Action cancelled')

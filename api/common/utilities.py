@@ -76,8 +76,6 @@ def error_as_response_body(error_msg, correlation_id):
 
 # region unit test methods
 
-UNIT_TEST_NAMESPACE = '/test/'
-
 def set_running_unit_tests(flag):
     if flag:
         os.environ["TESTING"] = 'true'
@@ -231,18 +229,15 @@ def get_aws_region():
 
 def get_aws_namespace():
     if running_unit_tests():
-        return UNIT_TEST_NAMESPACE
+        from .dev_config import UNIT_TEST_NAMESPACE
+        secrets_namespace = UNIT_TEST_NAMESPACE
     else:
         try:
             secrets_namespace = os.environ['SECRETS_NAMESPACE']
         except:
-            # secrets_namespace = '/prod/'
-            # secrets_namespace = '/staging/'
-            # secrets_namespace = '/test/'
-            # secrets_namespace = '/exp/'
-            # secrets_namespace = '/dev/'
-            secrets_namespace = '/dev-afs25/'
-        return secrets_namespace
+            from .dev_config import SECRETS_NAMESPACE
+            secrets_namespace = SECRETS_NAMESPACE
+    return secrets_namespace
 
 
 def get_environment_name():
@@ -427,12 +422,12 @@ countries = load_countries()
 
 
 if __name__ == "__main__":
-    # result = get_aws_secret('database-connection')
+    result = get_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
     # result = get_country_name('US')
-    # print(result)
+    print(result)
 
-    print(feature_flag('hubspot-tle'))
-    print(feature_flag('hubspot-contacts'))
+    # print(feature_flag('hubspot-tle'))
+    # print(feature_flag('hubspot-contacts'))
