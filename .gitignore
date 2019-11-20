@@ -21,7 +21,7 @@ var/
 .serverless
 
 # individual development config settings
-common/dev_config.py
+api/common/dev_config.py
 
 .idea
 .pytest_cache/
