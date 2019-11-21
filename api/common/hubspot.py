@@ -482,6 +482,7 @@ def get_new_token_from_hubspot(refresh_token, code, correlation_id):
     client_secret = hubspot_connection['client-secret']
 
     redirect_url = 'https://www.hubspot.com/auth-callback'
+    redirect_url = 'https://11ece1a5.ngrok.io/hubspot'
     formData = {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -509,7 +510,7 @@ def refresh_token(correlation_id):
 
 
 def get_initial_token_from_hubspot():
-    temp_code = "b71d4946-80a7-4bb8-a566-2ccd171d0acb"   # paste this from thiscovery admin
+    temp_code = "85827453-025b-4ebb-b106-5654615e9c45"   # paste this from thiscovery admin
     return get_new_token_from_hubspot(None, temp_code, None)
 
 hubspot_oauth_token = get_token_from_database(None)
@@ -606,28 +607,30 @@ if __name__ == "__main__":
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
+    # result = refresh_token(None)
+
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
 
     # result = get_token_from_database()
     # result = get_new_token_from_hubspot(token['refresh_token'])
 
-    hubspot_id = 1151
+    # hubspot_id = 1151
     # tsn = hubspot_timestamp(str(now_with_tz()))
     # changes = [
     #         {"property": "thiscovery_registered_date", "value": int(tsn)},
     #     ]
     # result = update_contact_by_id(hubspot_id, changes, None)
     #
-    contact = get_hubspot_contact_by_id(hubspot_id, None)
-
-    thiscovery_registered_timestamp = get_contact_property(contact, 'thiscovery_registered_date')
-
-    thiscovery_registered_date = hubspot_timestamp_to_datetime(int(thiscovery_registered_timestamp))
-
-    print(thiscovery_registered_date)
-
-    pass
+    # contact = get_hubspot_contact_by_id(hubspot_id, None)
+    #
+    # thiscovery_registered_timestamp = get_contact_property(contact, 'thiscovery_registered_date')
+    #
+    # thiscovery_registered_date = hubspot_timestamp_to_datetime(int(thiscovery_registered_timestamp))
+    #
+    # print(thiscovery_registered_date)
+    #
+    # pass
 
 
     # new_user = {
@@ -709,7 +712,6 @@ if __name__ == "__main__":
 
     # result = delete_timeline_event_type(390568)
 
-    # result = create_TLE_for_task_signup()
 
     # save_TLE_type_id('test', 1234)
 
@@ -722,4 +724,5 @@ if __name__ == "__main__":
 
     # save_token(result_2019_05_10_12_11)
 
-    create_thiscovery_contact_properties()
+    # result = create_thiscovery_contact_properties()
+    result = create_TLE_for_task_signup()
