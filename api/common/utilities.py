@@ -376,31 +376,8 @@ def append_country_name(entity):
 
 
 def load_countries():
-    # import os
-    country_list_filename = 'countries.json'
-
-    # print('dir:' + os.getcwd())
-    # print('files:' + str(os.listdir('./common')))
-
-    if running_unit_tests():
-        country_list_filename = '../../common/' + country_list_filename
-
-    if running_on_aws():
-        country_list_filename = './common/' + country_list_filename
-
-    try:
-        country_list = json.loads(get_file_as_string(country_list_filename))
-    except FileNotFoundError:
-        try:
-            country_list_filename = '../common/' + country_list_filename
-            country_list = json.loads(get_file_as_string(country_list_filename))
-        except FileNotFoundError as err:
-            try:
-                country_list_filename = '../' + country_list_filename
-                country_list = json.loads(get_file_as_string(country_list_filename))
-            except FileNotFoundError as err:
-                raise err
-
+    country_list_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'countries.json')
+    country_list = json.loads(get_file_as_string(country_list_filename))
     countries_dict = {}
     for country in country_list:
         countries_dict[country['Code']] = country['Name']
