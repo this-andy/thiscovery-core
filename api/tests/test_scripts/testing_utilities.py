@@ -20,9 +20,7 @@ import uuid
 from dateutil import parser
 from requests import get, post, patch
 from api.common.utilities import get_secret, now_with_tz
-
-# TEST_ON_AWS = True
-from api.common.dev_config import TEST_ON_AWS
+from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
 
 
 def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
@@ -45,7 +43,7 @@ def test_get(local_method, aws_url, path_parameters, querystring_parameters, cor
 def aws_get(url, params, correlation_id):
     aws_connection = get_secret('aws-connection')
     aws_api_key = aws_connection['aws-api-key']
-    full_url = 'https://test-api.thiscovery.org/v1/' + url
+    full_url = AWS_TEST_API + url
     headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
     try:
         response = get(full_url, params=params, headers=headers)
@@ -73,7 +71,7 @@ def test_post(local_method, aws_url, path_parameters, request_body, correlation_
 def aws_post(url, request_body, correlation_id):
     aws_connection = get_secret('aws-connection')
     aws_api_key = aws_connection['aws-api-key']
-    full_url = 'https://test-api.thiscovery.org/v1/' + url
+    full_url = AWS_TEST_API + url
     headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
     try:
         response = post(full_url, data=request_body, headers=headers)
@@ -101,7 +99,7 @@ def test_patch(local_method, aws_url, path_parameters, request_body, correlation
 def aws_patch(url, request_body, correlation_id):
     aws_connection = get_secret('aws-connection')
     aws_api_key = aws_connection['aws-api-key']
-    full_url = 'https://test-api.thiscovery.org/v1/' + url
+    full_url = AWS_TEST_API + url
     headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
     try:
         response = patch(full_url, data=request_body, headers=headers)
