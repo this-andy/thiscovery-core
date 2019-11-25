@@ -101,14 +101,16 @@ def get_file_as_string(path):
     with open(path, 'r') as f:
         return f.read()
 
-
-def running_on_aws():
-    try:
-        region = os.environ['AWS_REGION']
-    except:
-        region = None
-
-    return region is not None
+# # This function was only used in load_countries before the changes introduced in commit dcd8591
+# # If those changes are approved and merged to master, then this function can be deleted.
+# # Commenting it out for now
+# def running_on_aws():
+#     try:
+#         region = os.environ['AWS_REGION']
+#     except:
+#         region = None
+#
+#     return region is not None
 
 
 def now_with_tz():
