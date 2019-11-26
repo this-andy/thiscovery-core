@@ -19,6 +19,7 @@
 import json
 from http import HTTPStatus
 from unittest import TestCase
+from api.common.dev_config import DELETE_TEST_DATA
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests, DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
@@ -26,16 +27,20 @@ from api.tests.test_scripts.testing_utilities import test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usergroupmembership'
 
+def clear_database():
+    truncate_table('public.projects_usergroupmembership')
+    truncate_table('public.projects_user')
+    truncate_table('public.projects_usergroup')
 
 class TestUserGroupMembership(TestCase):
 
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
+        clear_database()
 
         insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_data_PSFU.csv', 'public.projects_user')
@@ -44,9 +49,7 @@ class TestUserGroupMembership(TestCase):
     @classmethod
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
-            truncate_table('public.projects_usergroupmembership')
-            truncate_table('public.projects_user')
-            truncate_table('public.projects_usergroup')
+            clear_database()
 
         set_running_unit_tests(False)
 
@@ -63,7 +66,7 @@ class TestUserGroupMembership(TestCase):
         test_and_remove_now_datetime(self, ugm_dict, 'created')
         test_and_remove_now_datetime(self, ugm_dict, 'modified')
 
-        self.assertDictEqual(ugm_dict, ugm_json)
+        self.assertDictEqual(ugm_json, ugm_dict)
 
     def test_02_user_group_membership_create_from_json_full_ok(self):
         from api.endpoints.user_group_membership import UserGroupMembership
@@ -77,7 +80,7 @@ class TestUserGroupMembership(TestCase):
         ugm = UserGroupMembership.from_json(ugm_json, None)
         ugm_dict = ugm.to_dict()
 
-        self.assertDictEqual(ugm_dict, ugm_json)
+        self.assertDictEqual(ugm_json, ugm_dict)
 
     def test_03_user_group_membership_create_from_json_invalid_uuid(self):
         from api.endpoints.user_group_membership import UserGroupMembership
@@ -119,7 +122,7 @@ class TestUserGroupMembership(TestCase):
         test_and_remove_now_datetime(self, ugm_dict, 'created')
         test_and_remove_now_datetime(self, ugm_dict, 'modified')
 
-        self.assertDictEqual(ugm_dict, ugm_json)
+        self.assertDictEqual(ugm_json, ugm_dict)
 
     def test_06_user_group_membership_new_from_json_url_code_ok(self):
         from api.endpoints.user_group_membership import UserGroupMembership
@@ -138,7 +141,7 @@ class TestUserGroupMembership(TestCase):
         del ugm_json['url_code']
         ugm_json['user_group_id'] = '03719e6a-f85d-492b-be0f-03ab1927014d'
 
-        self.assertDictEqual(ugm_dict, ugm_json)
+        self.assertDictEqual(ugm_json, ugm_dict)
 
     def test_07_user_group_membership_new_from_json_url_code_not_exists(self):
         from api.endpoints.user_group_membership import UserGroupMembership

@@ -17,13 +17,13 @@
 #
 
 from unittest import TestCase
+from api.common.dev_config import DELETE_TEST_DATA
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests, DetailedValueError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 
 class TestUserGroup(TestCase):
@@ -58,7 +58,7 @@ class TestUserGroup(TestCase):
         ug = UserGroup.get_by_id(id, None)
         ug_dict = ug.to_dict()
 
-        self.assertDictEqual(ug_dict, expected_body)
+        self.assertDictEqual(expected_body, ug_dict)
 
     def test_02_user_group_get_by_id_not_exists(self):
         from api.endpoints.user_group import UserGroup
@@ -82,7 +82,7 @@ class TestUserGroup(TestCase):
         ug = UserGroup.get_by_url_code(url_code, None)
         ug_dict = ug.to_dict()
 
-        self.assertDictEqual(ug_dict, expected_body)
+        self.assertDictEqual(expected_body, ug_dict)
 
     def test_04_user_group_get_by_id_not_exists(self):
         from api.endpoints.user_group import UserGroup
@@ -104,7 +104,7 @@ class TestUserGroup(TestCase):
             "short_name": None,
             "url_code": None,
         }
-        self.assertDictEqual(ug_dict, expected_body)
+        self.assertDictEqual(expected_body, ug_dict)
 
     def test_06_user_group_create_from_json_more(self):
         from api.endpoints.user_group import UserGroup
@@ -120,7 +120,7 @@ class TestUserGroup(TestCase):
         test_and_remove_now_datetime(self, ug_dict, 'created')
         test_and_remove_now_datetime(self, ug_dict, 'modified')
 
-        self.assertDictEqual(ug_dict, ug_json)
+        self.assertDictEqual(ug_json, ug_dict)
 
     def test_07_user_group_create_from_json_full(self):
         from api.endpoints.user_group import UserGroup
@@ -135,7 +135,7 @@ class TestUserGroup(TestCase):
         ug = UserGroup.from_json(ug_json, None)
         ug_dict = ug.to_dict()
 
-        self.assertDictEqual(ug_dict, ug_json)
+        self.assertDictEqual(ug_json, ug_dict)
 
 
     def test_08_user_group_create_from_json_name_missing(self):
