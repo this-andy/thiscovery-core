@@ -23,23 +23,92 @@ from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from time import sleep
+from api.common.dev_config import DELETE_TEST_DATA, TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
+from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
+from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
+    NotificationAttributes
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
+from api.endpoints.user import create_user_api
+from api.endpoints.user_task import list_user_tasks_api, create_user_task_api
+from api.endpoints.user_project import list_user_projects_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
-from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, NotificationAttributes
+
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usertask'
 USER_BASE_URL = 'user'
+TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
+
+# region expected bodies setup
+if TIMEZONE_IS_BST:
+    tz_hour = "13"
+    tz_offset = "01:00"
+else:
+    tz_hour = "12"
+    tz_offset = "00:00"
+
+USER_TASK_01_EXPECTED_BODY = {
+    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+    'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
+    'user_project_status': None,
+    'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
+    'task_description': 'Systematic review for CTG monitoring',
+    'user_task_id': 'dd8d4003-bb8e-4cb8-af7f-7c82816a5ff4',
+    'created': f'2018-08-17T{tz_hour}:10:57.827727+{tz_offset}',
+    'modified': f'2018-08-17T{tz_hour}:10:57.883217+{tz_offset}',
+    'status': 'active',
+    'consented': None,
+}
+
+USER_TASK_02_EXPECTED_BODY = {
+    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+    'user_project_id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
+    'user_project_status': None,
+    'project_task_id': '6f1c63e2-fbe8-4d24-8680-c68a30b407e3',
+    'task_description': 'Systematic review for ambulance bag',
+    'user_task_id': 'a3313e72-3532-482f-af5e-d31b0fa8efd6',
+    'created': f'2018-08-17T{tz_hour}:10:58.104983+{tz_offset}',
+    'modified': f'2018-08-17T{tz_hour}:10:58.170637+{tz_offset}',
+    'status': 'complete',
+    'consented': None,
+}
+
+USER_TASK_03_EXPECTED_BODY = {
+    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
+    'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
+    'user_project_status': None,
+    'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
+    'task_description': 'Midwife assessment for CTG monitoring',
+    'user_task_id': '70083082-1ffd-4e45-a8a7-364f4214af12',
+    'created': f'2018-08-17T{tz_hour}:10:58.228041+{tz_offset}',
+    'modified': f'2018-08-17T{tz_hour}:10:58.263516+{tz_offset}',
+    'status': 'active',
+    'consented': None,
+}
+# endregion
+
+
+def clear_database():
+    truncate_table('public.projects_usertask')
+    truncate_table('public.projects_projecttask')
+    truncate_table('public.projects_tasktype')
+    truncate_table('public.projects_userproject')
+    truncate_table('public.projects_externalsystem')
+    truncate_table('public.projects_project')
+    truncate_table('public.projects_user')
+    truncate_table('public.projects_usergroup')
+    delete_all_notifications()
+
 
 class TestUserTask(TestCase):
 
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
+        clear_database()
 
         insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
@@ -50,59 +119,16 @@ class TestUserTask(TestCase):
         insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask')
 
-
     @classmethod
     def tearDownClass(self):
         if DELETE_TEST_DATA:
-            truncate_table('public.projects_usertask')
-            truncate_table('public.projects_projecttask')
-            truncate_table('public.projects_tasktype')
-            truncate_table('public.projects_userproject')
-            truncate_table('public.projects_externalsystem')
-            truncate_table('public.projects_project')
-            truncate_table('public.projects_user')
-            truncate_table('public.projects_usergroup')
-            delete_all_notifications()
+            clear_database()
 
         set_running_unit_tests(False)
 
-
     def test_1_list_user_tasks_api_ok(self):
-        pass
-        from api.endpoints.user_task import list_user_tasks_api
-
         expected_status = HTTPStatus.OK
-        # todo figure out how do do this properly!
-        expected_body_gmt = [
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-             'user_project_status': None, 'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-             'task_description': 'Systematic review for CTG monitoring', 'user_task_id': 'dd8d4003-bb8e-4cb8-af7f-7c82816a5ff4',
-             'created': '2018-08-17T12:10:57.827727+00:00', 'modified': '2018-08-17T12:10:57.883217+00:00', 'status': 'active', 'consented': None},
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
-             'user_project_status': None, 'project_task_id': '6f1c63e2-fbe8-4d24-8680-c68a30b407e3',
-             'task_description': 'Systematic review for ambulance bag', 'user_task_id': 'a3313e72-3532-482f-af5e-d31b0fa8efd6',
-             'created': '2018-08-17T12:10:58.104983+00:00', 'modified': '2018-08-17T12:10:58.170637+00:00', 'status': 'complete', 'consented': None},
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-             'user_project_status': None, 'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
-             'task_description': 'Midwife assessment for CTG monitoring', 'user_task_id': '70083082-1ffd-4e45-a8a7-364f4214af12',
-             'created': '2018-08-17T12:10:58.228041+00:00', 'modified': '2018-08-17T12:10:58.263516+00:00', 'status': 'active', 'consented': None},
-        ]
-        expected_body_bst = [
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-             'user_project_status': None, 'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-             'task_description': 'Systematic review for CTG monitoring', 'user_task_id': 'dd8d4003-bb8e-4cb8-af7f-7c82816a5ff4',
-             'created': '2018-08-17T13:10:57.827727+01:00', 'modified': '2018-08-17T13:10:57.883217+01:00', 'status': 'active', 'consented': None},
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
-             'user_project_status': None, 'project_task_id': '6f1c63e2-fbe8-4d24-8680-c68a30b407e3',
-             'task_description': 'Systematic review for ambulance bag', 'user_task_id': 'a3313e72-3532-482f-af5e-d31b0fa8efd6',
-             'created': '2018-08-17T13:10:58.104983+01:00', 'modified': '2018-08-17T13:10:58.170637+01:00', 'status': 'complete', 'consented': None},
-            {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-             'user_project_status': None, 'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
-             'task_description': 'Midwife assessment for CTG monitoring', 'user_task_id': '70083082-1ffd-4e45-a8a7-364f4214af12',
-             'created': '2018-08-17T13:10:58.228041+01:00', 'modified': '2018-08-17T13:10:58.263516+01:00', 'status': 'active', 'consented': None},
-        ]
-        expected_body = expected_body_gmt
-
+        expected_body = [USER_TASK_01_EXPECTED_BODY, USER_TASK_02_EXPECTED_BODY, USER_TASK_03_EXPECTED_BODY]
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
 
         result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
@@ -110,14 +136,11 @@ class TestUserTask(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        for actual, expected in zip(result_json,expected_body):
-            self.assertDictEqual(actual, expected)
-        # self.assertDictEqual(result_json[1], expected_body[1])
-
+        for actual, expected in zip(result_json, expected_body):
+            self.assertDictEqual(expected, actual)
+        # self.assertDictEqual(expected_body[1], result_json[1])
 
     def test_2_list_user_tasks_api_user_not_exists(self):
-        from api.endpoints.user_project import list_user_projects_api
-
         expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
@@ -128,12 +151,12 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
-
+        self.assertTrue(
+            ('message' in result_json) and
+            ('does not exist' in result_json['message'])
+        )
 
     def test_3_list_user_tasks_api_no_results(self):
-        from api.endpoints.user_project import list_user_projects_api
-
         expected_status = HTTPStatus.OK
         expected_body = []
 
@@ -144,14 +167,9 @@ class TestUserTask(TestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertEqual(result_json, expected_body)
-
+        self.assertEqual(expected_body, result_json)
 
     def test_4_create_user_task_api_ok_and_duplicate(self):
-        from api.endpoints.user_task import create_user_task_api
-        from api.endpoints.user import create_user_api
-        from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
-
         expected_status = HTTPStatus.CREATED
         user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
         user_email = 'sw@email.co.uk'
@@ -201,34 +219,35 @@ class TestUserTask(TestCase):
         expected_body = dict.copy(ut_json)
         expected_body['modified'] = ut_json['created']
 
-        self.assertEqual(result_status, expected_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(expected_body, result_json)
 
-        self.assertEqual(task_provider_name, 'Cochrane')
-        self.assertEqual(url,'http://crowd.cochrane.org/index.html?user_id=' + user_id + '&user_task_id=' + ut_id + '&external_task_id=1234&env=test')
+        self.assertEqual('Cochrane', task_provider_name)
+        self.assertEqual(f'http://crowd.cochrane.org/index.html?user_id={user_id}&user_task_id={ut_id}'
+                         f'&external_task_id=1234&env={TEST_ENV}', url)
 
         # check that notification message exists
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
         notification = notifications[0]  # should be only one
-        self.assertEqual(notification['id'], ut_id)
-        self.assertEqual(notification['type'], NotificationType.TASK_SIGNUP.value)
-        # self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
+        self.assertEqual(ut_id, notification['id'])
+        self.assertEqual(NotificationType.TASK_SIGNUP.value, notification['type'])
+        # self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
 
         # check user now has sign-up timeline event
         sleep(10)
         tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
         result = get_timeline_event(tle_type_id, ut_id, None)
-        self.assertEqual(result['id'], ut_id)
+        self.assertEqual(ut_id, result['id'])
         notification_details = notification['details']
-        self.assertEqual(result['task_id'], notification_details['project_task_id'])
-        self.assertEqual(result['objectType'], 'CONTACT')
-        self.assertEqual(result['project_name'], 'CTG Monitoring')
+        self.assertEqual(notification_details['project_task_id'], result['task_id'])
+        self.assertEqual('CONTACT', result['objectType'])
+        self.assertEqual('CTG Monitoring', result['project_name'])
 
         # check that notification message has been processewd
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
         notification = notifications[0]  # should be only one
-        self.assertEqual(notification['id'], ut_id)
-        self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.PROCESSED.value)
+        self.assertEqual(ut_id, notification['id'])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
         # duplicate checking...
         # now check we can't insert same record again...
@@ -240,12 +259,12 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
-
+        self.assertTrue(
+            ('message' in result_json) and
+            ('already exists' in result_json['message'])
+        )
 
     def test_5_create_user_task_api_with_defaults(self):
-        from api.endpoints.user_task import create_user_task_api
-
         expected_status = HTTPStatus.CREATED
         user_id = "851f7b34-f76c-49de-a382-7e4089b744e2"
         ut_json = {
@@ -278,13 +297,13 @@ class TestUserTask(TestCase):
         url = result_json['url']
         del result_json['url']
 
-        self.assertEqual(result_status, expected_status)
-        self.assertDictEqual(result_json, result_json)
+        self.assertEqual(expected_status, result_status)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(ut_id).version == 4)
-        self.assertEqual(task_provider_name, 'Qualtrics')
-        self.assertEqual(url,'https://www.qualtrics.com?user_id=' + user_id + '&user_task_id=' + ut_id + '&external_task_id=8e368360-a708-4336-8feb-a8903fde0210&env=test')
+        self.assertEqual('Qualtrics', task_provider_name)
+        self.assertEqual(f'https://www.qualtrics.com?user_id={user_id}&user_task_id={ut_id}'
+                         f'&external_task_id=8e368360-a708-4336-8feb-a8903fde0210&env={TEST_ENV}', url)
 
         result_datetime = parser.parse(created)
         difference = abs(now_with_tz() - result_datetime)
@@ -294,12 +313,9 @@ class TestUserTask(TestCase):
         difference = abs(now_with_tz() - result_datetime)
         self.assertLess(difference.seconds, 10)
 
-        self.assertEqual(status, 'active')
-
+        self.assertEqual('active', status)
 
     def test_6_create_user_task_api_invalid_status(self):
-        from api.endpoints.user_task import create_user_task_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
@@ -315,12 +331,12 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'invalid user_task status' in result_json['message'])
-
+        self.assertTrue(
+            ('message' in result_json) and
+            ('invalid user_task status' in result_json['message'])
+        )
 
     def test_7_create_user_task_api_task_not_exists(self):
-        from api.endpoints.user_task import create_user_task_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
@@ -336,12 +352,12 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and 'project_task' in result_json['message'])
-
+        self.assertTrue(
+            ('message' in result_json) and
+            ('project_task' in result_json['message'])
+        )
 
     def test_8_create_user_task_api_task_missing_params(self):
-        from api.endpoints.user_task import create_user_task_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
@@ -354,5 +370,11 @@ class TestUserTask(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('parameter' in result_json and 'project_task_id' in result_json['parameter'])
-        self.assertTrue('message' in result_json and 'mandatory data missing' in result_json['message'])
+        self.assertTrue(
+            ('parameter' in result_json) and
+            ('project_task_id' in result_json['parameter'])
+        )
+        self.assertTrue(
+            ('message' in result_json) and
+            ('mandatory data missing' in result_json['message'])
+        )
