@@ -19,7 +19,6 @@
 import json
 from http import HTTPStatus
 from unittest import TestCase
-from api.common.dev_config import DELETE_TEST_DATA
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests, DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
@@ -27,6 +26,7 @@ from api.tests.test_scripts.testing_utilities import test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usergroupmembership'
 

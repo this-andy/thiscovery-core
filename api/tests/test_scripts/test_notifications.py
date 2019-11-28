@@ -18,11 +18,11 @@
 
 from unittest import TestCase
 from dateutil import parser
-from api.common.dev_config import DELETE_TEST_DATA
 from api.common.utilities import set_running_unit_tests, now_with_tz
 from api.common.notifications import NotificationStatus, NotificationAttributes, delete_all_notifications, get_notifications
 
 TIME_TOLERANCE_SECONDS = 10
+DELETE_TEST_DATA = True
 
 
 class TestNotifications(TestCase):

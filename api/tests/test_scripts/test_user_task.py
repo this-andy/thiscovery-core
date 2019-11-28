@@ -23,7 +23,7 @@ from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from time import sleep
-from api.common.dev_config import DELETE_TEST_DATA, TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
+from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
 from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
@@ -37,6 +37,7 @@ from api.tests.test_scripts.testing_utilities import test_get, test_post, test_p
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usertask'
 USER_BASE_URL = 'user'
@@ -297,7 +298,13 @@ class TestUserTask(TestCase):
         url = result_json['url']
         del result_json['url']
 
+        user_project_id = result_json['user_project_id']
+        del result_json['user_project_id']
+
         self.assertEqual(expected_status, result_status)
+        print(f"ut_json: {ut_json}")
+        print(f"result_json: {result_json}")
+        self.assertDictEqual(ut_json, result_json)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(ut_id).version == 4)
@@ -314,6 +321,7 @@ class TestUserTask(TestCase):
         self.assertLess(difference.seconds, 10)
 
         self.assertEqual('active', status)
+        self.assertEqual('8fdb6137-e196-4c17-8091-7a0d370fadba', user_project_id)
 
     def test_6_create_user_task_api_invalid_status(self):
         expected_status = HTTPStatus.BAD_REQUEST

@@ -17,11 +17,12 @@
 #
 
 from unittest import TestCase
-from api.common.dev_config import DELETE_TEST_DATA
 from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
 
 TIME_TOLERANCE_SECONDS = 10
 TEST_EMAIL_ADDRESS = 'sw@email.co.uk'
+DELETE_TEST_DATA = True
+
 
 class TestHubspot(TestCase):
 

@@ -26,12 +26,13 @@ from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
     NotificationAttributes
-from api.common.dev_config import TIMEZONE_IS_BST, DELETE_TEST_DATA
+from api.common.dev_config import TIMEZONE_IS_BST
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
+DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'user'
 

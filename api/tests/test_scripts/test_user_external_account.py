@@ -21,13 +21,13 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
-from api.common.dev_config import DELETE_TEST_DATA
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
+DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'userexternalaccount'
 
@@ -118,6 +118,7 @@ class TestUserExternalAccount(TestCase):
         del result_json['status']
 
         self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(uea_json, result_json)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(id).version == 4)

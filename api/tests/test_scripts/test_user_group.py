@@ -17,14 +17,13 @@
 #
 
 from unittest import TestCase
-from api.common.dev_config import DELETE_TEST_DATA
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import set_running_unit_tests, DetailedValueError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-
+DELETE_TEST_DATA = True
 
 class TestUserGroup(TestCase):
 
