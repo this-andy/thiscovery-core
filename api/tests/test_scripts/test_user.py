@@ -576,12 +576,37 @@ class TestUser(TestCase):
         expected_message = 'Database integrity error'
         expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
                          '(lower(email::text))=(sid@email.co.uk) already exists.\n'
-        print(result)
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
 
-    # def test_15_timezone(self):
+    def test_15_user_email_unique_constraint_is_case_insensitive(self):
+        """
+        Tests that unique constraint on email field in user database table is case insensitive
+        """
+        from api.endpoints.user import create_user_api
+
+        # create an user
+        expected_status = HTTPStatus.BAD_REQUEST
+        user_json = {
+            "email": "SID@email.co.uk",
+            "first_name": "Sidney",
+            "last_name": "Silva",
+            "country_code": "PT",
+            "status": "new"}
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        expected_message = 'Database integrity error'
+        expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
+                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual(expected_message, result_json['message'])
+        self.assertEqual(expected_error, result_json['error'])
+
+    # def test_16_timezone(self):
     #     from api.common.pg_utilities import execute_query
     #     sql = 'Select NOW()'
     #     result =  execute_query(sql, None, 'abc')
