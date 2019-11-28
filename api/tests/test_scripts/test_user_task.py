@@ -302,8 +302,6 @@ class TestUserTask(TestCase):
         del result_json['user_project_id']
 
         self.assertEqual(expected_status, result_status)
-        print(f"ut_json: {ut_json}")
-        print(f"result_json: {result_json}")
         self.assertDictEqual(ut_json, result_json)
 
         # now check individual data items
