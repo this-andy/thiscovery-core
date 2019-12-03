@@ -1246,7 +1246,7 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
-        - change-retention-policy
+        - arn:aws:iam::595383251813:policy/change-retention-policy
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
