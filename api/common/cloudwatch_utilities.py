@@ -18,9 +18,9 @@
 import boto3
 
 if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, get_aws_namespace
+    from api.common.utilities import get_logger, get_aws_namespace
 else:
-    from common.utilities import get_logger, get_aws_namespace
+    from .utilities import get_logger, get_aws_namespace
 
 TEMP_PREFIX = "/aws/lambda/thiscovery-core-{}".format(get_aws_namespace()[1:-1])  # use this for now to limit scope of changes
 
