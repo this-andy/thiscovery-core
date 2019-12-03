@@ -15,12 +15,6 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-from http import HTTPStatus
-
-import sys
-import json
-from datetime import datetime
-
 if 'api.endpoints' in __name__:
     from .common.cloudwatch_utilities import get_thiscovery_log_groups, set_log_group_retention_policy
     from .common.utilities import get_logger
@@ -45,4 +39,5 @@ def set_new_log_groups_retention_policy(event, context):
             set_log_group_retention_policy(log_group_name)
             response['updated_log_groups'].append(log_group_name)
 
+    logger.info('Response', extra={'response': response})
     return response

@@ -17,12 +17,14 @@
 #
 import boto3
 
-if 'api.endpoints' in __name__:
+if __name__ == "__main__":
     from api.common.utilities import get_logger, get_aws_namespace
 else:
     from .utilities import get_logger, get_aws_namespace
 
 TEMP_PREFIX = "/aws/lambda/thiscovery-core-{}".format(get_aws_namespace()[1:-1])  # use this for now to limit scope of changes
+# TEMP_PREFIX = "/aws/lambda/thiscovery-core-dev-afs25-createusertask"  # let's start with only one log group
+
 
 def get_thiscovery_log_groups(
         # prefix="/aws/lambda/thiscovery-core"  # uncomment this line once we are happy with this function
@@ -39,7 +41,8 @@ def get_thiscovery_log_groups(
         logGroupNamePrefix=prefix,
         limit=50,
         )
-        return response
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.describe_log_groups failed with response: {response}'
+        return response['logGroups']
     except Exception as err:
         raise err
 
@@ -65,4 +68,7 @@ def set_log_group_retention_policy(log_group_name, retention_in_days=30):
 
 
 if __name__ == "__main__":
-    print(get_thiscovery_log_groups())
+    response = get_thiscovery_log_groups()
+    print(response)
+    target_group_name = response[0]['logGroupName']
+    print(set_log_group_retention_policy(target_group_name))
