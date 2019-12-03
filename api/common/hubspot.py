@@ -476,13 +476,14 @@ def get_current_access_token(correlation_id) -> str:
 
 
 def get_new_token_from_hubspot(refresh_token, code, correlation_id):
+    from dev_config import NGROK_URL_ID
     global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
     client_secret = hubspot_connection['client-secret']
 
     redirect_url = 'https://www.hubspot.com/auth-callback'
-    redirect_url = 'https://11ece1a5.ngrok.io/hubspot'
+    redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
     formData = {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -510,8 +511,8 @@ def refresh_token(correlation_id):
 
 
 def get_initial_token_from_hubspot():
-    temp_code = "85827453-025b-4ebb-b106-5654615e9c45"   # paste this from thiscovery admin
-    return get_new_token_from_hubspot(None, temp_code, None)
+    from dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, None)
 
 hubspot_oauth_token = get_token_from_database(None)
 
@@ -607,7 +608,7 @@ if __name__ == "__main__":
     # result = update_property(None)
 
     # result = get_initial_token_from_hubspot()
-    # result = refresh_token(None)
+    result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
@@ -725,4 +726,4 @@ if __name__ == "__main__":
     # save_token(result_2019_05_10_12_11)
 
     # result = create_thiscovery_contact_properties()
-    result = create_TLE_for_task_signup()
+    # result = create_TLE_for_task_signup()
