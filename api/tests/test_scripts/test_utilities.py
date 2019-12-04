@@ -20,7 +20,7 @@ from unittest import TestCase
 from api.common.utilities import set_running_unit_tests
 
 
-class TestValidate_int(TestCase):
+class TestValidateInt(TestCase):
 
     def test_validate_int_ok(self):
         from api.common.utilities import validate_int
@@ -33,7 +33,7 @@ class TestValidate_int(TestCase):
         self.assertRaises(DetailedValueError, validate_int, 'abc')
 
 
-class TestValidate_uuid(TestCase):
+class TestValidateUuid(TestCase):
     def test_validate_uuid_ok(self):
         import uuid
         from api.common.utilities import validate_uuid
@@ -52,7 +52,7 @@ class TestValidate_uuid(TestCase):
         self.assertRaises(DetailedValueError, validate_uuid, uuid_str)
 
 
-class TestValidate_utc_datetime(TestCase):
+class TestValidateUtcDatetime(TestCase):
     def test_validate_utc_datetime_ok(self):
         from api.common.utilities import validate_utc_datetime, now_with_tz
         dt = str(now_with_tz())
@@ -74,7 +74,7 @@ class TestValidate_utc_datetime(TestCase):
         self.assertRaises(DetailedValueError, validate_utc_datetime, dt)
 
 
-class TestMinimise_white_space(TestCase):
+class TestMinimiseWhiteSpace(TestCase):
     def test_minimise_white_space_change(self):
         from api.common.utilities import minimise_white_space
         str1 = '''hello
@@ -95,21 +95,17 @@ class TestCountry(TestCase):
     def setUpClass(cls):
         set_running_unit_tests(True)
 
-
     @classmethod
     def tearDownClass(cls):
         set_running_unit_tests(False)
-
 
     def test_get_country_name_ok(self):
         from api.common.utilities import get_country_name
         self.assertEqual('France', get_country_name('FR'))
         self.assertEqual('United Kingdom', get_country_name('GB'))
 
-
     def test_get_country_name_fail(self):
         from api.common.utilities import get_country_name, DetailedValueError
         self.assertRaises(DetailedValueError, get_country_name, 'ZX')
         self.assertRaises(DetailedValueError, get_country_name, '')
         self.assertRaises(DetailedValueError, get_country_name, 'abcdef')
-
