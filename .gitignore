@@ -22,6 +22,7 @@ var/
 
 # individual development config settings
 api/common/dev_config.py
+api/endpoints/common/dev_config.py
 
 .idea
 .pytest_cache/
