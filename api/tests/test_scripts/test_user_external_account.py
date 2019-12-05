@@ -74,8 +74,8 @@ class TestUserExternalAccount(TestCase):
         expected_body = dict.copy(uea_json)
         expected_body['modified'] = '2018-06-13 14:15:16.171819+00'
 
-        self.assertEqual(result_status, expected_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(expected_body, result_json)
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
@@ -117,8 +117,8 @@ class TestUserExternalAccount(TestCase):
         status = result_json['status']
         del result_json['status']
 
-        self.assertEqual(result_status, expected_status)
-        self.assertDictEqual(result_json, result_json)
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(uea_json, result_json)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(id).version == 4)
@@ -131,7 +131,7 @@ class TestUserExternalAccount(TestCase):
         difference = abs(now_with_tz() - result_datetime)
         self.assertLess(difference.seconds, 10)
 
-        self.assertEqual(status, 'active')
+        self.assertEqual('active', status)
 
 
     def test_03_create_user_external_account_api_user_not_exists(self):
@@ -292,7 +292,7 @@ class TestUserExternalAccount(TestCase):
     #
     #     result = get_or_create_user_external_account(user_id, external_system_id, None)
     #     # returns id of existing record
-    #     self.assertEqual(result, "3686f075-1da1-401d-8329-10da0ccf3258")
+    #     self.assertEqual("3686f075-1da1-401d-8329-10da0ccf3258", result)
 
 
     # def test_11_get_or_create_user_external_account_create(self):
@@ -303,11 +303,11 @@ class TestUserExternalAccount(TestCase):
     #
     #     result = get_or_create_user_external_account(user_id, external_system_id, None)
     #     # returns new record
-    #     self.assertNotEqual(result['id'], "3686f075-1da1-401d-8329-10da0ccf3258")
+    #     self.assertNotEqual("3686f075-1da1-401d-8329-10da0ccf3258", result['id'])
     #
-    #     self.assertEqual(result['external_system_id'], "e056e0bf-8d24-487e-a57b-4e812b40c4d8")
-    #     self.assertEqual(result['user_id'], "35224bd5-f8a8-41f6-8502-f96e12d6ddde")
-    #     self.assertEqual(result['status'], "active")
+    #     self.assertEqual("e056e0bf-8d24-487e-a57b-4e812b40c4d8", result['external_system_id'])
+    #     self.assertEqual("35224bd5-f8a8-41f6-8502-f96e12d6ddde", result['user_id'])
+    #     self.assertEqual("active", result['status'])
     #
     #     result_datetime = parser.parse(result['created'])
     #     difference = abs(now_with_tz() - result_datetime)
