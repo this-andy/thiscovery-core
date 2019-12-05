@@ -476,7 +476,11 @@ def get_current_access_token(correlation_id) -> str:
 
 
 def get_new_token_from_hubspot(refresh_token, code, correlation_id):
-    from dev_config import NGROK_URL_ID
+    if __name__ == "__main__":
+        from api.common.dev_config import NGROK_URL_ID
+    else:
+        from .dev_config import NGROK_URL_ID
+
     global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
@@ -511,7 +515,11 @@ def refresh_token(correlation_id):
 
 
 def get_initial_token_from_hubspot():
-    from dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    if __name__ == "__main__":
+        from api.common.dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    else:
+        from .dev_config import INITIAL_HUBSPOT_AUTH_CODE
+
     return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, None)
 
 hubspot_oauth_token = get_token_from_database(None)
