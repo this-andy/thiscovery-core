@@ -230,6 +230,7 @@ def get_aws_region():
 
 
 def get_aws_namespace():
+    print('os envs:' + str(os.environ))
     if running_unit_tests():
         from .dev_config import UNIT_TEST_NAMESPACE
         secrets_namespace = UNIT_TEST_NAMESPACE
