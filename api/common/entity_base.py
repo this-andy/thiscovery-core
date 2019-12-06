@@ -3,10 +3,7 @@ import json
 import jsons
 from abc import ABC
 
-if __name__ == "__main__":
-    from api.common.utilities import now_with_tz, validate_uuid, validate_utc_datetime, DetailedValueError
-else:
-    from .utilities import now_with_tz, validate_uuid, validate_utc_datetime, DetailedValueError
+from common.utilities import now_with_tz, validate_uuid, validate_utc_datetime, DetailedValueError
 
 
 class EntityBase(ABC):

@@ -19,18 +19,11 @@
 import json
 from http import HTTPStatus
 
-if 'api.endpoints' in __name__:
-    from api.common.pg_utilities import execute_non_query, execute_query_multiple
-    from api.common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
-    from api.common.entity_base import EntityBase
-    from .user_group import UserGroup
-else:
-    from common.pg_utilities import execute_non_query, execute_query_multiple
-    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
-    from common.entity_base import EntityBase
-    from user_group import UserGroup
+from common.pg_utilities import execute_non_query, execute_query_multiple
+from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+    triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
+from common.entity_base import EntityBase
+from user_group import UserGroup
 
 # todo how best to deal with correlation ids
 

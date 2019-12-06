@@ -23,12 +23,9 @@ from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-if __name__ == "__main__":
-    from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
-    from api.common.dynamodb_utilities import get_item, put_item
-else:
-    from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
-    from .dynamodb_utilities import get_item, put_item
+
+from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
+from common.dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 

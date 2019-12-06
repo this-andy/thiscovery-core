@@ -20,14 +20,9 @@ import uuid
 import json
 from http import HTTPStatus
 
-if 'api.endpoints' in __name__:
-    from api.common.pg_utilities import execute_query
-    from api.common.utilities import validate_uuid, DetailedValueError
-    from api.common.entity_base import EntityBase
-else:
-    from common.pg_utilities import execute_query
-    from common.utilities import validate_uuid, DetailedValueError
-    from common.entity_base import EntityBase
+from common.pg_utilities import execute_query
+from common.utilities import validate_uuid, DetailedValueError
+from common.entity_base import EntityBase
 
 
 # todo how best to deal with correlation ids
