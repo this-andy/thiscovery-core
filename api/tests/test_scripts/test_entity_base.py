@@ -49,7 +49,7 @@ class TestEntityBase(TestCase):
         test_and_remove_now_datetime(self, ug_dict, 'created')
         test_and_remove_now_datetime(self, ug_dict, 'modified')
 
-        self.assertDictEqual(ug_dict, entity_json)
+        self.assertDictEqual(entity_json, ug_dict)
 
     def test_03_entity_create_from_json_full(self):
         entity_json = {
@@ -60,7 +60,7 @@ class TestEntityBase(TestCase):
         ug = TestClass(entity_json)
         ug_dict = ug.to_dict()
 
-        self.assertDictEqual(ug_dict, entity_json)
+        self.assertDictEqual(entity_json, ug_dict)
 
     def test_04_entity_create_from_json_bad_id(self):
         entity_json = {
@@ -87,7 +87,7 @@ class TestEntityBase(TestCase):
         ug = TestClass(entity_json)
         ug_json = ug.to_json()
         dict_as_json = json.loads(ug_json)
-        self.assertDictEqual(dict_as_json, entity_json)
+        self.assertDictEqual(entity_json, dict_as_json)
 
 
 if __name__ == '__main__':

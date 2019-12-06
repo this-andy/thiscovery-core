@@ -33,4 +33,4 @@ class TestUserExternalAccount(TestCase):
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
-        self.assertEqual(result_status, expected_status)
+        self.assertEqual(expected_status, result_status)

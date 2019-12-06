@@ -24,7 +24,9 @@ from time import sleep
 from unittest import TestCase
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
-from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationAttributes
+from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
+    NotificationAttributes
+from api.common.dev_config import TIMEZONE_IS_BST
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
 TEST_SQL_FOLDER = '../test_sql/'
@@ -57,31 +59,27 @@ class TestUser(TestCase):
 
 
     def test_01_get_user_by_uuid_api_exists(self):
+        """
+        Tests:
+            - we can retrieve an user by querying their ID
+            - the login notification triggered by api.endpoints.user.get_user_by_id works
+        """
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
 
         expected_status = HTTPStatus.OK
-        expected_body_bst = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "status": None,
-            "avatar_string": "AA"
-        }
 
-        expected_body_gmt = {
+        if TIMEZONE_IS_BST:
+            tz_hour = "13"
+            tz_offset = "01:00"
+        else:
+            tz_hour = "12"
+            tz_offset = "00:00"
+
+        expected_body = {
             "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T12:10:56.798192+00:00",
-            "modified": "2018-08-17T12:10:56.833885+00:00",
+            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
+            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
             "email": "altha@email.co.uk",
             "email_address_verified": False,
             "title": "Mrs",
@@ -95,14 +93,21 @@ class TestUser(TestCase):
             "avatar_string": "AA",
         }
 
-        expected_body = expected_body_gmt
-
         result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
+        # test results returned from api call
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(expected_body, result_json)
+
+        # check that login notification exists
+        notifications = get_notifications('type', ['user-login'])
+        notification = notifications[0]  # should be only one
+        self.assertEqual('user-login', notification['type'])
+        self.assertEqual(expected_body['email'], notification['label'])
+        self.assertEqual(expected_body['id'], notification['details']['user_id'])
+        self.assertEqual(expected_body['email'], notification['details']['email'])
 
 
     def test_02_get_user_by_uuid_api_not_exists(self):
