@@ -44,6 +44,7 @@ class NotificationAttributes(Enum):
     STATUS = 'processing_status'
     FAIL_COUNT = 'processing_fail_count'
     ERROR_MESSAGE = 'processing_error_message'
+    TYPE = 'type'
 
 
 def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):

@@ -596,7 +596,8 @@ def post_user_login_to_crm(login_details, correlation_id):
     changes = [
         {"property": property_name, "value": int(login_timestamp)},
     ]
-    update_contact_by_email(user_email, changes, correlation_id)
+    return update_contact_by_email(user_email, changes, correlation_id)
+
 
 
 if __name__ == "__main__":

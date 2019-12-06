@@ -161,8 +161,9 @@ def process_user_login(notification):
     try:
         # get basic data out of notification
         login_details = notification['details']
-        post_user_login_to_crm(login_details, correlation_id)
-        mark_notification_processed(notification, correlation_id)
+        posting_result = post_user_login_to_crm(login_details, correlation_id)
+        marking_result = mark_notification_processed(notification, correlation_id)
+        return posting_result, marking_result
 
     except Exception as ex:
         error_message = str(ex)
