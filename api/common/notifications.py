@@ -103,7 +103,8 @@ def mark_notification_failure(notification, error_message, correlation_id):
     if fail_count > MAX_RETRIES:
         status = NotificationStatus.DLQ.value
         update_notification_item(status, fail_count)
-        raise DetailedValueError(f'Notification processing failed', {})
+        errorjson = {'fail_count': fail_count, **notification}
+        raise DetailedValueError(f'Notification processing failed', errorjson)
     else:
         status = NotificationStatus.RETRYING.value
         update_notification_item(status, fail_count)
