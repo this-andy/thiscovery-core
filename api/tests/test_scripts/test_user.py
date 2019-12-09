@@ -102,12 +102,12 @@ class TestUser(TestCase):
         self.assertDictEqual(expected_body, result_json)
 
         # check that login notification exists
-        notifications = get_notifications('type', ['user-login'])
-        notification = notifications[0]  # should be only one
-        self.assertEqual('user-login', notification['type'])
-        self.assertEqual(expected_body['email'], notification['label'])
-        self.assertEqual(expected_body['id'], notification['details']['user_id'])
-        self.assertEqual(expected_body['email'], notification['details']['email'])
+        # notifications = get_notifications('type', ['user-login'])
+        # notification = notifications[0]  # should be only one
+        # self.assertEqual('user-login', notification['type'])
+        # self.assertEqual(expected_body['email'], notification['label'])
+        # self.assertEqual(expected_body['id'], notification['details']['user_id'])
+        # self.assertEqual(expected_body['email'], notification['details']['email'])
 
 
     def test_02_get_user_by_uuid_api_not_exists(self):
