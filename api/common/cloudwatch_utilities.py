@@ -22,14 +22,8 @@ if __name__ == "__main__":
 else:
     from .utilities import get_logger
 
-# TEMP_PREFIX = "/aws/lambda/thiscovery-core-dev-afs25-createusertask"  # let's start with only one log group
-TEMP_PREFIX = "/aws/lambda/thiscovery-core-dev-afs25"  # use this for now to limit scope of changes
 
-
-def get_thiscovery_log_groups(
-        # prefix="/aws/lambda/thiscovery-core"  # uncomment this line once we are happy with this function
-        prefix=TEMP_PREFIX                      # delete this line once we are happy with this function
-):
+def get_thiscovery_log_groups(prefix="/aws/lambda/thiscovery-core"):
     """
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
     """
@@ -68,7 +62,8 @@ def set_log_group_retention_policy(log_group_name, retention_in_days=30):
 
 
 if __name__ == "__main__":
-    response = get_thiscovery_log_groups()
-    print(response)
-    target_group_name = response[0]['logGroupName']
-    print(set_log_group_retention_policy(target_group_name))
+    pass
+    # response = get_thiscovery_log_groups()
+    # print(response)
+    # target_group_name = response[0]['logGroupName']
+    # print(set_log_group_retention_policy(target_group_name))
