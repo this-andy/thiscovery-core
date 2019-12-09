@@ -18,12 +18,12 @@
 import boto3
 
 if __name__ == "__main__":
-    from api.common.utilities import get_logger, get_aws_namespace
+    from api.common.utilities import get_logger
 else:
-    from .utilities import get_logger, get_aws_namespace
+    from .utilities import get_logger
 
-TEMP_PREFIX = "/aws/lambda/thiscovery-core-{}".format(get_aws_namespace()[1:-1])  # use this for now to limit scope of changes
 # TEMP_PREFIX = "/aws/lambda/thiscovery-core-dev-afs25-createusertask"  # let's start with only one log group
+TEMP_PREFIX = "/aws/lambda/thiscovery-core-dev-afs25"  # use this for now to limit scope of changes
 
 
 def get_thiscovery_log_groups(
