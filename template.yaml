@@ -1240,8 +1240,8 @@ Resources:
       CodeUri: api/endpoints
       Handler: log_groups.set_new_log_groups_retention_policy
       Runtime: python3.7
-      MemorySize: 3008
-      Timeout: 30
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
@@ -1257,7 +1257,7 @@ Resources:
         Timer8:
           Type: Schedule
           Properties:
-            Schedule: rate(15 days)
+            Schedule: rate(2 days)
           Metadata:
             StackeryName: timer-set-new-log-groups-retention-policy
 Parameters:
