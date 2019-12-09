@@ -12,11 +12,13 @@ def deploy(environment):
         if not proceed.lower() in ['y', 'yes']:
             sys.exit('Deployment aborted')
 
-    return subprocess.run(['stackery', 'deploy', '--stack-name=thiscovery-core', '--aws-profile default',
+    return subprocess.run(['stackery', 'deploy', '--stack-name=thiscovery-core', '--aws-profile=default',
                            f'--env-name={environment}', f'--git-ref={branch}'], check=True)
 
 
 if __name__ == '__main__':
-    deployment = deploy('dev-afs25')
-    # deployment = deploy('test-afs25')
-    print(deployment)
+    deploy('dev-afs25')
+    # deploy('test-afs25')
+
+    # deploy('dev')
+    # deploy('test')
