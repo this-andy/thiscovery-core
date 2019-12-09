@@ -1230,13 +1230,13 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-  SetNewLogGroupsRetentionPolicy:
+  SetNewLogGroupRetention:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-SetNewLogGroupsRetentio
+      FunctionName: !Sub ${AWS::StackName}-SetNewLogGroupRetention
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: SetNewLogGroupsRetentionPolicy
+        - ResourceName: SetNewLogGroupRetention
       CodeUri: api/endpoints
       Handler: log_groups.set_new_log_groups_retention_policy
       Runtime: python3.7
@@ -1257,7 +1257,7 @@ Resources:
         Timer8:
           Type: Schedule
           Properties:
-            Schedule: rate(5 minutes)
+            Schedule: rate(15 days)
           Metadata:
             StackeryName: timer-set-new-log-groups-retention-policy
 Parameters:
