@@ -19,9 +19,6 @@
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-
-print('NAME:' + __name__)
-
 from common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError, now_with_tz, new_correlation_id
 
 
