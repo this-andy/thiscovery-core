@@ -1260,6 +1260,9 @@ Resources:
             Schedule: rate(2 days)
           Metadata:
             StackeryName: timer-set-new-log-groups-retention-policy
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
 Parameters:
   StackTagName:
     Type: String
