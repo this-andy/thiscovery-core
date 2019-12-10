@@ -1257,7 +1257,7 @@ Resources:
         Timer8:
           Type: Schedule
           Properties:
-            Schedule: rate(1 minute)
+            Schedule: rate(2 days)
           Metadata:
             StackeryName: timer-set-new-log-groups-retention-policy
       Environment:
