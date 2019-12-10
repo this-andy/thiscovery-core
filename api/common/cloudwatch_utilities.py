@@ -18,12 +18,12 @@
 import boto3
 
 if __name__ == "__main__":
-    from api.common.utilities import get_logger
+    from api.common.utilities import get_logger, get_aws_namespace
 else:
-    from .utilities import get_logger
+    from .utilities import get_logger, get_aws_namespace
 
 
-def get_thiscovery_log_groups(prefix="/aws/lambda/thiscovery-core"):
+def get_thiscovery_log_groups(prefix=f"/aws/lambda/thiscovery-core-{get_aws_namespace()[1:-1]}"):
     """
     https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
     """
@@ -32,8 +32,8 @@ def get_thiscovery_log_groups(prefix="/aws/lambda/thiscovery-core"):
     try:
         logger.info('Getting log groups', extra={'prefix': prefix})
         response = client.describe_log_groups(
-        logGroupNamePrefix=prefix,
-        limit=50,
+            logGroupNamePrefix=prefix,
+            limit=50,
         )
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.describe_log_groups failed with response: {response}'
         return response['logGroups']
