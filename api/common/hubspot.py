@@ -38,7 +38,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 
-base_url = 'http://api.hubapi.com'
+base_url = 'https://api.hubapi.com'
 
 
 # region Contact property and group management
@@ -461,7 +461,7 @@ def get_token_from_database(correlation_id) -> dict:
     return token
 
 
-hubspot_oauth_token = None
+# hubspot_oauth_token = None
 
 
 def save_token(new_token, correlation_id):
@@ -469,15 +469,19 @@ def save_token(new_token, correlation_id):
 
 
 def get_current_access_token(correlation_id) -> str:
-    global hubspot_oauth_token
-    if hubspot_oauth_token is None:
-        hubspot_oauth_token = get_token_from_database(correlation_id)
+    # global hubspot_oauth_token
+    # if hubspot_oauth_token is None:
+    hubspot_oauth_token = get_token_from_database(correlation_id)
     return hubspot_oauth_token['access_token']
 
 
 def get_new_token_from_hubspot(refresh_token, code, correlation_id):
-    from dev_config import NGROK_URL_ID
-    global hubspot_oauth_token
+    if __name__ == "__main__":
+        from api.common.dev_config import NGROK_URL_ID
+    else:
+        from .dev_config import NGROK_URL_ID
+
+    # global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
     client_secret = hubspot_connection['client-secret']
@@ -501,20 +505,25 @@ def get_new_token_from_hubspot(refresh_token, code, correlation_id):
     token_text = res.text
     token = json.loads(token_text)
     save_token(token, correlation_id)
-    hubspot_oauth_token = token
+    # hubspot_oauth_token = token
     return token
 
 
 def refresh_token(correlation_id):
+    hubspot_oauth_token = get_token_from_database(None)
     refresh_token = hubspot_oauth_token['refresh_token']
     return get_new_token_from_hubspot(refresh_token, None, correlation_id)
 
 
 def get_initial_token_from_hubspot():
-    from dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    if __name__ == "__main__":
+        from api.common.dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    else:
+        from .dev_config import INITIAL_HUBSPOT_AUTH_CODE
+
     return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, None)
 
-hubspot_oauth_token = get_token_from_database(None)
+# hubspot_oauth_token = get_token_from_database(None)
 
 # endregion
 
@@ -607,8 +616,8 @@ if __name__ == "__main__":
     # result = create_property2(None)
     # result = update_property(None)
 
-    # result = get_initial_token_from_hubspot()
-    result = refresh_token(None)
+    result = get_initial_token_from_hubspot()
+    # result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
@@ -725,5 +734,6 @@ if __name__ == "__main__":
 
     # save_token(result_2019_05_10_12_11)
 
+    # run these two lines to setup new HubSpot env
     # result = create_thiscovery_contact_properties()
     # result = create_TLE_for_task_signup()

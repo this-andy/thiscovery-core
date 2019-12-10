@@ -25,6 +25,45 @@ TIME_TOLERANCE_SECONDS = 10
 DELETE_TEST_DATA = True
 
 
+# region helper functions
+def create_registration_notification(user_id="fae88a51-0053-4ba7-b74e-f68b31e82785",
+                                     user_email='sw.test@email.co.uk'):
+    from api.common.notification_send import notify_new_user_registration
+
+    user_json = {
+        "id": user_id,
+        "created": "2019-05-26T17:46:56+01:00",
+        "email": user_email,
+        "first_name": "Steven",
+        "last_name": "Walcorn",
+        "auth0_id": "1234abcd",
+        "country_code": "GB",
+        "country_name": "United Kingdom",
+        "avatar_string": "SW",
+        "status": "new"}
+
+    notify_new_user_registration(user_json, None)
+    return user_json
+
+
+def create_task_signup_notification(ut_id="9620089b-e9a4-46fd-bb78-091c8449d777",
+                                    user_id='35224bd5-f8a8-41f6-8502-f96e12d6ddde'):
+    from api.common.notification_send import notify_new_task_signup
+
+    ut_json = {
+        'user_id': user_id,
+        'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
+        'user_project_id': '5ee37b14-7d20-478f-8500-6a00cb15e345',
+        'status': 'active',
+        'consented': '2019-05-26 18:16:56.087895+01',
+        'id': ut_id,
+        'created': '2018-06-13 14:15:16.171819+00'
+    }
+    notify_new_task_signup(ut_json, None)
+    return ut_json
+# endregion
+
+
 class TestNotifications(TestCase):
 
     @classmethod
@@ -38,34 +77,23 @@ class TestNotifications(TestCase):
             delete_all_notifications()
         set_running_unit_tests(False)
 
+    def setUp(self):
+        """
+        Deletes all notifications before each test is run to ensure tests are independent
+        """
+        delete_all_notifications()
+
     def test_01_post_registration(self):
-        from api.common.notification_send import notify_new_user_registration
-
-        user_id = "fae88a51-0053-4ba7-b74e-f68b31e82785"
-        user_email = 'sw.test@email.co.uk'
-        user_json = {
-            "id": user_id,
-            "created": "2019-05-26T17:46:56+01:00",
-            "email": user_email,
-            "first_name": "Steven",
-            "last_name": "Walcorn",
-            "auth0_id": "1234abcd",
-            "country_code": "GB",
-            "country_name": "United Kingdom",
-            "avatar_string": "SW",
-            "status": "new"}
-
-        notify_new_user_registration(user_json, None)
-
+        user_json = create_registration_notification()
         notifications = get_notifications()
         self.assertEqual(1, len(notifications))
 
         notification = notifications[0]
-        self.assertEqual(user_id, notification['id'])
+        self.assertEqual(user_json['id'], notification['id'])
         self.assertEqual('user-registration', notification['type'])
-        self.assertEqual(user_email, notification['label'])
+        self.assertEqual(user_json['email'], notification['label'])
         self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
-        self.assertEqual(user_email, notification['details']['email'])
+        self.assertEqual(user_json['email'], notification['details']['email'])
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
@@ -74,30 +102,16 @@ class TestNotifications(TestCase):
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
     def test_02_post_signup(self):
-        from api.common.notification_send import notify_new_task_signup
-
-        ut_id = "9620089b-e9a4-46fd-bb78-091c8449d777"
-        user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'
-        ut_json = {
-            'user_id': user_id,
-            'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-            'user_project_id': '5ee37b14-7d20-478f-8500-6a00cb15e345',
-            'status': 'active',
-            'consented': '2019-05-26 18:16:56.087895+01',
-            'id': ut_id,
-            'created': '2018-06-13 14:15:16.171819+00'
-        }
-        notify_new_task_signup(ut_json, None)
-
+        ut_json = create_task_signup_notification()
         notifications = get_notifications()
-        self.assertEqual(2, len(notifications))
+        self.assertEqual(1, len(notifications))
 
-        notification = notifications[1]
-        self.assertEqual(ut_id, notification['id'])
+        notification = notifications[0]
+        self.assertEqual(ut_json['id'], notification['id'])
         self.assertEqual('task-signup', notification['type'])
-        self.assertEqual(user_id, notification['label'])
+        self.assertEqual(ut_json['user_id'], notification['label'])
         self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
-        self.assertEqual(ut_id, notification['details']['id'])
+        self.assertEqual(ut_json['id'], notification['details']['id'])
 
         # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
         now = now_with_tz()
@@ -107,6 +121,7 @@ class TestNotifications(TestCase):
 
     def test_03_fail_processing(self):
         from api.common.notifications import mark_notification_failure
+        create_registration_notification()
         notifications = get_notifications('type', ['user-registration'])
 
         self.assertEqual(1, len(notifications))
