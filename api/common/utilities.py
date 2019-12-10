@@ -101,16 +101,13 @@ def get_file_as_string(path):
     with open(path, 'r') as f:
         return f.read()
 
-# # This function was only used in load_countries before the changes introduced in commit dcd8591
-# # If those changes are approved and merged to master, then this function can be deleted.
-# # Commenting it out for now
-# def running_on_aws():
-#     try:
-#         region = os.environ['AWS_REGION']
-#     except:
-#         region = None
-#
-#     return region is not None
+
+def running_on_aws():
+    try:
+        region = os.environ['AWS_REGION']
+    except:
+        region = None
+    return region is not None
 
 
 def now_with_tz():
@@ -230,6 +227,25 @@ def get_aws_region():
 
 
 def get_aws_namespace():
+    if running_on_aws():
+        try:
+            secrets_namespace = os.environ['SECRETS_NAMESPACE']
+        except KeyError:
+            raise DetailedValueError('SECRETS_NAMESPACE environment variable not defined', {})
+    else:
+        if __name__ == "__main__":
+            from api.common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
+        else:
+            from .dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
+        if running_unit_tests():
+            secrets_namespace = UNIT_TEST_NAMESPACE
+        else:
+            secrets_namespace = SECRETS_NAMESPACE
+    return secrets_namespace
+
+
+def get_aws_namespace_OLD():
+    print('os envs:' + str(os.environ))
     if running_unit_tests():
         from .dev_config import UNIT_TEST_NAMESPACE
         secrets_namespace = UNIT_TEST_NAMESPACE
@@ -399,13 +415,13 @@ countries = load_countries()
 # endregion
 
 
-
 if __name__ == "__main__":
-    result = get_secret('database-connection')
+    # result = get_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
     # result = get_country_name('US')
+    result = get_aws_namespace()
     print(result)
 
     # print(feature_flag('hubspot-tle'))
