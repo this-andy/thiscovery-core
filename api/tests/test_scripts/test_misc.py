@@ -19,7 +19,7 @@
 import json
 from http import HTTPStatus
 from unittest import TestCase
-from api.tests.test_scripts.testing_utilities import test_post
+from api.tests.test_scripts.testing_utilities import test_get
 
 
 class TestUserExternalAccount(TestCase):
@@ -29,8 +29,10 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = HTTPStatus.OK
 
-        result = test_post(ping, 'ping', None, None, None)
+        result = test_get(ping, 'ping', None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+        self.assertEqual('Response from THIS Institute citizen science API', result_json['message'])
+        self.assertEqual('eu-west-1', result_json['region'])
