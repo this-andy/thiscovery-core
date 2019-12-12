@@ -18,8 +18,8 @@
 
 from unittest import TestCase
 from dateutil import parser
-from api.common.utilities import set_running_unit_tests, DuplicateInsertError, now_with_tz
-from api.common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
+from common.utilities import set_running_unit_tests, DuplicateInsertError, now_with_tz
+from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
 
 TEST_TABLE_NAME = 'testdata'
 TIME_TOLERANCE_SECONDS = 10
