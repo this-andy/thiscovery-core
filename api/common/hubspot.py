@@ -145,7 +145,7 @@ def create_timeline_event_type(type_defn: dict):
     type_defn['applicationId'] = app_id
     url = '/integrations/v1/' + app_id + '/timeline/event-types'
 
-    response = hubspot_post(url, type_defn, None)
+    response = hubspot_developer_post(url, type_defn, None)
     content = json.loads(response.content)
 
     return content['id']
@@ -156,7 +156,7 @@ def delete_timeline_event_type(tle_type_id):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id)
 
-    result = hubspot_delete(url, None)
+    result = hubspot_developer_delete(url, None)
 
     return result.status_code
 
@@ -177,7 +177,7 @@ def create_timeline_event_properties(tle_type_id, property_defns: list):
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
     for property_defn in property_defns:
-        result = hubspot_post(url, property_defn, None)
+        result = hubspot_developer_post(url, property_defn, None)
 
 
 def delete_timeline_event_property(tle_type_id, property_id):
@@ -403,6 +403,57 @@ def hubspot_delete(url, correlation_id):
 
 # endregion
 
+# region hubspot developer get/post/put/delete methods - used for managing TLE definitions
+
+def hubspot_developer_post(url: str, data: dict, correlation_id):
+    """
+    Posts using developer API key and user id instead of usual oAuth2 token
+    This is necessary for creating TLE types
+    """
+    from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+
+    full_url = base_url + url + \
+               '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+               '&userId=' + HUBSPOT_DEVELOPER_USERID + \
+               '&application-id=' + app_id
+    headers = {'Content-Type': 'application/json'}
+    try:
+        result = requests.post(data=json.dumps(data), url=full_url, headers=headers)
+        if result.status_code in [HTTPStatus.OK, HTTPStatus.CREATED]:
+            success = True
+        else:
+            errorjson = {'result': result}
+            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+    except HTTPError as err:
+        raise err
+    return result
+
+
+def hubspot_developer_delete(url: str, correlation_id):
+    """
+    Posts using developer API key and user id instead of usual oAuth2 token
+    This is necessary for creating TLE types
+    """
+    from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
+    full_url = base_url + url + \
+               '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+               '&userId=' + HUBSPOT_DEVELOPER_USERID
+    headers = {'Content-Type': 'application/json'}
+    try:
+        result = requests.delete(url=full_url, headers=headers)
+        if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT]:
+            success = True
+        else:
+            errorjson = {'result': result}
+            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+    except HTTPError as err:
+        raise err
+    return result
+
+# endregion
+
 
 # region contact methods
 
@@ -608,19 +659,14 @@ def post_user_login_to_crm(login_details, correlation_id):
 if __name__ == "__main__":
     pass
 
-    # result = create_group(None)
+    # This line allow you to initialise HubSpot oauth token
+    # result = get_initial_token_from_hubspot()
 
-    # result = create_property2(None)
-    # result = update_property(None)
-
-    result = get_initial_token_from_hubspot()
+    # and manually refresh it if required
     # result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
-
-    # result = get_token_from_database()
-    # result = get_new_token_from_hubspot(token['refresh_token'])
 
     # hubspot_id = 1151
     # tsn = hubspot_timestamp(str(now_with_tz()))
@@ -717,7 +763,7 @@ if __name__ == "__main__":
 
     # result = create_or_update_timeline_event(event_data)
 
-    # result = delete_timeline_event_type(390568)
+    # result = delete_timeline_event_type(395426)
 
 
     # save_TLE_type_id('test', 1234)
@@ -733,4 +779,4 @@ if __name__ == "__main__":
 
     # run these two lines to setup new HubSpot env
     # result = create_thiscovery_contact_properties()
-    # result = create_TLE_for_task_signup()
+    result = create_TLE_for_task_signup()
