@@ -51,6 +51,10 @@ def _jsonize_sql(base_sql):
 
 
 def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    """
+    Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
+    calls.
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -85,6 +89,10 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
 
 
 def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    """
+    Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
+    calls.
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -125,6 +133,9 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
 
 
 def execute_non_query(sql, params, correlation_id=new_correlation_id()):
+    """
+    Use this method to make changes that will be committed to the database (e.g. UPDATE, DELETE calls)
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)

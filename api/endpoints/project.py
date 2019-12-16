@@ -22,11 +22,11 @@ from http import HTTPStatus
 print ('name:' + __name__)
 
 if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+    from .common.pg_utilities import execute_query, execute_query_multiple, execute_non_query, dict_from_dataset
     from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
         triggered_by_heartbeat, non_prod_env_url_param, create_url_params
 else:
-    from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+    from common.pg_utilities import execute_query, execute_query_multiple, execute_non_query, dict_from_dataset
     from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
         triggered_by_heartbeat, non_prod_env_url_param, create_url_params
 
@@ -169,6 +169,19 @@ def get_project_task(project_task_id, correlation_id):
     return execute_query(sql, (str(project_task_id),), correlation_id)
 
 
+def update_project_task_progress_info(project_task_id, progress_info_dict, progress_info_modified, correlation_id):
+    progress_info_json = json.dumps(progress_info_dict)
+
+    base_sql = '''
+                UPDATE public.projects_projecttask
+                SET progress_info = (%s), progress_info_modified = (%s)
+                WHERE id = (%s);
+            '''
+
+    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
+    return number_of_updated_rows
+
+
 def get_project_with_tasks(project_uuid, correlation_id):
     # take base sql query and insert a where clause to get specified project
     sql_where_clause = " AND id = %s "
@@ -179,6 +192,10 @@ def get_project_with_tasks(project_uuid, correlation_id):
     result = execute_query(sql, (str(project_uuid),), correlation_id, True, False)
 
     return result
+
+
+def get_project_by_external_id(external_id, correlation_id):
+    #todo: write this function
 
 
 def get_project_api(event, context):

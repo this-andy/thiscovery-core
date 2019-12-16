@@ -42,3 +42,6 @@ api/local/london_data/
 
 # local secrets file
 api/local/secrets.py
+
+# sandbox
+/sandbox/
