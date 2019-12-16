@@ -20,19 +20,21 @@ import json
 from http import HTTPStatus
 from unittest import TestCase
 from api.tests.test_scripts.testing_utilities import test_get
+from api.common.dev_config import TEST_ON_AWS
 
 
 class TestUserExternalAccount(TestCase):
 
     def test_01_ping(self):
-        from api.endpoints.misc import ping
+        if TEST_ON_AWS:  # this test does not make sense to run locally
+            from api.endpoints.misc import ping
 
-        expected_status = HTTPStatus.OK
+            expected_status = HTTPStatus.OK
 
-        result = test_get(ping, 'ping', None, None, None)
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
+            result = test_get(ping, 'ping', None, None, None)
+            result_status = result['statusCode']
+            result_json = json.loads(result['body'])
 
-        self.assertEqual(expected_status, result_status)
-        self.assertEqual('Response from THIS Institute citizen science API', result_json['message'])
-        self.assertEqual('eu-west-1', result_json['region'])
+            self.assertEqual(expected_status, result_status)
+            self.assertEqual('Response from THIS Institute citizen science API', result_json['message'])
+            self.assertEqual('eu-west-1', result_json['region'])
