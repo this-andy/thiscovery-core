@@ -179,7 +179,8 @@ class TestNotifications(TestCase):
         """
         Ensures notification_send.notify_user_login fails if notification body does not include login_datetime
         """
-        self.assertRaises(AssertionError, create_login_notification())
+        with self.assertRaises(AssertionError):
+            create_login_notification()
 
     def test_06_process_login(self):
         """
