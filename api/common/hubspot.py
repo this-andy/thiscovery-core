@@ -18,8 +18,8 @@
 
 import json
 import requests
-import uuid
-from urllib.request import urlopen, Request, HTTPError
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
