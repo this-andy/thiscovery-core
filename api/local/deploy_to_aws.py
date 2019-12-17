@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 
+import json
 import subprocess
 import sys
-from slackclient import SlackClient
+import requests
 
-from api.local.secrets import STACKERY_CREDENTIALS, SLACK_TOKEN
+from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
 
 
-def slack_message(message="I've just finished running!", channel="@Andre"):
-    sc = SlackClient(SLACK_TOKEN)
-    sc.api_call('chat.postMessage', channel=channel,
-                text=message, username='deploy_to_aws',
-                icon_emoji=':robot_face:')
+def slack_message(environment, message="deploy_to_aws.py has just finished running!"):
+    header = {
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "text": message
+    }
+    requests.post(SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS['stackery-deployments'], data=json.dumps(payload), headers=header)
+    if 'afs25' in environment:
+        requests.post(SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS['Andre'], data=json.dumps(payload), headers=header)
 
 
 def stackery_deployment(environment, branch):
@@ -50,7 +56,7 @@ def deploy(environment):
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
-    slack_message()
+    slack_message(environment)
 
 
 if __name__ == '__main__':
