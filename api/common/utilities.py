@@ -237,27 +237,10 @@ def get_aws_namespace():
         except KeyError:
             raise DetailedValueError('SECRETS_NAMESPACE environment variable not defined', {})
     else:
-        if __name__ == "__main__":
-            from api.common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
-        else:
-            from .dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
+        from common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
         if running_unit_tests():
             secrets_namespace = UNIT_TEST_NAMESPACE
         else:
-            secrets_namespace = SECRETS_NAMESPACE
-    return secrets_namespace
-
-
-def get_aws_namespace_OLD():
-    print('os envs:' + str(os.environ))
-    if running_unit_tests():
-        from .dev_config import UNIT_TEST_NAMESPACE
-        secrets_namespace = UNIT_TEST_NAMESPACE
-    else:
-        try:
-            secrets_namespace = os.environ['SECRETS_NAMESPACE']
-        except:
-            from .dev_config import SECRETS_NAMESPACE
             secrets_namespace = SECRETS_NAMESPACE
     return secrets_namespace
 
