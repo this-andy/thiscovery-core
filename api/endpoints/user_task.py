@@ -19,16 +19,22 @@
 import uuid
 import json
 from http import HTTPStatus
+print('user_task: import from external modules successful')
 
-from .common.cochrane import get_progress
 from common.pg_utilities import execute_query, execute_non_query
+print('user_task: import from pg_utilities successful')
 from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
     validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
+print('user_task: import from utilities successful')
 from user import get_user_by_id
+print('user_task: import from user successful')
 from project import get_project_task
+print('user_task: import from project successful')
 from user_project import create_user_project_if_not_exists
+print('user_task: import from user_project successful')
 from common.notification_send import notify_new_task_signup
+print('user_task: import from notification_send successful')
 
 
 STATUS_CHOICES = (
