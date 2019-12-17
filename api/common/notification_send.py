@@ -17,10 +17,7 @@
 #
 import uuid
 
-if __name__ == "__main__":
-    from api.common.notifications import NotificationStatus, NotificationType, save_notification, create_notification
-else:
-    from .notifications import NotificationStatus, NotificationType, save_notification, create_notification
+from common.notifications import NotificationStatus, NotificationType, save_notification, create_notification
 
 
 def notify_new_user_registration(new_user, correlation_id):

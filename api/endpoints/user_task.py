@@ -20,24 +20,14 @@ import uuid
 import json
 from http import HTTPStatus
 
-if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query, execute_non_query
-    from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
-    from .user import get_user_by_id
-    from .project import get_project_task
-    from .user_project import create_user_project_if_not_exists
-    from .common.notification_send import notify_new_task_signup
-else:
-    from common.pg_utilities import execute_query, execute_non_query
-    from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
-    from user import get_user_by_id
-    from project import get_project_task
-    from user_project import create_user_project_if_not_exists
-    from common.notification_send import notify_new_task_signup
+from common.pg_utilities import execute_query, execute_non_query
+from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
+    validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+    triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
+from user import get_user_by_id
+from project import get_project_task
+from user_project import create_user_project_if_not_exists
+from common.notification_send import notify_new_task_signup
 
 
 STATUS_CHOICES = (
