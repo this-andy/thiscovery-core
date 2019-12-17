@@ -15,7 +15,7 @@ else:
     from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
 
 
-def update_progress_cochrane_task(event, context):
+def update_cochrane_progress(event, context):
     """
     AWS lambda handler to update progress of task hosted by Cochrane Crowd
     """
@@ -59,4 +59,4 @@ def update_progress_cochrane_task(event, context):
 
 
 if __name__ == "__main__":
-    update_progress_cochrane_task(None, None)
+    update_cochrane_progress(None, None)
