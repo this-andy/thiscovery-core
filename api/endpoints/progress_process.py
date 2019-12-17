@@ -16,10 +16,12 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+print('progress_process: About to import external modules')
 from common.cochrane import get_progress
 from common.utilities import get_correlation_id, get_logger
 from project import update_project_task_progress_info, get_project_task_by_external_task_id
 from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
+print('progress_process: Import of external modules successful')
 
 
 def update_cochrane_progress(event, context):

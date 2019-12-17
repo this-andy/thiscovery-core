@@ -16,10 +16,12 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+print('cochrane: About to import external modules')
 import json
 from http import HTTPStatus
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
+print('cochrane: import of external modules successful')
 
 BASE_URL_PRODUCTION = 'https://crs.cochrane.org'
 BASE_URL_STAGING = 'https://api-test.metaxis.com'
