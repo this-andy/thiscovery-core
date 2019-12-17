@@ -26,15 +26,18 @@ from api.common.dev_config import TEST_ON_AWS
 class TestUserExternalAccount(TestCase):
 
     def test_01_ping(self):
-        if TEST_ON_AWS:  # this test does not make sense to run locally
-            from api.endpoints.misc import ping
+        from api.endpoints.misc import ping
 
-            expected_status = HTTPStatus.OK
+        expected_status = HTTPStatus.OK
+        if TEST_ON_AWS:
+            expected_region = 'eu-west-1'
+        else:
+            expected_region = ''
 
-            result = test_get(ping, 'ping', None, None, None)
-            result_status = result['statusCode']
-            result_json = json.loads(result['body'])
+        result = test_get(ping, 'ping', None, None, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
 
-            self.assertEqual(expected_status, result_status)
-            self.assertEqual('Response from THIS Institute citizen science API', result_json['message'])
-            self.assertEqual('eu-west-1', result_json['region'])
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual('Response from THIS Institute citizen science API', result_json['message'])
+        self.assertEqual(expected_region, result_json['region'])
