@@ -2,8 +2,17 @@
 
 import subprocess
 import sys
+from slackclient import SlackClient
 
-from api.local.secrets import STACKERY_CREDENTIALS
+from api.local.secrets import STACKERY_CREDENTIALS, SLACK_TOKEN
+
+
+def slack_message(message="I've just finished running!", channel="@Andre"):
+    sc = SlackClient(SLACK_TOKEN)
+    sc.api_call('chat.postMessage', channel=channel,
+                text=message, username='deploy_to_aws',
+                icon_emoji=':robot_face:')
+
 
 def stackery_deployment(environment, branch):
     try:
@@ -41,6 +50,7 @@ def deploy(environment):
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
+    slack_message()
 
 
 if __name__ == '__main__':
