@@ -36,6 +36,7 @@ DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'user'
 
+
 class TestUser(TestCase):
 
     @classmethod
@@ -47,7 +48,6 @@ class TestUser(TestCase):
 
         insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
 
-
     @classmethod
     def tearDownClass(self):
         if DELETE_TEST_DATA:
@@ -56,7 +56,6 @@ class TestUser(TestCase):
             delete_all_notifications()
 
         set_running_unit_tests(False)
-
 
     def test_01_get_user_by_uuid_api_exists(self):
         """
@@ -102,12 +101,12 @@ class TestUser(TestCase):
         self.assertDictEqual(expected_body, result_json)
 
         # check that login notification exists
-        notifications = get_notifications('type', ['user-login'])
-        notification = notifications[0]  # should be only one
-        self.assertEqual('user-login', notification['type'])
-        self.assertEqual(expected_body['email'], notification['label'])
-        self.assertEqual(expected_body['id'], notification['details']['user_id'])
-        self.assertEqual(expected_body['email'], notification['details']['email'])
+        # notifications = get_notifications('type', ['user-login'])
+        # notification = notifications[0]  # should be only one
+        # self.assertEqual('user-login', notification['type'])
+        # self.assertEqual(expected_body['email'], notification['label'])
+        # self.assertEqual(expected_body['id'], notification['details']['user_id'])
+        # self.assertEqual(expected_body['email'], notification['details']['email'])
 
 
     def test_02_get_user_by_uuid_api_not_exists(self):
@@ -124,7 +123,6 @@ class TestUser(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-
     def test_03_get_user_by_uuid_api_bad_uuid(self):
         from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
@@ -139,7 +137,6 @@ class TestUser(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('uuid' in result_json)
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
-
 
     def test_04_get_user_email_exists(self):
         from api.endpoints.user import get_user_by_email_api
@@ -190,7 +187,6 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(result_json, expected_body)
 
-
     def test_05_get_user_email_not_exists(self):
         from api.endpoints.user import get_user_by_email_api
 
@@ -204,7 +200,6 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
-
 
     def test_06_patch_user_api_ok(self):
         from api.endpoints.user import patch_user_api
@@ -333,7 +328,6 @@ class TestUser(TestCase):
             }
             self.assertDictEqual(expected_body, last_entity_update)
 
-
     def test_07_patch_user_api_user_not_exists(self):
         from api.endpoints.user import patch_user_api
 
@@ -353,7 +347,6 @@ class TestUser(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-
     def test_08_patch_user_api_bad_attribute(self):
         from api.endpoints.user import patch_user_api
 
@@ -369,7 +362,6 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
-
 
     def test_09_patch_user_api_bad_operation(self):
         from api.endpoints.user import patch_user_api
@@ -387,7 +379,6 @@ class TestUser(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
-
     def test_10_patch_user_api_bad_jsonpatch(self):
         from api.endpoints.user import patch_user_api
 
@@ -403,7 +394,6 @@ class TestUser(TestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'].endswith('invalid jsonpatch'))
-
 
     def test_11_create_user_api_ok_and_duplicate(self):
         from api.endpoints.user import create_user_api, get_user_by_id_api
@@ -479,7 +469,6 @@ class TestUser(TestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
-
     def test_12_create_user_api_with_defaults(self):
         from api.endpoints.user import create_user_api
 
@@ -546,7 +535,6 @@ class TestUser(TestCase):
         # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
         # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
-
     def test_13_create_user_api_bad_uuid(self):
         from api.endpoints.user import create_user_api
 
@@ -572,7 +560,59 @@ class TestUser(TestCase):
         self.assertTrue('uuid' in result_json)
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
-    # def test_14_timezone(self):
+    def test_14_user_email_unique_constraint(self):
+        """
+        Tests unique constraint on email field in user database table
+        """
+        from api.endpoints.user import create_user_api
+
+        # create an user
+        expected_status = HTTPStatus.BAD_REQUEST
+        user_json = {
+            "email": "sid@email.co.uk",
+            "first_name": "Sidney",
+            "last_name": "Silva",
+            "country_code": "PT",
+            "status": "new"}
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        expected_message = 'Database integrity error'
+        expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
+                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual(expected_message, result_json['message'])
+        self.assertEqual(expected_error, result_json['error'])
+
+    def test_15_user_email_unique_constraint_is_case_insensitive(self):
+        """
+        Tests that unique constraint on email field in user database table is case insensitive
+        """
+        from api.endpoints.user import create_user_api
+
+        # create an user
+        expected_status = HTTPStatus.BAD_REQUEST
+        user_json = {
+            "email": "SID@email.co.uk",
+            "first_name": "Sidney",
+            "last_name": "Silva",
+            "country_code": "PT",
+            "status": "new"}
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        expected_message = 'Database integrity error'
+        expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
+                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual(expected_message, result_json['message'])
+        self.assertEqual(expected_error, result_json['error'])
+
+    # def test_16_timezone(self):
     #     from api.common.pg_utilities import execute_query
     #     sql = 'Select NOW()'
     #     result =  execute_query(sql, None, 'abc')
