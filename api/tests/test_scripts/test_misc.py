@@ -21,9 +21,18 @@ from http import HTTPStatus
 from unittest import TestCase
 from api.tests.test_scripts.testing_utilities import test_get
 from api.common.dev_config import TEST_ON_AWS
+from api.common.utilities import set_running_unit_tests
 
 
 class TestUserExternalAccount(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
 
     def test_01_ping(self):
         from api.endpoints.misc import ping
