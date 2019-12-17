@@ -8,7 +8,9 @@ import requests
 from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
 
 
-def slack_message(environment, message="deploy_to_aws.py has just finished running!"):
+def slack_message(environment, branch, message=None):
+    if not message:
+        message = f"{branch} has just been deployed to {environment}."
     header = {
         'Content-Type': 'application/json'
     }
@@ -56,7 +58,7 @@ def deploy(environment):
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
-    slack_message(environment)
+    slack_message(environment, branch)
 
 
 if __name__ == '__main__':
