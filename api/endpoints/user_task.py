@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+print('user_task: about to import from external modules')
 import uuid
 import json
 from http import HTTPStatus
