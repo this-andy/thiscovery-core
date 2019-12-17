@@ -44,8 +44,8 @@ def deploy(environment):
 
 
 if __name__ == '__main__':
-    # deploy('dev-afs25')
-    deploy('test-afs25')
+    deploy('dev-afs25')
+    # deploy('test-afs25')
 
     # deploy('dev')
     # deploy('test')

@@ -21,9 +21,13 @@ from http import HTTPStatus
 
 print ('name:' + __name__)
 
+print('project: About to import from common.pg_utilities')
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+print('project: import from common.pg_utilities successful')
+print('project: About to import from common.utilities')
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, non_prod_env_url_param, create_url_params
+print('project: import from common.utilities successful')
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 

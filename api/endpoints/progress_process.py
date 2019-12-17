@@ -19,8 +19,12 @@
 print('progress_process: About to import external modules')
 from common.cochrane import get_progress
 from common.utilities import get_correlation_id, get_logger
+print('progress_process: About to import from project')
 from project import update_project_task_progress_info, get_project_task_by_external_task_id
+print('progress_process: import from project successful')
+print('progress_process: About to import from user_task')
 from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
+print('progress_process: import from user_task successful')
 print('progress_process: Import of external modules successful')
 
 
