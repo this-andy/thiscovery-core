@@ -28,7 +28,7 @@ BASE_URL_STAGING = 'https://api-test.metaxis.com'
 BASE_URL_MOCK_API = 'https://720c06c1-663e-4fd9-bcf9-63bf5d933779.mock.pstmn.io'
 
 base_url = BASE_URL_MOCK_API
-base_url = BASE_URL_PRODUCTION
+# base_url = BASE_URL_PRODUCTION
 
 
 def cochrane_get(url):

@@ -164,8 +164,8 @@ def get_project_task(project_task_id, correlation_id):
             es.short_name as task_provider_name
         FROM public.projects_projecttask pt
         JOIN projects_externalsystem es on pt.external_system_id = es.id
-        WHERE pt.id = %s'''
-
+        WHERE pt.id = %s
+    '''
     return execute_query(sql, (str(project_task_id),), correlation_id)
 
 
@@ -194,8 +194,21 @@ def get_project_with_tasks(project_uuid, correlation_id):
     return result
 
 
-def get_project_by_external_id(external_id, correlation_id):
-    #todo: write this function
+def get_project_task_by_external_task_id(external_task_id, correlation_id):
+    sql = '''
+            SELECT
+                pt.id,
+                project_id,
+                task_type_id,
+                base_url,
+                external_system_id,
+                external_task_id,
+                es.short_name as task_provider_name
+            FROM public.projects_projecttask pt
+            JOIN projects_externalsystem es on pt.external_system_id = es.id
+            WHERE external_task_id = (%s)
+    '''
+    return execute_query(sql, [str(external_task_id)], correlation_id, jsonize_sql=False)
 
 
 def get_project_api(event, context):
@@ -412,13 +425,13 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
-    ev = {'queryStringParameters': qsp}
-    result = get_project_status_for_user_api(ev, None)
-    print(json.dumps(result, indent=2))
-    body = result['body']
-    body_json = json.loads(body)
-    print(json.dumps(body_json, indent=2))
+    # qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
+    # ev = {'queryStringParameters': qsp}
+    # result = get_project_status_for_user_api(ev, None)
+    # print(json.dumps(result, indent=2))
+    # body = result['body']
+    # body_json = json.loads(body)
+    # print(json.dumps(body_json, indent=2))
     # if len(result) == 0:
     #     print(result)
     # else:
@@ -427,3 +440,4 @@ if __name__ == "__main__":
 
     # print(list_projects_with_tasks(None))
     # print(json.dumps(list_projects(None)))
+    pass

@@ -84,9 +84,12 @@ def get_user_task(ut_id, correlation_id):
 
 def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id):
     """
-    Returns a list of user_tasks related to user_id and project_task_id (expected length = 1)
+    Returns user_task related to user_id and project_task_id or None
     """
-    return [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    result = [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    if result:
+        return result[0]
+    return None
 
 
 def update_user_task_progress_info(ut_id, progress_info_dict, correlation_id):
