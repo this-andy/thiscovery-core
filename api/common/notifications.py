@@ -84,7 +84,7 @@ def mark_notification_processed(notification, correlation_id):
     notification_updates = {
         NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value
     }
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+    return update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
 
 def mark_notification_failure(notification, error_message, correlation_id):

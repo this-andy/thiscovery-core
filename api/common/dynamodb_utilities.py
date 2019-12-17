@@ -116,6 +116,7 @@ def update_item(table_name: str, key: str, name_value_pairs: dict, correlation_i
             ExpressionAttributeValues = values_expr,
             ExpressionAttributeNames = attr_names_expr,
         )
+        return response
     except Exception as ex:
         raise ex
 

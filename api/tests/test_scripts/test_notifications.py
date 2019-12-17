@@ -16,8 +16,10 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from unittest import TestCase
 from dateutil import parser
+from http import HTTPStatus
+from unittest import TestCase
+
 from api.common.utilities import set_running_unit_tests, now_with_tz
 from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications
 from api.common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
@@ -179,14 +181,12 @@ class TestNotifications(TestCase):
         """
         self.assertRaises(AssertionError, create_login_notification())
 
-    def test_05_process_login(self):
+    def test_06_process_login(self):
         """
         Tests notification_process.process_user_login
         """
         create_login_notification(TEST_USER_02_JSON)
         notification = get_notifications()[0]
-        posting, marking = process_user_login(notification)
-        from pprint import pprint
-        pprint(posting)
-
-
+        posting_result, marking_result = process_user_login(notification)
+        self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
