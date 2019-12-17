@@ -17,11 +17,9 @@
 #
 
 import json
-import requests
-import uuid
-from urllib.request import urlopen, Request, HTTPError
 from http import HTTPStatus
-from datetime import datetime
+from urllib.error import HTTPError
+from urllib.request import urlopen, Request
 
 BASE_URL_PRODUCTION = 'https://crs.cochrane.org'
 BASE_URL_STAGING = 'https://api-test.metaxis.com'
