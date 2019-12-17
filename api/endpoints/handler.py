@@ -19,7 +19,7 @@
 import json
 import os
 from http import HTTPStatus
-from api.common.utilities import get_logger, get_correlation_id, get_secret, get_start_time, get_elapsed_ms
+from common.utilities import get_logger, get_correlation_id, get_secret, get_start_time, get_elapsed_ms
 
 def hubspot_entity_info(event, context):
 
