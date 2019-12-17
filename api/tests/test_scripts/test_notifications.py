@@ -19,6 +19,7 @@
 from dateutil import parser
 from http import HTTPStatus
 from unittest import TestCase
+from time import sleep
 
 from api.common.utilities import set_running_unit_tests, now_with_tz
 from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications
@@ -134,7 +135,7 @@ class TestNotifications(TestCase):
     def test_03_fail_processing(self):
         from api.common.notifications import mark_notification_failure
         create_registration_notification()
-        notifications = get_notifications('type', ['user-registration'])
+        notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
 
         self.assertEqual(1, len(notifications))
 
@@ -143,7 +144,7 @@ class TestNotifications(TestCase):
         mark_notification_failure(notification, test_error_message, None)
 
         # read it and check
-        notifications = get_notifications('type', ['user-registration'])
+        notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual('1', notification[NotificationAttributes.FAIL_COUNT.value])
@@ -154,7 +155,8 @@ class TestNotifications(TestCase):
         mark_notification_failure(notification, test_error_message, None)
 
         # read it and check
-        notifications = get_notifications('type', ['user-registration'])
+
+        notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual('3', notification[NotificationAttributes.FAIL_COUNT.value])
@@ -165,7 +167,7 @@ class TestNotifications(TestCase):
         Tests notification_send.notify_user_login
         """
         user_json = create_login_notification(TEST_USER_02_JSON)
-        notifications = get_notifications()
+        notifications = get_notifications('type', [NotificationType.USER_LOGIN.value])
         self.assertEqual(1, len(notifications))
 
         notification = notifications[0]

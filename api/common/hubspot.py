@@ -779,5 +779,5 @@ if __name__ == "__main__":
     # save_token(result_2019_05_10_12_11)
 
     # run these two lines to setup new HubSpot env
-    # result = create_thiscovery_contact_properties()
-    result = create_TLE_for_task_signup()
+    result = create_thiscovery_contact_properties()
+    # result = create_TLE_for_task_signup()
