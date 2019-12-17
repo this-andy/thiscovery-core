@@ -129,12 +129,16 @@ def triggered_by_heartbeat(event):
 
 
 def obfuscate_data(input, item_key_path):
-    key = item_key_path[0]
-    if key in input:
-        if len(item_key_path) == 1:
-            input[key] = '*****'
-        else:
-            obfuscate_data(input[key], item_key_path[1:])
+    try:
+        key = item_key_path[0]
+        if key in input:
+            if len(item_key_path) == 1:
+                input[key] = '*****'
+            else:
+                obfuscate_data(input[key], item_key_path[1:])
+    except TypeError:
+        # if called with None or non-subscriptable arguments then do nothing
+        pass
 
 # endregion
 

@@ -17,10 +17,7 @@
 #
 
 from enum import Enum
-if 'api.endpoints' in __name__:
-    from api.common.dynamodb_utilities import scan, update_item, delete_all, put_item
-else:
-    from .dynamodb_utilities import scan, update_item, delete_all, put_item
+from common.dynamodb_utilities import scan, update_item, delete_all, put_item
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'

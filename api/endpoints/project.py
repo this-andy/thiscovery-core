@@ -21,14 +21,9 @@ from http import HTTPStatus
 
 print ('name:' + __name__)
 
-if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query, execute_query_multiple, execute_non_query, dict_from_dataset
-    from .common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, non_prod_env_url_param, create_url_params
-else:
-    from common.pg_utilities import execute_query, execute_query_multiple, execute_non_query, dict_from_dataset
-    from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, non_prod_env_url_param, create_url_params
+from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
+    triggered_by_heartbeat, non_prod_env_url_param, create_url_params
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
@@ -425,13 +420,13 @@ if __name__ == "__main__":
     # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
     # a "a5634be4-af2a-4d4a-a282-663e8c816507"
     # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    # qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
-    # ev = {'queryStringParameters': qsp}
-    # result = get_project_status_for_user_api(ev, None)
-    # print(json.dumps(result, indent=2))
-    # body = result['body']
-    # body_json = json.loads(body)
-    # print(json.dumps(body_json, indent=2))
+    qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
+    ev = {'queryStringParameters': qsp}
+    result = get_project_status_for_user_api(ev, None)
+    print(json.dumps(result, indent=2))
+    body = result['body']
+    body_json = json.loads(body)
+    print(json.dumps(body_json, indent=2))
     # if len(result) == 0:
     #     print(result)
     # else:
@@ -440,4 +435,3 @@ if __name__ == "__main__":
 
     # print(list_projects_with_tasks(None))
     # print(json.dumps(list_projects(None)))
-    pass

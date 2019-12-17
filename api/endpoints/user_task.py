@@ -19,28 +19,16 @@
 import uuid
 import json
 from http import HTTPStatus
-from psycopg2.extras import Json
 
-if 'api.endpoints' in __name__:
-    from .common.cochrane import get_progress
-    from .common.pg_utilities import execute_query, execute_non_query
-    from .common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
-    from .user import get_user_by_id
-    from .project import get_project_task
-    from .user_project import create_user_project_if_not_exists
-    from .common.notification_send import notify_new_task_signup
-else:
-    from common.cochrane import get_progress
-    from common.pg_utilities import execute_query, execute_non_query
-    from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
-        validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-        triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
-    from user import get_user_by_id
-    from project import get_project_task
-    from user_project import create_user_project_if_not_exists
-    from common.notification_send import notify_new_task_signup
+from .common.cochrane import get_progress
+from common.pg_utilities import execute_query, execute_non_query
+from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
+    validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
+    triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
+from user import get_user_by_id
+from project import get_project_task
+from user_project import create_user_project_if_not_exists
+from common.notification_send import notify_new_task_signup
 
 
 STATUS_CHOICES = (
@@ -325,31 +313,18 @@ def create_user_task_api(event, context):
 
 
 if __name__ == "__main__":
-    # ut_json = {
-    #     'user_id': "82b4577a-07bb-4de6-bd55-129e5db6578c",
-    #     'project_task_id': "273b420e-09cb-419c-8b57-b393595dba78",
-    #     'consented': '2019-05-26 17:30:56.087895+01'
-    # }
-    # # print(ut_json)
-    #
-    # ev = {'body': json.dumps(ut_json)}
-    # print(create_user_task_api(ev, None))
-    # a = list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None)
-    # b = filter_user_tasks_by_project_task_id("851f7b34-f76c-49de-a382-7e4089b744e2", '07af2fbe-5cd1-447f-bae1-3a2f8de82829', None)
-    # print("b: {}".format(b))
-    # d = get_user_task('615ff0e6-0b41-4870-b9db-527345d1d9e5', None)
-    # print(d)
-    # c_updates = [
-    #     {'column': 'status', 'value': 'complete'},
-    #     {'column': 'progress_info', 'value': {'number_of_abstracts': 6}},
-    # ]
-    # c = update_user_task('615ff0e6-0b41-4870-b9db-527345d1d9e5', c_updates, None)
-    # print(c)
-    c = update_user_task_progress_info('615ff0e6-0b41-4870-b9db-527345d1d9e5', {'abstracts': 10}, None)
-    # c = update_user_task_progress_info('615ff0e6-0b41-4870-b9db-527345d1d9e5', 'hello world', None)
-    print(c)
-    # d = get_user_task('615ff0e6-0b41-4870-b9db-527345d1d9e5', None)
-    # print(d)
+    ut_json = {
+        'user_id': "82b4577a-07bb-4de6-bd55-129e5db6578c",
+        'project_task_id': "273b420e-09cb-419c-8b57-b393595dba78",
+        'consented': '2019-05-26 17:30:56.087895+01'
+    }
+    # print(ut_json)
+
+    ev = {'body': json.dumps(ut_json)}
+    print(create_user_task_api(ev, None))
+
+    # print(list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None))
+
     # user_task_id = "524c8b64-c63b-437d-bb6f-b9503f980fa5"
     # user_task_json = get_user_task(user_task_id, None)
     # notify_new_task_signup(user_task_json[0], None)
