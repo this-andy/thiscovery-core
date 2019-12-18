@@ -1258,7 +1258,7 @@ Resources:
         Timer7:
           Type: Schedule
           Properties:
-            Schedule: rate(1 minute)
+            Schedule: rate(1 hour)
           Metadata:
             StackeryName: timer-update-cochrane-progress
       Environment:
