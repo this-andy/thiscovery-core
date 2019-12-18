@@ -18,9 +18,9 @@
 
 import json
 from unittest import TestCase
-from api.common.utilities import DetailedValueError
+from common.entity_base import EntityBase
+from common.utilities import DetailedValueError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
-from api.common.entity_base import EntityBase
 
 
 class TestClass(EntityBase):

@@ -20,14 +20,9 @@ import uuid
 import json
 from http import HTTPStatus
 
-if 'api.endpoints' in __name__:
-    from api.common.pg_utilities import execute_query
-    from api.common.utilities import validate_uuid, DetailedValueError
-    from api.common.entity_base import EntityBase
-else:
-    from common.pg_utilities import execute_query
-    from common.utilities import validate_uuid, DetailedValueError
-    from common.entity_base import EntityBase
+from common.pg_utilities import execute_query
+from common.utilities import validate_uuid, DetailedValueError
+from common.entity_base import EntityBase
 
 
 # todo how best to deal with correlation ids
@@ -44,7 +39,6 @@ BASE_SELECT_SQL = '''
     '''
 
 class UserGroup(EntityBase):
-
 
     def __init__(self, name, short_name, url_code, ug_json=[], correlation_id=None):
         super().__init__(ug_json, correlation_id)
@@ -129,4 +123,5 @@ if __name__ == "__main__":
 
     # ug = UserGroup.get_by_id('9cabcdea-8169-4101-87bd-24fd92c9a6da', correlation_id)
     ug = UserGroup.get_by_url_code('ug#2', correlation_id)
+    ug_d = ug.to_dict()
     print(ug.to_json())

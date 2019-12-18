@@ -20,6 +20,9 @@ var/
 # Serverless directories
 .serverless
 
+# Python virtual environments
+venv-mint/
+
 # individual development config settings
 api/common/dev_config.py
 api/endpoints/common/dev_config.py
@@ -36,3 +39,6 @@ api/tests/test_sql/.DS_Store
 
 # data from original dev env
 api/local/london_data/
+
+# local secrets file
+api/local/secrets.py

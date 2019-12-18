@@ -18,11 +18,26 @@
 
 from unittest import TestCase
 from dateutil import parser
-from api.common.utilities import set_running_unit_tests, DuplicateInsertError
-from api.common.dynamodb_utilities import delete_all
+from common.utilities import set_running_unit_tests, DuplicateInsertError, now_with_tz
+from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
 
 TEST_TABLE_NAME = 'testdata'
 TIME_TOLERANCE_SECONDS = 10
+
+TEST_ITEM_01 = {
+    'key': 'test01',
+    'item_type': 'test data',
+    'details': {'att1': 'val1', 'att2': 'val2'},
+}
+
+
+def put_test_items(integer):
+    """
+    Puts "integer" test items in TEST_TABLE_NAME
+    :param integer: desired number of test items
+    """
+    for n in range(integer):
+        put_item(TEST_TABLE_NAME, f'test{n:03}', 'test data', {'att1': f'val1.{n}', 'att2': f'val2.{n}'}, {}, True)
 
 
 class TestDynamoDB(TestCase):
@@ -30,108 +45,75 @@ class TestDynamoDB(TestCase):
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        delete_all(TEST_TABLE_NAME)
 
     @classmethod
     def tearDownClass(cls):
         set_running_unit_tests(False)
 
+    def setUp(self):
+        delete_all(TEST_TABLE_NAME)
+
+    def common_assertions(self, item, result, relevant_datetime):
+        self.assertEqual(item['key'], result['id'])
+        self.assertEqual(item['item_type'], result['type'])
+        self.assertEqual(item['details'], result['details'])
+
+        # now check relevant datetime - allow up to TIME_TOLERANCE_SECONDS difference
+        now = now_with_tz()
+        difference = abs(now - relevant_datetime)
+        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+
     def test_01_get_table_ok(self):
-        from api.common.dynamodb_utilities import get_table, scan
         table = get_table(TEST_TABLE_NAME)
         items = scan(TEST_TABLE_NAME)
-
         self.assertEqual('ACTIVE', table.table_status)
         self.assertEqual(0, len(items))
 
     def test_02_put_and_get_ok(self):
-        from api.common.dynamodb_utilities import put_item, get_item
-        from api.common.utilities import now_with_tz
-
-        item = {}
-        key = 'test01'
-        item_type = 'test data'
-        details = {'att1': 'val1', 'att2': 'val2'}
-
-        put_item(TEST_TABLE_NAME, key, item_type, details, item, False)
-        result = get_item(TEST_TABLE_NAME, key)
-
-        self.assertEqual(key, result['id'])
-        self.assertEqual(item_type, result['type'])
-        self.assertEqual(details, result['details'])
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
+        item = TEST_ITEM_01
+        put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
+        result = get_item(TEST_TABLE_NAME, item['key'])
         result_created_datetime = parser.parse(result['created'])
-        difference = abs(now - result_created_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.common_assertions(item, result, result_created_datetime)
 
     def test_03_put_update_ok(self):
-        from api.common.dynamodb_utilities import put_item, get_item
-        from api.common.utilities import now_with_tz
-
-        item = {}
-        key = 'test01'
-        item_type = 'test data'
-        details = {'att1': 'val1', 'att3': 'val3'}
-
-        put_item(TEST_TABLE_NAME, key, item_type, details, item, True)
-        result = get_item(TEST_TABLE_NAME, key)
-
-        self.assertEqual(key, result['id'])
-        self.assertEqual(item_type, result['type'])
-        self.assertEqual(details, result['details'])
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
+        item = TEST_ITEM_01
+        put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
+        item['details'] = {'att1': 'val1', 'att3': 'val3'}
+        put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, update_allowed=True)
+        result = get_item(TEST_TABLE_NAME, item['key'])
         result_modified_datetime = parser.parse(result['modified'])
-        difference = abs(now - result_modified_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.common_assertions(item, result, result_modified_datetime)
 
     def test_04_put_update_fail(self):
-        from api.common.dynamodb_utilities import put_item
-
-        item = {}
-        key = 'test01'
-        item_type = 'test data'
-        details = {'att1': 'val1', 'att2': 'val2'}
-
+        item = TEST_ITEM_01
+        put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
         with self.assertRaises(DuplicateInsertError):
-            put_item(TEST_TABLE_NAME, key, item_type, details, item, False)
+            put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
 
     def test_05_scan(self):
-        from api.common.dynamodb_utilities import put_item, scan
-
-        put_item(TEST_TABLE_NAME, 'test02', 'test data', {'att1': 'val1.2', 'att2': 'val2.2'}, {}, True)
-        put_item(TEST_TABLE_NAME, 'test03', 'test data', {'att1': 'val1.3', 'att2': 'val2.3'}, {}, True)
-        put_item(TEST_TABLE_NAME, 'test04', 'test data', {'att1': 'val1.4', 'att2': 'val2.4'}, {}, True)
-
+        put_test_items(3)
         items = scan(TEST_TABLE_NAME)
-
-        self.assertEqual(4, len(items))
-        self.assertEqual('test04', items[3]['id'])
+        self.assertEqual(3, len(items))
+        self.assertEqual('test002', items[2]['id'])
 
     def test_06_scan_filter_list(self):
-        from api.common.dynamodb_utilities import scan
-
-        items = scan(TEST_TABLE_NAME, 'id', ['test03'])
+        put_test_items(4)
+        items = scan(TEST_TABLE_NAME, 'id', ['test002'])
 
         self.assertEqual(1, len(items))
-        self.assertEqual({'att1': 'val1.3', 'att2': 'val2.3'}, items[0]['details'])
+        self.assertEqual({'att1': 'val1.2', 'att2': 'val2.2'}, items[0]['details'])
 
     def test_07_scan_filter_string(self):
-        from api.common.dynamodb_utilities import scan
-
-        items = scan(TEST_TABLE_NAME, 'id', 'test04')
+        put_test_items(4)
+        items = scan(TEST_TABLE_NAME, 'id', 'test002')
 
         self.assertEqual(1, len(items))
-        self.assertEqual({'att1': 'val1.4', 'att2': 'val2.4'}, items[0]['details'])
+        self.assertEqual({'att1': 'val1.2', 'att2': 'val2.2'}, items[0]['details'])
 
     def test_08_delete_ok(self):
-        from api.common.dynamodb_utilities import delete_item, get_item
-
-        key = 'test01'
+        put_test_items(1)
+        key = 'test000'
         delete_item(TEST_TABLE_NAME, key)
         result = get_item(TEST_TABLE_NAME, key)
-
         self.assertIsNone(result)

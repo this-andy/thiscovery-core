@@ -18,17 +18,14 @@
 
 import json
 import requests
-import uuid
-from urllib.request import urlopen, Request, HTTPError
+from urllib.request import urlopen, Request
+from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-if __name__ == "__main__":
-    from api.common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
-    from api.common.dynamodb_utilities import get_item, put_item
-else:
-    from .utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
-    from .dynamodb_utilities import get_item, put_item
+
+from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
+from common.dynamodb_utilities import get_item, put_item
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -38,7 +35,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 
-base_url = 'http://api.hubapi.com'
+base_url = 'https://api.hubapi.com'
 
 
 # region Contact property and group management
@@ -148,7 +145,7 @@ def create_timeline_event_type(type_defn: dict):
     type_defn['applicationId'] = app_id
     url = '/integrations/v1/' + app_id + '/timeline/event-types'
 
-    response = hubspot_post(url, type_defn, None)
+    response = hubspot_developer_post(url, type_defn, None)
     content = json.loads(response.content)
 
     return content['id']
@@ -159,7 +156,7 @@ def delete_timeline_event_type(tle_type_id):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id)
 
-    result = hubspot_delete(url, None)
+    result = hubspot_developer_delete(url, None)
 
     return result.status_code
 
@@ -180,7 +177,7 @@ def create_timeline_event_properties(tle_type_id, property_defns: list):
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
     for property_defn in property_defns:
-        result = hubspot_post(url, property_defn, None)
+        result = hubspot_developer_post(url, property_defn, None)
 
 
 def delete_timeline_event_property(tle_type_id, property_id):
@@ -286,6 +283,7 @@ def hubspot_get(url, correlation_id):
     full_url = base_url + url
     headers = {}
     headers['Content-Type'] = 'application/json'
+    data = None
     while not success:
         try:
             headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
@@ -406,6 +404,57 @@ def hubspot_delete(url, correlation_id):
 
 # endregion
 
+# region hubspot developer get/post/put/delete methods - used for managing TLE definitions
+
+def hubspot_developer_post(url: str, data: dict, correlation_id):
+    """
+    Posts using developer API key and user id instead of usual oAuth2 token
+    This is necessary for creating TLE types
+    """
+    from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+
+    full_url = base_url + url + \
+               '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+               '&userId=' + HUBSPOT_DEVELOPER_USERID + \
+               '&application-id=' + app_id
+    headers = {'Content-Type': 'application/json'}
+    try:
+        result = requests.post(data=json.dumps(data), url=full_url, headers=headers)
+        if result.status_code in [HTTPStatus.OK, HTTPStatus.CREATED]:
+            success = True
+        else:
+            errorjson = {'result': result}
+            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+    except HTTPError as err:
+        raise err
+    return result
+
+
+def hubspot_developer_delete(url: str, correlation_id):
+    """
+    Posts using developer API key and user id instead of usual oAuth2 token
+    This is necessary for creating TLE types
+    """
+    from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
+    full_url = base_url + url + \
+               '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+               '&userId=' + HUBSPOT_DEVELOPER_USERID
+    headers = {'Content-Type': 'application/json'}
+    try:
+        result = requests.delete(url=full_url, headers=headers)
+        if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT]:
+            success = True
+        else:
+            errorjson = {'result': result}
+            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+    except HTTPError as err:
+        raise err
+    return result
+
+# endregion
+
 
 # region contact methods
 
@@ -461,7 +510,7 @@ def get_token_from_database(correlation_id) -> dict:
     return token
 
 
-hubspot_oauth_token = None
+# hubspot_oauth_token = None
 
 
 def save_token(new_token, correlation_id):
@@ -469,26 +518,26 @@ def save_token(new_token, correlation_id):
 
 
 def get_current_access_token(correlation_id) -> str:
-    global hubspot_oauth_token
-    if hubspot_oauth_token is None:
-        hubspot_oauth_token = get_token_from_database(correlation_id)
+    # global hubspot_oauth_token
+    # if hubspot_oauth_token is None:
+    hubspot_oauth_token = get_token_from_database(correlation_id)
     return hubspot_oauth_token['access_token']
 
 
-def get_new_token_from_hubspot(refresh_token, code, correlation_id):
-    from dev_config import NGROK_URL_ID
-    global hubspot_oauth_token
+def get_new_token_from_hubspot(refresh_token, code, redirect_url, correlation_id):
+
+    # global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
     client_secret = hubspot_connection['client-secret']
 
-    redirect_url = 'https://www.hubspot.com/auth-callback'
-    redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
     formData = {
         "client_id": client_id,
         "client_secret": client_secret,
-        "redirect_uri": redirect_url,
     }
+
+    if redirect_url is not None:
+        formData['redirect_uri'] = redirect_url
 
     if refresh_token:
         formData['grant_type'] = "refresh_token"
@@ -501,20 +550,23 @@ def get_new_token_from_hubspot(refresh_token, code, correlation_id):
     token_text = res.text
     token = json.loads(token_text)
     save_token(token, correlation_id)
-    hubspot_oauth_token = token
+    # hubspot_oauth_token = token
     return token
 
 
 def refresh_token(correlation_id):
+    hubspot_oauth_token = get_token_from_database(None)
     refresh_token = hubspot_oauth_token['refresh_token']
-    return get_new_token_from_hubspot(refresh_token, None, correlation_id)
+    return get_new_token_from_hubspot(refresh_token, None, None, correlation_id)
 
 
 def get_initial_token_from_hubspot():
-    from dev_config import INITIAL_HUBSPOT_AUTH_CODE
-    return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, None)
+    from common.dev_config import INITIAL_HUBSPOT_AUTH_CODE, NGROK_URL_ID
 
-hubspot_oauth_token = get_token_from_database(None)
+    redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
+    return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
+
+# hubspot_oauth_token = get_token_from_database(None)
 
 # endregion
 
@@ -596,25 +648,21 @@ def post_user_login_to_crm(login_details, correlation_id):
     changes = [
         {"property": property_name, "value": int(login_timestamp)},
     ]
-    update_contact_by_email(user_email, changes, correlation_id)
+    return update_contact_by_email(user_email, changes, correlation_id)
+
 
 
 if __name__ == "__main__":
     pass
 
-    # result = create_group(None)
-
-    # result = create_property2(None)
-    # result = update_property(None)
-
+    # This line allow you to initialise HubSpot oauth token
     # result = get_initial_token_from_hubspot()
+
+    # and manually refresh it if required
     result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
-
-    # result = get_token_from_database()
-    # result = get_new_token_from_hubspot(token['refresh_token'])
 
     # hubspot_id = 1151
     # tsn = hubspot_timestamp(str(now_with_tz()))
@@ -711,7 +759,7 @@ if __name__ == "__main__":
 
     # result = create_or_update_timeline_event(event_data)
 
-    # result = delete_timeline_event_type(390568)
+    # result = delete_timeline_event_type(395426)
 
 
     # save_TLE_type_id('test', 1234)
@@ -725,5 +773,6 @@ if __name__ == "__main__":
 
     # save_token(result_2019_05_10_12_11)
 
+    # run these two lines to setup new HubSpot env
     # result = create_thiscovery_contact_properties()
     # result = create_TLE_for_task_signup()

@@ -101,16 +101,13 @@ def get_file_as_string(path):
     with open(path, 'r') as f:
         return f.read()
 
-# # This function was only used in load_countries before the changes introduced in commit dcd8591
-# # If those changes are approved and merged to master, then this function can be deleted.
-# # Commenting it out for now
-# def running_on_aws():
-#     try:
-#         region = os.environ['AWS_REGION']
-#     except:
-#         region = None
-#
-#     return region is not None
+
+def running_on_aws():
+    try:
+        region = os.environ['AWS_REGION']
+    except:
+        region = None
+    return region is not None
 
 
 def now_with_tz():
@@ -132,12 +129,16 @@ def triggered_by_heartbeat(event):
 
 
 def obfuscate_data(input, item_key_path):
-    key = item_key_path[0]
-    if key in input:
-        if len(item_key_path) == 1:
-            input[key] = '*****'
-        else:
-            obfuscate_data(input[key], item_key_path[1:])
+    try:
+        key = item_key_path[0]
+        if key in input:
+            if len(item_key_path) == 1:
+                input[key] = '*****'
+            else:
+                obfuscate_data(input[key], item_key_path[1:])
+    except TypeError:
+        # if called with None or non-subscriptable arguments then do nothing
+        pass
 
 # endregion
 
@@ -230,14 +231,16 @@ def get_aws_region():
 
 
 def get_aws_namespace():
-    if running_unit_tests():
-        from .dev_config import UNIT_TEST_NAMESPACE
-        secrets_namespace = UNIT_TEST_NAMESPACE
-    else:
+    if running_on_aws():
         try:
             secrets_namespace = os.environ['SECRETS_NAMESPACE']
-        except:
-            from .dev_config import SECRETS_NAMESPACE
+        except KeyError:
+            raise DetailedValueError('SECRETS_NAMESPACE environment variable not defined', {})
+    else:
+        from common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
+        if running_unit_tests():
+            secrets_namespace = UNIT_TEST_NAMESPACE
+        else:
             secrets_namespace = SECRETS_NAMESPACE
     return secrets_namespace
 
@@ -399,13 +402,13 @@ countries = load_countries()
 # endregion
 
 
-
 if __name__ == "__main__":
-    result = get_secret('database-connection')
+    # result = get_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
     # result = get_country_name('US')
+    result = get_aws_namespace()
     print(result)
 
     # print(feature_flag('hubspot-tle'))
