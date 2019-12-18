@@ -408,6 +408,8 @@ Resources:
         - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -421,6 +423,8 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
+          TABLE_NAME: !Ref notifications
+          TABLE_ARN: !GetAtt notifications.Arn
       Events:
         CoreAPIGETv1userid:
           Type: Api

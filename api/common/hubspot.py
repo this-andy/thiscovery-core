@@ -283,6 +283,7 @@ def hubspot_get(url, correlation_id):
     full_url = base_url + url
     headers = {}
     headers['Content-Type'] = 'application/json'
+    data = None
     while not success:
         try:
             headers['Authorization'] = 'Bearer ' + get_current_access_token(correlation_id)
@@ -523,24 +524,20 @@ def get_current_access_token(correlation_id) -> str:
     return hubspot_oauth_token['access_token']
 
 
-def get_new_token_from_hubspot(refresh_token, code, correlation_id):
-    if __name__ == "__main__":
-        from api.common.dev_config import NGROK_URL_ID
-    else:
-        from .dev_config import NGROK_URL_ID
+def get_new_token_from_hubspot(refresh_token, code, redirect_url, correlation_id):
 
     # global hubspot_oauth_token
     hubspot_connection = get_secret('hubspot-connection')
     client_id = hubspot_connection['client-id']
     client_secret = hubspot_connection['client-secret']
 
-    redirect_url = 'https://www.hubspot.com/auth-callback'
-    redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
     formData = {
         "client_id": client_id,
         "client_secret": client_secret,
-        "redirect_uri": redirect_url,
     }
+
+    if redirect_url is not None:
+        formData['redirect_uri'] = redirect_url
 
     if refresh_token:
         formData['grant_type'] = "refresh_token"
@@ -560,16 +557,14 @@ def get_new_token_from_hubspot(refresh_token, code, correlation_id):
 def refresh_token(correlation_id):
     hubspot_oauth_token = get_token_from_database(None)
     refresh_token = hubspot_oauth_token['refresh_token']
-    return get_new_token_from_hubspot(refresh_token, None, correlation_id)
+    return get_new_token_from_hubspot(refresh_token, None, None, correlation_id)
 
 
 def get_initial_token_from_hubspot():
-    if __name__ == "__main__":
-        from api.common.dev_config import INITIAL_HUBSPOT_AUTH_CODE
-    else:
-        from .dev_config import INITIAL_HUBSPOT_AUTH_CODE
+    from common.dev_config import INITIAL_HUBSPOT_AUTH_CODE, NGROK_URL_ID
 
-    return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, None)
+    redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
+    return get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
 
 # hubspot_oauth_token = get_token_from_database(None)
 
@@ -653,7 +648,8 @@ def post_user_login_to_crm(login_details, correlation_id):
     changes = [
         {"property": property_name, "value": int(login_timestamp)},
     ]
-    update_contact_by_email(user_email, changes, correlation_id)
+    return update_contact_by_email(user_email, changes, correlation_id)
+
 
 
 if __name__ == "__main__":
@@ -663,7 +659,7 @@ if __name__ == "__main__":
     # result = get_initial_token_from_hubspot()
 
     # and manually refresh it if required
-    # result = refresh_token(None)
+    result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
@@ -779,4 +775,4 @@ if __name__ == "__main__":
 
     # run these two lines to setup new HubSpot env
     # result = create_thiscovery_contact_properties()
-    result = create_TLE_for_task_signup()
+    # result = create_TLE_for_task_signup()

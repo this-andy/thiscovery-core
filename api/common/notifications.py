@@ -41,6 +41,7 @@ class NotificationAttributes(Enum):
     STATUS = 'processing_status'
     FAIL_COUNT = 'processing_fail_count'
     ERROR_MESSAGE = 'processing_error_message'
+    TYPE = 'type'
 
 
 def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
@@ -80,7 +81,7 @@ def mark_notification_processed(notification, correlation_id):
     notification_updates = {
         NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value
     }
-    update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+    return update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
 
 def mark_notification_failure(notification, error_message, correlation_id):

@@ -34,7 +34,7 @@ def notify_new_task_signup(task_signup, correlation_id):
 
 
 def notify_user_login(login_info, correlation_id):
-    return
+    assert 'login_datetime' in login_info.keys(), f"login_datetime not present in notification body ({login_info})"
     notification_item = create_notification(login_info['email'])
     key = str(uuid.uuid4())
     save_notification(key, NotificationType.USER_LOGIN.value, login_info, notification_item, correlation_id)
