@@ -187,12 +187,17 @@ def create_timeline_event_properties(tle_type_id, property_defns: list):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
+    properties_created = []
     for property_defn in property_defns:
-        result_ = hubspot_developer_post(url, property_defn, None)
-        if not result_.ok:
-            raise DetailedValueError(f'Failed to create {property_defn} for timeline event type ID {tle_type_id}', details={'result': result})
-
-    return result_
+        try:
+            hubspot_developer_post(url, property_defn, None)
+            properties_created.append(property_defn)
+        except DetailedValueError as err:
+            if err.details['message'] == 'Cannot have two properties with same name.':
+                print(f'Timeline event {tle_type_id} already has a property named {property_defn["name"]} - no action taken')
+            else:
+                raise err
+    return properties_created
 
 
 def delete_timeline_event_property(tle_type_id, property_id):
@@ -279,10 +284,10 @@ def create_timeline_event_type_for_task_signup(task_signup_tle_type_name=TASK_SI
             },
         ]
 
-        result_ = create_timeline_event_properties(tle_type_id, properties)
+        create_timeline_event_properties(tle_type_id, properties)
         save_TLE_type_id(task_signup_tle_type_name, tle_type_id, None)
         print(f'{message_base} created')
-        return result_
+        return tle_type_id
 
 
 def save_TLE_type_id(name: str, hubspot_id, correlation_id):
@@ -456,15 +461,14 @@ def hubspot_developer_get(url, correlation_id, app_id_in_url=False):
     headers = {'Content-Type': 'application/json'}
     logger.info('About to try request.get', extra={'full_url': full_url, 'headers': headers})
     try:
-        result = requests.get(full_url, headers=headers)
-        if result.ok:
+        result_ = requests.get(full_url, headers=headers)
+        if result_.ok:
             success = True
         else:
-            errorjson = {'result': result}
-            raise DetailedValueError(f'HTTP code {result.status_code}', errorjson)
+            raise DetailedValueError(f'HTTP code {result.status_code}', result_.json())
     except HTTPError as err:
         raise err
-    return result
+    return result_
 
 
 def hubspot_developer_post(url: str, data: dict, correlation_id, app_id_in_url=False):
@@ -495,8 +499,7 @@ def hubspot_developer_post(url: str, data: dict, correlation_id, app_id_in_url=F
         if result.status_code in [HTTPStatus.OK, HTTPStatus.CREATED]:
             success = True
         else:
-            errorjson = {'result': result}
-            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+            raise DetailedValueError(f'HTTP code {result.status_code}', {**data, **result.json()})
     except HTTPError as err:
         raise err
     return result
