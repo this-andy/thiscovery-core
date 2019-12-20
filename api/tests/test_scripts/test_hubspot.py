@@ -22,8 +22,28 @@ from unittest import TestCase
 from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
 
 TIME_TOLERANCE_SECONDS = 10
-TEST_EMAIL_ADDRESS = 'sw@email.co.uk'
 DELETE_TEST_DATA = True
+
+TEST_USER_01 = {
+    "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
+    "created": "2019-06-01T11:16:56+01:00",
+    "email": "sw@email.co.uk",
+    "first_name": "Steven",
+    "last_name": "Walcorn",
+    "thiscovery_id": "d5897775-adbc-4859-b883-1aec0e2fd559",
+    "country_code": "GB",
+    "country_name": "United Kingdom",
+    "status": "new"
+}
+
+
+def delete_test_users(test_users=[TEST_USER_01]):
+    for user in test_users:
+        u_email = user['email']
+        contact = hs.get_hubspot_contact_by_email(u_email, None)
+        if contact is not None:
+            contact_hubspot_id = contact['vid']
+            hs.delete_hubspot_contact(contact_hubspot_id, None)
 
 
 class TestHubspot(TestCase):
@@ -35,27 +55,24 @@ class TestHubspot(TestCase):
     @classmethod
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
-            contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, None)
-            if contact is not None:
-                contact_hubspot_id = contact['vid']
-                hs.delete_hubspot_contact(contact_hubspot_id, None)
-
+            delete_test_users()
         set_running_unit_tests(False)
 
+    def setUp(self):
+        """
+        Deletes test_users before each test is run to ensure tests are independent
+        """
+        delete_test_users()
+
     def test_01_create_contact_ok(self):
-        user_json = {
-            "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-            "created": "2019-06-01T11:16:56+01:00",
-            "email": TEST_EMAIL_ADDRESS,
-            "first_name": "Steven",
-            "last_name": "Walcorn",
-            "thiscovery_id": "d5897775-adbc-4859-b883-1aec0e2fd559",
-            "country_code": "GB",
-            "country_name": "United Kingdom",
-            "status": "new"}
-
+        """
+        Tests functions:
+        - hs.post_new_user_to_crm
+        - hs.get_hubspot_contact_by_id,
+        - hs.get_contact_property
+        """
+        user_json = TEST_USER_01
         hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
-
         contact = hs.get_hubspot_contact_by_id(hubspot_id, None)
 
         self.assertEqual(user_json['id'], hs.get_contact_property(contact, 'thiscovery_id'))
@@ -65,22 +82,46 @@ class TestHubspot(TestCase):
         self.assertEqual(user_json['country_name'], hs.get_contact_property(contact, 'country'))
 
     def test_03_update_contact_ok(self):
+        """
+        Tests functions:
+        - hs.update_contact_by_email
+        - hs.get_hubspot_contact_by_email
+        - hs.get_contact_property
+
+        Uses functions:
+        - hs.hubspot_timestamp
+        - api.common.utilities.now_with_tz
+        """
+        user_json = TEST_USER_01
+        hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
         tsn = hs.hubspot_timestamp(str(now_with_tz()))
         property_name = 'thiscovery_registered_date'
         changes = [
                 {"property": property_name, "value": int(tsn)},
             ]
-        hs.update_contact_by_email('sw@email.co.uk', changes, correlation_id)
+        hs.update_contact_by_email(user_json['email'], changes, correlation_id)
 
-        contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
+        contact = hs.get_hubspot_contact_by_email(user_json['email'], correlation_id)
         thiscovery_registered_datestamp = hs.get_contact_property(contact, property_name)
 
         self.assertEqual(str(tsn), thiscovery_registered_datestamp)
 
     def test_04_create_tle(self):
+        """
+        Tests functions:
+        - hs.get_hubspot_contact_by_email
+
+        - hs.get_hubspot_contact_by_email
+        - hs.get_contact_property
+
+        Uses functions:
+        - api.common.utilities.new_correlation_id
+        """
+        user_json = TEST_USER_01
+        hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
-        contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
+        contact = hs.get_hubspot_contact_by_email(user_json['email'], correlation_id)
         contact_hubspot_id = contact['vid']
         tle_type_id = hs.get_TLE_type_id(hs.TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
         tle_id = 'test_tle_01'
