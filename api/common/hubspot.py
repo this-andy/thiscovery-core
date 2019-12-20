@@ -41,15 +41,6 @@ base_url = 'https://api.hubapi.com'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
-def save_TLE_type_id(name: str, hubspot_id, correlation_id):
-    table_id = get_aws_namespace() + name
-    details = {
-        'hubspot_id': str(hubspot_id),
-        'name': str(name),
-    }
-    put_item('lookups', table_id, 'tle_type', details, {}, True, correlation_id)
-
-
 def get_TLE_type_id(name: str, correlation_id):
     table_id = get_aws_namespace() + name
     item = get_item('lookups', table_id, correlation_id)
@@ -463,7 +454,7 @@ def post_user_login_to_crm(login_details, correlation_id):
     return update_contact_by_email(user_email, changes, correlation_id)
 
 
-class TimelineEventsManager:
+class TimelineEventBase:
     def __init__(self, app_id=None):
         # workaround for setting get_secret('hubspot-connection')['app-id'] as default value of app_id. Defining it as default above instead of None breaks
         # the tests that rely on this class because, if that is tried, os.environ["TESTING"] does not exist inside the scope of get_secret.
@@ -472,25 +463,13 @@ class TimelineEventsManager:
         else:
             self.app_id = app_id
 
-    def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
-        url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
-        result = hubspot_get(url, correlation_id)
-        return result
 
-    def get_timeline_event_properties(self, tle_type_id):
+class TimelineEventTypeManager(TimelineEventBase):
+
+    def get_timeline_event_type_properties(self, tle_type_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
         result = hubspot_get(url, None)
         return result
-
-    def create_or_update_timeline_event(self, event_data: dict, correlation_id):
-        url = f'/integrations/v1/{self.app_id}/timeline/event'
-        result = hubspot_put(url, event_data, correlation_id)
-        return result.status_code
-
-    def create_timeline_event_properties(self, tle_type_id, property_defns: list):
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
-        for property_defn in property_defns:
-            hubspot_developer_post(url, property_defn, None)
 
     def create_timeline_event_type(self, type_defn):
         """
@@ -508,7 +487,12 @@ class TimelineEventsManager:
         content = json.loads(response.content)
         return content['id']
 
-    def delete_timeline_event_property(self, tle_type_id, property_id):
+    def create_timeline_event_type_properties(self, tle_type_id, property_defns: list):
+        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
+        for property_defn in property_defns:
+            hubspot_developer_post(url, property_defn, None)
+
+    def delete_timeline_event_type_property(self, tle_type_id, property_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties/{property_id}'
         result = hubspot_delete(url, None)
         return result.status_code
@@ -527,57 +511,26 @@ class TimelineEventsManager:
         result = hubspot_developer_delete(url, None)
         return result.status_code
 
-    def create_timeline_event_for_task_signup(self):
-        type_defn = {
-            "name": TASK_SIGNUP_TLE_TYPE_NAME,
-            "objectType": "CONTACT",
-            "headerTemplate": "{{signup_event_type}} for {{task_name}}",
-            "detailTemplate": "Project: {{project_name}}  {{project_id}}\nTask type: {{task_type_name}}  {{task_type_id}}"
+    def save_timeline_event_type_id(self, name: str, hubspot_id, correlation_id):
+        table_id = get_aws_namespace() + name
+        details = {
+            'hubspot_id': str(hubspot_id),
+            'name': str(name),
         }
+        put_item('lookups', table_id, 'tle_type', details, {}, True, correlation_id)
 
-        tle_type_id = self.create_timeline_event_type(type_defn)
 
-        properties = [
-            {
-                "name": "project_id",
-                "label": "Project Id",
-                "propertyType": "String"
-            },
-            {
-                "name": "project_name",
-                "label": "Project Name",
-                "propertyType": "String"
-            },
-            {
-                "name": "task_id",
-                "label": "Task Id",
-                "propertyType": "String"
-            },
-            {
-                "name": "task_name",
-                "label": "Task Name",
-                "propertyType": "String"
-            },
-            {
-                "name": "task_type_id",
-                "label": "Task Type Id",
-                "propertyType": "String"
-            },
-            {
-                "name": "task_type_name",
-                "label": "Task Type",
-                "propertyType": "String"
-            },
-            {
-                "name": "signup_event_type",
-                "label": "Event Type",
-                "propertyType": "String"
-            },
-        ]
+class TimelineEventManager(TimelineEventBase):
 
-        self.create_timeline_event_properties(tle_type_id, properties)
+    def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
+        url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
+        result = hubspot_get(url, correlation_id)
+        return result
 
-        save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
+    def create_or_update_timeline_event(self, event_data: dict, correlation_id):
+        url = f'/integrations/v1/{self.app_id}/timeline/event'
+        result = hubspot_put(url, event_data, correlation_id)
+        return result.status_code
 
 
 if __name__ == "__main__":
@@ -672,7 +625,7 @@ if __name__ == "__main__":
     #     },
     # ]
 
-    # result = create_timeline_event_properties('279633', data)
+    # result = create_timeline_event_type_properties('279633', data)
 
     # result = delete_timeline_event_property('279633', '480994')
 
