@@ -71,12 +71,6 @@ class TestHubspotContacts(TestCase):
         delete_test_users()
 
     def test_01_create_contact_ok(self):
-        """
-        Tests functions:
-            hs.post_new_user_to_crm
-            hs.get_hubspot_contact_by_id,
-            hs.get_contact_property
-        """
         user_json = TEST_USER_01
         hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
         contact = hs.get_hubspot_contact_by_id(hubspot_id, None)
@@ -88,16 +82,6 @@ class TestHubspotContacts(TestCase):
         self.assertEqual(user_json['country_name'], hs.get_contact_property(contact, 'country'))
 
     def test_03_update_contact_ok(self):
-        """
-        Tests functions:
-            hs.update_contact_by_email
-            hs.get_hubspot_contact_by_email
-            hs.get_contact_property
-
-        Uses functions:
-            hs.hubspot_timestamp
-            api.common.utilities.now_with_tz
-        """
         user_json = TEST_USER_01
         hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
@@ -113,17 +97,28 @@ class TestHubspotContacts(TestCase):
 
         self.assertEqual(str(tsn), thiscovery_registered_datestamp)
 
-    def test_04_create_tle(self):
-        """
-        Tests functions:
-            hs.get_hubspot_contact_by_email
 
-            hs.get_hubspot_contact_by_email
-            hs.get_contact_property
+class TestHubspotTimelineEvents(TestCase):
 
-        Uses functions:
-            api.common.utilities.new_correlation_id
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+        cls.tle_manager = hs.TimelineEventsManager()
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
+
+    def test_tle_01_create_and_delete_tle_type(self):
         """
+        Tests the creation and deletion of timeline event types
+        """
+        tle_type_id = self.tle_manager.create_timeline_event_type(TEST_TLE_TYPE_DEFINITION)
+        self.assertIsInstance(tle_type_id, int)
+        status_code = self.tle_manager.delete_timeline_event_type(tle_type_id)
+        self.assertEqual(HTTPStatus.NO_CONTENT, status_code)
+
+    def test_tle_02_create_tle(self):
         user_json = TEST_USER_01
         hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
@@ -155,32 +150,10 @@ class TestHubspotContacts(TestCase):
             'timestamp': hs.hubspot_timestamp(signup_details['created'])
         }
 
-        hs.create_or_update_timeline_event(tle_details, correlation_id)
+        self.tle_manager.create_or_update_timeline_event(tle_details, correlation_id)
 
-        tle = hs.get_timeline_event(tle_type_id, tle_id, correlation_id)
+        tle = self.tle_manager.get_timeline_event(tle_type_id, tle_id, correlation_id)
 
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])
         self.assertEqual(contact_hubspot_id, tle['objectId'])
-
-
-class TestHubspotTimelineEvents(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-
-    @classmethod
-    def tearDownClass(cls):
-        set_running_unit_tests(False)
-
-    def test_tle_01_create_and_delete_tle_type(self):
-        """
-        Tests functions:
-            hs.create_timeline_event_type
-            hs.delete_timeline_event_type
-        """
-        tle_type_id = hs.create_timeline_event_type(TEST_TLE_TYPE_DEFINITION)
-        self.assertIsInstance(tle_type_id, int)
-        status_code = hs.delete_timeline_event_type(tle_type_id)
-        self.assertEqual(HTTPStatus.NO_CONTENT, status_code)
