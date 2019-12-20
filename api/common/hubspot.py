@@ -124,22 +124,45 @@ def create_thiscovery_contact_properties():
         print(message_base + 'already exists - no action taken')
     else:
         print(message_base + 'created')
-
 # endregion
 
-# region Timeline Events
 
-def create_or_update_timeline_event(event_data: dict, correlation_id):
+# region Timeline Events
+def append_app_id_to_url(url):
+    """
+    Helper function to retrieve app_id from AWS and append it to an url
+
+    Args:
+        url (str): must contain a placemarker {app_id} where the ID should be inserted
+
+    Returns:
+        url containing app ID for SECRETS_NAMESPACE environment
+
+    """
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
-    url = '/integrations/v1/' + app_id + '/timeline/event'
+    return url.format(app_id=app_id)
 
+
+def create_or_update_timeline_event(event_data: dict, correlation_id):
+    url = append_app_id_to_url(f'/integrations/v1/{app_id}/timeline/event')
     result = hubspot_put(url, event_data, correlation_id)
-
     return result.status_code
 
 
-def create_timeline_event_type(type_defn: dict):
+def create_timeline_event_type(type_defn):
+    """
+    See https://developers.hubspot.com/docs/methods/timeline/create-event-type
+
+    Args:
+        type_defn (dict): see test_hubspot.TEST_TLE_TYPE_DEFINITION for an example
+
+    Returns:
+        content['id'] (int): ID of created timeline event type
+
+    Tested by:
+        test_hubspot.test_tle_01_create_and_delete_tle_type
+    """
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
     type_defn['applicationId'] = app_id
@@ -152,12 +175,20 @@ def create_timeline_event_type(type_defn: dict):
 
 
 def delete_timeline_event_type(tle_type_id):
-    hubspot_connection = get_secret('hubspot-connection')
-    app_id = hubspot_connection['app-id']
-    url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id)
+    """
+    See https://developers.hubspot.com/docs/methods/timeline/delete-event-type
 
+    Args:
+        tle_type_id: ID of timeline event type to be deleted
+
+    Returns:
+        Status code of delete request: Returns a 204 No Content response on success
+
+    Tested by:
+        test_hubspot.test_tle_01_create_and_delete_tle_type
+    """
+    url = append_app_id_to_url(f'/integrations/v1/{app_id}/timeline/event-types/{tle_type_id}'
     result = hubspot_developer_delete(url, None)
-
     return result.status_code
 
 
@@ -459,10 +490,34 @@ def hubspot_developer_delete(url: str, correlation_id):
 # region contact methods
 
 def get_contact_property(contact, property_name):
+    """
+
+    Args:
+        contact:
+        property_name:
+
+    Returns:
+
+    Tested in:
+        test_hubspot.test_01_create_contact_ok
+
+    """
     return contact['properties'][property_name]['value']
 
 
 def get_hubspot_contact_by_id(id, correlation_id):
+    """
+
+    Args:
+        id: hubspot ID of contact
+        correlation_id:
+
+    Returns:
+
+    Tested in:
+        test_hubspot.test_01_create_contact_ok
+
+    """
     url = '/contacts/v1/contact/vid/' + str(id) + '/profile'
     return hubspot_get(url, correlation_id)
 
@@ -586,10 +641,23 @@ def hubspot_timestamp_to_datetime(hubspot_timestamp: int):
     timestamp = hubspot_timestamp/1000
     dt = datetime.fromtimestamp(timestamp)
     return dt
-
 # endregion
 
+
 def post_new_user_to_crm(new_user, correlation_id):
+    """
+
+    Args:
+        new_user (json): see test_hubspot.TEST_USER_01 for an example
+        correlation_id:
+
+    Returns:
+        tuple: (hubspot_id, is_new) if successful, (-1, False) otherwise
+
+    Tested in:
+        test_hubspot.test_01_create_contact_ok
+
+    """
     email = new_user['email']
 
     url = '/contacts/v1/contact/createOrUpdate/email/' + email
@@ -659,7 +727,7 @@ if __name__ == "__main__":
     # result = get_initial_token_from_hubspot()
 
     # and manually refresh it if required
-    result = refresh_token(None)
+    # result = refresh_token(None)
 
     # existing_tle_type_id_from_hubspot =
     # save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)

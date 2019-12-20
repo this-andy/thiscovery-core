@@ -18,6 +18,7 @@
 
 import api.common.hubspot as hs
 
+from http import HTTPStatus
 from unittest import TestCase
 from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
 
@@ -36,6 +37,11 @@ TEST_USER_01 = {
     "status": "new"
 }
 
+TEST_TLE_TYPE_DEFINITION = {
+    "name": "Test timeline type",
+    "objectType": "CONTACT",
+    "headerTemplate": "# Title for event {{id}}\nThis is an event for {{objectType}}"
+}
 
 def delete_test_users(test_users=[TEST_USER_01]):
     for user in test_users:
@@ -46,7 +52,7 @@ def delete_test_users(test_users=[TEST_USER_01]):
             hs.delete_hubspot_contact(contact_hubspot_id, None)
 
 
-class TestHubspot(TestCase):
+class TestHubspotContacts(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -67,9 +73,9 @@ class TestHubspot(TestCase):
     def test_01_create_contact_ok(self):
         """
         Tests functions:
-        - hs.post_new_user_to_crm
-        - hs.get_hubspot_contact_by_id,
-        - hs.get_contact_property
+            hs.post_new_user_to_crm
+            hs.get_hubspot_contact_by_id,
+            hs.get_contact_property
         """
         user_json = TEST_USER_01
         hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
@@ -84,13 +90,13 @@ class TestHubspot(TestCase):
     def test_03_update_contact_ok(self):
         """
         Tests functions:
-        - hs.update_contact_by_email
-        - hs.get_hubspot_contact_by_email
-        - hs.get_contact_property
+            hs.update_contact_by_email
+            hs.get_hubspot_contact_by_email
+            hs.get_contact_property
 
         Uses functions:
-        - hs.hubspot_timestamp
-        - api.common.utilities.now_with_tz
+            hs.hubspot_timestamp
+            api.common.utilities.now_with_tz
         """
         user_json = TEST_USER_01
         hs.post_new_user_to_crm(user_json, None)
@@ -110,13 +116,13 @@ class TestHubspot(TestCase):
     def test_04_create_tle(self):
         """
         Tests functions:
-        - hs.get_hubspot_contact_by_email
+            hs.get_hubspot_contact_by_email
 
-        - hs.get_hubspot_contact_by_email
-        - hs.get_contact_property
+            hs.get_hubspot_contact_by_email
+            hs.get_contact_property
 
         Uses functions:
-        - api.common.utilities.new_correlation_id
+            api.common.utilities.new_correlation_id
         """
         user_json = TEST_USER_01
         hs.post_new_user_to_crm(user_json, None)
@@ -156,3 +162,25 @@ class TestHubspot(TestCase):
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])
         self.assertEqual(contact_hubspot_id, tle['objectId'])
+
+
+class TestHubspotTimelineEvents(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
+
+    def test_tle_01_create_and_delete_tle_type(self):
+        """
+        Tests functions:
+            hs.create_timeline_event_type
+            hs.delete_timeline_event_type
+        """
+        tle_type_id = hs.create_timeline_event_type(TEST_TLE_TYPE_DEFINITION)
+        self.assertIsInstance(tle_type_id, int)
+        status_code = hs.delete_timeline_event_type(tle_type_id)
+        self.assertEqual(HTTPStatus.NO_CONTENT, status_code)
