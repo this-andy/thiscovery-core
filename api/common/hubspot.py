@@ -38,95 +38,6 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 base_url = 'https://api.hubapi.com'
 
 
-# region Contact property and group management
-
-
-def create_group(group_definition):
-    url = '/properties/v1/contacts/groups'
-    try:
-        r = hubspot_post(url, group_definition, None)
-    except DetailedValueError as err:
-        if err.details['result'].status_code == HTTPStatus.CONFLICT:
-            return HTTPStatus.CONFLICT
-        else:
-            raise err
-    return r.status_code
-
-
-def create_contact_property(property_definition):
-    url = '/properties/v1/contacts/properties'
-    try:
-        r = hubspot_post(url, property_definition, None)
-    except DetailedValueError as err:
-        if err.details['result'].status_code == HTTPStatus.CONFLICT:
-            return HTTPStatus.CONFLICT
-        else:
-            raise err
-    return r.status_code
-
-
-def create_thiscovery_contact_properties():
-    group_definition = {
-        "name": "thiscovery",
-        "displayName": "Thiscovery"
-    }
-    status = create_group(group_definition)
-    message_base = "Group named '" + group_definition["name"] + "' "
-    if status == HTTPStatus.CONFLICT:
-        print(message_base + 'already exists - no action taken')
-    else:
-        print(message_base + 'created')
-
-    property_definition = {
-        "name": "thiscovery_id",
-        "label": "Thiscovery ID",
-        "description": "Contact's unique user ID in Thiscovery API",
-        "groupName": "thiscovery",
-        "type": "string",
-        "fieldType": "text",
-        "formField": False
-    }
-    status = create_contact_property(property_definition)
-    message_base = "Property named '" + property_definition["name"] + "' "
-    if status == HTTPStatus.CONFLICT:
-        print(message_base + 'already exists - no action taken')
-    else:
-        print(message_base + 'created')
-
-    property_definition = {
-        "name": "thiscovery_registered_date",
-        "label": "Registered on Thiscovery date",
-        "description": "The date on which a person first registered on Thiscovery.  Automatically set when someone registers.",
-        "groupName": "thiscovery",
-        "type": "datetime",
-        "fieldType": "text",
-        "formField": False
-    }
-    status = create_contact_property(property_definition)
-    message_base = "Property named '" + property_definition["name"] + "' "
-    if status == HTTPStatus.CONFLICT:
-        print(message_base + 'already exists - no action taken')
-    else:
-        print(message_base + 'created')
-
-    property_definition = {
-        "name": "thiscovery_last_login_date",
-        "label": "Last login on Thiscovery date",
-        "description": "The date on which a person last logged in to Thiscovery.",
-        "groupName": "thiscovery",
-        "type": "datetime",
-        "fieldType": "text",
-        "formField": False
-    }
-    status = create_contact_property(property_definition)
-    message_base = "Property named '" + property_definition["name"] + "' "
-    if status == HTTPStatus.CONFLICT:
-        print(message_base + 'already exists - no action taken')
-    else:
-        print(message_base + 'created')
-# endregion
-
-
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
@@ -337,10 +248,6 @@ def get_contact_property(contact, property_name):
         property_name:
 
     Returns:
-
-    Tested in:
-        test_hubspot.test_01_create_contact_ok
-
     """
     return contact['properties'][property_name]['value']
 
@@ -353,9 +260,6 @@ def get_hubspot_contact_by_id(id, correlation_id):
         correlation_id:
 
     Returns:
-
-    Tested in:
-        test_hubspot.test_01_create_contact_ok
 
     """
     url = '/contacts/v1/contact/vid/' + str(id) + '/profile'
@@ -560,8 +464,13 @@ def post_user_login_to_crm(login_details, correlation_id):
 
 
 class TimelineEventsManager:
-    def __init__(self, app_id=get_secret('hubspot-connection')['app-id']):
-        self.app_id = app_id
+    def __init__(self, app_id=None):
+        # workaround for setting get_secret('hubspot-connection')['app-id'] as default value of app_id. Defining it as default above instead of None breaks
+        # the tests that rely on this class because, if that is tried, os.environ["TESTING"] does not exist inside the scope of get_secret.
+        if not app_id:
+            self.app_id = get_secret('hubspot-connection')['app-id']
+        else:
+            self.app_id = app_id
 
     def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
@@ -592,9 +501,6 @@ class TimelineEventsManager:
 
         Returns:
             content['id'] (int): ID of created timeline event type
-
-        Tested by:
-            test_hubspot.test_tle_01_create_and_delete_tle_type
         """
         type_defn['applicationId'] = self.app_id
         url = f'/integrations/v1/{self.app_id}/timeline/event-types'
@@ -616,9 +522,6 @@ class TimelineEventsManager:
 
         Returns:
             Status code of delete request: Returns a 204 No Content response on success
-
-        Tested by:
-            test_hubspot.test_tle_01_create_and_delete_tle_type
         """
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}'
         result = hubspot_developer_delete(url, None)
