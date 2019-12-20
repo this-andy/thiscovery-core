@@ -16,6 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import api.common.hubspot as hs
+
 from unittest import TestCase
 from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
 
@@ -32,18 +34,15 @@ class TestHubspot(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        from api.common.hubspot import get_hubspot_contact_by_email, delete_hubspot_contact
         if DELETE_TEST_DATA:
-            contact = get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, None)
+            contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, None)
             if contact is not None:
                 contact_hubspot_id = contact['vid']
-                delete_hubspot_contact(contact_hubspot_id, None)
+                hs.delete_hubspot_contact(contact_hubspot_id, None)
 
         set_running_unit_tests(False)
 
     def test_01_create_contact_ok(self):
-        from api.common.hubspot import post_new_user_to_crm, get_hubspot_contact_by_id, get_contact_property
-
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
             "created": "2019-06-01T11:16:56+01:00",
@@ -55,41 +54,35 @@ class TestHubspot(TestCase):
             "country_name": "United Kingdom",
             "status": "new"}
 
-        hubspot_id, is_new = post_new_user_to_crm(user_json, None)
+        hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
 
-        contact = get_hubspot_contact_by_id(hubspot_id, None)
+        contact = hs.get_hubspot_contact_by_id(hubspot_id, None)
 
-        self.assertEqual(user_json['id'], get_contact_property(contact, 'thiscovery_id'))
-        self.assertEqual(user_json['first_name'], get_contact_property(contact, 'firstname'))
-        self.assertEqual(user_json['last_name'], get_contact_property(contact, 'lastname'))
-        self.assertEqual(user_json['email'], get_contact_property(contact, 'email'))
-        self.assertEqual(user_json['country_name'], get_contact_property(contact, 'country'))
+        self.assertEqual(user_json['id'], hs.get_contact_property(contact, 'thiscovery_id'))
+        self.assertEqual(user_json['first_name'], hs.get_contact_property(contact, 'firstname'))
+        self.assertEqual(user_json['last_name'], hs.get_contact_property(contact, 'lastname'))
+        self.assertEqual(user_json['email'], hs.get_contact_property(contact, 'email'))
+        self.assertEqual(user_json['country_name'], hs.get_contact_property(contact, 'country'))
 
     def test_03_update_contact_ok(self):
-        from api.common.hubspot import update_contact_by_email, get_hubspot_contact_by_email, hubspot_timestamp, \
-            get_contact_property
-
         correlation_id = new_correlation_id()
-        tsn = hubspot_timestamp(str(now_with_tz()))
+        tsn = hs.hubspot_timestamp(str(now_with_tz()))
         property_name = 'thiscovery_registered_date'
         changes = [
                 {"property": property_name, "value": int(tsn)},
             ]
-        update_contact_by_email('sw@email.co.uk', changes, correlation_id)
+        hs.update_contact_by_email('sw@email.co.uk', changes, correlation_id)
 
-        contact = get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
-        thiscovery_registered_datestamp = get_contact_property(contact, property_name)
+        contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
+        thiscovery_registered_datestamp = hs.get_contact_property(contact, property_name)
 
         self.assertEqual(str(tsn), thiscovery_registered_datestamp)
 
     def test_04_create_tle(self):
-        from api.common.hubspot import create_or_update_timeline_event, hubspot_timestamp, get_TLE_type_id, \
-            TASK_SIGNUP_TLE_TYPE_NAME, get_hubspot_contact_by_email, get_timeline_event
-
         correlation_id = new_correlation_id()
-        contact = get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
+        contact = hs.get_hubspot_contact_by_email(TEST_EMAIL_ADDRESS, correlation_id)
         contact_hubspot_id = contact['vid']
-        tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
+        tle_type_id = hs.get_TLE_type_id(hs.TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
         tle_id = 'test_tle_01'
 
         signup_details = {
@@ -112,12 +105,12 @@ class TestHubspot(TestCase):
             'task_id': signup_details['task_id'],
             'task_name': signup_details['task_name'],
             'signup_event_type': signup_details['signup_event_type'],
-            'timestamp': hubspot_timestamp(signup_details['created'])
+            'timestamp': hs.hubspot_timestamp(signup_details['created'])
         }
 
-        create_or_update_timeline_event(tle_details, correlation_id)
+        hs.create_or_update_timeline_event(tle_details, correlation_id)
 
-        tle = get_timeline_event(tle_type_id, tle_id, correlation_id)
+        tle = hs.get_timeline_event(tle_type_id, tle_id, correlation_id)
 
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])
