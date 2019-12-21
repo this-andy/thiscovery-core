@@ -35,17 +35,8 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 
-base_url = 'https://api.hubapi.com'
-
-
+BASE_URL = 'https://api.hubapi.com'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
-
-
-def get_TLE_type_id(name: str, correlation_id):
-    table_id = get_aws_namespace() + name
-    item = get_item('lookups', table_id, correlation_id)
-
-    return item['details']['hubspot_id']
 
 
 # region common hubspot get/post/put/delete methods
@@ -53,7 +44,7 @@ def get_TLE_type_id(name: str, correlation_id):
 def hubspot_get(url, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     data = None
@@ -79,7 +70,7 @@ def hubspot_get(url, correlation_id):
 def hubspot_post(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -110,7 +101,7 @@ def hubspot_post(url: str, data: dict, correlation_id):
 def hubspot_put(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -140,7 +131,7 @@ def hubspot_put(url: str, data: dict, correlation_id):
 def hubspot_delete(url, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -188,7 +179,7 @@ def hubspot_developer_post(url: str, data: dict, correlation_id):
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
 
-    full_url = base_url + url + \
+    full_url = BASE_URL + url + \
                '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
                '&userId=' + HUBSPOT_DEVELOPER_USERID + \
                '&application-id=' + app_id
@@ -211,7 +202,7 @@ def hubspot_developer_delete(url: str, correlation_id):
     This is necessary for creating TLE types
     """
     from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
-    full_url = base_url + url + \
+    full_url = BASE_URL + url + \
                '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
                '&userId=' + HUBSPOT_DEVELOPER_USERID
     headers = {'Content-Type': 'application/json'}
@@ -425,7 +416,7 @@ def post_new_user_to_crm(new_user, correlation_id):
 
 
 def post_task_signup_to_crm(signup_details, correlation_id):
-    tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
+    tle_type_id = get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
     tle_details = {
         'id': signup_details['id'],
         'objectId': signup_details['crm_id'],
@@ -465,6 +456,12 @@ class TimelineEventBase:
 
 
 class TimelineEventTypeManager(TimelineEventBase):
+
+    def get_timeline_event_type_id(self, name: str, correlation_id):
+        table_id = get_aws_namespace() + name
+        item = get_item('lookups', table_id, correlation_id)
+
+        return item['details']['hubspot_id']
 
     def get_timeline_event_type_properties(self, tle_type_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
@@ -645,7 +642,7 @@ if __name__ == "__main__":
 
     # save_TLE_type_id('test', 1234)
 
-    # result = get_TLE_type_id('test')
+    # result = get_timeline_event_type_id('test')
 
     # result = get_hubspot_contact(1101, None)
     # result = get_hubspot_contacts()
