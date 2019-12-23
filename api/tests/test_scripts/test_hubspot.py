@@ -88,9 +88,9 @@ class TestHubspotContacts(TestCase):
 
     def test_03_update_contact_ok(self):
         user_json = TEST_USER_01
-        self.hs_client.post_new_user_to_crm(user_json, None)
+        hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
-        tsn = self.hs_client.hubspot_timestamp(str(now_with_tz()))
+        tsn = hs.hubspot_timestamp(str(now_with_tz()))
         property_name = 'thiscovery_registered_date'
         changes = [
                 {"property": property_name, "value": int(tsn)},

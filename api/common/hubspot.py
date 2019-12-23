@@ -52,6 +52,7 @@ class HubSpotClient:
         }
         self.connection_secret = None
         self.app_id = None
+        self.logger = get_logger()
 
     # region token management
     def get_token_from_database(self):
@@ -142,9 +143,11 @@ class HubSpotClient:
     # endregion
 
     # region get/post/put/delete requests
-    def hubspot_request(self, method, url, params={}, data={}, correlation_id=None):
+    def hubspot_request(self, method, url, params={}, data={}, headers=None, correlation_id=None):
         if correlation_id is None:
             correlation_id = self.correlation_id
+        if headers is None:
+            headers = self.headers
         success = False
         retry_count = 0
         full_url = BASE_URL + url
@@ -154,7 +157,7 @@ class HubSpotClient:
                     method=method,
                     url=full_url,
                     params=params,
-                    headers=self.headers,
+                    headers=headers,
                     data=json.dumps(data),
                 )
                 if method in ['POST', 'PUT', 'DELETE']:
@@ -168,7 +171,12 @@ class HubSpotClient:
                         errorjson = {'url': url, 'result': result, 'content': result.content}
                         raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
                 elif method in ['GET']:
-                    result = result.json()
+                    if result.status_code in [HTTPStatus.NOT_FOUND]:
+                        self.logger.warning(f'Content not found; returning None',
+                                            extra={'result.status_code': result.status_code, 'result.content': result.content})
+                        return None
+                    else:
+                        result = result.json()
                     success = True
                 else:
                     raise DetailedValueError(f'Support for method {method} not implemented in {__file__}')
@@ -211,7 +219,10 @@ class HubSpotClient:
             'userId': HUBSPOT_DEVELOPER_USERID,
             'application-id': self.app_id,
         }
-        return self.hubspot_request(method, url, params=params, data=data, correlation_id=correlation_id)
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
 
     def developer_post(self, url: str, data: dict, correlation_id):
         return self.hubspot_dev_request('POST', url, data=data, correlation_id=correlation_id)
@@ -262,6 +273,13 @@ class HubSpotClient:
         item = ddb.get_item('lookups', table_id, correlation_id)
         return item['details']['hubspot_id']
 
+    def set_app_id(self):
+        """
+        Sets HubSpot app-id of this class instance if that variable is not set yet
+        """
+        if self.app_id is None:
+            self.get_hubspot_connection_secret()
+
     def get_timeline_event_type_properties(self, tle_type_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
         result = self.get(url, None)
@@ -277,18 +295,21 @@ class HubSpotClient:
         Returns:
             content['id'] (int): ID of created timeline event type
         """
+        self.set_app_id()
         type_defn['applicationId'] = self.app_id
         url = f'/integrations/v1/{self.app_id}/timeline/event-types'
-        response = self.dev_post(url, type_defn, None)
+        response = self.developer_post(url, type_defn, None)
         content = json.loads(response.content)
         return content['id']
 
     def create_timeline_event_type_properties(self, tle_type_id, property_defns: list):
+        self.set_app_id()
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
         for property_defn in property_defns:
-            self.dev_post(url, property_defn, None)
+            self.developer_post(url, property_defn, None)
 
     def delete_timeline_event_type_property(self, tle_type_id, property_id):
+        self.set_app_id()
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties/{property_id}'
         result = self.delete(url, None)
         return result.status_code
@@ -303,8 +324,9 @@ class HubSpotClient:
         Returns:
             Status code of delete request: Returns a 204 No Content response on success
         """
+        self.set_app_id()
         url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}'
-        result = self.dev_delete(url, None)
+        result = self.developer_delete(url, None)
         return result.status_code
 
     @staticmethod
@@ -319,11 +341,13 @@ class HubSpotClient:
 
     # region Timeline event instances
     def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
+        self.set_app_id()
         url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
         result = self.get(url, correlation_id)
         return result
 
     def create_or_update_timeline_event(self, event_data: dict, correlation_id):
+        self.set_app_id()
         url = f'/integrations/v1/{self.app_id}/timeline/event'
         result = self.put(url, event_data, correlation_id)
         return result.status_code
@@ -395,7 +419,7 @@ def post_new_user_to_crm(new_user, correlation_id):
 
 
 def post_task_signup_to_crm(signup_details, correlation_id):
-    tle_type_manager = TimelineEventTypeManager()
+    tle_type_manager = HubSpotClient()
     tle_type_id = tle_type_manager.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
     tle_details = {
         'id': signup_details['id'],
@@ -415,7 +439,7 @@ def post_task_signup_to_crm(signup_details, correlation_id):
 
 
 def post_user_login_to_crm(login_details, correlation_id):
-    contacts_client = ContactsApiClient()
+    contacts_client = HubSpotClient()
     user_email = login_details['email']
     login_time_str = login_details['login_datetime']
     login_timestamp = hubspot_timestamp(login_time_str)
