@@ -162,3 +162,43 @@ class TestHubspotTimelineEvents(TestCase):
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])
         self.assertEqual(contact_hubspot_id, tle['objectId'])
+
+
+class TestHubspotClient(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+        cls.hs_client = HubSpotClient()
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
+
+    def test_client_01_get_connection_secret(self):
+        cs = self.hs_client.get_hubspot_connection_secret()
+        expected_keys = [
+            "api-key",
+            "app-id",
+            "client-id",
+            "client-secret",
+        ]
+        self.assertEqual(expected_keys, list(cs.keys()))
+
+    def test_client_02_get_new_token_from_hubspot(self):
+        old_token = self.hs_client.get_token_from_database()
+        expected_keys = [
+            "access_token",
+            "expires_in",
+            "refresh_token",
+        ]
+        self.assertEqual(expected_keys, sorted(list(old_token.keys())))
+
+        new_token = self.hs_client.get_new_token_from_hubspot()
+        expected_keys += ['app-id']
+        expected_keys.sort()
+        self.assertEqual(expected_keys, sorted(list(new_token.keys())))
+        self.assertEqual(len(old_token['access_token']), len(new_token['access_token']))
+        self.assertNotEqual(old_token['access_token'], new_token['access_token'])
+        self.assertEqual(self.hs_client.app_id, new_token['app-id'])
+

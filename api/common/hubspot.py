@@ -44,12 +44,13 @@ class HubSpotClient:
     def __init__(self, correlation_id=None):
         self.correlation_id = correlation_id
         self.tokens = self.get_token_from_database()
-        self.access_token = self.tokens['access_token']
-        self.refresh_token = self.tokens['refresh_token']
-        self.headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.access_token}',
-        }
+
+        if not self.tokens:
+            self.access_token, self.refresh_token = None, None
+        else:
+            self.access_token = self.tokens['access_token']
+            self.refresh_token = self.tokens['refresh_token']
+
         self.connection_secret = None
         self.app_id = None
         self.logger = get_logger()
@@ -120,7 +121,6 @@ class HubSpotClient:
         self.tokens = res.json()
         self.access_token = self.tokens['access_token']
         self.refresh_token = self.tokens['refresh_token']
-        self.headers['Authorization'] = f'Bearer {self.access_token}'
 
         self.save_token(self.tokens, correlation_id)
         return {**self.tokens, 'app-id': self.app_id}
@@ -146,8 +146,6 @@ class HubSpotClient:
     def hubspot_request(self, method, url, params={}, data={}, headers=None, correlation_id=None):
         if correlation_id is None:
             correlation_id = self.correlation_id
-        if headers is None:
-            headers = self.headers
         success = False
         retry_count = 0
         full_url = BASE_URL + url
@@ -192,17 +190,29 @@ class HubSpotClient:
 
             return result
 
+    def hubspot_token_request(self, method, url, params={}, data={}, correlation_id=None):
+        """
+        Method for requests using token
+        """
+        if not self.access_token:
+            self.get_new_token_from_hubspot(correlation_id=correlation_id)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.access_token}',
+        }
+        return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
+
     def post(self, url: str, data: dict, correlation_id):
-        return self.hubspot_request('POST', url, data=data, correlation_id=correlation_id)
+        return self.hubspot_token_request('POST', url, data=data, correlation_id=correlation_id)
 
     def get(self, url, correlation_id):
-        return self.hubspot_request('GET', url, correlation_id=correlation_id)
+        return self.hubspot_token_request('GET', url, correlation_id=correlation_id)
 
     def put(self, url: str, data: dict, correlation_id):
-        return self.hubspot_request('PUT', url, data=data, correlation_id=correlation_id)
+        return self.hubspot_token_request('PUT', url, data=data, correlation_id=correlation_id)
 
     def delete(self, url, correlation_id):
-        return self.hubspot_request('DELETE', url, correlation_id=correlation_id)
+        return self.hubspot_token_request('DELETE', url, correlation_id=correlation_id)
     # endregion
 
     # region hubspot developer get/post/put/delete methods - used for managing TLE definitions
