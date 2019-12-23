@@ -35,12 +35,13 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_secret = hubspot_connection['client-secret']
 
 BASE_URL = 'https://api.hubapi.com'
+CONTACTS_ENDPOINT = '/contacts/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
 class HubSpotClient:
 
-    def __init__(self, correlation_id):
+    def __init__(self, correlation_id=None):
         self.correlation_id = correlation_id
         self.tokens = self.get_token_from_database()
         self.access_token = self.tokens['access_token']
@@ -50,6 +51,7 @@ class HubSpotClient:
             'Authorization': f'Bearer {self.access_token}',
         }
         self.connection_secret = None
+        self.app_id = None
 
     # region token management
     def get_token_from_database(self):
@@ -69,6 +71,7 @@ class HubSpotClient:
         """
         if self.connection_secret is None:
             self.connection_secret = get_secret('hubspot-connection')
+            self.app_id = self.connection_secret['app-id']
         return self.connection_secret
 
     def get_new_token_from_hubspot(self, refresh_token='self value', code=None, redirect_url=None, correlation_id=None):
@@ -82,10 +85,10 @@ class HubSpotClient:
             correlation_id: Correlation id for tracing
 
         Returns:
-            HubSpot token (dict), containing values for keys 'access_token' and 'refresh_token'
+            Dict of HubSpot credentials, containing values for keys 'access_token', 'refresh_token' and 'app-id'
 
         Notes:
-            Saves the values of 'access_token' and 'refresh_token' to class instance attributes
+            Saves the values of 'access_token', 'refresh_token' and 'app-id' to class instance attributes
         """
         if refresh_token == 'self value':
             refresh_token = self.refresh_token
@@ -95,6 +98,7 @@ class HubSpotClient:
         hubspot_connection = self.get_hubspot_connection_secret()
         client_id = hubspot_connection['client-id']
         client_secret = hubspot_connection['client-secret']
+        self.app_id = hubspot_connection['app-id']
 
         formData = {
             "client_id": client_id,
@@ -118,7 +122,7 @@ class HubSpotClient:
         self.headers['Authorization'] = f'Bearer {self.access_token}'
 
         self.save_token(self.tokens, correlation_id)
-        return self.tokens
+        return {**self.tokens, 'app-id': self.app_id}
 
     def get_initial_token_from_hubspot(self):
         """
@@ -200,12 +204,12 @@ class HubSpotClient:
         This is necessary for creating TLE types
         """
         from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
-        hubspot_connection = get_secret('hubspot-connection')
-        app_id = hubspot_connection['app-id']
+        if self.app_id is None:
+            self.get_hubspot_connection_secret()
         params = {
             'hapikey': HUBSPOT_DEVELOPER_APIKEY,
             'userId': HUBSPOT_DEVELOPER_USERID,
-            'application-id': app_id,
+            'application-id': self.app_id,
         }
         return self.hubspot_request(method, url, params=params, data=data, correlation_id=correlation_id)
 
@@ -216,19 +220,17 @@ class HubSpotClient:
         return self.hubspot_dev_request('DELETE', url, correlation_id=correlation_id)
     # endregion
 
-
-class ContactsApiClient(HubSpotClient):
-
+    # region Contacts API methods
     def get_hubspot_contacts(self, correlation_id):
-        url = '/contacts/v1/lists/all/contacts/all'
+        url = f'{CONTACTS_ENDPOINT}/lists/all/contacts/all'
         return self.get(url, correlation_id)
 
     def get_hubspot_contact_by_id(self, id_, correlation_id):
-        url = f'/contacts/v1/contact/vid/{id_}/profile'
+        url = f'{CONTACTS_ENDPOINT}/contact/vid/{id_}/profile'
         return self.get(url, correlation_id)
 
     def get_hubspot_contact_by_email(self, email: str, correlation_id):
-        url = f'/contacts/v1/contact/email/{email}/profile'
+        url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
         return self.get(url, correlation_id)
 
     @staticmethod
@@ -241,30 +243,19 @@ class ContactsApiClient(HubSpotClient):
         return r.status_code
 
     def update_contact_by_email(self, email: str, property_changes: list, correlation_id):
-        url = f'/contacts/v1/contact/email/{email}/profile'
+        url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
         return self.update_contact_core(url, property_changes, correlation_id)
 
     def update_contact_by_id(self, hubspot_id, property_changes: list, correlation_id):
-        url = f'/contacts/v1/contact/vid/{hubspot_id}/profile'
+        url = f'{CONTACTS_ENDPOINT}/contact/vid/{hubspot_id}/profile'
         return self.update_contact_core(url, property_changes, correlation_id)
 
     def delete_hubspot_contact(self, id_, correlation_id):
-        url = f'/contacts/v1/contact/vid/{id_}'
+        url = f'{CONTACTS_ENDPOINT}/contact/vid/{id_}'
         return self.delete(url, correlation_id)
+    # endregion
 
-
-class TimelineEventBase:
-    def __init__(self, app_id=None):
-        # workaround for setting get_secret('hubspot-connection')['app-id'] as default value of app_id. Defining it as default above instead of None breaks
-        # the tests that rely on this class because, if that is tried, os.environ["TESTING"] does not exist inside the scope of get_secret.
-        if not app_id:
-            self.app_id = get_secret('hubspot-connection')['app-id']
-        else:
-            self.app_id = app_id
-
-
-class TimelineEventTypeManager(HubSpotClient, TimelineEventBase):
-
+    #region Timeline event types
     @staticmethod
     def get_timeline_event_type_id(name: str, correlation_id):
         table_id = get_aws_namespace() + name
@@ -324,7 +315,9 @@ class TimelineEventTypeManager(HubSpotClient, TimelineEventBase):
             'name': str(name),
         }
         ddb.put_item('lookups', table_id, 'tle_type', details, {}, True, correlation_id)
+    # endregion
 
+    # region Timeline event instances
     def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
         url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
         result = self.get(url, correlation_id)
@@ -334,6 +327,7 @@ class TimelineEventTypeManager(HubSpotClient, TimelineEventBase):
         url = f'/integrations/v1/{self.app_id}/timeline/event'
         result = self.put(url, event_data, correlation_id)
         return result.status_code
+    # endregion
 
 
 # region hubspot timestamp methods

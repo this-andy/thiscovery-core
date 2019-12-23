@@ -17,6 +17,7 @@
 #
 
 import api.common.hubspot as hs
+from api.common.hubspot import HubSpotClient
 
 from http import HTTPStatus
 from unittest import TestCase
@@ -43,13 +44,16 @@ TEST_TLE_TYPE_DEFINITION = {
     "headerTemplate": "# Title for event {{id}}\nThis is an event for {{objectType}}"
 }
 
-def delete_test_users(test_users=[TEST_USER_01]):
+
+def delete_test_users(test_users=[TEST_USER_01], hs_client=None):
+    if hs_client is None:
+        hs_client = HubSpotClient()
     for user in test_users:
         u_email = user['email']
-        contact = hs.get_hubspot_contact_by_email(u_email, None)
+        contact = hs_client.get_hubspot_contact_by_email(u_email, None)
         if contact is not None:
             contact_hubspot_id = contact['vid']
-            hs.delete_hubspot_contact(contact_hubspot_id, None)
+            hs_client.delete_hubspot_contact(contact_hubspot_id, None)
 
 
 class TestHubspotContacts(TestCase):
@@ -57,43 +61,44 @@ class TestHubspotContacts(TestCase):
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
+        cls.hs_client = HubSpotClient()
 
     @classmethod
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
-            delete_test_users()
+            delete_test_users(hs_client=cls.hs_client)
         set_running_unit_tests(False)
 
     def setUp(self):
         """
         Deletes test_users before each test is run to ensure tests are independent
         """
-        delete_test_users()
+        delete_test_users(hs_client=self.hs_client)
 
     def test_01_create_contact_ok(self):
         user_json = TEST_USER_01
         hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
-        contact = hs.get_hubspot_contact_by_id(hubspot_id, None)
+        contact = self.hs_client.get_hubspot_contact_by_id(hubspot_id, None)
 
-        self.assertEqual(user_json['id'], hs.get_contact_property(contact, 'thiscovery_id'))
-        self.assertEqual(user_json['first_name'], hs.get_contact_property(contact, 'firstname'))
-        self.assertEqual(user_json['last_name'], hs.get_contact_property(contact, 'lastname'))
-        self.assertEqual(user_json['email'], hs.get_contact_property(contact, 'email'))
-        self.assertEqual(user_json['country_name'], hs.get_contact_property(contact, 'country'))
+        self.assertEqual(user_json['id'], self.hs_client.get_contact_property(contact, 'thiscovery_id'))
+        self.assertEqual(user_json['first_name'], self.hs_client.get_contact_property(contact, 'firstname'))
+        self.assertEqual(user_json['last_name'], self.hs_client.get_contact_property(contact, 'lastname'))
+        self.assertEqual(user_json['email'], self.hs_client.get_contact_property(contact, 'email'))
+        self.assertEqual(user_json['country_name'], self.hs_client.get_contact_property(contact, 'country'))
 
     def test_03_update_contact_ok(self):
         user_json = TEST_USER_01
-        hs.post_new_user_to_crm(user_json, None)
+        self.hs_client.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
-        tsn = hs.hubspot_timestamp(str(now_with_tz()))
+        tsn = self.hs_client.hubspot_timestamp(str(now_with_tz()))
         property_name = 'thiscovery_registered_date'
         changes = [
                 {"property": property_name, "value": int(tsn)},
             ]
-        hs.update_contact_by_email(user_json['email'], changes, correlation_id)
+        self.hs_client.update_contact_by_email(user_json['email'], changes, correlation_id)
 
-        contact = hs.get_hubspot_contact_by_email(user_json['email'], correlation_id)
-        thiscovery_registered_datestamp = hs.get_contact_property(contact, property_name)
+        contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
+        thiscovery_registered_datestamp = self.hs_client.get_contact_property(contact, property_name)
 
         self.assertEqual(str(tsn), thiscovery_registered_datestamp)
 
@@ -103,7 +108,7 @@ class TestHubspotTimelineEvents(TestCase):
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        cls.tle_manager = hs.TimelineEventsManager()
+        cls.hs_client = HubSpotClient()
 
     @classmethod
     def tearDownClass(cls):
@@ -113,18 +118,18 @@ class TestHubspotTimelineEvents(TestCase):
         """
         Tests the creation and deletion of timeline event types
         """
-        tle_type_id = self.tle_manager.create_timeline_event_type(TEST_TLE_TYPE_DEFINITION)
+        tle_type_id = self.hs_client.create_timeline_event_type(TEST_TLE_TYPE_DEFINITION)
         self.assertIsInstance(tle_type_id, int)
-        status_code = self.tle_manager.delete_timeline_event_type(tle_type_id)
+        status_code = self.hs_client.delete_timeline_event_type(tle_type_id)
         self.assertEqual(HTTPStatus.NO_CONTENT, status_code)
 
     def test_tle_02_create_tle(self):
         user_json = TEST_USER_01
         hs.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
-        contact = hs.get_hubspot_contact_by_email(user_json['email'], correlation_id)
+        contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
         contact_hubspot_id = contact['vid']
-        tle_type_id = hs.get_TLE_type_id(hs.TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
+        tle_type_id = self.hs_client.get_timeline_event_type_id(hs.TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
         tle_id = 'test_tle_01'
 
         signup_details = {
@@ -150,9 +155,9 @@ class TestHubspotTimelineEvents(TestCase):
             'timestamp': hs.hubspot_timestamp(signup_details['created'])
         }
 
-        self.tle_manager.create_or_update_timeline_event(tle_details, correlation_id)
+        self.hs_client.create_or_update_timeline_event(tle_details, correlation_id)
 
-        tle = self.tle_manager.get_timeline_event(tle_type_id, tle_id, correlation_id)
+        tle = self.hs_client.get_timeline_event(tle_type_id, tle_id, correlation_id)
 
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])
