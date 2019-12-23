@@ -77,7 +77,7 @@ class TestHubspotContacts(TestCase):
 
     def test_01_create_contact_ok(self):
         user_json = TEST_USER_01
-        hubspot_id, is_new = hs.post_new_user_to_crm(user_json, None)
+        hubspot_id, is_new = self.hs_client.post_new_user_to_crm(user_json, None)
         contact = self.hs_client.get_hubspot_contact_by_id(hubspot_id, None)
 
         self.assertEqual(user_json['id'], self.hs_client.get_contact_property(contact, 'thiscovery_id'))
@@ -88,7 +88,7 @@ class TestHubspotContacts(TestCase):
 
     def test_03_update_contact_ok(self):
         user_json = TEST_USER_01
-        hs.post_new_user_to_crm(user_json, None)
+        self.hs_client.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
         tsn = hs.hubspot_timestamp(str(now_with_tz()))
         property_name = 'thiscovery_registered_date'
@@ -125,7 +125,7 @@ class TestHubspotTimelineEvents(TestCase):
 
     def test_tle_02_create_tle(self):
         user_json = TEST_USER_01
-        hs.post_new_user_to_crm(user_json, None)
+        self.hs_client.post_new_user_to_crm(user_json, None)
         correlation_id = new_correlation_id()
         contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
         contact_hubspot_id = contact['vid']

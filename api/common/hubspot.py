@@ -363,6 +363,80 @@ class HubSpotClient:
         return result.status_code
     # endregion
 
+    # region thiscovery functionality
+    def post_new_user_to_crm(self, new_user, correlation_id):
+        """
+
+        Args:
+            new_user (json): see test_hubspot.TEST_USER_01 for an example
+            correlation_id:
+
+        Returns:
+            tuple: (hubspot_id, is_new) if successful, (-1, False) otherwise
+
+        Tested in:
+            test_hubspot.test_01_create_contact_ok
+
+        """
+        email = new_user['email']
+
+        url = '/contacts/v1/contact/createOrUpdate/email/' + email
+
+        created_timestamp = hubspot_timestamp(new_user['created'])
+
+        data = {
+            "properties": [
+                {"property": "email", "value": email},
+                {"property": "firstname", "value": new_user['first_name']},
+                {"property": "lastname", "value": new_user['last_name']},
+                {"property": "thiscovery_id", "value": new_user['id']},
+                {"property": "thiscovery_registered_date", "value": created_timestamp},
+                {"property": "country", "value": new_user['country_name']},
+            ]
+        }
+
+        result = self.post(url=url, data=data, correlation_id=correlation_id)
+
+        if result.status_code == HTTPStatus.OK:
+
+            content_str = result.content.decode('utf-8')
+            content = json.loads(content_str)
+            vid = content['vid']
+            is_new = content['isNew']
+            return vid, is_new
+
+        else:
+            return -1, False
+
+    def post_task_signup_to_crm(self, signup_details, correlation_id):
+        tle_type_id = self.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
+        tle_details = {
+            'id': signup_details['id'],
+            'objectId': signup_details['crm_id'],
+            'eventTypeId': tle_type_id,
+            'project_id': signup_details['project_id'],
+            'project_name': signup_details['project_name'],
+            'task_id': signup_details['task_id'],
+            'task_name': signup_details['task_name'],
+            'task_type_id': signup_details['task_type_id'],
+            'task_type_name': signup_details['task_type_name'],
+            'signup_event_type': signup_details['signup_event_type'],
+            'timestamp': hubspot_timestamp(signup_details['created'])
+        }
+
+        return self.create_or_update_timeline_event(tle_details, correlation_id)
+
+    def post_user_login_to_crm(self, login_details, correlation_id):
+        user_email = login_details['email']
+        login_time_str = login_details['login_datetime']
+        login_timestamp = hubspot_timestamp(login_time_str)
+        property_name = 'thiscovery_last_login_date'
+        changes = [
+            {"property": property_name, "value": int(login_timestamp)},
+        ]
+        return self.update_contact_by_email(user_email, changes, correlation_id)
+    # endregion
+
 
 # region hubspot timestamp methods
 def hubspot_timestamp(datetime_string: str):
@@ -380,81 +454,3 @@ def hubspot_timestamp_to_datetime(hubspot_timestamp: int):
     dt = datetime.fromtimestamp(timestamp)
     return dt
 # endregion
-
-
-def post_new_user_to_crm(new_user, correlation_id):
-    """
-
-    Args:
-        new_user (json): see test_hubspot.TEST_USER_01 for an example
-        correlation_id:
-
-    Returns:
-        tuple: (hubspot_id, is_new) if successful, (-1, False) otherwise
-
-    Tested in:
-        test_hubspot.test_01_create_contact_ok
-
-    """
-    hs_client = HubSpotClient()
-    email = new_user['email']
-
-    url = '/contacts/v1/contact/createOrUpdate/email/' + email
-
-    created_timestamp = hubspot_timestamp(new_user['created'])
-
-    data = {
-        "properties": [
-            {"property": "email", "value": email},
-            {"property": "firstname", "value": new_user['first_name']},
-            {"property": "lastname", "value": new_user['last_name']},
-            {"property": "thiscovery_id", "value": new_user['id']},
-            {"property": "thiscovery_registered_date", "value": created_timestamp},
-            {"property": "country", "value": new_user['country_name']},
-        ]
-    }
-
-    result = hs_client.post(url=url, data=data, correlation_id=correlation_id)
-
-    if result.status_code == HTTPStatus.OK:
-
-        content_str = result.content.decode('utf-8')
-        content = json.loads(content_str)
-        vid = content['vid']
-        is_new = content['isNew']
-        return vid, is_new
-
-    else:
-        return -1, False
-
-
-def post_task_signup_to_crm(signup_details, correlation_id):
-    tle_type_manager = HubSpotClient()
-    tle_type_id = tle_type_manager.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
-    tle_details = {
-        'id': signup_details['id'],
-        'objectId': signup_details['crm_id'],
-        'eventTypeId': tle_type_id,
-        'project_id': signup_details['project_id'],
-        'project_name': signup_details['project_name'],
-        'task_id': signup_details['task_id'],
-        'task_name': signup_details['task_name'],
-        'task_type_id': signup_details['task_type_id'],
-        'task_type_name': signup_details['task_type_name'],
-        'signup_event_type': signup_details['signup_event_type'],
-        'timestamp': hubspot_timestamp(signup_details['created'])
-    }
-
-    return tle_type_manager.create_or_update_timeline_event(tle_details, correlation_id)
-
-
-def post_user_login_to_crm(login_details, correlation_id):
-    contacts_client = HubSpotClient()
-    user_email = login_details['email']
-    login_time_str = login_details['login_datetime']
-    login_timestamp = hubspot_timestamp(login_time_str)
-    property_name = 'thiscovery_last_login_date'
-    changes = [
-        {"property": property_name, "value": int(login_timestamp)},
-    ]
-    return contacts_client.update_contact_by_email(user_email, changes, correlation_id)
