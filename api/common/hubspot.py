@@ -36,6 +36,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 BASE_URL = 'https://api.hubapi.com'
 CONTACTS_ENDPOINT = '/contacts/v1'
+INTEGRATIONS_ENDPOINT = '/integrations/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
@@ -158,6 +159,15 @@ class HubSpotClient:
                     headers=headers,
                     data=json.dumps(data),
                 )
+                self.logger.info('Logging request and result',
+                                 extra={
+                                     'request': {
+                                         'method': method,
+                                         'url': full_url,
+                                         'data': data,
+                                     },
+                                     'result': result.text
+                                 })
                 if method in ['POST', 'PUT', 'DELETE']:
                     if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                         success = True
@@ -202,11 +212,11 @@ class HubSpotClient:
         }
         return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
 
-    def post(self, url: str, data: dict, correlation_id):
-        return self.hubspot_token_request('POST', url, data=data, correlation_id=correlation_id)
-
     def get(self, url, correlation_id):
         return self.hubspot_token_request('GET', url, correlation_id=correlation_id)
+
+    def post(self, url: str, data: dict, correlation_id):
+        return self.hubspot_token_request('POST', url, data=data, correlation_id=correlation_id)
 
     def put(self, url: str, data: dict, correlation_id):
         return self.hubspot_token_request('PUT', url, data=data, correlation_id=correlation_id)
@@ -234,6 +244,9 @@ class HubSpotClient:
         }
         return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
 
+    def developer_get(self, url: str, correlation_id):
+        return self.hubspot_dev_request('GET', url, correlation_id=correlation_id)
+
     def developer_post(self, url: str, data: dict, correlation_id):
         return self.hubspot_dev_request('POST', url, data=data, correlation_id=correlation_id)
 
@@ -242,15 +255,15 @@ class HubSpotClient:
     # endregion
 
     # region Contacts API methods
-    def get_hubspot_contacts(self, correlation_id):
+    def get_hubspot_contacts(self, correlation_id=None):
         url = f'{CONTACTS_ENDPOINT}/lists/all/contacts/all'
         return self.get(url, correlation_id)
 
-    def get_hubspot_contact_by_id(self, id_, correlation_id):
+    def get_hubspot_contact_by_id(self, id_, correlation_id=None):
         url = f'{CONTACTS_ENDPOINT}/contact/vid/{id_}/profile'
         return self.get(url, correlation_id)
 
-    def get_hubspot_contact_by_email(self, email: str, correlation_id):
+    def get_hubspot_contact_by_email(self, email: str, correlation_id=None):
         url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
         return self.get(url, correlation_id)
 
@@ -263,11 +276,11 @@ class HubSpotClient:
         r = self.post(url, data, correlation_id)
         return r.status_code
 
-    def update_contact_by_email(self, email: str, property_changes: list, correlation_id):
+    def update_contact_by_email(self, email: str, property_changes: list, correlation_id=None):
         url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
         return self.update_contact_core(url, property_changes, correlation_id)
 
-    def update_contact_by_id(self, hubspot_id, property_changes: list, correlation_id):
+    def update_contact_by_id(self, hubspot_id, property_changes: list, correlation_id=None):
         url = f'{CONTACTS_ENDPOINT}/contact/vid/{hubspot_id}/profile'
         return self.update_contact_core(url, property_changes, correlation_id)
 
@@ -291,8 +304,8 @@ class HubSpotClient:
             self.get_hubspot_connection_secret()
 
     def get_timeline_event_type_properties(self, tle_type_id):
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
-        result = self.get(url, None)
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
+        result = self.developer_get(url, None)
         return result
 
     def create_timeline_event_type(self, type_defn):
@@ -307,21 +320,33 @@ class HubSpotClient:
         """
         self.set_app_id()
         type_defn['applicationId'] = self.app_id
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types'
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types'
         response = self.developer_post(url, type_defn, None)
         content = json.loads(response.content)
         return content['id']
 
     def create_timeline_event_type_properties(self, tle_type_id, property_defns: list):
         self.set_app_id()
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
+        results = list()
         for property_defn in property_defns:
-            self.developer_post(url, property_defn, None)
+            results.append(self.developer_post(url, property_defn, None))
+        return results
 
     def delete_timeline_event_type_property(self, tle_type_id, property_id):
+        """
+        See https://developers.hubspot.com/docs/methods/timeline/delete-timeline-event-type-property
+
+        Args:
+            tle_type_id: Timeline event type id
+            property_id: Property id
+
+        Returns:
+            Status code returned by API call
+        """
         self.set_app_id()
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}/properties/{property_id}'
-        result = self.delete(url, None)
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties/{property_id}'
+        result = self.developer_delete(url, None)
         return result.status_code
 
     def delete_timeline_event_type(self, tle_type_id):
@@ -335,30 +360,21 @@ class HubSpotClient:
             Status code of delete request: Returns a 204 No Content response on success
         """
         self.set_app_id()
-        url = f'/integrations/v1/{self.app_id}/timeline/event-types/{tle_type_id}'
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}'
         result = self.developer_delete(url, None)
         return result.status_code
-
-    @staticmethod
-    def save_timeline_event_type_id(name: str, hubspot_id, correlation_id):
-        table_id = get_aws_namespace() + name
-        details = {
-            'hubspot_id': str(hubspot_id),
-            'name': str(name),
-        }
-        ddb.put_item('lookups', table_id, 'tle_type', details, {}, True, correlation_id)
     # endregion
 
     # region Timeline event instances
     def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
         self.set_app_id()
-        url = f'/integrations/v1/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
         result = self.get(url, correlation_id)
         return result
 
     def create_or_update_timeline_event(self, event_data: dict, correlation_id):
         self.set_app_id()
-        url = f'/integrations/v1/{self.app_id}/timeline/event'
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event'
         result = self.put(url, event_data, correlation_id)
         return result.status_code
     # endregion
@@ -450,6 +466,7 @@ def hubspot_timestamp(datetime_string: str):
 
 
 def hubspot_timestamp_to_datetime(hubspot_timestamp: int):
+    # TODO: Evaluate if we are likely to need this function. It is not currently used anywhere.
     timestamp = hubspot_timestamp/1000
     dt = datetime.fromtimestamp(timestamp)
     return dt

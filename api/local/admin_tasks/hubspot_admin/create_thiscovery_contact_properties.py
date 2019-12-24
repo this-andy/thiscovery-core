@@ -1,14 +1,15 @@
 from http import HTTPStatus
-from api.common.hubspot import hubspot_post
+from api.common.hubspot import HubSpotClient
 from api.common.utilities import DetailedValueError
 
 
 class ContactPropertyAndGroupManager:
+    hs_client = HubSpotClient()
 
     @classmethod
     def create_object(cls, url, object_definition):
         try:
-            r = hubspot_post(url, object_definition, None)
+            r = cls.hs_client.post(url, object_definition, None)
         except DetailedValueError as err:
             if err.details['result'].status_code == HTTPStatus.CONFLICT:
                 return HTTPStatus.CONFLICT
