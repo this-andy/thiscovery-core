@@ -51,21 +51,24 @@ def update_cochrane_progress(event, context):
     updated_project_tasks = 0
     updated_user_tasks = 0
     for k, v in progress_by_task.items():
-        pt_id = get_project_task_by_external_task_id(k, correlation_id)[0]
-        project_task_assessments = 0
-        for record in v:
-            user_task_assessments = record['count']
-            target_user_task = filter_user_tasks_by_project_task_id(record['uuid'], pt_id, correlation_id)
-            user_task_progress_info_dict = {'total assessments': user_task_assessments}
-            user_task_id = target_user_task['user_task_id']
-            logger.info('About to update progress info of user task', extra={'user_task_id': user_task_id, 'progress_info': user_task_progress_info_dict,
-                                                                             'correlation_id': correlation_id, 'event': event})
-            updated_user_tasks += update_user_task_progress_info(user_task_id, user_task_progress_info_dict, correlation_id)
-            project_task_assessments += user_task_assessments
-        project_task_progress_info_dict = {'total assessments': project_task_assessments}
-        logger.info('About to update progress info of project task', extra={'project_task_id': pt_id, 'progress_info': project_task_progress_info_dict,
-                                                                            'correlation_id': correlation_id, 'event': event})
-        updated_project_tasks += update_project_task_progress_info(pt_id, project_task_progress_info_dict, progress_info_modified, correlation_id)
+        try:
+            pt_id = get_project_task_by_external_task_id(k, correlation_id)[0]
+            project_task_assessments = 0
+            for record in v:
+                user_task_assessments = record['count']
+                target_user_task = filter_user_tasks_by_project_task_id(record['uuid'], pt_id, correlation_id)
+                user_task_progress_info_dict = {'total assessments': user_task_assessments}
+                user_task_id = target_user_task['user_task_id']
+                logger.info('About to update progress info of user task', extra={'user_task_id': user_task_id, 'progress_info': user_task_progress_info_dict,
+                                                                                 'correlation_id': correlation_id, 'event': event})
+                updated_user_tasks += update_user_task_progress_info(user_task_id, user_task_progress_info_dict, correlation_id)
+                project_task_assessments += user_task_assessments
+            project_task_progress_info_dict = {'total assessments': project_task_assessments}
+            logger.info('About to update progress info of project task', extra={'project_task_id': pt_id, 'progress_info': project_task_progress_info_dict,
+                                                                                'correlation_id': correlation_id, 'event': event})
+            updated_project_tasks += update_project_task_progress_info(pt_id, project_task_progress_info_dict, progress_info_modified, correlation_id)
+        except IndexError as err:
+            logger.error(f'Could not find any project tasks matching external task id {k}')
 
     return {'updated_project_tasks': updated_project_tasks, 'updated_user_tasks': updated_user_tasks}
 
