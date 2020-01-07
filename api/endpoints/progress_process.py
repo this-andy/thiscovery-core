@@ -16,7 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 from common.cochrane import get_progress
-from common.utilities import get_correlation_id, get_logger
+from common.utilities import get_correlation_id, get_logger, ObjectDoesNotExistError
 from project import update_project_task_progress_info, get_project_task_by_external_task_id
 from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
 
@@ -67,8 +67,8 @@ def update_cochrane_progress(event, context):
             logger.info('About to update progress info of project task', extra={'project_task_id': pt_id, 'progress_info': project_task_progress_info_dict,
                                                                                 'correlation_id': correlation_id, 'event': event})
             updated_project_tasks += update_project_task_progress_info(pt_id, project_task_progress_info_dict, progress_info_modified, correlation_id)
-        except IndexError as err:
-            logger.error(f'Could not find any project tasks matching external task id {k}')
+        except IndexError:
+            raise ObjectDoesNotExistError(f'Could not find any project tasks matching external task id {k}')
 
     return {'updated_project_tasks': updated_project_tasks, 'updated_user_tasks': updated_user_tasks}
 
