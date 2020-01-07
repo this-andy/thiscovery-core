@@ -1234,15 +1234,15 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-  UpdateCochraneProgress:
+  SetNewLogGroupRetention:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-UpdateCochraneProgress
+      FunctionName: !Sub ${AWS::StackName}-SetNewLogGroupRetention
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: UpdateCochraneProgress
+        - ResourceName: SetNewLogGroupRetention
       CodeUri: api/endpoints
-      Handler: progress_process.update_cochrane_progress
+      Handler: log_groups.set_new_log_groups_retention_policy
       Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
@@ -1250,8 +1250,7 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - arn:aws:iam::595383251813:policy/change-retention-policy
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1259,18 +1258,14 @@ Resources:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
       Events:
-        Timer7:
+        Timer8:
           Type: Schedule
           Properties:
-            Schedule: rate(1 hour)
+            Schedule: rate(2 days)
           Metadata:
-            StackeryName: timer-update-cochrane-progress
+            StackeryName: timer-set-new-log-groups-retention-policy
       Environment:
         Variables:
-          DB_ID: !Ref ThiscoveryDB
-          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
-          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
 Parameters:
   StackTagName:
