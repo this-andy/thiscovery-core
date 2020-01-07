@@ -52,6 +52,9 @@ def deploy(environment):
             sys.exit('Deployment aborted')
 
     try:
+        proceed = input(f'About to deploy branch {branch} to {environment}. Continue? [y/N]')
+        if not proceed.lower() in ['y', 'yes']:
+            sys.exit('Deployment aborted')
         stackery_deployment(environment, branch)
     except subprocess.CalledProcessError as err:
         if err.stderr.decode('utf-8').strip() == "Error: Failed to get settings: Attempting to access Stackery " \
