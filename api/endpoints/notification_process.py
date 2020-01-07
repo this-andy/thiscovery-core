@@ -24,18 +24,11 @@ import sys
 import json
 from datetime import datetime
 
-if 'api.endpoints' in __name__:
-    from .common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
-    from .common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, post_user_login_to_crm
-    from .common.pg_utilities import execute_query
-    from .common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
-    from .user import patch_user
-else:
-    from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
-    from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, post_user_login_to_crm
-    from common.pg_utilities import execute_query
-    from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
-    from user import patch_user
+from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+from common.hubspot import post_new_user_to_crm, post_task_signup_to_crm, post_user_login_to_crm
+from common.pg_utilities import execute_query
+from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+from user import patch_user
 
 
 def process_notifications(event, context):
@@ -161,8 +154,9 @@ def process_user_login(notification):
     try:
         # get basic data out of notification
         login_details = notification['details']
-        post_user_login_to_crm(login_details, correlation_id)
-        mark_notification_processed(notification, correlation_id)
+        posting_result = post_user_login_to_crm(login_details, correlation_id)
+        marking_result = mark_notification_processed(notification, correlation_id)
+        return posting_result, marking_result
 
     except Exception as ex:
         error_message = str(ex)

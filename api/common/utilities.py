@@ -129,12 +129,16 @@ def triggered_by_heartbeat(event):
 
 
 def obfuscate_data(input, item_key_path):
-    key = item_key_path[0]
-    if key in input:
-        if len(item_key_path) == 1:
-            input[key] = '*****'
-        else:
-            obfuscate_data(input[key], item_key_path[1:])
+    try:
+        key = item_key_path[0]
+        if key in input:
+            if len(item_key_path) == 1:
+                input[key] = '*****'
+            else:
+                obfuscate_data(input[key], item_key_path[1:])
+    except TypeError:
+        # if called with None or non-subscriptable arguments then do nothing
+        pass
 
 # endregion
 
@@ -233,27 +237,10 @@ def get_aws_namespace():
         except KeyError:
             raise DetailedValueError('SECRETS_NAMESPACE environment variable not defined', {})
     else:
-        if __name__ == "__main__":
-            from api.common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
-        else:
-            from .dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
+        from common.dev_config import UNIT_TEST_NAMESPACE, SECRETS_NAMESPACE
         if running_unit_tests():
             secrets_namespace = UNIT_TEST_NAMESPACE
         else:
-            secrets_namespace = SECRETS_NAMESPACE
-    return secrets_namespace
-
-
-def get_aws_namespace_OLD():
-    print('os envs:' + str(os.environ))
-    if running_unit_tests():
-        from .dev_config import UNIT_TEST_NAMESPACE
-        secrets_namespace = UNIT_TEST_NAMESPACE
-    else:
-        try:
-            secrets_namespace = os.environ['SECRETS_NAMESPACE']
-        except:
-            from .dev_config import SECRETS_NAMESPACE
             secrets_namespace = SECRETS_NAMESPACE
     return secrets_namespace
 

@@ -23,22 +23,13 @@ from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
 
-if 'api.endpoints' in __name__:
-    from .common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
-    from .common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
-        PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
-    from .common.entity_update import EntityUpdate
-    # from .utils import validate_uuid
-    from .common.notification_send import notify_new_user_registration, notify_user_login
-else:
-    from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
-    from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
-        PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
-        now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
-    from common.entity_update import EntityUpdate
-    # from utils import validate_uuid
-    from common.notification_send import notify_new_user_registration, notify_user_login
+from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
+from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
+    PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
+    now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
+from common.entity_update import EntityUpdate
+# from utils import validate_uuid
+from common.notification_send import notify_new_user_registration, notify_user_login
 
 
 BASE_USER_SELECT_SQL = '''
