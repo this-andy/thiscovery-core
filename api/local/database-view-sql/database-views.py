@@ -17,18 +17,23 @@
 #
 
 import os
-from api.common.pg_utilities import execute_query, execute_non_query, run_sql_script_file
+import sys
+from api.common.pg_utilities import run_sql_script_file
+
+
 
 VIEW_SQL_FOLDER = './'
 
 
 def create_all_views():
-    print (os.getcwd())
+    print(os.getcwd())
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_group_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_testgroup_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_group_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_testgroup_users_create.sql', None)
     run_sql_script_file(VIEW_SQL_FOLDER + 'view_task_signups.sql', None)
+    run_sql_script_file(VIEW_SQL_FOLDER + 'view_external_users_identity.sql', None)
+
 
 if __name__ == "__main__":
     create_all_views()
