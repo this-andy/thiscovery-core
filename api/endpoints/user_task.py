@@ -15,7 +15,6 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
 import uuid
 import json
 from http import HTTPStatus
@@ -57,6 +56,7 @@ def get_user_task(ut_id, correlation_id):
             ut.modified,               
             ut.status,
             ut.consented,
+            ut.progress_info,
             up.user_id              
         FROM 
             public.projects_usertask ut
@@ -66,6 +66,29 @@ def get_user_task(ut_id, correlation_id):
 
     result = execute_query(base_sql, (str(ut_id),), correlation_id)
     return result
+
+
+def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id):
+    """
+    Returns user_task related to user_id and project_task_id or None
+    """
+    result = [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    if result:
+        return result[0]
+    return None
+
+
+def update_user_task_progress_info(ut_id, progress_info_dict, correlation_id):
+    progress_info_json = json.dumps(progress_info_dict)
+
+    base_sql = '''
+                UPDATE public.projects_usertask
+                SET progress_info = (%s)
+                WHERE id = (%s);
+            '''
+
+    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, ut_id], correlation_id)
+    return number_of_updated_rows
 
 
 def list_user_tasks(user_id, correlation_id):
