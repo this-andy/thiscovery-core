@@ -51,6 +51,17 @@ def _jsonize_sql(base_sql):
 
 
 def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    """
+    Args:
+        base_sql:
+        params (tuple or list): http://initd.org/psycopg/docs/usage.html#passing-parameters-to-sql-queries
+        correlation_id:
+        return_json:
+        jsonize_sql:
+
+    Returns:
+
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)

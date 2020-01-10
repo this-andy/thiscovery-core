@@ -337,8 +337,29 @@ def get_project_status_for_user(user_id, correlation_id):
     except Exception as ex:
         raise ex
 
-
     return project_list
+
+
+def get_project_status_for_external_user(ext_user_project_id, correlation_id):
+    """
+    Translates ext_user_project_id to user_id and then returns result of get_project_status_for_user
+    Args:
+        ext_user_project_id:
+        correlation_id:
+
+    Returns: List of Projects and ProjectTasks associated with ext_user_project_id
+    """
+
+    sql = """
+        SELECT user_id
+        FROM public.external_users_identity
+        WHERE ext_user_project_id = %s
+    """
+
+    results = execute_query(sql, [str(ext_user_project_id)], correlation_id, jsonize_sql=False)
+    if results:
+        user_id = results[0]
+        return get_project_status_for_user(user_id, correlation_id)
 
 
 def get_project_status_for_user_api(event, context):
@@ -360,6 +381,34 @@ def get_project_status_for_user_api(event, context):
         response = {
             "statusCode": HTTPStatus.OK,
             "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
+        }
+
+    except Exception as ex:
+        error_msg = ex.args[0]
+        logger.error(error_msg, extra={'correlation_id': correlation_id})
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
+
+    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
+    return response
+
+
+def get_project_status_for_external_user_api(event, context):
+    start_time = get_start_time()
+    logger = get_logger()
+    correlation_id = None
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
+
+    try:
+        params = event['queryStringParameters']
+        ext_user_project_id = params['ext_user_project_id']  # all public id are uuids
+        correlation_id = get_correlation_id(event)
+        logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
+        response = {
+            "statusCode": HTTPStatus.OK,
+            "body": json.dumps(get_project_status_for_external_user(ext_user_project_id, correlation_id))
         }
 
     except Exception as ex:
