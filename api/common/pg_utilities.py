@@ -189,6 +189,29 @@ def insert_data_from_csv(source_file, destination_table, separator=',', header_r
     conn.close()
 
 
+def insert_multiple_data_from_csv(*args, separator=',', header_row=False):
+    """
+    Populates database with data from multiple files in a single connection
+
+    Args:
+        *args: one or more tuples in the format (path_to_source_csv_file, name_of_destination_table)
+        separator (str): csv file separator
+        header_row (bool): whether or not csv file contains a header row
+
+    Returns: None
+    """
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    for source_file, destination_table in args:
+        with open(source_file, 'r') as f:
+            if header_row:
+                next(f)  # Skip the header row.
+            cursor.copy_from(f, destination_table, sep=separator, null='')
+    conn.commit()
+    conn.close()
+
+
 def populate_table_from_csv(source_folder, destination_table_name, separator=','):
     if separator == ',':
         extn = '.csv'
@@ -201,6 +224,18 @@ def populate_table_from_csv(source_folder, destination_table_name, separator=','
 
 def truncate_table(table_name):
     sql = 'TRUNCATE TABLE ' + table_name + ' CASCADE'
+    execute_non_query(sql, None)
+
+
+def truncate_table_multiple(*args):
+    """
+    Args:
+        *args: one or more table names to truncate
+
+    Returns: None
+    """
+    table_names_str = ', '.join(args)
+    sql = 'TRUNCATE TABLE ' + table_names_str + ' CASCADE'
     execute_non_query(sql, None)
 
 

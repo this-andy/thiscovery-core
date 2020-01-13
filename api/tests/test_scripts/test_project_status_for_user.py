@@ -21,7 +21,7 @@ from http import HTTPStatus
 from unittest import TestCase
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api, get_project_status_for_external_user_api
-from api.common.pg_utilities import insert_data_from_csv, truncate_table
+from api.common.pg_utilities import insert_multiple_data_from_csv, truncate_table_multiple
 from api.common.utilities import set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
@@ -35,17 +35,20 @@ ENTITY_BASE_URL = 'project-user-status'
 
 # region helper functions
 def clear_test_data():
-    truncate_table('public.projects_usertask')
-    truncate_table('public.projects_userproject')
-    truncate_table('public.projects_usergroupmembership')
-    truncate_table('public.projects_user')
-    truncate_table('public.projects_projecttaskgroupvisibility')
-    truncate_table('public.projects_projectgroupvisibility')
-    truncate_table('public.projects_projecttask')
-    truncate_table('public.projects_externalsystem')
-    truncate_table('public.projects_tasktype')
-    truncate_table('public.projects_project')
-    truncate_table('public.projects_usergroup')
+    truncate_table_multiple(
+        'public.projects_usertask',
+        'public.projects_userproject',
+        'public.projects_usergroupmembership',
+        'public.projects_user',
+        'public.projects_projecttaskgroupvisibility',
+        'public.projects_projectgroupvisibility',
+        'public.projects_projecttask',
+        'public.projects_externalsystem',
+        'public.projects_tasktype',
+        'public.projects_project',
+        'public.projects_usergroup',
+    )
+
 # endregion
 
 
@@ -66,20 +69,20 @@ class TestProjectStatusForUser(TestCase):
     def setUpClass(cls):
         set_running_unit_tests(True)
         clear_test_data()
+        insert_multiple_data_from_csv(
+                (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
+                (TEST_DATA_FOLDER + 'project_data_PSFU.csv', 'public.projects_project'),
+                (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),
+                (TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem'),
+                (TEST_DATA_FOLDER + 'projecttask_data_PSFU.csv', 'public.projects_projecttask'),
+                (TEST_DATA_FOLDER + 'projectgroupvisibility_data.csv', 'public.projects_projectgroupvisibility'),
+                (TEST_DATA_FOLDER + 'projecttaskgroupvisibility_data.csv','public.projects_projecttaskgroupvisibility'),
+                (TEST_DATA_FOLDER + 'user_data_PSFU.csv', 'public.projects_user'),
+                (TEST_DATA_FOLDER + 'usergroupmembership_data.csv', 'public.projects_usergroupmembership'),
+                (TEST_DATA_FOLDER + 'userproject_PSFU.csv', 'public.projects_userproject'),
+                (TEST_DATA_FOLDER + 'usertask_PSFU.csv', 'public.projects_usertask'),
+        )
 
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'project_data_PSFU.csv', 'public.projects_project')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data_PSFU.csv', 'public.projects_projecttask')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'projectgroupvisibility_data.csv',
-                             'public.projects_projectgroupvisibility')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'projecttaskgroupvisibility_data.csv',
-                             'public.projects_projecttaskgroupvisibility')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data_PSFU.csv', 'public.projects_user')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroupmembership_data.csv', 'public.projects_usergroupmembership')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'userproject_PSFU.csv', 'public.projects_userproject')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usertask_PSFU.csv', 'public.projects_usertask')
 
     @classmethod
     def tearDownClass(cls):
