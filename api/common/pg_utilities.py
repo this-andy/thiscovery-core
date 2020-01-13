@@ -123,17 +123,18 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
                 sql = base_sql
             sql = minimise_white_space(sql)
             param_str = str(params)
-            logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+            logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
 
             cursor.execute(sql, params)
             records = cursor.fetchall()
-            logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+            logger.info('postgres result', extra={'rows returned': str(len(records)), 'correlation_id': correlation_id})
 
             if return_json:
                 results.append(_get_json_from_tuples(records))
             else:
                 results.append(records)
 
+        logger.info('Returning multiple results', extra={'results': results})
         return results
 
     except Exception as ex:
