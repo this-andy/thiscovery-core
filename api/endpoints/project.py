@@ -422,7 +422,6 @@ def get_project_status_for_external_user(ext_user_project_id, correlation_id):
     projecttask_group_users_dict = dict_from_dataset(projecttask_group_users, 'project_task_id')
     projecttask_testgroup_users_dict = dict_from_dataset(projecttask_testgroup_users, 'project_task_id')
     projects_usertasks_dict = dict_from_dataset(projects_usertasks, 'project_task_id')
-    print(projects_usertasks_dict)
 
     # now add calculated attributes to returned json...
 
@@ -444,7 +443,6 @@ def get_project_status_for_external_user(ext_user_project_id, correlation_id):
                         (task['visibility'] == 'public')
                         or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
                         or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
-                print(task_id)
                 task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
                 if task['user_is_signedup']:
                     print('User is signed up!')
