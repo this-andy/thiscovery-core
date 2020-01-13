@@ -27,7 +27,7 @@ from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
 from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
-from api.common.pg_utilities import insert_data_from_csv, truncate_table
+from api.common.pg_utilities import insert_multiple_data_from_csv, truncate_table_multiple
 from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.endpoints.user import create_user_api
 from api.endpoints.user_task import list_user_tasks_api, create_user_task_api
@@ -93,14 +93,16 @@ USER_TASK_03_EXPECTED_BODY = {
 
 
 def clear_database():
-    truncate_table('public.projects_usertask')
-    truncate_table('public.projects_projecttask')
-    truncate_table('public.projects_tasktype')
-    truncate_table('public.projects_userproject')
-    truncate_table('public.projects_externalsystem')
-    truncate_table('public.projects_project')
-    truncate_table('public.projects_user')
-    truncate_table('public.projects_usergroup')
+    truncate_table_multiple(
+        'public.projects_usertask',
+        'public.projects_projecttask',
+        'public.projects_tasktype',
+        'public.projects_userproject',
+        'public.projects_externalsystem',
+        'public.projects_project',
+        'public.projects_user',
+        'public.projects_usergroup',
+    )
     delete_all_notifications()
 
 
@@ -111,14 +113,16 @@ class TestUserTask(TestCase):
         set_running_unit_tests(True)
         clear_database()
 
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask')
+        insert_multiple_data_from_csv(
+            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
+            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
+            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
+            (TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem'),
+            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
+            (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),
+            (TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask'),
+            (TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask'),
+        )
 
     @classmethod
     def tearDownClass(self):
@@ -197,6 +201,7 @@ class TestUserTask(TestCase):
         ut_json = {
             'user_id': user_id,
             'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
+            'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': ut_id,
@@ -301,11 +306,15 @@ class TestUserTask(TestCase):
         user_project_id = result_json['user_project_id']
         del result_json['user_project_id']
 
+        ext_user_task_id = result_json['ext_user_task_id']
+        del result_json['ext_user_task_id']
+
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(ut_json, result_json)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(ut_id).version == 4)
+        self.assertTrue(uuid.UUID(ext_user_task_id).version == 4)
         self.assertEqual('Qualtrics', task_provider_name)
         self.assertEqual(f'https://www.qualtrics.com?user_id={user_id}&user_task_id={ut_id}'
                          f'&external_task_id=8e368360-a708-4336-8feb-a8903fde0210&env={TEST_ENV}', url)

@@ -36,6 +36,9 @@ STATUS_CHOICES = (
 )
 DEFAULT_STATUS = 'active'
 
+# this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
+ext_user_task_id, created, status = None, None, None
+
 
 def validate_status(s):
     if s in STATUS_CHOICES:
@@ -178,9 +181,15 @@ def check_if_user_task_exists(user_id, project_task_id, correlation_id):
 
 
 def create_user_task(ut_json, correlation_id):
-    # json MUST contain: user_id, project_task_id, ut_consented
-    # json may OPTIONALLY include: id, created, ut_status
+    """
+    Inserts new UserTask row in thiscovery db
 
+    Args:
+        ut_json: must contain user_id, project_task_id and ut_consented; may optionally include id, created, status, ext_user_task_id
+        correlation_id:
+
+    Returns:
+    """
     # extract mandatory data from json
     try:
         user_id = validate_uuid(ut_json['user_id'])
@@ -194,6 +203,21 @@ def create_user_task(ut_json, correlation_id):
         raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
+    for variable_name, default_value, validating_func in [
+        ('ext_user_task_id', str(uuid.uuid4()), validate_uuid),
+        ('created', str(now_with_tz()), validate_utc_datetime),
+        ('status', DEFAULT_STATUS, validate_status),
+    ]:
+        if variable_name in ut_json:
+            try:
+                globals()[variable_name] = validating_func(ut_json[variable_name])  # https://stackoverflow.com/a/4687672
+            except DetailedValueError as err:
+                err.add_correlation_id(correlation_id)
+                raise err
+        else:
+            globals()[variable_name] = default_value
+
+    # id shadows builtin function, so treat if separately (using globals() approach above would overwrite that function)
     if 'id' in ut_json:
         try:
             id = validate_uuid(ut_json['id'])
@@ -202,24 +226,6 @@ def create_user_task(ut_json, correlation_id):
             raise err
     else:
         id = str(uuid.uuid4())
-
-    if 'created' in ut_json:
-        try:
-            created = validate_utc_datetime(ut_json['created'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        created = str(now_with_tz())
-
-    if 'status' in ut_json:
-        try:
-            ut_status = validate_status(ut_json['status'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        ut_status = DEFAULT_STATUS
 
     # get corresponding project_task...
     project_task = get_project_task(project_task_id, correlation_id)
@@ -244,8 +250,6 @@ def create_user_task(ut_json, correlation_id):
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user_task already exists', errorjson)
 
-    ext_user_task_id = uuid.uuid4()
-
     sql = '''INSERT INTO public.projects_usertask (
             id,
             created,
@@ -257,7 +261,7 @@ def create_user_task(ut_json, correlation_id):
             ext_user_task_id
         ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented, ext_user_task_id), correlation_id)
+    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, status, ut_consented, ext_user_task_id), correlation_id)
 
     url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
@@ -270,7 +274,7 @@ def create_user_task(ut_json, correlation_id):
         'project_task_id': project_task_id,
         'task_provider_name': task_provider_name,
         'url': url,
-        'status': ut_status,
+        'status': status,
         'consented': ut_consented,
         'ext_user_task_id': ext_user_task_id,
     }

@@ -28,7 +28,6 @@ from user import get_user_by_id
 # from utils import validate_uuid
 
 
-
 STATUS_CHOICES = (
     'active',
     'complete',
@@ -36,6 +35,8 @@ STATUS_CHOICES = (
 )
 DEFAULT_STATUS = 'active'
 
+# this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
+ext_user_project_id, created, status = None, None, None
 
 def validate_status(s):
     if s in STATUS_CHOICES:
@@ -127,7 +128,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     Inserts new UserProject row in thiscovery db
 
     Args:
-        up_json: must contain user_id and project_id; may optionally include id, created, status
+        up_json: must contain user_id and project_id; may optionally include id, created, status, ext_user_project_id
         correlation_id:
         do_nothing_if_exists:
 
@@ -145,6 +146,21 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
+    for variable_name, default_value, validating_func in [
+        ('ext_user_project_id', str(uuid.uuid4()), validate_uuid),
+        ('created', str(now_with_tz()), validate_utc_datetime),
+        ('status', DEFAULT_STATUS, validate_status),
+    ]:
+        if variable_name in up_json:
+            try:
+                globals()[variable_name] = validating_func(up_json[variable_name])  # https://stackoverflow.com/a/4687672
+            except DetailedValueError as err:
+                err.add_correlation_id(correlation_id)
+                raise err
+        else:
+            globals()[variable_name] = default_value
+
+    # id shadows builtin function, so treat if separately (using globals() approach above would overwrite that function)
     if 'id' in up_json:
         try:
             id = validate_uuid(up_json['id'])
@@ -153,24 +169,6 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
             raise err
     else:
         id = str(uuid.uuid4())
-
-    if 'created' in up_json:
-        try:
-            created = validate_utc_datetime(up_json['created'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        created = str(now_with_tz())
-
-    if 'status' in up_json:
-        try:
-            status = validate_status(up_json['status'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        status = DEFAULT_STATUS
 
     # check external account does not already exist
     existing = get_existing_user_project_id(user_id, project_id, correlation_id)
@@ -187,8 +185,6 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
-    ext_user_project_id = uuid.uuid4()
-
     sql = '''INSERT INTO public.projects_userproject (
         id,
         created,
@@ -199,7 +195,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         ext_user_project_id
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, user_id, project_id, status), correlation_id)
+    execute_non_query(sql, (id, created, created, user_id, project_id, status, ext_user_project_id), correlation_id)
 
     new_user_project = {
         'id': id,
