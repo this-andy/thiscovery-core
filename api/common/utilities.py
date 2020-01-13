@@ -262,6 +262,13 @@ def get_environment_name():
 #         return append_env_to_url(url)
 
 # this belongs in user_task class as a property - moved here to avoid circular includes
+def create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id):
+    params = f'?ext_user_project_id={ext_user_project_id}&ext_user_task_id={ext_user_task_id}'
+    if external_task_id is not None:
+        params += f'&external_task_id={external_task_id}'
+    return params
+
+
 def create_url_params(user_id, user_task_id, external_task_id):
     params = '?user_id=' + user_id + '&user_task_id=' + user_task_id
     if external_task_id is not None:
