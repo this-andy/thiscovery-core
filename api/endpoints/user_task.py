@@ -244,6 +244,8 @@ def create_user_task(ut_json, correlation_id):
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user_task already exists', errorjson)
 
+    ext_user_task_id = uuid.uuid4()
+
     sql = '''INSERT INTO public.projects_usertask (
             id,
             created,
@@ -251,10 +253,11 @@ def create_user_task(ut_json, correlation_id):
             user_project_id,
             project_task_id,
             status,
-            consented
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
+            consented,
+            ext_user_task_id
+        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
+    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented, ext_user_task_id), correlation_id)
 
     url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
@@ -269,6 +272,7 @@ def create_user_task(ut_json, correlation_id):
         'url': url,
         'status': ut_status,
         'consented': ut_consented,
+        'ext_user_task_id': ext_user_task_id,
     }
 
     notify_new_task_signup(new_user_task, correlation_id)

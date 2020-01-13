@@ -21,7 +21,7 @@ from http import HTTPStatus
 
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-    triggered_by_heartbeat, non_prod_env_url_param, create_url_params
+    triggered_by_heartbeat, non_prod_env_url_param, create_url_params, create_anonymous_url_params
 
 
 BASE_PROJECT_SELECT_SQL = '''
@@ -225,7 +225,7 @@ def get_project_api(event, context):
             response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise ObjectDoesNotExistError('project does not exist', errorjson)
+            raise ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
 
     except ObjectDoesNotExistError as err:
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
@@ -328,7 +328,6 @@ def get_project_status_for_user(user_id, correlation_id):
     projects_usertasks_dict = dict_from_dataset(projects_usertasks,'project_task_id')
 
     # now add calculated attributes to returned json...
-
     try:
         for project in project_list:
             project_id = project['id']
@@ -370,25 +369,132 @@ def get_project_status_for_user(user_id, correlation_id):
 
 
 def get_project_status_for_external_user(ext_user_project_id, correlation_id):
-    """
-    Translates ext_user_project_id to user_id and then returns result of get_project_status_for_user
-    Args:
-        ext_user_project_id:
-        correlation_id:
 
-    Returns: List of Projects and ProjectTasks associated with ext_user_project_id
-    """
+    logger = get_logger()
 
-    sql = """
-        SELECT user_id
-        FROM public.external_users_identity
+    project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
+
+    sql0 = """
+        SELECT project_id, project_name, group_id, group_name, user_id, email, ext_user_project_id
+        FROM public.project_group_users
         WHERE ext_user_project_id = %s
     """
 
-    results = execute_query(sql, [str(ext_user_project_id)], correlation_id, jsonize_sql=False)
-    if results:
-        user_id = results[0]
-        return get_project_status_for_user(user_id, correlation_id)
+    sql1 = """
+        SELECT project_id, project_name, testing_group_id, group_name, user_id, email, ext_user_project_id
+        FROM public.project_testgroup_users
+        WHERE ext_user_project_id = %s
+    """
+
+    sql2 = """
+        SELECT project_task_id, description, group_id, group_name, user_id, email, ext_user_project_id
+        FROM public.projecttask_group_users
+        WHERE ext_user_project_id = %s
+    """
+
+    sql3 = """
+        SELECT project_task_id, description, testing_group_id, group_name, user_id, email, ext_user_project_id
+        FROM public.projecttask_testgroup_users
+        WHERE ext_user_project_id = %s
+    """
+
+    sql4 = """
+        SELECT project_task_id, ut.id, ut.status, up.ext_user_project_id as ext_user_project_id, ut.ext_user_task_id as ext_user_task_id 
+        FROM public.projects_usertask ut
+        JOIN public.projects_userproject up ON ut.user_project_id = up.id
+        WHERE ext_user_project_id = %s
+    """
+
+    tuple_ext_user_project_id = (str(ext_user_project_id),)
+    results = execute_query_multiple(
+        (sql0, sql1, sql2, sql3, sql4),
+        (tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id),
+        correlation_id)
+
+    project_group_users = results[0]
+    project_testgroup_users = results[1]
+    projecttask_group_users = results[2]
+    projecttask_testgroup_users = results[3]
+    projects_usertasks = results[4]
+
+    project_group_users_dict = dict_from_dataset(project_group_users, 'project_id')
+    project_testgroup_users_dict = dict_from_dataset(project_testgroup_users, 'project_id')
+    projecttask_group_users_dict = dict_from_dataset(projecttask_group_users, 'project_task_id')
+    projecttask_testgroup_users_dict = dict_from_dataset(projecttask_testgroup_users, 'project_task_id')
+    projects_usertasks_dict = dict_from_dataset(projects_usertasks, 'project_task_id')
+    print(projects_usertasks_dict)
+
+    # now add calculated attributes to returned json...
+
+    try:
+        logger.info(f'About to iterate over {len(project_list)} projects')
+        for project in project_list:
+            project_id = project['id']
+            logger.info(f'Working on project {project_id}', extra={'project': project})
+            project['project_is_visible'] = \
+                ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
+                or ((project['status'] != 'testing') and
+                    ((project['visibility'] == 'public') or
+                    (project_group_users_dict.get(project_id) is not None)))
+            for task in project['tasks']:
+                task_id = task['id']
+                logger.info(f'Working on task {task_id} of project {project_id}', extra={'task': task, 'project': project})
+                task['task_is_visible'] = \
+                    project['project_is_visible'] and (
+                        (task['visibility'] == 'public')
+                        or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
+                        or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
+                print(task_id)
+                task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
+                if task['user_is_signedup']:
+                    print('User is signed up!')
+                task['signup_available'] = \
+                    (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
+                    or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
+                if task['user_is_signedup']:
+                    if task['status'] == 'complete':
+                        task['user_task_status'] = 'complete'
+                    else:
+                        task['user_task_status'] = projects_usertasks_dict[task_id]['status']
+                # only give url if user has signedup (inc if completed)
+                if task['task_is_visible'] and task['user_is_signedup']:
+                    if task['url'] is not None:
+                        ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
+                        external_task_id = task['external_task_id']
+                        task['url'] += create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
+                        task['url'] += non_prod_env_url_param()
+                else:
+                    task['url'] = None
+                    # task['task_provider_name'] = None
+    except Exception as ex:
+        raise ex
+
+    return project_list
+
+
+
+# # Commenting this out for now. If we decide we want to keep the API endpoint based on user_id, this function might be useful; otherwise, it is better
+# # to just edit get_project_status_for_user to satisfy our needs
+# def get_project_status_for_external_user(ext_user_project_id, correlation_id):
+#     """
+#     Translates ext_user_project_id to user_id and then returns result of get_project_status_for_user
+#     Args:
+#         ext_user_project_id:
+#         correlation_id:
+#
+#     Returns: List of Projects and ProjectTasks associated with ext_user_project_id
+#     """
+#
+#     sql = """
+#         SELECT user_id
+#         FROM public.external_users_identity
+#         WHERE ext_user_project_id = %s
+#     """
+#
+#     results = execute_query(sql, [str(ext_user_project_id)], correlation_id, jsonize_sql=False)
+#     if results:
+#         user_id = results[0]
+#         return get_project_status_for_user(user_id, correlation_id)
 
 
 def get_project_status_for_user_api(event, context):

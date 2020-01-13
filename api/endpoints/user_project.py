@@ -123,9 +123,16 @@ def get_existing_user_project_id(user_id, project_id, correlation_id):
 
 
 def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
-    # json MUST contain: user_id, project_id,
-    # json may OPTIONALLY include: id, created, status
+    """
+    Inserts new UserProject row in thiscovery db
 
+    Args:
+        up_json: must contain user_id and project_id; may optionally include id, created, status
+        correlation_id:
+        do_nothing_if_exists:
+
+    Returns:
+    """
     # extract mandatory data from json
     try:
         user_id = validate_uuid(up_json['user_id'])    # all public id are uuids
@@ -180,14 +187,17 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
+    ext_user_project_id = uuid.uuid4()
+
     sql = '''INSERT INTO public.projects_userproject (
         id,
         created,
         modified,
         user_id,
         project_id,
-        status
-    ) VALUES ( %s, %s, %s, %s, %s, %s );'''
+        status,
+        ext_user_project_id
+    ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
 
     execute_non_query(sql, (id, created, created, user_id, project_id, status), correlation_id)
 
@@ -198,6 +208,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         'user_id': user_id,
         'project_id': project_id,
         'status': status,
+        'ext_user_project_id': ext_user_project_id,
     }
 
     return new_user_project
