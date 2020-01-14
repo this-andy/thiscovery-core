@@ -22,7 +22,8 @@ from unittest import TestCase
 
 import api.common.pg_utilities as pg_utils
 import api.endpoints.progress_process as prog_proc
-import testing_utilities as tu
+import api.endpoints.project as p
+import api.endpoints.user_task as ut
 from api.common.utilities import set_running_unit_tests
 
 TEST_DATA_FOLDER = '../test_data/'
@@ -70,3 +71,20 @@ class MyTestCase(TestCase):
         expected_result = {'updated_project_tasks': 1, 'updated_user_tasks': 2}
         result = prog_proc.update_cochrane_progress(event=event, context=None)
         self.assertEqual(expected_result, result)
+
+        # check project task progress was updated
+        pt = p.get_project_task(p.get_project_task_by_external_task_id('ext-3a')[0]['id'])[0]
+        expected_pt_assessments = 45
+        actual_pt_assessments = pt['progress_info']['total assessments']
+        self.assertEqual(expected_pt_assessments, actual_pt_assessments)
+        expected_pt_progress_modified = '2019-12-18T12:16:42+00:00'
+        actual_pt_progress_modified = pt['progress_info_modified']
+        self.assertEqual(expected_pt_progress_modified, actual_pt_progress_modified)
+
+        # check user task progress was updated
+        user1_id = '851f7b34-f76c-49de-a382-7e4089b744e2'
+        project_task_id = pt['project_task_id']
+        user_task = ut.filter_user_tasks_by_project_task_id(user1_id, project_task_id)
+        expected_ut_assessments = 15
+        actual_ut_assessments = user_task['progress_info']['total assessments']
+        self.assertEqual(expected_ut_assessments, actual_ut_assessments)

@@ -61,10 +61,10 @@ def update_cochrane_progress(event, context):
     progress_info_modified = progress_dict['daterun']
 
     progress_by_task = sort_progress_by_task(progress_dict)
-    updated_project_tasks = 0
-    updated_user_tasks = 0
+    # updated_project_tasks = 0
+    # updated_user_tasks = 0
     logger.info('Execution time before for loop', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
-    sql_queries = []
+    user_tasks_sql_queries, project_tasks_sql_queries = list(), list()
     for external_task_id, v in progress_by_task.items():
         logger.info(f'Working on task {external_task_id}')
         project_task_assessments = 0
@@ -102,7 +102,7 @@ def update_cochrane_progress(event, context):
             '''
 
             # updated_user_tasks += pg_utils.execute_non_query(ut_sql, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
-            sql_queries.append((ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
+            user_tasks_sql_queries.append((ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
 
             project_task_assessments += user_task_assessments
 
@@ -118,11 +118,19 @@ def update_cochrane_progress(event, context):
             '''
 
         # updated_project_tasks += pg_utils.execute_non_query(pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
-        sql_queries.append((pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
+        project_tasks_sql_queries.append((pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
 
+    from pprint import pprint
+
+    multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
+    multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]
+    updated_rows = pg_utils.execute_non_query_multiple(multiple_sql_queries, multiple_params, correlation_id)
+
+    assert len(updated_rows) == len(project_tasks_sql_queries) + len(user_tasks_sql_queries), 'Number of updated database rows does not match number of ' \
+                                                                                              'executed sql queries'
 
     logger.info('Total execution time', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
-    return {'updated_project_tasks': updated_project_tasks, 'updated_user_tasks': updated_user_tasks}
+    return {'updated_project_tasks': len(project_tasks_sql_queries), 'updated_user_tasks': len(user_tasks_sql_queries)}
 
 
 # function below is not used anywhere and can be delete. Leaving it here for now in case the approach of executing queries in batch doesn't work

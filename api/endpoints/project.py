@@ -162,14 +162,17 @@ def list_projects_api(event, context):
     return response
 
 
-def get_project_task(project_task_id, correlation_id):
+def get_project_task(project_task_id, correlation_id=None):
     sql = '''
         SELECT
+            pt.id as project_task_id,
             project_id,
             task_type_id,
             base_url,
             external_system_id,
             external_task_id,
+            progress_info,
+            progress_info_modified,
             es.short_name as task_provider_name
         FROM public.projects_projecttask pt
         JOIN projects_externalsystem es on pt.external_system_id = es.id
@@ -203,8 +206,8 @@ def get_project_with_tasks(project_uuid, correlation_id):
     return result
 
 
-def get_project_task_by_external_task_id(external_task_id, correlation_id):
-    return execute_query(TASKS_BY_EXTERNAL_ID_SQL, [str(external_task_id)], correlation_id, jsonize_sql=False)
+def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
+    return execute_query(TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
 
 
 def get_project_api(event, context):

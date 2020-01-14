@@ -162,6 +162,53 @@ def execute_non_query(sql, params, correlation_id=new_correlation_id()):
         conn.close()
 
 
+def execute_non_query_multiple(sql_iterable, params_iterable, correlation_id=new_correlation_id()):
+    """
+    
+    Args:
+        sql_iterable (tuple, list, etc): iterable containing sql queries to be executed
+        params_iterable (tuple, list, etc): iterable containing params for sql queries in sql_iterable
+        correlation_id: 
+
+    Returns:
+        List of number of rows affected by each of the input sql queries
+
+    """
+    try:
+        logger = get_logger()
+        conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
+
+    results = []
+    cursor = conn.cursor()
+
+    for (sql, params) in zip(sql_iterable, params_iterable):
+        sql = minimise_white_space(sql)
+        param_str = str(params)
+        logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+
+        try:
+            cursor.execute(sql, params)
+        except psycopg2.IntegrityError as err:
+            errorjson = {'error': err.args[0], 'correlation_id': str(correlation_id)}
+            conn.close()
+            raise DetailedIntegrityError('Database integrity error', errorjson)
+        except Exception as ex:
+            conn.close()
+            raise ex
+
+        rowcount = cursor.rowcount
+        logger.info(f'postgres query updated {rowcount} rows', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+        results.append(rowcount)
+
+    conn.commit()
+    conn.close()
+    return results
+
+
+
+
 def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     sql = get_file_as_string(sql_script_file)
     execute_non_query(sql, None, correlation_id)
