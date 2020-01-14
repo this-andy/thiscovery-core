@@ -20,6 +20,7 @@ from http import HTTPStatus
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
 
+from api.common.utilities import get_logger
 
 BASE_URL_PRODUCTION = 'https://crs.cochrane.org'
 BASE_URL_STAGING = 'https://api-test.metaxis.com'
@@ -29,14 +30,16 @@ base_url = BASE_URL_MOCK_API
 # base_url = BASE_URL_PRODUCTION
 
 
-def cochrane_get(url):
-    full_url = base_url + url
+def cochrane_get(url, api_url):
+    full_url = api_url + url
     headers = dict()
     headers['Content-Type'] = 'application/json'
+    logger = get_logger()
     try:
         req = Request(full_url, headers=headers)
         response = urlopen(req).read()
         data = json.loads(response)
+        logger.info('API response', extra={'body': data})
     except HTTPError as err:
         if err.code == HTTPStatus.NOT_FOUND:
             return None
@@ -45,9 +48,9 @@ def cochrane_get(url):
     return data
 
 
-def get_progress():
+def get_progress(api_url=base_url):
     url = '/CrowdService/v1/this/progress'
-    return cochrane_get(url)
+    return cochrane_get(url, api_url)
 
 
 if __name__ == '__main__':

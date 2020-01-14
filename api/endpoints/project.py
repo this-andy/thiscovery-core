@@ -94,6 +94,21 @@ MINIMAL_PROJECT_SELECT_SQL = '''
 '''
 
 
+TASKS_BY_EXTERNAL_ID_SQL = '''
+            SELECT
+                pt.id,
+                project_id,
+                task_type_id,
+                base_url,
+                external_system_id,
+                external_task_id,
+                es.short_name as task_provider_name
+            FROM public.projects_projecttask pt
+            JOIN projects_externalsystem es on pt.external_system_id = es.id
+            WHERE external_task_id = (%s)
+    '''
+
+
 def list_projects(correlation_id):
     base_sql = '''
       SELECT 
@@ -189,20 +204,7 @@ def get_project_with_tasks(project_uuid, correlation_id):
 
 
 def get_project_task_by_external_task_id(external_task_id, correlation_id):
-    sql = '''
-            SELECT
-                pt.id,
-                project_id,
-                task_type_id,
-                base_url,
-                external_system_id,
-                external_task_id,
-                es.short_name as task_provider_name
-            FROM public.projects_projecttask pt
-            JOIN projects_externalsystem es on pt.external_system_id = es.id
-            WHERE external_task_id = (%s)
-    '''
-    return execute_query(sql, [str(external_task_id)], correlation_id, jsonize_sql=False)
+    return execute_query(TASKS_BY_EXTERNAL_ID_SQL, [str(external_task_id)], correlation_id, jsonize_sql=False)
 
 
 def get_project_api(event, context):
