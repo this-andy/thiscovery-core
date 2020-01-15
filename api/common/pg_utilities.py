@@ -189,7 +189,7 @@ def insert_data_from_csv(source_file, destination_table, separator=',', header_r
     conn.close()
 
 
-def insert_multiple_data_from_csv(*args, separator=',', header_row=False):
+def insert_data_from_csv_multiple(*args, separator=',', header_row=False):
     """
     Populates database with data from multiple files in a single connection
 

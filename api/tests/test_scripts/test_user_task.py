@@ -27,7 +27,7 @@ from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
 from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
-from api.common.pg_utilities import insert_multiple_data_from_csv, truncate_table_multiple
+from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
 from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.endpoints.user import create_user_api
 from api.endpoints.user_task import list_user_tasks_api, create_user_task_api
@@ -113,7 +113,7 @@ class TestUserTask(TestCase):
         set_running_unit_tests(True)
         clear_database()
 
-        insert_multiple_data_from_csv(
+        insert_data_from_csv_multiple(
             (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
             (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
             (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),

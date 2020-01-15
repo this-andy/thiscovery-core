@@ -21,7 +21,7 @@ from http import HTTPStatus
 from unittest import TestCase
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api, get_project_status_for_external_user_api
-from api.common.pg_utilities import insert_multiple_data_from_csv, truncate_table_multiple
+from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
 from api.common.utilities import set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
 
@@ -69,7 +69,7 @@ class TestProjectStatusForUser(TestCase):
     def setUpClass(cls):
         set_running_unit_tests(True)
         clear_test_data()
-        insert_multiple_data_from_csv(
+        insert_data_from_csv_multiple(
                 (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
                 (TEST_DATA_FOLDER + 'project_data_PSFU.csv', 'public.projects_project'),
                 (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),

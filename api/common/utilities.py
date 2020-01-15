@@ -16,12 +16,14 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import os
-import uuid
+import datetime
+import functools
 import logging
+import os
 import re
 import sys
-import datetime
+import uuid
+
 from timeit import default_timer as timer
 from dateutil import parser, tz
 from pythonjsonlogger import jsonlogger
@@ -405,18 +407,33 @@ def get_country_name(country_code):
 
 
 countries = load_countries()
+# endregion
 
+
+#region decorators
+def time_execution(func):
+    @functools.wraps(func)
+    def time_execution_wrapper(*args, **kwargs):
+        logger = get_logger()
+        start_time = get_start_time()
+        result = func(*args, **kwargs)
+        logger.info('Decorated function result and execution time', extra={'decorated func module': func.__module__, 'decorated func name': func.__name__,
+                                                                           'result': result, 'func args': args, 'func kwargs': kwargs,
+                                                                           'elapsed_ms': get_elapsed_ms(start_time)})
+        return result
+    return time_execution_wrapper
 # endregion
 
 
 if __name__ == "__main__":
+    pass
     # result = get_secret('database-connection')
     # result = {"dbname": "citsci_platform", **result}
     # result = now_with_tz()
     # result = str(result)
     # result = get_country_name('US')
-    result = get_aws_namespace()
-    print(result)
+    # result = get_aws_namespace()
+    # print(result)
 
     # print(feature_flag('hubspot-tle'))
     # print(feature_flag('hubspot-contacts'))
