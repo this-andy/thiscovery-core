@@ -51,7 +51,7 @@ def update_cochrane_progress(event, context):
     correlation_id = get_correlation_id(event)
 
     # optional base_url queryStringParameter so that tests can always point to mock API
-    params = event['queryStringParameters']
+    params = event.get('queryStringParameters')
     api_url = params.get('api_url')
 
     if api_url:
