@@ -20,7 +20,7 @@ from http import HTTPStatus
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
 
-from api.common.utilities import get_logger
+from common.utilities import get_logger
 
 BASE_URL_PRODUCTION = 'https://crs.cochrane.org'
 BASE_URL_STAGING = 'https://api-test.metaxis.com'
