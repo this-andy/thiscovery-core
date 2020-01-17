@@ -17,21 +17,79 @@
 #
 import boto3
 
+from common.aws_common import BaseClient
 from common.utilities import get_logger, get_aws_namespace
 
 
-class BaseClient:
-    def __init__(self):
-        self.logger = get_logger()
+ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 
 
 class CloudWatch(BaseClient):
+
     def __init__(self):
         super().__init__()
         self.client = boto3.client('cloudwatch')
 
+    def get_alarms(self, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.describe_alarms
+        """
+        if prefix is None:
+            prefix = f"thiscovery-core-{super().get_namespace()}"
+        try:
+            self.logger.info('Getting cloudwatch alarms', extra={'prefix': prefix})
+            response = self.client.describe_alarms(
+                AlarmNamePrefix=prefix,
+            )
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.describe_alarms failed with response: {response}'
+            return response['MetricAlarms']
+        except Exception as err:
+            raise err
+
+    def get_lambda_duration_alarms(self):
+        return self.get_alarms(prefix=f"thiscovery-core-{super().get_namespace()}-{ALARM_PREFIX_LAMBDA_DURATION}")
+
+    def create_or_update_lambda_duration_alarm(self, **kwargs):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.put_metric_alarm
+
+        Args:
+            **kwargs: Parameters that will be passed to put_metric_alarm; MUST contain AlarmName; MAY contain Threshold
+
+        Returns:
+        """
+        # if 'Threshold' not in kwargs, set default
+        kwargs['Threshold'] = kwargs.get('Threshold', 1.5)
+
+        # testing
+        kwargs['AlarmName'] = 'thiscovery-core-test-afs25-LambdaDuration-UpdateCochraneProgress'
+
+        try:
+            response = self.client.put_metric_alarm(
+                AlarmName=kwargs['AlarmName'],
+                ComparisonOperator='GreaterThanThreshold',
+                EvaluationPeriods=1,
+                MetricName='Duration',
+                Namespace='AWS/Lambda',
+                Period=300,
+                Statistic='Maximum',
+                Threshold=kwargs['Threshold'],
+                TreatMissingData='notBreaching',
+                ActionsEnabled=False,
+                Unit='Seconds',
+            )
+
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_metric_alarm failed with response: {response}'
+            return response['ResponseMetadata']['HTTPStatusCode']
+        except Exception as err:
+            raise err
+
+    # def create_lambda_duration_alarm(self, environment):
+    #     pass
+
 
 class CloudWatchLogs(BaseClient):
+
     def __init__(self):
         super().__init__()
         self.client = boto3.client('logs')
@@ -71,11 +129,3 @@ class CloudWatchLogs(BaseClient):
             return response
         except Exception as err:
             raise err
-
-
-if __name__ == "__main__":
-    pass
-    # response = get_thiscovery_log_groups()
-    # print(response)
-    # target_group_name = response[0]['logGroupName']
-    # print(set_log_group_retention_policy(target_group_name))
