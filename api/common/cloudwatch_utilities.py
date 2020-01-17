@@ -17,11 +17,14 @@
 #
 import boto3
 
-if __name__ == "__main__":
-    from api.common.utilities import get_logger, get_aws_namespace
-else:
-    from .utilities import get_logger, get_aws_namespace
+from common.utilities import get_logger, get_aws_namespace
 
+
+class CloudWatchClient:
+    def __init__(self):
+        self.logger = get_logger()
+        self.logs_client = boto3.client('logs')
+        self.cw_client = boto3.client('cloudwatch')
 
 def get_thiscovery_log_groups(prefix=f"/aws/lambda/thiscovery-core-{get_aws_namespace()[1:-1]}"):
     """
