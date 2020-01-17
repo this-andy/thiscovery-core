@@ -15,12 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-if 'api.endpoints' in __name__:
-    from .common.cloudwatch_utilities import get_thiscovery_log_groups, set_log_group_retention_policy
-    from .common.utilities import get_logger
-else:
-    from common.cloudwatch_utilities import get_thiscovery_log_groups, set_log_group_retention_policy
-    from common.utilities import get_logger
+
+from common.cloudwatch_utilities import CloudWatchLogs
 
 
 def set_new_log_groups_retention_policy(event, context):
@@ -28,16 +24,15 @@ def set_new_log_groups_retention_policy(event, context):
     Fetches all CloudWatch log groups and sets the default retention policy (30 days) only for those groups in which
     the parameter "retentionInDays" is not present (new groups).
     """
-    logger = get_logger()
-    log_groups = get_thiscovery_log_groups()
+    cwl = CloudWatchLogs()
     response = {
         'updated_log_groups': [],
     }
-    for lg in log_groups:
+    for lg in cwl.get_thiscovery_log_groups():
         if 'retentionInDays' not in lg.keys():
             log_group_name = lg['logGroupName']
-            set_log_group_retention_policy(log_group_name)
+            cwl.set_log_group_retention_policy(log_group_name)
             response['updated_log_groups'].append(log_group_name)
 
-    logger.info('Response', extra={'response': response})
+    cwl.logger.info('Response', extra={'response': response})
     return response
