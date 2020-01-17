@@ -49,11 +49,12 @@ class CloudWatch(BaseClient):
     def get_lambda_duration_alarms(self):
         return self.get_alarms(prefix=f"thiscovery-core-{super().get_namespace()}-{ALARM_PREFIX_LAMBDA_DURATION}")
 
-    def create_or_update_lambda_duration_alarm(self, **kwargs):
+    def create_or_update_lambda_duration_alarm(self, function_name, **kwargs):
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.put_metric_alarm
 
         Args:
+            function_name (str): The name of the lambda function the alarm relates to (e.g. 'thiscovery-core-test-afs25-UpdateCochraneProgress')
             **kwargs: Parameters that will be passed to put_metric_alarm; MUST contain AlarmName; MAY contain Threshold
 
         Returns:
@@ -61,12 +62,13 @@ class CloudWatch(BaseClient):
         # if 'Threshold' not in kwargs, set default
         kwargs['Threshold'] = kwargs.get('Threshold', 1.5)
 
-        # testing
-        kwargs['AlarmName'] = 'thiscovery-core-test-afs25-LambdaDuration-UpdateCochraneProgress'
-
         try:
             response = self.client.put_metric_alarm(
                 AlarmName=kwargs['AlarmName'],
+                Dimensions=[{
+                    'Name': 'FunctionName',
+                    'Value': function_name,
+                }],
                 ComparisonOperator='GreaterThanThreshold',
                 EvaluationPeriods=1,
                 MetricName='Duration',
