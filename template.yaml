@@ -387,12 +387,19 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusergroupmembership.Arn}/invocations
               responses: {}
-          /v2/project-user-status:
+          /v1/project-user-status-ext:
             get:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetExtProjectStatuses.Arn}/invocations
+              responses: {}
+          /v1/user-ext/{id}:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUserByExtProjId.Arn}/invocations
               responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
@@ -612,15 +619,9 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
+        - AWSLambdaENIManagementAccess
       Events:
         CoreAPIGETv1project:
           Type: Api
@@ -635,6 +636,12 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
     Metadata:
       StackeryName: list-projects
   getprojectbyuuid:
@@ -819,15 +826,9 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
+        - AWSLambdaENIManagementAccess
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
@@ -842,6 +843,12 @@ Resources:
             Path: /v1/userproject
             Method: POST
             RestApiId: !Ref CoreAPI
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
     Metadata:
       StackeryName: create-user-project
   listusertasks:
@@ -1336,11 +1343,49 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
       Events:
-        CoreAPIGETv2projectuserstatus:
+        CoreAPIGETv1projectuserstatusext:
           Type: Api
           Properties:
-            Path: /v2/project-user-status
+            Path: /v1/project-user-status-ext
+            Method: GET
+            RestApiId: !Ref CoreAPI
+  GetUserByExtProjId:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-GetUserByExtProjId
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: GetUserByExtProjId
+      CodeUri: api/endpoints
+      Handler: user.get_user_by_ext_user_project_id_api
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1userextid:
+          Type: Api
+          Properties:
+            Path: /v1/user-ext/{id}
             Method: GET
             RestApiId: !Ref CoreAPI
       Environment:
