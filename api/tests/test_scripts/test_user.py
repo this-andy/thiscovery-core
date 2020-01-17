@@ -160,7 +160,7 @@ class TestUser(TestCase):
             "avatar_string": "AA",
         }
 
-        result = test_get(u.get_user_by_ext_user_project_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(u.get_user_by_ext_user_project_id_api, 'user-ext', path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

@@ -91,14 +91,15 @@ class TestProjectStatusForUser(TestCase):
 
         set_running_unit_tests(False)
 
-    def check_project_status_for_single_user_base(self, parameter_name, parameter_value, expected_results, target_function=get_project_status_for_user_api):
+    def check_project_status_for_single_user_base(self, parameter_name, parameter_value, expected_results,
+                                                  target_function=get_project_status_for_user_api, base_url=ENTITY_BASE_URL):
         querystring_parameters = {parameter_name: parameter_value}
         # event = {'queryStringParameters': querystring_parameters}
 
         expected_status = HTTPStatus.OK
 
         # result = get_project_status_for_user_api(event, None)
-        result = test_get(target_function, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result = test_get(target_function, base_url, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -132,7 +133,8 @@ class TestProjectStatusForUser(TestCase):
 
     def check_project_status_for_single_external_user(self, ext_user_project_id, expected_results):
         self.check_project_status_for_single_user_base('ext_user_project_id', ext_user_project_id, expected_results,
-                                                       target_function=get_project_status_for_external_user_api)
+                                                       target_function=get_project_status_for_external_user_api,
+                                                       base_url='project-user-status-ext')
 
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
