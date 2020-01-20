@@ -30,7 +30,7 @@ VIEW_SQL_FOLDER = '../../local/database-view-sql/'
 TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'project-user-status'
+ENTITY_BASE_URL = 'v1/project-user-status'
 
 # region helper functions
 def clear_test_data():

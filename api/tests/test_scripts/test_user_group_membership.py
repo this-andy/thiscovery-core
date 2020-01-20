@@ -28,7 +28,7 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'usergroupmembership'
+ENTITY_BASE_URL = 'v1/usergroupmembership'
 
 
 def clear_database():

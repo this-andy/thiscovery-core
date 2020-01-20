@@ -28,7 +28,7 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'project'
+ENTITY_BASE_URL = 'v1/project'
 
 # region expected bodies setup
 if TIMEZONE_IS_BST:
@@ -175,4 +175,5 @@ class TestProject(TestCase):
 
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and result_json['message'] == 'project does not exist')
+        self.assertTrue(('message' in result_json) and
+                        ('project does not exist' in result_json['message']))

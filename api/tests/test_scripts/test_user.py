@@ -34,7 +34,7 @@ TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'user'
+ENTITY_BASE_URL = 'v1/user'
 
 
 class TestUser(TestCase):
@@ -442,7 +442,7 @@ class TestUser(TestCase):
 
         # check user now has crm (hubspot) id
         sleep(10)
-        result = test_get(get_user_by_id_api, 'user', {'id': user_id}, None, None)
+        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, {'id': user_id}, None, None)
         result_json = json.loads(result['body'])
         self.assertIsNotNone(result_json['crm_id'])
 

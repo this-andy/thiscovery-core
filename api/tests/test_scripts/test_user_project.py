@@ -32,7 +32,7 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'userproject'
+ENTITY_BASE_URL = 'v1/userproject'
 
 # region expected bodies setup
 if TIMEZONE_IS_BST:

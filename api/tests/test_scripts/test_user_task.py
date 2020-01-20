@@ -39,8 +39,8 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'usertask'
-USER_BASE_URL = 'user'
+ENTITY_BASE_URL = 'v1/usertask'
+USER_BASE_URL = 'v1/user'
 TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
 
 # region expected bodies setup
