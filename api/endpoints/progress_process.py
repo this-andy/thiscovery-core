@@ -123,8 +123,6 @@ def update_cochrane_progress(event, context):
         # updated_project_tasks += pg_utils.execute_non_query(pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
         project_tasks_sql_queries.append((pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
 
-    from pprint import pprint
-
     multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
     multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]
     updated_rows = pg_utils.execute_non_query_multiple(multiple_sql_queries, multiple_params, correlation_id)
