@@ -62,6 +62,7 @@ USER_TASK_01_EXPECTED_BODY = {
     'modified': f'2018-08-17T{tz_hour}:10:57.883217+{tz_offset}',
     'status': 'active',
     'consented': None,
+    'progress_info': None,
 }
 
 USER_TASK_02_EXPECTED_BODY = {
@@ -75,6 +76,7 @@ USER_TASK_02_EXPECTED_BODY = {
     'modified': f'2018-08-17T{tz_hour}:10:58.170637+{tz_offset}',
     'status': 'complete',
     'consented': None,
+    'progress_info': None,
 }
 
 USER_TASK_03_EXPECTED_BODY = {
@@ -88,6 +90,7 @@ USER_TASK_03_EXPECTED_BODY = {
     'modified': f'2018-08-17T{tz_hour}:10:58.263516+{tz_offset}',
     'status': 'active',
     'consented': None,
+    'progress_info': None,
 }
 # endregion
 

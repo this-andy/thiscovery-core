@@ -106,7 +106,7 @@ if __name__ == "__main__":
     if answer == namespace:
         print ('Updating ' + namespace)
         # pass
-        # clear_database()
+        clear_database()
         populate_database()
         post_sample_users_to_crm()
         # populate_database_london_dev()
