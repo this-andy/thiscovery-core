@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if answer == namespace:
         print ('Updating ' + namespace)
         # pass
-        # clear_database()
+        clear_database()
         populate_database()
         # populate_database_london_dev()
     else:
