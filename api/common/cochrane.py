@@ -20,14 +20,7 @@ from http import HTTPStatus
 from urllib.error import HTTPError
 from urllib.request import urlopen, Request
 
-from common.utilities import get_logger
-
-BASE_URL_PRODUCTION = 'https://crs.cochrane.org'
-BASE_URL_STAGING = 'https://api-test.metaxis.com'
-BASE_URL_MOCK_API = 'https://720c06c1-663e-4fd9-bcf9-63bf5d933779.mock.pstmn.io'
-
-base_url = BASE_URL_MOCK_API
-# base_url = BASE_URL_PRODUCTION
+from common.utilities import get_logger, get_secret
 
 
 def cochrane_get(url, api_url):
@@ -48,11 +41,6 @@ def cochrane_get(url, api_url):
     return data
 
 
-def get_progress(api_url=base_url):
+def get_progress(api_url=get_secret('cochrane-connection')['base_url']):
     url = '/CrowdService/v1/this/progress'
     return cochrane_get(url, api_url)
-
-
-if __name__ == '__main__':
-    # print(get_progress())
-    pass
