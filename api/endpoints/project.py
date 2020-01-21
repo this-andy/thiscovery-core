@@ -19,11 +19,10 @@
 import json
 from http import HTTPStatus
 
-print ('name:' + __name__)
-
-from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset
+from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, non_prod_env_url_param, create_url_params
+
 
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
@@ -95,6 +94,21 @@ MINIMAL_PROJECT_SELECT_SQL = '''
 '''
 
 
+TASKS_BY_EXTERNAL_ID_SQL = '''
+            SELECT
+                pt.id,
+                project_id,
+                task_type_id,
+                base_url,
+                external_system_id,
+                external_task_id,
+                es.short_name as task_provider_name
+            FROM public.projects_projecttask pt
+            JOIN projects_externalsystem es on pt.external_system_id = es.id
+            WHERE external_task_id = (%s)
+    '''
+
+
 def list_projects(correlation_id):
     base_sql = '''
       SELECT 
@@ -148,20 +162,36 @@ def list_projects_api(event, context):
     return response
 
 
-def get_project_task(project_task_id, correlation_id):
+def get_project_task(project_task_id, correlation_id=None):
     sql = '''
         SELECT
+            pt.id as project_task_id,
             project_id,
             task_type_id,
             base_url,
             external_system_id,
             external_task_id,
+            progress_info,
+            progress_info_modified,
             es.short_name as task_provider_name
         FROM public.projects_projecttask pt
         JOIN projects_externalsystem es on pt.external_system_id = es.id
-        WHERE pt.id = %s'''
-
+        WHERE pt.id = %s
+    '''
     return execute_query(sql, (str(project_task_id),), correlation_id)
+
+
+def update_project_task_progress_info(project_task_id, progress_info_dict, progress_info_modified, correlation_id):
+    progress_info_json = json.dumps(progress_info_dict)
+
+    base_sql = '''
+                UPDATE public.projects_projecttask
+                SET progress_info = (%s), progress_info_modified = (%s)
+                WHERE id = (%s);
+            '''
+
+    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
+    return number_of_updated_rows
 
 
 def get_project_with_tasks(project_uuid, correlation_id):
@@ -174,6 +204,10 @@ def get_project_with_tasks(project_uuid, correlation_id):
     result = execute_query(sql, (str(project_uuid),), correlation_id, True, False)
 
     return result
+
+
+def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
+    return execute_query(TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
 
 
 def get_project_api(event, context):

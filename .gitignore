@@ -42,3 +42,10 @@ api/local/london_data/
 
 # local secrets file
 api/local/secrets.py
+
+# sandbox
+/sandbox/
+
+# symbolic-link shortcuts
+/deploy_to_aws.py
+/setup-sample-data.py
