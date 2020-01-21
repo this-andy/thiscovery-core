@@ -50,17 +50,7 @@ def update_cochrane_progress(event, context):
     logger = get_logger()
     correlation_id = get_correlation_id(event)
 
-    # optional base_url queryStringParameter so that tests can always point to mock API
-    try:
-        params = event['queryStringParameters']
-        api_url = params.get('api_url')
-    except KeyError:
-        api_url = None
-
-    if api_url:
-        progress_dict = get_progress(api_url=api_url)
-    else:
-        progress_dict = get_progress()
+    progress_dict = get_progress()
     progress_info_modified = progress_dict['daterun']
 
     progress_by_task = sort_progress_by_task(progress_dict)

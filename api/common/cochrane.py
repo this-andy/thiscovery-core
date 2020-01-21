@@ -23,8 +23,8 @@ from urllib.request import urlopen, Request
 from common.utilities import get_logger, get_secret
 
 
-def cochrane_get(url, api_url):
-    full_url = api_url + url
+def cochrane_get(url):
+    full_url = get_secret('cochrane-connection')['base_url'] + url
     headers = dict()
     headers['Content-Type'] = 'application/json'
     logger = get_logger()
@@ -41,6 +41,5 @@ def cochrane_get(url, api_url):
     return data
 
 
-def get_progress(api_url=get_secret('cochrane-connection')['base_url']):
-    url = '/CrowdService/v1/this/progress'
-    return cochrane_get(url, api_url)
+def get_progress(url='/CrowdService/v1/this/progress'):
+    return cochrane_get(url)
