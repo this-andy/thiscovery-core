@@ -1,9 +1,26 @@
 #!/usr/bin/env python3
 
+import json
 import subprocess
 import sys
+import requests
 
-from api.local.secrets import STACKERY_CREDENTIALS
+from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
+
+
+def slack_message(environment, branch, message=None):
+    if not message:
+        message = f"{branch} has just been deployed to {environment}."
+    header = {
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "text": message
+    }
+    requests.post(SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS['stackery-deployments'], data=json.dumps(payload), headers=header)
+    if 'afs25' in environment:
+        requests.post(SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS['Andre'], data=json.dumps(payload), headers=header)
+
 
 def stackery_deployment(environment, branch):
     try:
@@ -35,12 +52,16 @@ def deploy(environment):
             sys.exit('Deployment aborted')
 
     try:
+        proceed = input(f'About to deploy branch {branch} to {environment}. Continue? [y/N]')
+        if not proceed.lower() in ['y', 'yes']:
+            sys.exit('Deployment aborted')
         stackery_deployment(environment, branch)
     except subprocess.CalledProcessError as err:
         if err.stderr.decode('utf-8').strip() == "Error: Failed to get settings: Attempting to access Stackery " \
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
+    slack_message(environment, branch)
 
 
 if __name__ == '__main__':
