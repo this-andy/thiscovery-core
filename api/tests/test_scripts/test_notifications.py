@@ -23,9 +23,11 @@ from time import sleep
 
 import api.endpoints.notification_process as np
 from api.common.hubspot import HubSpotClient
-from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications
+from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
+    mark_notification_failure
 from api.common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
-from api.common.utilities import set_running_unit_tests, now_with_tz, get_country_name
+from api.common.utilities import set_running_unit_tests, now_with_tz, get_country_name, DetailedValueError
+
 
 TIME_TOLERANCE_SECONDS = 10
 DELETE_TEST_DATA = True
@@ -82,36 +84,6 @@ def create_task_signup_notification(ut_id="c2712f2a-6ca6-4987-888f-19625668c887"
     notify_new_task_signup(ut_json, None)
     return ut_json
 
-#
-# def create_task_signup_notification(ut_id="ceb30e82-de0f-4009-940d-778dace69ec9",
-#                                     user_id='d1070e81-557e-40eb-a7ba-b951ddb7ebdc'):
-#     ut_json = {
-#         'user_id': user_id,
-#         'project_task_id': '5907275b-6d75-4ec0-ada8-5854b44fb955',
-#         'user_project_id': '0910e15a-4bc3-4f5f-a8f5-e092afe90eb6',
-#         'status': 'active',
-#         'consented': '2019-05-26 18:16:56.087895+01',
-#         'id': ut_id,
-#         'created': '2018-06-13 14:15:16.171819+00'
-#     }
-#     notify_new_task_signup(ut_json, None)
-#     return ut_json
-#
-#
-# def create_task_signup_notification(ut_id="9620089b-e9a4-46fd-bb78-091c8449d777",
-#                                     user_id='35224bd5-f8a8-41f6-8502-f96e12d6ddde'):
-#     ut_json = {
-#         'user_id': user_id,
-#         'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-#         'user_project_id': '5ee37b14-7d20-478f-8500-6a00cb15e345',
-#         'status': 'active',
-#         'consented': '2019-05-26 18:16:56.087895+01',
-#         'id': ut_id,
-#         'created': '2018-06-13 14:15:16.171819+00'
-#     }
-#     notify_new_task_signup(ut_json, None)
-#     return ut_json
-
 
 def create_login_notification(user_json=TEST_USER_01_JSON):
     notify_user_login(user_json, None)
@@ -139,6 +111,9 @@ class TestNotifications(TestCase):
         delete_all_notifications()
 
     def test_01_post_registration(self):
+        """
+        Tests the notification process associated with a new registration
+        """
         user_json = create_registration_notification()
         notifications = get_notifications()
         self.assertEqual(1, len(notifications))
@@ -160,6 +135,9 @@ class TestNotifications(TestCase):
         pass
 
     def test_03_post_signup(self):
+        """
+        Tests the notification process associated with a new task signup
+        """
         ut_json = create_task_signup_notification()
         notifications = get_notifications()
         self.assertEqual(1, len(notifications))
@@ -220,6 +198,10 @@ class TestNotifications(TestCase):
             create_login_notification()
 
     def test_08_fail_processing(self):
+        """
+                Tests function notifications.mark_notification_failure
+                """
+        # TODO: This test only works if MAX_RETRIES == 2 (defined in api/endpoints/common/notifications.py:25); adapt it to work with any value
         from api.common.notifications import mark_notification_failure
         create_registration_notification()
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
@@ -239,10 +221,15 @@ class TestNotifications(TestCase):
 
         mark_notification_failure(notification, test_error_message, None)
         test_error_message = 'test_03_fail_processing - DLQ'
-        mark_notification_failure(notification, test_error_message, None)
+
+        with self.assertRaises(DetailedValueError) as context:
+            mark_notification_failure(notification, test_error_message, None)
+
+        err = context.exception
+        err_msg = err.args[0]
+        self.assertEqual('Notification processing failed', err_msg)
 
         # read it and check
-
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
