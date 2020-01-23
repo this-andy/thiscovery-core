@@ -21,10 +21,12 @@ from http import HTTPStatus
 from unittest import TestCase
 from time import sleep
 
-from api.common.utilities import set_running_unit_tests, now_with_tz
-from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications
-from api.common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
+from common.utilities import set_running_unit_tests, now_with_tz, DetailedValueError
+from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
+    mark_notification_failure
+from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
 from api.endpoints.notification_process import process_user_login
+
 
 TIME_TOLERANCE_SECONDS = 10
 DELETE_TEST_DATA = True
@@ -97,6 +99,9 @@ class TestNotifications(TestCase):
         delete_all_notifications()
 
     def test_01_post_registration(self):
+        """
+        Tests the notification process associated with a new registration
+        """
         user_json = create_registration_notification()
         notifications = get_notifications()
         self.assertEqual(1, len(notifications))
@@ -115,6 +120,9 @@ class TestNotifications(TestCase):
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
     def test_02_post_signup(self):
+        """
+        Tests the notification process associated with a new task signup
+        """
         ut_json = create_task_signup_notification()
         notifications = get_notifications()
         self.assertEqual(1, len(notifications))
@@ -133,10 +141,13 @@ class TestNotifications(TestCase):
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
     def test_03_fail_processing(self):
-        from api.common.notifications import mark_notification_failure
-        create_registration_notification()
-        notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
+        """
+        Tests function notifications.mark_notification_failure
+        """
+        # TODO: This test only works if MAX_RETRIES == 2 (defined in api/endpoints/common/notifications.py:25); adapt it to work with any value
 
+        create_registration_notification()
+        notifications = get_notifications()
         self.assertEqual(1, len(notifications))
 
         notification = notifications[0]
@@ -152,10 +163,15 @@ class TestNotifications(TestCase):
 
         mark_notification_failure(notification, test_error_message, None)
         test_error_message = 'test_03_fail_processing - DLQ'
-        mark_notification_failure(notification, test_error_message, None)
+
+        with self.assertRaises(DetailedValueError) as context:
+            mark_notification_failure(notification, test_error_message, None)
+
+        err = context.exception
+        err_msg = err.args[0]
+        self.assertEqual('Notification processing failed', err_msg)
 
         # read it and check
-
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
