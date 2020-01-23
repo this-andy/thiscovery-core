@@ -22,11 +22,10 @@ from unittest import TestCase
 from time import sleep
 
 import api.endpoints.notification_process as np
-from api.common.hubspot import HubSpotClient
-from api.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
+from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
-from api.common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
-from api.common.utilities import set_running_unit_tests, now_with_tz, get_country_name, DetailedValueError
+from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
+from common.utilities import set_running_unit_tests, now_with_tz, get_country_name, DetailedValueError
 
 
 TIME_TOLERANCE_SECONDS = 10
@@ -199,10 +198,9 @@ class TestNotifications(TestCase):
 
     def test_08_fail_processing(self):
         """
-                Tests function notifications.mark_notification_failure
-                """
+        Tests function notifications.mark_notification_failure
+        """
         # TODO: This test only works if MAX_RETRIES == 2 (defined in api/endpoints/common/notifications.py:25); adapt it to work with any value
-        from api.common.notifications import mark_notification_failure
         create_registration_notification()
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
 

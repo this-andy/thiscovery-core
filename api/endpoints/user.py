@@ -89,7 +89,7 @@ def append_calculated_properties(user):
     return user
 
 
-def get_user_by_id(user_id, correlation_id):
+def get_user_by_id(user_id, correlation_id=None):
 
     try:
         user_id = validate_uuid(user_id)
