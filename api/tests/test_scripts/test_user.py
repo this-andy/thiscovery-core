@@ -22,12 +22,15 @@ from http import HTTPStatus
 from dateutil import parser
 from time import sleep
 from unittest import TestCase
+from api.common.hubspot import HubSpotClient
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
     NotificationAttributes
 from api.common.dev_config import TIMEZONE_IS_BST
+from api.endpoints.user import create_user_api, get_user_by_id_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -396,9 +399,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'].endswith('invalid jsonpatch'))
 
     def test_11_create_user_api_ok_and_duplicate(self):
-        from api.endpoints.user import create_user_api, get_user_by_id_api
-        from api.common.hubspot import get_hubspot_contact_by_id, get_contact_property
-
         expected_status = HTTPStatus.CREATED
         user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
         user_email = 'sw@email.co.uk'
@@ -447,8 +447,9 @@ class TestUser(TestCase):
         self.assertIsNotNone(result_json['crm_id'])
 
         # and check that hubspot has thiscovery id
-        contact = get_hubspot_contact_by_id(result_json['crm_id'], None)
-        thiscovery_id = get_contact_property(contact, 'thiscovery_id')
+        hs_client = HubSpotClient()
+        contact = hs_client.get_hubspot_contact_by_id(result_json['crm_id'], None)
+        thiscovery_id = hs_client.get_contact_property(contact, 'thiscovery_id')
         self.assertEqual(thiscovery_id, user_id)
 
         # check that notification message has been processewd
