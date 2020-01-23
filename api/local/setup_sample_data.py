@@ -18,7 +18,7 @@
 import csv
 import os
 
-import api.common.hubspot as hs
+from api.common.hubspot import HubSpotClient
 import api.endpoints.user as user
 from api.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
 from api.common.utilities import get_aws_namespace, get_country_name, now_with_tz
@@ -27,6 +27,7 @@ from api.common.utilities import get_aws_namespace, get_country_name, now_with_t
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'tests', 'test_data')
 USER_DATA_FILE = os.path.join(TEST_DATA_FOLDER, 'user_data_PSFU.csv')
 
+hs_client = HubSpotClient()
 
 def post_sample_users_to_crm():
     with open(USER_DATA_FILE) as csvfile:
@@ -44,7 +45,7 @@ def post_sample_users_to_crm():
                 "status": "new"
             }
 
-            hubspot_id, _ = hs.post_new_user_to_crm(user_json, correlation_id=None)
+            hubspot_id, _ = hs_client.post_new_user_to_crm(user_json, correlation_id=None)
             user_jsonpatch = [
                 {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
             ]
@@ -52,17 +53,17 @@ def post_sample_users_to_crm():
 
 
 def populate_database():
-    insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'project_data_PSFU.csv', 'public.projects_project')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'projecttask_data_PSFU.csv', 'public.projects_projecttask')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'projectgroupvisibility_data.csv', 'public.projects_projectgroupvisibility')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'projecttaskgroupvisibility_data.csv', 'public.projects_projecttaskgroupvisibility')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'project_data_PSFU.csv'), 'public.projects_project')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'tasktype_data.csv'), 'public.projects_tasktype')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'external_system_data.csv'), 'public.projects_externalsystem')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'projecttask_data_PSFU.csv'), 'public.projects_projecttask')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'projectgroupvisibility_data.csv'), 'public.projects_projectgroupvisibility')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'projecttaskgroupvisibility_data.csv'), 'public.projects_projecttaskgroupvisibility')
     insert_data_from_csv(USER_DATA_FILE, 'public.projects_user')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'usergroupmembership_data.csv', 'public.projects_usergroupmembership')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'userproject_PSFU.csv', 'public.projects_userproject')
-    insert_data_from_csv(TEST_DATA_FOLDER + 'usertask_PSFU.csv', 'public.projects_usertask')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'usergroupmembership_data.csv'), 'public.projects_usergroupmembership')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'userproject_PSFU.csv'), 'public.projects_userproject')
+    insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'usertask_PSFU.csv'), 'public.projects_usertask')
 
 
 def populate_database_london_dev():
