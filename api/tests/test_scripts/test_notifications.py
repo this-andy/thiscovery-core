@@ -15,6 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import os
 
 from dateutil import parser
 from http import HTTPStatus
@@ -22,6 +23,10 @@ from unittest import TestCase
 from time import sleep
 
 import api.endpoints.notification_process as np
+import testing_utilities as test_utils
+import common.pg_utilities as pg_utils
+
+from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
 from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
@@ -31,6 +36,7 @@ from common.utilities import set_running_unit_tests, now_with_tz, get_country_na
 TIME_TOLERANCE_SECONDS = 10
 DELETE_TEST_DATA = True
 
+TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 # region test users
 TEST_USER_01_JSON = {
@@ -89,18 +95,45 @@ def create_login_notification(user_json=TEST_USER_01_JSON):
     return user_json
 # endregion
 
+def clear_database():
+    pg_utils.truncate_table('public.projects_usertask')
+    pg_utils.truncate_table('public.projects_projecttask')
+    pg_utils.truncate_table('public.projects_tasktype')
+    pg_utils.truncate_table('public.projects_userproject')
+    pg_utils.truncate_table('public.projects_externalsystem')
+    pg_utils.truncate_table('public.projects_project')
+    pg_utils.truncate_table('public.projects_user')
+    pg_utils.truncate_table('public.projects_usergroup')
+    pg_utils.truncate_table('public.projects_usertask')
+    delete_all_notifications()
+
 
 class TestNotifications(TestCase):
 
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        delete_all_notifications()
+        clear_database()
+        user_data_csv = os.path.join(TEST_DATA_FOLDER, 'user_data_PSFU.csv')
+
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup')
+        pg_utils.insert_data_from_csv(user_data_csv, 'public.projects_user')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'project_data_PSFU.csv'), 'public.projects_project')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'external_system_data.csv'), 'public.projects_externalsystem')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'userproject_PSFU.csv'), 'public.projects_userproject')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'tasktype_data.csv'), 'public.projects_tasktype')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'projecttask_data_PSFU.csv'), 'public.projects_projecttask')
+        pg_utils.insert_data_from_csv(os.path.join(TEST_DATA_FOLDER, 'usertask_PSFU.csv'), 'public.projects_usertask')
+
+        hs_client = HubSpotClient()
+        test_utils.post_sample_users_to_crm(user_data_csv, hs_client)
 
     @classmethod
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
+            clear_database()
             delete_all_notifications()
+
         set_running_unit_tests(False)
 
     def setUp(self):
