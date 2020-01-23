@@ -35,12 +35,23 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_id = hubspot_connection['client-id']
 # client_secret = hubspot_connection['client-secret']
 
-base_url = 'https://api.hubapi.com'
+BASE_URL = 'https://api.hubapi.com'
+
+
+def list_timeline_event_types(correlation_id):
+    """
+    Gets the current list of timeline events
+    """
+    url = '/integrations/v1/{app_id}/timeline/event-types'
+    result = hubspot_developer_get(url, correlation_id, app_id_in_url=True)
+    if result.ok:
+        return result.json()
+    else:
+        errorjson = {'result': result}
+        raise DetailedValueError(f'HTTP code {result.status_code}', errorjson)
 
 
 # region Contact property and group management
-
-
 def create_group(group_definition):
     url = '/properties/v1/contacts/groups'
     try:
@@ -176,8 +187,17 @@ def create_timeline_event_properties(tle_type_id, property_defns: list):
     app_id = hubspot_connection['app-id']
     url = '/integrations/v1/' + app_id + '/timeline/event-types/' + str(tle_type_id) + '/properties'
 
+    properties_created = []
     for property_defn in property_defns:
-        result = hubspot_developer_post(url, property_defn, None)
+        try:
+            hubspot_developer_post(url, property_defn, None)
+            properties_created.append(property_defn)
+        except DetailedValueError as err:
+            if err.details['message'] == 'Cannot have two properties with same name.':
+                print(f'Timeline event {tle_type_id} already has a property named {property_defn["name"]} - no action taken')
+            else:
+                raise err
+    return properties_created
 
 
 def delete_timeline_event_property(tle_type_id, property_id):
@@ -198,65 +218,76 @@ def get_timeline_event(tle_type_id, tle_id, correlation_id):
     result = hubspot_get(url, correlation_id)
 
     return result
-
-
 # endregion
+
 
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
-def create_TLE_for_task_signup():
+def create_timeline_event_type_for_task_signup(task_signup_tle_type_name=TASK_SIGNUP_TLE_TYPE_NAME):
 
-    type_defn = {
-            "name": TASK_SIGNUP_TLE_TYPE_NAME,
-            "objectType": "CONTACT",
-            "headerTemplate": "{{signup_event_type}} for {{task_name}}",
-            "detailTemplate": "Project: {{project_name}}  {{project_id}}\nTask type: {{task_type_name}}  {{task_type_id}}"
-        }
+    timeline_events = list_timeline_event_types(None)
+    conflicts = [x for x in timeline_events if x['name'] == task_signup_tle_type_name]
 
-    tle_type_id = create_timeline_event_type(type_defn)
+    assert len(conflicts) < 2, f'Two or more timeline event types named {task_signup_tle_type_name} already exist in HubSpot. ' \
+                               f'Please fix this via the HubSpot GUI'
 
-    properties = [
-        {
-            "name": "project_id",
-            "label": "Project Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "project_name",
-            "label": "Project Name",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_id",
-            "label": "Task Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_name",
-            "label": "Task Name",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_type_id",
-            "label": "Task Type Id",
-            "propertyType": "String"
-        },
-        {
-            "name": "task_type_name",
-            "label": "Task Type",
-            "propertyType": "String"
-        },
-        {
-            "name": "signup_event_type",
-            "label": "Event Type",
-            "propertyType": "String"
-        },
-    ]
+    message_base = f'Timeline event type named {task_signup_tle_type_name}'
+    if conflicts:
+        print(f'{message_base} already exists - no action taken')
+        return None
+    else:
+        type_defn = {
+                "name": task_signup_tle_type_name,
+                "objectType": "CONTACT",
+                "headerTemplate": "{{signup_event_type}} for {{task_name}}",
+                "detailTemplate": "Project: {{project_name}}  {{project_id}}\nTask type: {{task_type_name}}  {{task_type_id}}"
+            }
 
-    result = create_timeline_event_properties(tle_type_id, properties)
+        tle_type_id = create_timeline_event_type(type_defn)
 
-    save_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, tle_type_id, None)
+        properties = [
+            {
+                "name": "project_id",
+                "label": "Project Id",
+                "propertyType": "String"
+            },
+            {
+                "name": "project_name",
+                "label": "Project Name",
+                "propertyType": "String"
+            },
+            {
+                "name": "task_id",
+                "label": "Task Id",
+                "propertyType": "String"
+            },
+            {
+                "name": "task_name",
+                "label": "Task Name",
+                "propertyType": "String"
+            },
+            {
+                "name": "task_type_id",
+                "label": "Task Type Id",
+                "propertyType": "String"
+            },
+            {
+                "name": "task_type_name",
+                "label": "Task Type",
+                "propertyType": "String"
+            },
+            {
+                "name": "signup_event_type",
+                "label": "Event Type",
+                "propertyType": "String"
+            },
+        ]
+
+        create_timeline_event_properties(tle_type_id, properties)
+        save_TLE_type_id(task_signup_tle_type_name, tle_type_id, None)
+        print(f'{message_base} created')
+        return tle_type_id
 
 
 def save_TLE_type_id(name: str, hubspot_id, correlation_id):
@@ -280,7 +311,7 @@ def get_TLE_type_id(name: str, correlation_id):
 def hubspot_get(url, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     data = None
@@ -306,7 +337,7 @@ def hubspot_get(url, correlation_id):
 def hubspot_post(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -337,7 +368,7 @@ def hubspot_post(url: str, data: dict, correlation_id):
 def hubspot_put(url: str, data: dict, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -367,7 +398,7 @@ def hubspot_put(url: str, data: dict, correlation_id):
 def hubspot_delete(url, correlation_id):
     success = False
     retry_count = 0
-    full_url = base_url + url
+    full_url = BASE_URL + url
     headers = {}
     headers['Content-Type'] = 'application/json'
     while not success:
@@ -405,28 +436,70 @@ def hubspot_delete(url, correlation_id):
 # endregion
 
 # region hubspot developer get/post/put/delete methods - used for managing TLE definitions
+def hubspot_developer_get(url, correlation_id, app_id_in_url=False):
+    """
+    Gets using developer API key and user id instead of usual oAuth2 token
+    This is necessary for listing TLE types
 
-def hubspot_developer_post(url: str, data: dict, correlation_id):
+    :param app_id_in_url: if this is set to True, then the url parameter must contain a placeholder {app_id} indicating where the app_id should be inserted
+    """
+    from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
+    logger = get_logger()
+    hubspot_connection = get_secret('hubspot-connection')
+    app_id = hubspot_connection['app-id']
+
+    if app_id_in_url:
+        full_url = BASE_URL + url.format(app_id=app_id) + \
+                   '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+                   '&userId=' + HUBSPOT_DEVELOPER_USERID
+    else:
+        full_url = BASE_URL + url + \
+               '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+               '&userId=' + HUBSPOT_DEVELOPER_USERID + \
+               '&application-id=' + app_id
+
+    headers = {'Content-Type': 'application/json'}
+    logger.info('About to try request.get', extra={'full_url': full_url, 'headers': headers})
+    try:
+        result_ = requests.get(full_url, headers=headers)
+        if result_.ok:
+            success = True
+        else:
+            raise DetailedValueError(f'HTTP code {result.status_code}', result_.json())
+    except HTTPError as err:
+        raise err
+    return result_
+
+
+def hubspot_developer_post(url: str, data: dict, correlation_id, app_id_in_url=False):
     """
     Posts using developer API key and user id instead of usual oAuth2 token
     This is necessary for creating TLE types
+
+    :param app_id_in_url: if this is set to True, then the url parameter must contain a placeholder {app_id} indicating where the app_id should be inserted
     """
     from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
     hubspot_connection = get_secret('hubspot-connection')
     app_id = hubspot_connection['app-id']
 
-    full_url = base_url + url + \
+    if app_id_in_url:
+        full_url = BASE_URL + url.format(app_id=app_id) + \
+                   '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
+                   '&userId=' + HUBSPOT_DEVELOPER_USERID
+    else:
+        full_url = BASE_URL + url + \
                '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
                '&userId=' + HUBSPOT_DEVELOPER_USERID + \
                '&application-id=' + app_id
+
+
     headers = {'Content-Type': 'application/json'}
     try:
         result = requests.post(data=json.dumps(data), url=full_url, headers=headers)
         if result.status_code in [HTTPStatus.OK, HTTPStatus.CREATED]:
             success = True
         else:
-            errorjson = {'result': result}
-            raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+            raise DetailedValueError(f'HTTP code {result.status_code}', {**data, **result.json()})
     except HTTPError as err:
         raise err
     return result
@@ -438,7 +511,7 @@ def hubspot_developer_delete(url: str, correlation_id):
     This is necessary for creating TLE types
     """
     from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
-    full_url = base_url + url + \
+    full_url = BASE_URL + url + \
                '?hapikey=' + HUBSPOT_DEVELOPER_APIKEY + \
                '&userId=' + HUBSPOT_DEVELOPER_USERID
     headers = {'Content-Type': 'application/json'}
@@ -775,4 +848,4 @@ if __name__ == "__main__":
 
     # run these two lines to setup new HubSpot env
     # result = create_thiscovery_contact_properties()
-    # result = create_TLE_for_task_signup()
+    # result = create_timeline_event_for_task_signup()
