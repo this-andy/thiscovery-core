@@ -89,7 +89,7 @@ def append_calculated_properties(user):
     return user
 
 
-def get_user_by_id(user_id, correlation_id):
+def get_user_by_id(user_id, correlation_id=None):
 
     try:
         user_id = validate_uuid(user_id)
@@ -100,14 +100,6 @@ def get_user_by_id(user_id, correlation_id):
     sql_where_clause = " WHERE id = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
-
-    if user_json:
-        login_info = {
-            'email': user_json[0]['email'],
-            'user_id': user_id,
-            'login_datetime': str(now_with_tz())
-        }
-        notify_user_login(login_info, correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -129,7 +121,16 @@ def get_user_by_id_api(event, context):
         result = get_user_by_id(user_id, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
+            user_json = result[0]
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
+
+            login_info = {
+                'email': user_json['email'],
+                'user_id': user_id,
+                'login_datetime': str(now_with_tz())
+            }
+            notify_user_login(login_info, correlation_id)
+
         else:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)

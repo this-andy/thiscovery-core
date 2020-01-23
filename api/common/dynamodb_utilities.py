@@ -19,7 +19,7 @@
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-from common.utilities import get_aws_region, get_environment_name, get_logger, DuplicateInsertError, now_with_tz, new_correlation_id
+from common.utilities import get_aws_region, get_environment_name, get_logger, DetailedValueError, now_with_tz, new_correlation_id
 
 
 STACK_NAME = 'thiscovery-core'
@@ -55,7 +55,7 @@ def put_item(table_name: str, key, item_type: str, item_details, item: dict, upd
     except ClientError as ex:
         error_code = ex.response['Error']['Code']
         errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(key), 'correlation_id': correlation_id}
-        raise DuplicateInsertError('item already exists', errorjson)
+        raise DetailedValueError('Dynamodb raised an error', errorjson)
 
 
 def update_item_old(table_name: str, key: str, attr_name: str, attr_value, correlation_id=new_correlation_id()):

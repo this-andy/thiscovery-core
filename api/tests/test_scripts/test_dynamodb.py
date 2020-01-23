@@ -18,7 +18,7 @@
 
 from unittest import TestCase
 from dateutil import parser
-from common.utilities import set_running_unit_tests, DuplicateInsertError, now_with_tz
+from common.utilities import set_running_unit_tests, DetailedValueError, now_with_tz
 from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
 
 TEST_TABLE_NAME = 'testdata'
@@ -88,8 +88,9 @@ class TestDynamoDB(TestCase):
     def test_04_put_update_fail(self):
         item = TEST_ITEM_01
         put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
-        with self.assertRaises(DuplicateInsertError):
+        with self.assertRaises(DetailedValueError) as error:
             put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
+        self.assertEqual('ConditionalCheckFailedException', error.exception.details['error_code'])
 
     def test_05_scan(self):
         put_test_items(3)
