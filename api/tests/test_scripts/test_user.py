@@ -23,16 +23,18 @@ from dateutil import parser
 from time import sleep
 from unittest import TestCase
 
-import api.common.pg_utilities as pg_utils
 import api.endpoints.user as u
+import common.pg_utilities as pg_utils
 
-from api.common.dev_config import TIMEZONE_IS_BST
-from api.common.entity_update import EntityUpdate
-from api.common.hubspot import get_hubspot_contact_by_id, get_contact_property
-from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationAttributes
-from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
 from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from common.dev_config import TIMEZONE_IS_BST
+from common.entity_update import EntityUpdate
+from common.hubspot import HubSpotClient
+from common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
+    NotificationAttributes
+from common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
+
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -486,8 +488,9 @@ class TestUser(TestCase):
         self.assertIsNotNone(result_json['crm_id'])
 
         # and check that hubspot has thiscovery id
-        contact = get_hubspot_contact_by_id(result_json['crm_id'], None)
-        thiscovery_id = get_contact_property(contact, 'thiscovery_id')
+        hs_client = HubSpotClient()
+        contact = hs_client.get_hubspot_contact_by_id(result_json['crm_id'], None)
+        thiscovery_id = hs_client.get_contact_property(contact, 'thiscovery_id')
         self.assertEqual(thiscovery_id, user_id)
 
         # check that notification message has been processewd

@@ -15,24 +15,20 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import boto3
 
-from common.cloudwatch_utilities import CloudWatchLogs
+from common.utilities import get_logger, get_aws_namespace
 
 
-def set_new_log_groups_retention_policy(event, context):
-    """
-    Fetches all CloudWatch log groups and sets the default retention policy (30 days) only for those groups in which
-    the parameter "retentionInDays" is not present (new groups).
-    """
-    cwl = CloudWatchLogs()
-    response = {
-        'updated_log_groups': [],
-    }
-    for lg in cwl.get_thiscovery_log_groups():
-        if 'retentionInDays' not in lg.keys():
-            log_group_name = lg['logGroupName']
-            cwl.set_log_group_retention_policy(log_group_name)
-            response['updated_log_groups'].append(log_group_name)
+ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 
-    cwl.logger.info('Response', extra={'response': response})
-    return response
+
+class BaseClient:
+    def __init__(self):
+        self.logger = get_logger()
+        self.aws_namespace = None
+
+    def get_namespace(self):
+        if self.aws_namespace is None:
+            self.aws_namespace = get_aws_namespace()[1:-1]
+        return self.aws_namespace

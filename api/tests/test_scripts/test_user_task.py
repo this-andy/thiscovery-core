@@ -24,7 +24,7 @@ from dateutil import parser
 from unittest import TestCase
 from time import sleep
 from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
-from api.common.hubspot import get_timeline_event, get_TLE_type_id, TASK_SIGNUP_TLE_TYPE_NAME
+from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
 from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
@@ -243,9 +243,10 @@ class TestUserTask(TestCase):
         # self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
 
         # check user now has sign-up timeline event
+        hs_client = HubSpotClient()
         sleep(10)
-        tle_type_id = get_TLE_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
-        result = get_timeline_event(tle_type_id, ut_id, None)
+        tle_type_id = hs_client.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
+        result = hs_client.get_timeline_event(tle_type_id, ut_id, None)
         self.assertEqual(ut_id, result['id'])
         notification_details = notification['details']
         self.assertEqual(notification_details['project_task_id'], result['task_id'])

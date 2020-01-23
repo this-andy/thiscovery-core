@@ -16,9 +16,13 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import csv
 import uuid
 from dateutil import parser
 from requests import get, post, patch
+
+import api.endpoints.user as user
+from common.hubspot import HubSpotClient
 from api.common.utilities import get_secret, now_with_tz, get_logger
 from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
 
@@ -128,3 +132,26 @@ def test_and_remove_new_uuid(test_case, entity_json):
         test_case.assertTrue(uuid.UUID(id).version == 4)
     except KeyError:
         test_case.assertTrue(False, 'id missing')
+
+
+def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
+    with open(user_test_data_csv) as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            user_json = {
+                "id": row[0],
+                "created": row[1],
+                "email": row[3],
+                "first_name": row[5],
+                "last_name": row[6],
+                "country_code": row[12],
+                "country_name": get_country_name(row[12]),
+                "avatar_string": f'{row[5][0].upper()}{row[6][0].upper()}',
+                "status": "new"
+            }
+
+            hubspot_id, _ = hs_client.post_new_user_to_crm(user_json, correlation_id=None)
+            user_jsonpatch = [
+                {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
+            ]
+            user.patch_user(user_json['id'], user_jsonpatch, now_with_tz(), correlation_id=None)

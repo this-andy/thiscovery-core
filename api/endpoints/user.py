@@ -167,7 +167,7 @@ def get_user_by_ext_user_project_id_api(event, context):
     return response
 
 
-def get_user_by_id(user_id, correlation_id):
+def get_user_by_id(user_id, correlation_id=None):
 
     try:
         user_id = validate_uuid(user_id)
