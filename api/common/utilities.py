@@ -31,6 +31,7 @@ import json
 import boto3
 from botocore.exceptions import ClientError
 
+from common.log_color_handler import ColorHandler
 
 # region Custom error classes and handling
 
@@ -189,8 +190,7 @@ def get_logger():
     global logger
     if logger is None:
         logger = logging.getLogger('thiscovery')
-        # print('creating logger')
-        log_handler = logging.StreamHandler()
+        log_handler = ColorHandler()
         formatter = jsonlogger.JsonFormatter('%(asctime)s %(module)s %(funcName)s %(lineno)d %(name)-2s %(levelname)-8s %(message)s')
         formatter.default_msec_format = '%s.%03d'
         log_handler.setFormatter(formatter)

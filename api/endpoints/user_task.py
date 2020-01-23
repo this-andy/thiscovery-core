@@ -71,7 +71,7 @@ def get_user_task(ut_id, correlation_id):
     return result
 
 
-def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id):
+def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id=None):
     """
     Returns user_task related to user_id and project_task_id or None
     """
@@ -118,7 +118,8 @@ def list_user_tasks(user_id, correlation_id):
             ut.created,
             ut.modified,               
             ut.status,
-            ut.consented                
+            ut.consented,
+            ut.progress_info         
         FROM 
             public.projects_usertask ut
             inner join public.projects_projecttask pt on pt.id = ut.project_task_id
