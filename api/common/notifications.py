@@ -18,7 +18,7 @@
 
 from enum import Enum
 from common.dynamodb_utilities import scan, update_item, delete_all, put_item
-from common.utilities import DetailedValueError
+from common.utilities import DetailedValueError, get_logger
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'
@@ -86,6 +86,9 @@ def mark_notification_processed(notification, correlation_id):
 
 
 def mark_notification_failure(notification, error_message, correlation_id):
+    logger = get_logger()
+    logger.error('Error processing notification', extra={'error_message': error_message, 'notification': notification, 'correlation_id': correlation_id})
+
     def update_notification_item(status_, fail_count_, error_message_=error_message):
         notification_updates = {
             NotificationAttributes.STATUS.value: status_,

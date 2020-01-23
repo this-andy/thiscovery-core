@@ -142,8 +142,10 @@ def process_task_signup(notification):
             raise DetailedValueError('user does not have crm_id', errorjson)
         else:
             hs_client = HubSpotClient()
-            hs_client.post_task_signup_to_crm(signup_details, correlation_id)
-            mark_notification_processed(notification, correlation_id)
+            posting_result = hs_client.post_task_signup_to_crm(signup_details, correlation_id)
+            marking_result = mark_notification_processed(notification, correlation_id)
+            return posting_result, marking_result
+
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)
