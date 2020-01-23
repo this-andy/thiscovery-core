@@ -138,8 +138,6 @@ class HubSpotClient:
         redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
         return self.get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
 
-    return result
-# endregion
     @staticmethod
     def save_token(new_token, correlation_id):
         ddb.put_item('tokens', 'hubspot', 'oAuth_token', new_token, {}, True, correlation_id)
