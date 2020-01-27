@@ -93,7 +93,7 @@ def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
 
     sql = '''
         SELECT 
-            u.id as user_id, 
+            u.id, 
             u.created, 
             u.modified, 
             u.email, 
@@ -104,8 +104,7 @@ def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
             u.country_code,
             u.auth0_id, 
             u.crm_id,
-            u.status,
-            up.ext_user_project_id as id
+            u.status
         FROM 
             public.projects_user as u
             JOIN public.projects_userproject as up on up.user_id = u.id
