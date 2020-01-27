@@ -102,7 +102,7 @@ class TestUser(test_utils.DbTestCase):
         Tests:
             - we can retrieve an user by querying by ext_user_project_id (using path parameter ?id=)
         """
-        path_parameters = {'id': "c02b6a0f-d85c-4c75-9547-f895ce424388"}
+        query_parameters = {'ext_user_project_id': "c02b6a0f-d85c-4c75-9547-f895ce424388"}
 
         expected_status = HTTPStatus.OK
 
@@ -131,7 +131,7 @@ class TestUser(test_utils.DbTestCase):
             "avatar_string": "AA",
         }
 
-        result = test_get(u.get_user_by_ext_user_project_id_api, 'user-ext', path_parameters, None, None)
+        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

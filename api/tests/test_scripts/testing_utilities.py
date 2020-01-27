@@ -87,7 +87,7 @@ class DbTestCase(TestCase):
 
 
 
-def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
+def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
     logger = get_logger()
     if TEST_ON_AWS:
         if path_parameters is not None:
