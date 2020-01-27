@@ -21,6 +21,8 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
+
+import testing_utilities as test_utils
 from api.common.pg_utilities import insert_data_from_csv, truncate_table
 from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
@@ -31,26 +33,8 @@ DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'userexternalaccount'
 
-class TestUserExternalAccount(TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_external_account_data.csv', 'public.projects_userexternalaccount')
-
-
-    @classmethod
-    def tearDownClass(self):
-        if DELETE_TEST_DATA:
-            truncate_table('public.projects_user')
-            truncate_table('public.projects_externalsystem')
-            truncate_table('public.projects_userexternalaccount')
-
-        set_running_unit_tests(False)
-
+class TestUserExternalAccount(test_utils.DbTestCase):
 
     def test_01_create_user_external_account_api_ok_and_duplicate(self):
         from api.endpoints.user_external_account import create_user_external_account_api

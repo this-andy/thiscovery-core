@@ -18,7 +18,8 @@
 
 import json
 from http import HTTPStatus
-from unittest import TestCase
+
+import testing_utilities as test_utils
 from common.pg_utilities import insert_data_from_csv, truncate_table
 from common.utilities import set_running_unit_tests, DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
@@ -26,33 +27,11 @@ from api.tests.test_scripts.testing_utilities import test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usergroupmembership'
 
 
-def clear_database():
-    truncate_table('public.projects_usergroupmembership')
-    truncate_table('public.projects_user')
-    truncate_table('public.projects_usergroup')
-
-class TestUserGroupMembership(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-        clear_database()
-
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data_PSFU.csv', 'public.projects_user')
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroupmembership_data.csv', 'public.projects_usergroupmembership')
-
-    @classmethod
-    def tearDownClass(cls):
-        if DELETE_TEST_DATA:
-            clear_database()
-
-        set_running_unit_tests(False)
+class TestUserGroupMembership(test_utils.DbTestCase):
 
     def test_01_user_group_membership_create_from_json_basic_ok(self):
         from api.endpoints.user_group_membership import UserGroupMembership

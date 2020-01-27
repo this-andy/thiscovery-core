@@ -17,30 +17,18 @@
 #
 
 from unittest import TestCase
+
+import testing_utilities as test_utils
+
 from common.pg_utilities import insert_data_from_csv, truncate_table
 from common.utilities import set_running_unit_tests, DetailedValueError
 from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
-class TestUserGroup(TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-
-        truncate_table('public.projects_usergroup')
-
-        insert_data_from_csv(TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup')
-
-    @classmethod
-    def tearDownClass(cls):
-        if DELETE_TEST_DATA:
-            truncate_table('public.projects_usergroup')
-
-        set_running_unit_tests(False)
+class TestUserGroup(test_utils.DbTestCase):
 
     def test_01_user_group_get_by_id_exist(self):
         from api.endpoints.user_group import UserGroup

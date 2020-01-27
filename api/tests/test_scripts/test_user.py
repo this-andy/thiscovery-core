@@ -21,10 +21,10 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from time import sleep
-from unittest import TestCase
 
 import api.endpoints.user as u
 import common.pg_utilities as pg_utils
+import testing_utilities as test_utils
 
 from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
@@ -39,40 +39,13 @@ from common.utilities import new_correlation_id, now_with_tz, set_running_unit_t
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'user'
 
 
-def clear_database():
-    pg_utils.truncate_table_multiple(
-        'public.projects_usergroup',
-        'public.projects_project',
-        'public.projects_user',
-        'public.projects_userproject',
-        'public.projects_entityupdate',
-    )
-
-class TestUser(TestCase):
+class TestUser(test_utils.DbTestCase):
     maxDiff = None
-
-    @classmethod
-    def setUpClass(self):
-        set_running_unit_tests(True)
-        clear_database()
-        pg_utils.insert_data_from_csv_multiple(
-            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
-            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
-            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
-            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
-        )
-
-    @classmethod
-    def tearDownClass(self):
-        if DELETE_TEST_DATA:
-            clear_database()
-            delete_all_notifications()
-        set_running_unit_tests(False)
+    delete_notifications = True
 
     def test_01_get_user_by_uuid_api_exists(self):
         """
@@ -100,8 +73,8 @@ class TestUser(TestCase):
             "title": "Mrs",
             "first_name": "Altha",
             "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
+            "country_code": "GB",
+            "country_name": "United Kingdom",
             "auth0_id": None,
             "crm_id": None,
             "status": None,

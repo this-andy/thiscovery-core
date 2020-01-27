@@ -23,6 +23,8 @@ from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from time import sleep
+
+import testing_utilities as test_utils
 from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
@@ -37,7 +39,6 @@ from api.tests.test_scripts.testing_utilities import test_get, test_post, test_p
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'usertask'
 USER_BASE_URL = 'user'
@@ -95,44 +96,7 @@ USER_TASK_03_EXPECTED_BODY = {
 # endregion
 
 
-def clear_database():
-    truncate_table_multiple(
-        'public.projects_usertask',
-        'public.projects_projecttask',
-        'public.projects_tasktype',
-        'public.projects_userproject',
-        'public.projects_externalsystem',
-        'public.projects_project',
-        'public.projects_user',
-        'public.projects_usergroup',
-    )
-    delete_all_notifications()
-
-
-class TestUserTask(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-        clear_database()
-
-        insert_data_from_csv_multiple(
-            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
-            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
-            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
-            (TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem'),
-            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
-            (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),
-            (TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask'),
-            (TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask'),
-        )
-
-    @classmethod
-    def tearDownClass(self):
-        if DELETE_TEST_DATA:
-            clear_database()
-
-        set_running_unit_tests(False)
+class TestUserTask(test_utils.DbTestCase):
 
     def test_1_list_user_tasks_api_ok(self):
         expected_status = HTTPStatus.OK
