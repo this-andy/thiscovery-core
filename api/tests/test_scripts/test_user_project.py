@@ -36,28 +36,29 @@ ENTITY_BASE_URL = 'userproject'
 
 # region expected bodies setup
 if TIMEZONE_IS_BST:
-    tz_hour = "13"
+    tz_hour = "12"
     tz_offset = "01:00"
 else:
-    tz_hour = "12"
+    tz_hour = "11"
     tz_offset = "00:00"
 
+
 USER_PROJECT_01_EXPECTED_BODY = {
-    'id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
-    'project_id': '3ffc498f-8add-4448-b452-4fc7f463aa21',
-    'created': f'2018-08-17T{tz_hour}:10:57.362814+{tz_offset}',
-    'modified': f'2018-08-17T{tz_hour}:10:57.401109+{tz_offset}',
-    'status': None,
+        "id": "000aa7fd-759b-4a8e-9fa8-f2457108e16f",
+        "user_id": "851f7b34-f76c-49de-a382-7e4089b744e2",
+        "project_id": "a099d03b-11e3-424c-9e97-d1c095f9823b",
+        "created": f"2018-11-05T{tz_hour}:14:13.182231+{tz_offset}",
+        "modified": f"2018-11-05T{tz_hour}:14:13.182304+{tz_offset}",
+        "status": None,
 }
 
 USER_PROJECT_02_EXPECTED_BODY = {
-    'id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
-    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
-    'project_id': '0c137d9d-e087-448b-ba8d-24141b6ceecd',
-    'created': f'2018-08-17T{tz_hour}:10:57.648741+{tz_offset}',
-    'modified': f'2018-08-17T{tz_hour}:10:57.683971+{tz_offset}',
-    'status': None,
+        "id": "53320854-72f1-491a-b562-d84c252f4252",
+        "user_id": "851f7b34-f76c-49de-a382-7e4089b744e2",
+        "project_id": "5907275b-6d75-4ec0-ada8-5854b44fb955",
+        "created": f"2018-11-05T{tz_hour}:14:23.005412+{tz_offset}",
+        "modified": f"2018-11-05T{tz_hour}:14:23.005449+{tz_offset}",
+        "status": None,
 }
 # endregion
 
@@ -94,7 +95,7 @@ class TestUserProject(test_utils.DbTestCase):
     def test_03_list_user_projects_api_no_results(self):
         expected_status = HTTPStatus.OK
         expected_body = []
-        querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
+        querystring_parameters = {'user_id': 'dceac123-03a7-4e29-ab5a-739e347b374d'}
 
         result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
@@ -107,7 +108,7 @@ class TestUserProject(test_utils.DbTestCase):
         expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
-            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
+            'project_id': "5907275b-6d75-4ec0-ada8-5854b44fb955",
             'ext_user_project_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
             'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
@@ -145,7 +146,7 @@ class TestUserProject(test_utils.DbTestCase):
         expected_status = HTTPStatus.CREATED
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42515",
-            'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"
+            'project_id': "5907275b-6d75-4ec0-ada8-5854b44fb955"
         }
         body = json.dumps(up_json)
 
@@ -249,7 +250,7 @@ class TestUserProject(test_utils.DbTestCase):
 
     def test_09_create_user_projects_api_if_not_exists(self):
         user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
-        project_id = "0c137d9d-e087-448b-ba8d-24141b6ceecd"
+        project_id = "5907275b-6d75-4ec0-ada8-5854b44fb955"
         result = create_user_project_if_not_exists(user_id, project_id, None)
 
         # should return id of user_project created in test 4

@@ -42,6 +42,32 @@ TIME_TOLERANCE_SECONDS = 15
 
 ENTITY_BASE_URL = 'user'
 
+# region expected results
+if TIMEZONE_IS_BST:
+    tz_hour = "13"
+    tz_offset = "01:00"
+else:
+    tz_hour = "12"
+    tz_offset = "00:00"
+
+EXPECTED_USER = {
+    "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+    "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
+    "modified": f"2018-08-17T{tz_hour}:10:56.833885+{tz_offset}",
+    "email": "altha@email.co.uk",
+    "email_address_verified": False,
+    "title": "Mrs",
+    "first_name": "Altha",
+    "last_name": "Alcorn",
+    "country_code": "GB",
+    "country_name": "United Kingdom",
+    "auth0_id": None,
+    "crm_id": None,
+    "status": None,
+    "avatar_string": "AA",
+}
+# endregion
+
 
 class TestUser(test_utils.DbTestCase):
     maxDiff = None
@@ -57,37 +83,13 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.OK
 
-        if TIMEZONE_IS_BST:
-            tz_hour = "13"
-            tz_offset = "01:00"
-        else:
-            tz_hour = "12"
-            tz_offset = "00:00"
-
-        expected_body = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
-            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "GB",
-            "country_name": "United Kingdom",
-            "auth0_id": None,
-            "crm_id": None,
-            "status": None,
-            "avatar_string": "AA",
-        }
-
         result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(expected_body, result_json)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
         # check that login notification exists
         # notifications = get_notifications('type', ['user-login'])
@@ -102,33 +104,9 @@ class TestUser(test_utils.DbTestCase):
         Tests:
             - we can retrieve an user by querying by ext_user_project_id (using path parameter ?id=)
         """
-        query_parameters = {'ext_user_project_id': "c02b6a0f-d85c-4c75-9547-f895ce424388"}
+        query_parameters = {'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"}
 
         expected_status = HTTPStatus.OK
-
-        if TIMEZONE_IS_BST:
-            tz_hour = "13"
-            tz_offset = "01:00"
-        else:
-            tz_hour = "12"
-            tz_offset = "00:00"
-
-        expected_body = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
-            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "status": None,
-            "avatar_string": "AA",
-        }
 
         result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
         result_status = result['statusCode']
@@ -136,7 +114,7 @@ class TestUser(test_utils.DbTestCase):
 
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(expected_body, result_json)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
     def test_16_get_user_by_uuid_api_not_exists(self):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
@@ -170,47 +148,12 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.OK
 
-        expected_body_bst = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "avatar_string": "AA",
-            "status": None
-        }
-
-        expected_body_gmt = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T12:10:56.798192+00:00",
-            "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "avatar_string": "AA",
-            "status": None
-        }
-        expected_body = expected_body_gmt
-
         result = test_get(get_user_by_email_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
     def test_05_get_user_email_not_exists(self):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
@@ -245,30 +188,12 @@ class TestUser(test_utils.DbTestCase):
         result_status = result['statusCode']
 
         self.assertEqual(expected_status, result_status)
-
         # now check database values...
-        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': user_id}
 
-        expected_body_bst = {
+        expected_body = {
             "id": user_id,
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "email": "simon.smith@dancingbear.com",
-            "email_address_verified": True,
-            "title": "Sir",
-            "first_name": "simon",
-            "last_name": "smith",
-            "auth0_id": "new-auth0-id",
-            "country_code": "IT",
-            "country_name": "Italy",
-            "crm_id": None,
-            "avatar_string": "ss",
-            "status": "singing"
-        }
-
-        expected_body_gmt = {
-            "id": user_id,
-            "created": "2018-08-17T12:10:56.798192+00:00",
+            "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
             "email": "simon.smith@dancingbear.com",
             "email_address_verified": True,
             "title": "Sir",
@@ -282,9 +207,7 @@ class TestUser(test_utils.DbTestCase):
             "status": "singing"
         }
 
-        expected_body = expected_body_gmt
-
-        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
@@ -337,7 +260,7 @@ class TestUser(test_utils.DbTestCase):
                 {"op": "replace", "path": "/status", "value": None},
                 {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
                 {"op": "replace", "path": "/email_address_verified", "value": False},
-                {"op": "replace", "path": "/country_code", "value": "FR"},
+                {"op": "replace", "path": "/country_code", "value": "GB"},
             ]
             self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
 
@@ -573,43 +496,29 @@ class TestUser(test_utils.DbTestCase):
         # create an user
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
-            "email": "sid@email.co.uk",
+            "email": "clive@email.co.uk",
             "first_name": "Sidney",
             "last_name": "Silva",
             "country_code": "PT",
             "status": "new"}
-        body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, json.dumps(user_json), None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         expected_message = 'Database integrity error'
         expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
-                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
+                         '(lower(email::text))=(clive@email.co.uk) already exists.\n'
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
 
-    def test_15_user_email_unique_constraint_is_case_insensitive(self):
-        """
-        Tests that unique constraint on email field in user database table is case insensitive
-        """
-        # create an user
-        expected_status = HTTPStatus.BAD_REQUEST
-        user_json = {
-            "email": "SID@email.co.uk",
-            "first_name": "Sidney",
-            "last_name": "Silva",
-            "country_code": "PT",
-            "status": "new"}
+        # now make sure the unique contraint is case insensitive
+        user_json['email'] = "CLIVE@email.co.uk"
         body = json.dumps(user_json)
 
         result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
-        expected_message = 'Database integrity error'
-        expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
-                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
