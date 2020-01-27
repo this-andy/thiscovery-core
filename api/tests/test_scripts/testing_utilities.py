@@ -27,7 +27,7 @@ from api.common.utilities import get_secret, now_with_tz, get_logger, get_countr
 from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
 
 
-def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
+def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
     logger = get_logger()
     if TEST_ON_AWS:
         if path_parameters is not None:
