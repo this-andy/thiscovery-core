@@ -114,8 +114,7 @@ class TestUser(test_utils.DbTestCase):
             tz_offset = "00:00"
 
         expected_body = {
-            "id": "c02b6a0f-d85c-4c75-9547-f895ce424388",
-            "user_id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
             "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
             "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
             "email": "altha@email.co.uk",
