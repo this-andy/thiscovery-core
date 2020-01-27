@@ -146,11 +146,12 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
-    for variable_name, default_value, validating_func in [
+    optional_fields_name_default_and_validator = [
         ('ext_user_project_id', str(uuid.uuid4()), validate_uuid),
         ('created', str(now_with_tz()), validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
-    ]:
+    ]
+    for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
         if variable_name in up_json:
             try:
                 globals()[variable_name] = validating_func(up_json[variable_name])  # https://stackoverflow.com/a/4687672

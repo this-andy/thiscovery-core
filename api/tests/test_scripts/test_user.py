@@ -44,20 +44,22 @@ DELETE_TEST_DATA = True
 ENTITY_BASE_URL = 'user'
 
 
+def clear_database():
+    pg_utils.truncate_table_multiple(
+        'public.projects_usergroup',
+        'public.projects_project',
+        'public.projects_user',
+        'public.projects_userproject',
+        'public.projects_entityupdate',
+    )
+
 class TestUser(TestCase):
     maxDiff = None
 
     @classmethod
     def setUpClass(self):
         set_running_unit_tests(True)
-
-        pg_utils.truncate_table_multiple(
-            'public.projects_usergroup',
-            'public.projects_project',
-            'public.projects_user',
-            'public.projects_userproject',
-        )
-
+        clear_database()
         pg_utils.insert_data_from_csv_multiple(
             (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
             (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
@@ -68,14 +70,8 @@ class TestUser(TestCase):
     @classmethod
     def tearDownClass(self):
         if DELETE_TEST_DATA:
-            pg_utils.truncate_table_multiple(
-                'public.projects_usergroup',
-                'public.projects_project',
-                'public.projects_user',
-                'public.projects_userproject',
-            )
+            clear_database()
             delete_all_notifications()
-
         set_running_unit_tests(False)
 
     def test_01_get_user_by_uuid_api_exists(self):

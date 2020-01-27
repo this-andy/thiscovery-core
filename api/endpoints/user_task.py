@@ -186,7 +186,7 @@ def create_user_task(ut_json, correlation_id):
     Inserts new UserTask row in thiscovery db
 
     Args:
-        ut_json: must contain user_id, project_task_id and ut_consented; may optionally include id, created, status, ext_user_task_id
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id
         correlation_id:
 
     Returns:
@@ -195,7 +195,7 @@ def create_user_task(ut_json, correlation_id):
     try:
         user_id = validate_uuid(ut_json['user_id'])
         project_task_id = validate_uuid(ut_json['project_task_id'])
-        ut_consented = validate_utc_datetime(ut_json['consented'])
+        consented = validate_utc_datetime(ut_json['consented'])
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
@@ -204,11 +204,12 @@ def create_user_task(ut_json, correlation_id):
         raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
-    for variable_name, default_value, validating_func in [
+    optional_fields_name_default_and_validator = [
         ('ext_user_task_id', str(uuid.uuid4()), validate_uuid),
         ('created', str(now_with_tz()), validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
-    ]:
+    ]
+    for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
         if variable_name in ut_json:
             try:
                 globals()[variable_name] = validating_func(ut_json[variable_name])  # https://stackoverflow.com/a/4687672
@@ -262,7 +263,7 @@ def create_user_task(ut_json, correlation_id):
             ext_user_task_id
         ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, status, ut_consented, ext_user_task_id), correlation_id)
+    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id), correlation_id)
 
     url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
@@ -276,7 +277,7 @@ def create_user_task(ut_json, correlation_id):
         'task_provider_name': task_provider_name,
         'url': url,
         'status': status,
-        'consented': ut_consented,
+        'consented': consented,
         'ext_user_task_id': ext_user_task_id,
     }
 

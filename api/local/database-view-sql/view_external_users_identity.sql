@@ -27,7 +27,9 @@ CREATE OR REPLACE VIEW public.external_users_identity AS
         up.id AS user_project_id,
         up.ext_user_project_id,
         pt.id AS project_task_id,
-        p.id AS project_id
+        pt.description AS project_task_description,
+        p.id AS project_id,
+        p.name AS project_name
     FROM projects_user u
     JOIN projects_userproject up on u.id = up.user_id
     JOIN projects_project p on up.project_id = p.id
