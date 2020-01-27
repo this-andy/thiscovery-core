@@ -54,6 +54,16 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
     """
     Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
     calls.
+
+    Args:
+        base_sql:
+        params (tuple or list): http://initd.org/psycopg/docs/usage.html#passing-parameters-to-sql-queries
+        correlation_id:
+        return_json:
+        jsonize_sql:
+
+    Returns:
+
     """
     try:
         logger = get_logger()
@@ -113,17 +123,18 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
                 sql = base_sql
             sql = minimise_white_space(sql)
             param_str = str(params)
-            logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+            logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
 
             cursor.execute(sql, params)
             records = cursor.fetchall()
-            logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+            logger.info('postgres result', extra={'rows returned': str(len(records)), 'correlation_id': correlation_id})
 
             if return_json:
                 results.append(_get_json_from_tuples(records))
             else:
                 results.append(records)
 
+        logger.info('Returning multiple results', extra={'results': results})
         return results
 
     except Exception as ex:
@@ -225,6 +236,29 @@ def insert_data_from_csv(source_file, destination_table, separator=',', header_r
     conn.close()
 
 
+def insert_data_from_csv_multiple(*args, separator=',', header_row=False):
+    """
+    Populates database with data from multiple files in a single connection
+
+    Args:
+        *args: one or more tuples in the format (path_to_source_csv_file, name_of_destination_table)
+        separator (str): csv file separator
+        header_row (bool): whether or not csv file contains a header row
+
+    Returns: None
+    """
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    for source_file, destination_table in args:
+        with open(source_file, 'r') as f:
+            if header_row:
+                next(f)  # Skip the header row.
+            cursor.copy_from(f, destination_table, sep=separator, null='')
+    conn.commit()
+    conn.close()
+
+
 def populate_table_from_csv(source_folder, destination_table_name, separator=','):
     if separator == ',':
         extn = '.csv'
@@ -237,6 +271,18 @@ def populate_table_from_csv(source_folder, destination_table_name, separator=','
 
 def truncate_table(table_name):
     sql = 'TRUNCATE TABLE ' + table_name + ' CASCADE'
+    execute_non_query(sql, None)
+
+
+def truncate_table_multiple(*args):
+    """
+    Args:
+        *args: one or more table names to truncate
+
+    Returns: None
+    """
+    table_names_str = ', '.join(args)
+    sql = 'TRUNCATE TABLE ' + table_names_str + ' CASCADE'
     execute_non_query(sql, None)
 
 

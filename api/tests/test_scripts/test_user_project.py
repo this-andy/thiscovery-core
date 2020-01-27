@@ -130,6 +130,7 @@ class TestUserProject(TestCase):
         up_json = {
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
+            'ext_user_project_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
             'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
@@ -187,11 +188,15 @@ class TestUserProject(TestCase):
         status = result_json['status']
         del result_json['status']
 
+        ext_user_project_id = result_json['ext_user_project_id']
+        del result_json['ext_user_project_id']
+
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(up_json, result_json)
 
         # now check individual data items
         self.assertTrue(uuid.UUID(id).version == 4)
+        self.assertTrue(uuid.UUID(ext_user_project_id).version == 4)
 
         result_datetime = parser.parse(created)
         difference = abs(now_with_tz() - result_datetime)

@@ -22,14 +22,18 @@ from http import HTTPStatus
 from dateutil import parser
 from time import sleep
 from unittest import TestCase
-from api.common.hubspot import HubSpotClient
-from api.common.pg_utilities import insert_data_from_csv, truncate_table
-from api.common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
-from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
-    NotificationAttributes
-from api.common.dev_config import TIMEZONE_IS_BST
-from api.endpoints.user import create_user_api, get_user_by_id_api
+
+import api.endpoints.user as u
+import common.pg_utilities as pg_utils
+
+from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from common.dev_config import TIMEZONE_IS_BST
+from common.entity_update import EntityUpdate
+from common.hubspot import HubSpotClient
+from common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
+    NotificationAttributes
+from common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
 
 
 TEST_SQL_FOLDER = '../test_sql/'
@@ -40,33 +44,42 @@ DELETE_TEST_DATA = True
 ENTITY_BASE_URL = 'user'
 
 
+def clear_database():
+    pg_utils.truncate_table_multiple(
+        'public.projects_usergroup',
+        'public.projects_project',
+        'public.projects_user',
+        'public.projects_userproject',
+        'public.projects_entityupdate',
+    )
+
 class TestUser(TestCase):
+    maxDiff = None
 
     @classmethod
     def setUpClass(self):
         set_running_unit_tests(True)
-
-        truncate_table('public.projects_user')
-        truncate_table('public.projects_entityupdate')
-
-        insert_data_from_csv(TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user')
+        clear_database()
+        pg_utils.insert_data_from_csv_multiple(
+            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
+            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
+            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
+            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
+        )
 
     @classmethod
     def tearDownClass(self):
         if DELETE_TEST_DATA:
-            truncate_table('public.projects_user')
-            truncate_table('public.projects_entityupdate')
+            clear_database()
             delete_all_notifications()
-
         set_running_unit_tests(False)
 
     def test_01_get_user_by_uuid_api_exists(self):
         """
         Tests:
-            - we can retrieve an user by querying their ID
+            - we can retrieve an user by querying their user_id (using path parameter ?id=)
             - the login notification triggered by api.endpoints.user.get_user_by_id works
         """
-        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
 
         expected_status = HTTPStatus.OK
@@ -111,9 +124,49 @@ class TestUser(TestCase):
         # self.assertEqual(expected_body['id'], notification['details']['user_id'])
         # self.assertEqual(expected_body['email'], notification['details']['email'])
 
+    def test_02_get_user_by_ext_user_project_id_api_exists(self):
+        """
+        Tests:
+            - we can retrieve an user by querying by ext_user_project_id (using path parameter ?id=)
+        """
+        path_parameters = {'id': "c02b6a0f-d85c-4c75-9547-f895ce424388"}
 
-    def test_02_get_user_by_uuid_api_not_exists(self):
-        from api.endpoints.user import get_user_by_id_api
+        expected_status = HTTPStatus.OK
+
+        if TIMEZONE_IS_BST:
+            tz_hour = "13"
+            tz_offset = "01:00"
+        else:
+            tz_hour = "12"
+            tz_offset = "00:00"
+
+        expected_body = {
+            "id": "c02b6a0f-d85c-4c75-9547-f895ce424388",
+            "user_id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
+            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
+            "email": "altha@email.co.uk",
+            "email_address_verified": False,
+            "title": "Mrs",
+            "first_name": "Altha",
+            "last_name": "Alcorn",
+            "country_code": "FR",
+            "country_name": "France",
+            "auth0_id": None,
+            "crm_id": None,
+            "status": None,
+            "avatar_string": "AA",
+        }
+
+        result = test_get(u.get_user_by_ext_user_project_id_api, 'user-ext', path_parameters, None, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # test results returned from api call
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(expected_body, result_json)
+
+    def test_16_get_user_by_uuid_api_not_exists(self):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
 
         expected_status = HTTPStatus.NOT_FOUND
@@ -127,7 +180,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
     def test_03_get_user_by_uuid_api_bad_uuid(self):
-        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -142,8 +194,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
     def test_04_get_user_email_exists(self):
-        from api.endpoints.user import get_user_by_email_api
-
         querystring_parameters = {'email': 'altha@email.co.uk'}
 
         expected_status = HTTPStatus.OK
@@ -191,8 +241,6 @@ class TestUser(TestCase):
         self.assertDictEqual(result_json, expected_body)
 
     def test_05_get_user_email_not_exists(self):
-        from api.endpoints.user import get_user_by_email_api
-
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         expected_status = HTTPStatus.NOT_FOUND
 
@@ -205,9 +253,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
     def test_06_patch_user_api_ok(self):
-        from api.endpoints.user import patch_user_api
-        from api.common.entity_update import EntityUpdate
-
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
 
         expected_status = HTTPStatus.NO_CONTENT
@@ -332,8 +377,6 @@ class TestUser(TestCase):
             self.assertDictEqual(expected_body, last_entity_update)
 
     def test_07_patch_user_api_user_not_exists(self):
-        from api.endpoints.user import patch_user_api
-
         expected_status = HTTPStatus.NOT_FOUND
         user_jsonpatch = [
             {'op': 'replace', 'path': '/title', 'value': 'Sir'},
@@ -351,8 +394,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
     def test_08_patch_user_api_bad_attribute(self):
-        from api.endpoints.user import patch_user_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'replace', 'path': '/non-existent-attribute', 'value': 'simon'}]
         body = json.dumps(user_jsonpatch)
@@ -367,8 +408,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
     def test_09_patch_user_api_bad_operation(self):
-        from api.endpoints.user import patch_user_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': '/first_name', 'value': 'simon'}]
         body = json.dumps(user_jsonpatch)
@@ -383,8 +422,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
     def test_10_patch_user_api_bad_jsonpatch(self):
-        from api.endpoints.user import patch_user_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'this': 'is', 'not': '/a', 'valid': 'jsonpatch'}]
         body = json.dumps(user_jsonpatch)
@@ -471,8 +508,6 @@ class TestUser(TestCase):
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
     def test_12_create_user_api_with_defaults(self):
-        from api.endpoints.user import create_user_api
-
         expected_status = HTTPStatus.CREATED
         user_json = {
             "email": "hh@email.co.uk",
@@ -537,8 +572,6 @@ class TestUser(TestCase):
         # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
     def test_13_create_user_api_bad_uuid(self):
-        from api.endpoints.user import create_user_api
-
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b13m",
@@ -565,8 +598,6 @@ class TestUser(TestCase):
         """
         Tests unique constraint on email field in user database table
         """
-        from api.endpoints.user import create_user_api
-
         # create an user
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
@@ -591,8 +622,6 @@ class TestUser(TestCase):
         """
         Tests that unique constraint on email field in user database table is case insensitive
         """
-        from api.endpoints.user import create_user_api
-
         # create an user
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {

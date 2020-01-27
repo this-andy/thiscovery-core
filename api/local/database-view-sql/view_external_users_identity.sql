@@ -16,16 +16,22 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-CREATE OR REPLACE VIEW public.project_testgroup_users AS
- SELECT p.id AS project_id,
-    p.short_name AS project_name,
-    p.testing_group_id,
-    ug.short_name AS group_name,
-    u.id AS user_id,
-    u.email,
-    up.ext_user_project_id AS ext_user_project_id
-   FROM projects_project p
-     JOIN projects_usergroup ug ON ug.id = p.testing_group_id
-     JOIN projects_usergroupmembership ugm ON ug.id = ugm.user_group_id
-     JOIN projects_user u ON ugm.user_id = u.id
-     JOIN projects_userproject up ON p.id = up.project_id;
+CREATE OR REPLACE VIEW public.external_users_identity AS
+    SELECT
+        u.id AS user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        ut.id AS user_task_id,
+        ut.ext_user_task_id,
+        up.id AS user_project_id,
+        up.ext_user_project_id,
+        pt.id AS project_task_id,
+        pt.description AS project_task_description,
+        p.id AS project_id,
+        p.name AS project_name
+    FROM projects_user u
+    JOIN projects_userproject up on u.id = up.user_id
+    JOIN projects_project p on up.project_id = p.id
+    JOIN projects_usertask ut on up.id = ut.user_project_id
+    JOIN projects_projecttask pt on pt.project_id = p.id;

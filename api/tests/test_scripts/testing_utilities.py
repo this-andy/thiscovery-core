@@ -23,16 +23,18 @@ from requests import get, post, patch
 
 import api.endpoints.user as user
 from common.hubspot import HubSpotClient
-from common.utilities import get_secret, now_with_tz, get_country_name
-from common.dev_config import TEST_ON_AWS, AWS_TEST_API
+from api.common.utilities import get_secret, now_with_tz, get_logger, get_country_name
+from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
 
 
 def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
+    logger = get_logger()
     if TEST_ON_AWS:
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
         else:
             url = aws_url
+        logger.info(f'Url passed to aws_get: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
         return aws_get(url, querystring_parameters, correlation_id)
     else:
         if path_parameters is not None:
