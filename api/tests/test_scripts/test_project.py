@@ -133,7 +133,8 @@ class TestProject(TestCase):
         expected_body = [PROJECT_01_EXPECTED_BODY, PROJECT_02_EXPECTED_BODY]
 
         # result = list_projects_api(None, None)
-        result = test_get(list_projects_api, ENTITY_BASE_URL, None, None, None)
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(list_projects_api, endpoint, None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -154,8 +155,8 @@ class TestProject(TestCase):
         expected_status = HTTPStatus.OK
         expected_body = [PROJECT_02_EXPECTED_BODY]
         # result = get_project_api(event, None)
-
-        result = test_get(get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(get_project_api, endpoint, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -169,7 +170,8 @@ class TestProject(TestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = test_get(get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(get_project_api, endpoint, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
