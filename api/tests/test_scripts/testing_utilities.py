@@ -241,29 +241,3 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
                 {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
             ]
             user.patch_user(user_json['id'], user_jsonpatch, now_with_tz(), correlation_id=None)
-
-
-def clear_test_data(delete_notifications=False):
-    """
-    Clears all PostgreSQL database tables used by the test suite. Optionally deletes all notifications in AWS Dynamodb.
-
-    Args:
-        delete_notifications (bool): False by default. If set to True, notifications in Dynamodb are also deleted.
-    """
-    truncate_table_multiple(
-        'public.projects_entityupdate',
-        'public.projects_usertask',
-        'public.projects_userproject',
-        'public.projects_usergroupmembership',
-        'public.projects_user',
-        'public.projects_projecttaskgroupvisibility',
-        'public.projects_projectgroupvisibility',
-        'public.projects_projecttask',
-        'public.projects_externalsystem',
-        'public.projects_tasktype',
-        'public.projects_project',
-        'public.projects_usergroup',
-        'public.projects_userexternalaccount',
-    )
-    if delete_notifications:
-        delete_all_notifications()
