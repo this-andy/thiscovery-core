@@ -211,17 +211,7 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
-        result_modified = result_json['modified']
-        del result_json['modified']
-
-        # check the rest of the result excluding modified
-        self.assertDictEqual(expected_body, result_json)
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
-        result_modified_datetime = parser.parse(result_modified)
-        difference = abs(now - result_modified_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.now_datetime_test_and_remove(result_json, 'modified', tolerance=TIME_TOLERANCE_SECONDS)
 
         # now check that we have a corresponding entity update record
         entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
@@ -229,22 +219,18 @@ class TestUser(test_utils.DbTestCase):
         if len(entity_updates) > 0:
             # get most recent update record
             last_entity_update = entity_updates[-1]
+
+            # remove from returned value those things we don't want to test
+            self.remove_dict_items_to_be_ignored_by_tests(last_entity_update, ['id', 'modified'])
+
             # remove and store data items to be tested individually
-            result_created = last_entity_update['created']
-            del last_entity_update['created']
+            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
+            self.now_datetime_test_and_remove(last_entity_update, 'created', tolerance=TIME_TOLERANCE_SECONDS)
+
             result_json_reverse_patch = last_entity_update['json_reverse_patch']
             del last_entity_update['json_reverse_patch']
             result_json_patch = last_entity_update['json_patch']
             del last_entity_update['json_patch']
-
-            # now remove from returned value those things we don't want to test
-            del last_entity_update['id']
-            del last_entity_update['modified']
-
-            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
-            result_created_datetime = parser.parse(result_created)
-            difference = abs(now - result_created_datetime)
-            self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
             # check jsonpatch - compare as lists in case order different
             result_json_patch = json.loads(result_json_patch)
@@ -417,14 +403,9 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        id = result_json['id']
-        del result_json['id']
-
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
+        self.new_uuid_test_and_remove(result_json)
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
 
         auth0_id = result_json['auth0_id']
         del result_json['auth0_id']
@@ -448,16 +429,6 @@ class TestUser(test_utils.DbTestCase):
         self.assertDictEqual(result_json, user_json)
 
         # now check individual data items
-        self.assertTrue(uuid.UUID(id).version == 4)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
-
         self.assertIsNone(auth0_id)
         self.assertFalse(email_address_verified)
         # self.assertTrue(uuid.UUID(email_verification_token).version == 4)

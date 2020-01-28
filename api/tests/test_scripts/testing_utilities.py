@@ -34,7 +34,53 @@ from common.utilities import get_secret, now_with_tz, get_logger, get_country_na
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
-class DbTestCase(TestCase):
+class BaseTestCase(TestCase):
+    """
+    Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
+    """
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
+
+    def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
+        actual_value = entity_dict[attribute_name]
+        del entity_dict[attribute_name]
+        self.assertEqual(expected_value, actual_value)
+        return actual_value
+
+    def now_datetime_test_and_remove(self, entity_dict, datetime_attribute_name, tolerance=10):
+        datetime_string = entity_dict[datetime_attribute_name]
+        del entity_dict[datetime_attribute_name]
+        now = now_with_tz()
+        datetime_value = parser.parse(datetime_string)
+        difference = abs(now - datetime_value)
+        self.assertLess(difference.seconds, tolerance)
+        return datetime_string
+
+    def uuid_test_and_remove(self, entity_dict, uuid_attribute_name):
+        uuid_value = entity_dict[uuid_attribute_name]
+        del entity_dict[uuid_attribute_name]
+        self.assertTrue(uuid.UUID(uuid_value).version == 4)
+        return uuid_value
+
+    def new_uuid_test_and_remove(self, entity_dict):
+        try:
+            uuid_value = self.uuid_test_and_remove(entity_dict, 'id')
+            return uuid_value
+        except KeyError:
+            self.assertTrue(False, 'id missing')
+
+    @staticmethod
+    def remove_dict_items_to_be_ignored_by_tests(entity_dict, list_of_keys):
+        for key in list_of_keys:
+            del entity_dict[key]
+
+
+class DbTestCase(BaseTestCase):
     delete_test_data = False
     delete_notifications = False
 
@@ -172,26 +218,6 @@ def aws_patch(url, request_body, correlation_id):
         return {'statusCode': response.status_code, 'body': response.text}
     except Exception as err:
         raise err
-
-
-def test_and_remove_now_datetime(test_case, entity_json, datetime_attribute_name, tolerance=10):
-    datetime_string = entity_json[datetime_attribute_name]
-    del entity_json[datetime_attribute_name]
-
-    # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-    now = now_with_tz()
-    datetime_value = parser.parse(datetime_string)
-    difference = abs(now - datetime_value)
-    test_case.assertLess(difference.seconds, tolerance)
-
-
-def test_and_remove_new_uuid(test_case, entity_json):
-    try:
-        id = entity_json['id']
-        del entity_json['id']
-        test_case.assertTrue(uuid.UUID(id).version == 4)
-    except KeyError:
-        test_case.assertTrue(False, 'id missing')
 
 
 def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):

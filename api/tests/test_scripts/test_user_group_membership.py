@@ -22,8 +22,6 @@ from http import HTTPStatus
 import testing_utilities as test_utils
 from common.pg_utilities import insert_data_from_csv, truncate_table
 from common.utilities import set_running_unit_tests, DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
-from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
-from api.tests.test_scripts.testing_utilities import test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -42,9 +40,9 @@ class TestUserGroupMembership(test_utils.DbTestCase):
         ugm = UserGroupMembership.from_json(ugm_json, None)
         ugm_dict = ugm.to_dict()
 
-        test_and_remove_new_uuid(self, ugm_dict)
-        test_and_remove_now_datetime(self, ugm_dict, 'created')
-        test_and_remove_now_datetime(self, ugm_dict, 'modified')
+        self.new_uuid_test_and_remove(ugm_dict)
+        self.now_datetime_test_and_remove(ugm_dict, 'created')
+        self.now_datetime_test_and_remove(ugm_dict, 'modified')
 
         self.assertDictEqual(ugm_json, ugm_dict)
 
@@ -98,9 +96,9 @@ class TestUserGroupMembership(test_utils.DbTestCase):
         ugm = UserGroupMembership.new_from_json(ugm_json, None)
         ugm_dict = ugm.to_dict()
 
-        test_and_remove_new_uuid(self, ugm_dict)
-        test_and_remove_now_datetime(self, ugm_dict, 'created')
-        test_and_remove_now_datetime(self, ugm_dict, 'modified')
+        self.new_uuid_test_and_remove(ugm_dict)
+        self.now_datetime_test_and_remove(ugm_dict, 'created')
+        self.now_datetime_test_and_remove(ugm_dict, 'modified')
 
         self.assertDictEqual(ugm_json, ugm_dict)
 
@@ -113,9 +111,9 @@ class TestUserGroupMembership(test_utils.DbTestCase):
         ugm = UserGroupMembership.new_from_json(ugm_json, None)
         ugm_dict = ugm.to_dict()
 
-        test_and_remove_new_uuid(self, ugm_dict)
-        test_and_remove_now_datetime(self, ugm_dict, 'created')
-        test_and_remove_now_datetime(self, ugm_dict, 'modified')
+        self.new_uuid_test_and_remove(ugm_dict)
+        self.now_datetime_test_and_remove(ugm_dict, 'created')
+        self.now_datetime_test_and_remove(ugm_dict, 'modified')
 
         # replace url_code with uuid for testing output
         del ugm_json['url_code']
@@ -189,23 +187,23 @@ class TestUserGroupMembership(test_utils.DbTestCase):
         }
         body = json.dumps(ugm_json)
 
-        result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
+        result = test_utils.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         # # modified is not part of body supplied but is returned
         expected_body = dict.copy(ugm_json)
 
-        test_and_remove_new_uuid(self, result_json)
-        test_and_remove_now_datetime(self, result_json, 'created')
-        test_and_remove_now_datetime(self, result_json, 'modified')
+        self.new_uuid_test_and_remove(result_json)
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
 
         self.assertEqual(expected_status, result_status, 'Return status incorrect')
         self.assertDictEqual(expected_body, result_json, 'Return body incorrect')
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.NO_CONTENT
-        result = test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
+        result = test_utils.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
 
         result_status = result['statusCode']
 

@@ -152,40 +152,17 @@ class TestUserProject(test_utils.DbTestCase):
 
         result = test_post(create_user_project_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        id = result_json['id']
-        del result_json['id']
+        self.new_uuid_test_and_remove(result_json)
+        self.uuid_test_and_remove(result_json, 'ext_user_project_id')
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
+        self.value_test_and_remove(result_json, 'status', expected_value='active')
 
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
-
-        status = result_json['status']
-        del result_json['status']
-
-        ext_user_project_id = result_json['ext_user_project_id']
-        del result_json['ext_user_project_id']
-
-        self.assertEqual(expected_status, result_status)
         self.assertDictEqual(up_json, result_json)
-
-        # now check individual data items
-        self.assertTrue(uuid.UUID(id).version == 4)
-        self.assertTrue(uuid.UUID(ext_user_project_id).version == 4)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        self.assertEqual('active', status)
 
     def test_06_create_user_projects_api_invalid_uuid(self):
         expected_status = HTTPStatus.BAD_REQUEST

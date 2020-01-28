@@ -17,10 +17,9 @@
 #
 
 import json
-from unittest import TestCase
 from common.entity_base import EntityBase
 from common.utilities import DetailedValueError
-from api.tests.test_scripts.testing_utilities import test_and_remove_new_uuid, test_and_remove_now_datetime
+from api.tests.test_scripts.testing_utilities import BaseTestCase
 
 
 class TestClass(EntityBase):
@@ -28,15 +27,15 @@ class TestClass(EntityBase):
         pass
 
 
-class TestEntityBase(TestCase):
+class TestEntityBase(BaseTestCase):
 
     def test_01_entity_create_from_json_basic(self):
         ug = TestClass()
         ug_dict = ug.to_dict()
 
-        test_and_remove_new_uuid(self, ug_dict)
-        test_and_remove_now_datetime(self, ug_dict, 'created')
-        test_and_remove_now_datetime(self, ug_dict, 'modified')
+        self.new_uuid_test_and_remove(ug_dict)
+        self.now_datetime_test_and_remove(ug_dict, 'created')
+        self.now_datetime_test_and_remove(ug_dict, 'modified')
 
     def test_02_entity_create_from_json_with_id(self):
         entity_json = {
@@ -46,8 +45,8 @@ class TestEntityBase(TestCase):
         ug = TestClass(entity_json)
         ug_dict = ug.to_dict()
 
-        test_and_remove_now_datetime(self, ug_dict, 'created')
-        test_and_remove_now_datetime(self, ug_dict, 'modified')
+        self.now_datetime_test_and_remove(ug_dict, 'created')
+        self.now_datetime_test_and_remove(ug_dict, 'modified')
 
         self.assertDictEqual(entity_json, ug_dict)
 
@@ -88,7 +87,3 @@ class TestEntityBase(TestCase):
         ug_json = ug.to_json()
         dict_as_json = json.loads(ug_json)
         self.assertDictEqual(entity_json, dict_as_json)
-
-
-if __name__ == '__main__':
-    pass

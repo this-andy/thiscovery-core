@@ -123,12 +123,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(user_json['email'], notification['label'])
         self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual(user_json['email'], notification['details']['email'])
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
-        created_datetime = parser.parse(notification['created'])
-        difference = abs(now - created_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.now_datetime_test_and_remove(notification, 'created', tolerance=TIME_TOLERANCE_SECONDS)
 
     def test_02_process_registration(self):
         pass
@@ -147,12 +142,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(ut_json['user_id'], notification['label'])
         self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual(ut_json['id'], notification['details']['id'])
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
-        created_datetime = parser.parse(notification['created'])
-        difference = abs(now - created_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.now_datetime_test_and_remove(notification, 'created', tolerance=TIME_TOLERANCE_SECONDS)
 
     def test_04_process_signup(self):
         """

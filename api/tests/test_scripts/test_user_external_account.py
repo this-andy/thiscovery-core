@@ -89,33 +89,13 @@ class TestUserExternalAccount(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        id = result_json['id']
-        del result_json['id']
-
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
-
-        status = result_json['status']
-        del result_json['status']
+        self.new_uuid_test_and_remove(result_json)
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
+        self.value_test_and_remove(result_json, 'status', expected_value='active')
 
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(uea_json, result_json)
-
-        # now check individual data items
-        self.assertTrue(uuid.UUID(id).version == 4)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        self.assertEqual('active', status)
 
 
     def test_03_create_user_external_account_api_user_not_exists(self):

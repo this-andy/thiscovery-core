@@ -220,7 +220,7 @@ class TestUserTask(test_utils.DbTestCase):
 
     def test_5_create_user_task_api_with_defaults(self):
         expected_status = HTTPStatus.CREATED
-        user_id = "851f7b34-f76c-49de-a382-7e4089b744e2"
+        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
             'user_id': user_id,
             'project_task_id': '683598e8-435f-4052-a417-f0f6d808373a',
@@ -233,14 +233,10 @@ class TestUserTask(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        ut_id = result_json['id']
-        del result_json['id']
-
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
+        ut_id = self.new_uuid_test_and_remove(result_json)
+        self.uuid_test_and_remove(result_json, 'ext_user_task_id')
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
 
         status = result_json['status']
         del result_json['status']
@@ -254,26 +250,13 @@ class TestUserTask(test_utils.DbTestCase):
         user_project_id = result_json['user_project_id']
         del result_json['user_project_id']
 
-        ext_user_task_id = result_json['ext_user_task_id']
-        del result_json['ext_user_task_id']
-
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(ut_json, result_json)
 
         # now check individual data items
-        self.assertTrue(uuid.UUID(ut_id).version == 4)
-        self.assertTrue(uuid.UUID(ext_user_task_id).version == 4)
         self.assertEqual('Qualtrics', task_provider_name)
         self.assertEqual(f'https://www.qualtrics.com?user_id={user_id}&user_task_id={ut_id}'
                          f'&external_task_id=ext-6b&env={TEST_ENV}', url)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
 
         self.assertEqual('active', status)
         self.assertEqual('ddf0750a-758e-47de-aef3-055d0af41d3d', user_project_id)

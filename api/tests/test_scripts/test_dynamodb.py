@@ -16,8 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from unittest import TestCase
 from dateutil import parser
+
+import testing_utilities as test_utils
 from common.utilities import set_running_unit_tests, DetailedValueError, now_with_tz
 from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
 
@@ -40,28 +41,16 @@ def put_test_items(integer):
         put_item(TEST_TABLE_NAME, f'test{n:03}', 'test data', {'att1': f'val1.{n}', 'att2': f'val2.{n}'}, {}, True)
 
 
-class TestDynamoDB(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-
-    @classmethod
-    def tearDownClass(cls):
-        set_running_unit_tests(False)
+class TestDynamoDB(test_utils.BaseTestCase):
 
     def setUp(self):
         delete_all(TEST_TABLE_NAME)
 
-    def common_assertions(self, item, result, relevant_datetime):
+    def common_assertions(self, item, result, relevant_datetime_name):
         self.assertEqual(item['key'], result['id'])
         self.assertEqual(item['item_type'], result['type'])
         self.assertEqual(item['details'], result['details'])
-
-        # now check relevant datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
-        difference = abs(now - relevant_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.now_datetime_test_and_remove(result, relevant_datetime_name, tolerance=TIME_TOLERANCE_SECONDS)
 
     def test_01_get_table_ok(self):
         table = get_table(TEST_TABLE_NAME)
@@ -73,8 +62,7 @@ class TestDynamoDB(TestCase):
         item = TEST_ITEM_01
         put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
         result = get_item(TEST_TABLE_NAME, item['key'])
-        result_created_datetime = parser.parse(result['created'])
-        self.common_assertions(item, result, result_created_datetime)
+        self.common_assertions(item, result, 'created')
 
     def test_03_put_update_ok(self):
         item = TEST_ITEM_01
@@ -82,8 +70,7 @@ class TestDynamoDB(TestCase):
         item['details'] = {'att1': 'val1', 'att3': 'val3'}
         put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, update_allowed=True)
         result = get_item(TEST_TABLE_NAME, item['key'])
-        result_modified_datetime = parser.parse(result['modified'])
-        self.common_assertions(item, result, result_modified_datetime)
+        self.common_assertions(item, result, 'modified')
 
     def test_04_put_update_fail(self):
         item = TEST_ITEM_01
