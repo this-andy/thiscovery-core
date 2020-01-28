@@ -51,6 +51,20 @@ def _jsonize_sql(base_sql):
 
 
 def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    """
+    Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
+    calls.
+
+    Args:
+        base_sql:
+        params (tuple or list): http://initd.org/psycopg/docs/usage.html#passing-parameters-to-sql-queries
+        correlation_id:
+        return_json:
+        jsonize_sql:
+
+    Returns:
+
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -85,6 +99,10 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
 
 
 def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+    """
+    Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
+    calls.
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -105,17 +123,18 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
                 sql = base_sql
             sql = minimise_white_space(sql)
             param_str = str(params)
-            logger.info('postgres query', extra = {'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+            logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
 
             cursor.execute(sql, params)
             records = cursor.fetchall()
-            logger.info('postgres result', extra = {'rows returned': str(len(records)), 'correlation_id': correlation_id})
+            logger.info('postgres result', extra={'rows returned': str(len(records)), 'correlation_id': correlation_id})
 
             if return_json:
                 results.append(_get_json_from_tuples(records))
             else:
                 results.append(records)
 
+        logger.info('Returning multiple results', extra={'results': results})
         return results
 
     except Exception as ex:
@@ -125,6 +144,9 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
 
 
 def execute_non_query(sql, params, correlation_id=new_correlation_id()):
+    """
+    Use this method to make changes that will be committed to the database (e.g. UPDATE, DELETE calls)
+    """
     try:
         logger = get_logger()
         conn = _get_connection(correlation_id)
@@ -151,6 +173,53 @@ def execute_non_query(sql, params, correlation_id=new_correlation_id()):
         conn.close()
 
 
+def execute_non_query_multiple(sql_iterable, params_iterable, correlation_id=new_correlation_id()):
+    """
+    
+    Args:
+        sql_iterable (tuple, list, etc): iterable containing sql queries to be executed
+        params_iterable (tuple, list, etc): iterable containing params for sql queries in sql_iterable
+        correlation_id: 
+
+    Returns:
+        List of number of rows affected by each of the input sql queries
+
+    """
+    try:
+        logger = get_logger()
+        conn = _get_connection(correlation_id)
+    except Exception as ex:
+        raise ex
+
+    results = []
+    cursor = conn.cursor()
+
+    for (sql, params) in zip(sql_iterable, params_iterable):
+        sql = minimise_white_space(sql)
+        param_str = str(params)
+        logger.info('postgres query', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+
+        try:
+            cursor.execute(sql, params)
+        except psycopg2.IntegrityError as err:
+            errorjson = {'error': err.args[0], 'correlation_id': str(correlation_id)}
+            conn.close()
+            raise DetailedIntegrityError('Database integrity error', errorjson)
+        except Exception as ex:
+            conn.close()
+            raise ex
+
+        rowcount = cursor.rowcount
+        logger.info(f'postgres query updated {rowcount} rows', extra={'query': sql, 'parameters': param_str, 'correlation_id': correlation_id})
+        results.append(rowcount)
+
+    conn.commit()
+    conn.close()
+    return results
+
+
+
+
 def run_sql_script_file(sql_script_file, correlation_id=new_correlation_id()):
     sql = get_file_as_string(sql_script_file)
     execute_non_query(sql, None, correlation_id)
@@ -167,6 +236,29 @@ def insert_data_from_csv(source_file, destination_table, separator=',', header_r
     conn.close()
 
 
+def insert_data_from_csv_multiple(*args, separator=',', header_row=False):
+    """
+    Populates database with data from multiple files in a single connection
+
+    Args:
+        *args: one or more tuples in the format (path_to_source_csv_file, name_of_destination_table)
+        separator (str): csv file separator
+        header_row (bool): whether or not csv file contains a header row
+
+    Returns: None
+    """
+    conn = _get_connection()
+    cursor = conn.cursor()
+
+    for source_file, destination_table in args:
+        with open(source_file, 'r') as f:
+            if header_row:
+                next(f)  # Skip the header row.
+            cursor.copy_from(f, destination_table, sep=separator, null='')
+    conn.commit()
+    conn.close()
+
+
 def populate_table_from_csv(source_folder, destination_table_name, separator=','):
     if separator == ',':
         extn = '.csv'
@@ -179,6 +271,18 @@ def populate_table_from_csv(source_folder, destination_table_name, separator=','
 
 def truncate_table(table_name):
     sql = 'TRUNCATE TABLE ' + table_name + ' CASCADE'
+    execute_non_query(sql, None)
+
+
+def truncate_table_multiple(*args):
+    """
+    Args:
+        *args: one or more table names to truncate
+
+    Returns: None
+    """
+    table_names_str = ', '.join(args)
+    sql = 'TRUNCATE TABLE ' + table_names_str + ' CASCADE'
     execute_non_query(sql, None)
 
 

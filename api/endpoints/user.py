@@ -22,7 +22,7 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
-
+import common.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
 from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
@@ -89,7 +89,85 @@ def append_calculated_properties(user):
     return user
 
 
-def get_user_by_id(user_id, correlation_id):
+def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
+
+    sql = '''
+        SELECT 
+            u.id as user_id, 
+            u.created, 
+            u.modified, 
+            u.email, 
+            u.email_address_verified,
+            u.title, 
+            u.first_name, 
+            u.last_name, 
+            u.country_code,
+            u.auth0_id, 
+            u.crm_id,
+            u.status,
+            up.ext_user_project_id as id
+        FROM 
+            public.projects_user as u
+            JOIN public.projects_userproject as up on up.user_id = u.id
+        WHERE
+            up.ext_user_project_id = (%s)
+    '''
+
+    try:
+        ext_user_project_id = validate_uuid(ext_user_project_id)
+    except DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
+
+    user_json = execute_query(sql, (str(ext_user_project_id),), correlation_id)
+
+    return append_calculated_properties_to_list(user_json)
+
+
+@utils.time_execution
+def get_user_by_ext_user_project_id_api(event, context):
+    logger = get_logger()
+
+    if triggered_by_heartbeat(event):
+        logger.info('API call (heartbeat)', extra={'event': event})
+        return
+
+    try:
+        correlation_id = get_correlation_id(event)
+        ext_user_project_id = event['pathParameters']['id']
+        logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
+
+        result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
+
+        if result:
+            user_json = result[0]
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
+
+            login_info = {
+                'email': user_json['email'],
+                'user_id': user_json['user_id'],
+                'login_datetime': str(now_with_tz())
+            }
+            # notify_user_login(login_info, correlation_id)
+
+        else:
+            errorjson = {'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
+            raise ObjectDoesNotExistError('user does not exist', errorjson)
+
+    except ObjectDoesNotExistError as err:
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
+
+    except DetailedValueError as err:
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
+
+    except Exception as ex:
+        errorMsg = ex.args[0]
+        logger.error(errorMsg, extra={'correlation_id': correlation_id})
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
+    return response
+
+
+def get_user_by_id(user_id, correlation_id=None):
 
     try:
         user_id = validate_uuid(user_id)
@@ -100,14 +178,6 @@ def get_user_by_id(user_id, correlation_id):
     sql_where_clause = " WHERE id = %s"
 
     user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
-
-    if user_json:
-        login_info = {
-            'email': user_json[0]['email'],
-            'user_id': user_id,
-            'login_datetime': str(now_with_tz())
-        }
-        notify_user_login(login_info, correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -129,7 +199,16 @@ def get_user_by_id_api(event, context):
         result = get_user_by_id(user_id, correlation_id)
 
         if len(result) > 0:
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
+            user_json = result[0]
+            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
+
+            login_info = {
+                'email': user_json['email'],
+                'user_id': user_id,
+                'login_datetime': str(now_with_tz())
+            }
+            notify_user_login(login_info, correlation_id)
+
         else:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise ObjectDoesNotExistError('user does not exist', errorjson)

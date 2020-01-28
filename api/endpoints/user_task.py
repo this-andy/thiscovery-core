@@ -15,7 +15,6 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
 import uuid
 import json
 from http import HTTPStatus
@@ -37,6 +36,9 @@ STATUS_CHOICES = (
 )
 DEFAULT_STATUS = 'active'
 
+# this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
+ext_user_task_id, created, status = None, None, None
+
 
 def validate_status(s):
     if s in STATUS_CHOICES:
@@ -57,6 +59,7 @@ def get_user_task(ut_id, correlation_id):
             ut.modified,               
             ut.status,
             ut.consented,
+            ut.progress_info,
             up.user_id              
         FROM 
             public.projects_usertask ut
@@ -66,6 +69,29 @@ def get_user_task(ut_id, correlation_id):
 
     result = execute_query(base_sql, (str(ut_id),), correlation_id)
     return result
+
+
+def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id=None):
+    """
+    Returns user_task related to user_id and project_task_id or None
+    """
+    result = [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    if result:
+        return result[0]
+    return None
+
+
+def update_user_task_progress_info(ut_id, progress_info_dict, correlation_id):
+    progress_info_json = json.dumps(progress_info_dict)
+
+    base_sql = '''
+                UPDATE public.projects_usertask
+                SET progress_info = (%s)
+                WHERE id = (%s);
+            '''
+
+    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, ut_id], correlation_id)
+    return number_of_updated_rows
 
 
 def list_user_tasks(user_id, correlation_id):
@@ -92,7 +118,8 @@ def list_user_tasks(user_id, correlation_id):
             ut.created,
             ut.modified,               
             ut.status,
-            ut.consented                
+            ut.consented,
+            ut.progress_info         
         FROM 
             public.projects_usertask ut
             inner join public.projects_projecttask pt on pt.id = ut.project_task_id
@@ -155,14 +182,20 @@ def check_if_user_task_exists(user_id, project_task_id, correlation_id):
 
 
 def create_user_task(ut_json, correlation_id):
-    # json MUST contain: user_id, project_task_id, ut_consented
-    # json may OPTIONALLY include: id, created, ut_status
+    """
+    Inserts new UserTask row in thiscovery db
 
+    Args:
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id
+        correlation_id:
+
+    Returns:
+    """
     # extract mandatory data from json
     try:
         user_id = validate_uuid(ut_json['user_id'])
         project_task_id = validate_uuid(ut_json['project_task_id'])
-        ut_consented = validate_utc_datetime(ut_json['consented'])
+        consented = validate_utc_datetime(ut_json['consented'])
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
@@ -171,6 +204,22 @@ def create_user_task(ut_json, correlation_id):
         raise DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
+    optional_fields_name_default_and_validator = [
+        ('ext_user_task_id', str(uuid.uuid4()), validate_uuid),
+        ('created', str(now_with_tz()), validate_utc_datetime),
+        ('status', DEFAULT_STATUS, validate_status),
+    ]
+    for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
+        if variable_name in ut_json:
+            try:
+                globals()[variable_name] = validating_func(ut_json[variable_name])  # https://stackoverflow.com/a/4687672
+            except DetailedValueError as err:
+                err.add_correlation_id(correlation_id)
+                raise err
+        else:
+            globals()[variable_name] = default_value
+
+    # id shadows builtin function, so treat if separately (using globals() approach above would overwrite that function)
     if 'id' in ut_json:
         try:
             id = validate_uuid(ut_json['id'])
@@ -179,24 +228,6 @@ def create_user_task(ut_json, correlation_id):
             raise err
     else:
         id = str(uuid.uuid4())
-
-    if 'created' in ut_json:
-        try:
-            created = validate_utc_datetime(ut_json['created'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        created = str(now_with_tz())
-
-    if 'status' in ut_json:
-        try:
-            ut_status = validate_status(ut_json['status'])
-        except DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        ut_status = DEFAULT_STATUS
 
     # get corresponding project_task...
     project_task = get_project_task(project_task_id, correlation_id)
@@ -228,10 +259,11 @@ def create_user_task(ut_json, correlation_id):
             user_project_id,
             project_task_id,
             status,
-            consented
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
+            consented,
+            ext_user_task_id
+        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s );'''
 
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, ut_status, ut_consented), correlation_id)
+    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id), correlation_id)
 
     url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
@@ -244,8 +276,9 @@ def create_user_task(ut_json, correlation_id):
         'project_task_id': project_task_id,
         'task_provider_name': task_provider_name,
         'url': url,
-        'status': ut_status,
-        'consented': ut_consented,
+        'status': status,
+        'consented': consented,
+        'ext_user_task_id': ext_user_task_id,
     }
 
     notify_new_task_signup(new_user_task, correlation_id)
