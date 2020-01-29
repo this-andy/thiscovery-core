@@ -132,7 +132,6 @@ class TestNotifications(TestCase):
     def tearDownClass(cls):
         if DELETE_TEST_DATA:
             clear_database()
-            delete_all_notifications()
 
         set_running_unit_tests(False)
 

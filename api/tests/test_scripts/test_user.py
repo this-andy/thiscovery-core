@@ -23,6 +23,7 @@ from dateutil import parser
 from time import sleep
 from unittest import TestCase
 
+import api.endpoints.notification_process as np
 import api.endpoints.user as u
 import common.pg_utilities as pg_utils
 
@@ -477,8 +478,9 @@ class TestUser(TestCase):
         # self.assertEqual(notification[NotificationAttributes.STATUS.value], NotificationStatus.NEW.value)
         self.assertEqual(user_email, notification['details']['email'])
 
+        np.process_notifications(event=None, context=None)
         # check user now has crm (hubspot) id
-        sleep(10)
+        # sleep(10)
         result = test_get(get_user_by_id_api, 'user', {'id': user_id}, None, None)
         result_json = json.loads(result['body'])
         self.assertIsNotNone(result_json['crm_id'])
