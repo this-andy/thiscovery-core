@@ -60,6 +60,7 @@ def process_notifications(event, context):
     for login_notification in login_notifications:
         process_user_login(login_notification)
 
+
 def process_user_registration(notification):
     logger = get_logger()
     correlation_id = new_correlation_id()
@@ -82,9 +83,10 @@ def process_user_registration(notification):
             {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
         ]
 
-        patch_user(user_id, user_jsonpatch, now_with_tz(), correlation_id)
+        number_of_updated_rows_in_db = patch_user(user_id, user_jsonpatch, now_with_tz(), correlation_id)
+        marking_result = mark_notification_processed(notification, correlation_id)
+        return number_of_updated_rows_in_db, marking_result
 
-        mark_notification_processed(notification, correlation_id)
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)

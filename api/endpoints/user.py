@@ -273,6 +273,18 @@ def get_user_by_email_api(event, context):
 
 
 def patch_user(id_to_update, patch_json, modified_time=now_with_tz(), correlation_id=new_correlation_id()):
+    """
+
+    Args:
+        id_to_update:
+        patch_json:
+        modified_time:
+        correlation_id:
+
+    Returns:
+        Total number of rows updated in RDS database
+
+    """
     mappings = {
         'email': {'table_name': 'public.projects_user', 'column_name': 'email'},
         'email_address_verified': {'table_name': 'public.projects_user', 'column_name': 'email_address_verified'},
@@ -287,7 +299,7 @@ def patch_user(id_to_update, patch_json, modified_time=now_with_tz(), correlatio
 
     id_column = 'id'
 
-    execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_time, correlation_id)
+    return execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_time, correlation_id)
 
 
 def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id):

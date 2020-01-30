@@ -69,6 +69,7 @@ TEST_USER_03_JSON = {
 }
 # endregion
 
+
 # region helper functions
 def create_registration_notification(user_json=TEST_USER_01_JSON):
     notify_new_user_registration(user_json, None)
@@ -94,6 +95,7 @@ def create_login_notification(user_json=TEST_USER_01_JSON):
     notify_user_login(user_json, None)
     return user_json
 # endregion
+
 
 def clear_database():
     pg_utils.truncate_table('public.projects_usertask')
@@ -163,7 +165,18 @@ class TestNotifications(TestCase):
         self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
     def test_02_process_registration(self):
-        pass
+        """
+        Tests processing of registration notifications. Also tests that notification content has not been altered by updates made during processing
+        """
+        self.maxDiff = None
+        create_registration_notification(user_json=TEST_USER_03_JSON)
+        notification = get_notifications()[0]
+        number_of_updated_rows_in_db, marking_result = np.process_user_registration(notification)
+        self.assertGreaterEqual(1, number_of_updated_rows_in_db)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
+        # now check that notification contents are still the same
+        updated_notification = get_notifications()[0]
+        self.assertEqual(notification['details'], updated_notification['details'])
 
     def test_03_post_signup(self):
         """
@@ -246,7 +259,7 @@ class TestNotifications(TestCase):
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
-        self.assertEqual('1', notification[NotificationAttributes.FAIL_COUNT.value])
+        self.assertEqual(1, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
 
         mark_notification_failure(notification, test_error_message, None)
@@ -263,5 +276,5 @@ class TestNotifications(TestCase):
         notifications = get_notifications('type', [NotificationType.USER_REGISTRATION.value])
         notification = notifications[0]
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
-        self.assertEqual('3', notification[NotificationAttributes.FAIL_COUNT.value])
+        self.assertEqual(3, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
