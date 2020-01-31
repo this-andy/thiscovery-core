@@ -19,6 +19,8 @@
 import json
 from http import HTTPStatus
 from unittest import TestCase
+
+import testing_utilities as test_utils
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api, get_project_status_for_external_user_api
 from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
@@ -29,27 +31,8 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 VIEW_SQL_FOLDER = '../../local/database-view-sql/'
 TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'project-user-status'
-
-# region helper functions
-def clear_test_data():
-    truncate_table_multiple(
-        'public.projects_usertask',
-        'public.projects_userproject',
-        'public.projects_usergroupmembership',
-        'public.projects_user',
-        'public.projects_projecttaskgroupvisibility',
-        'public.projects_projectgroupvisibility',
-        'public.projects_projecttask',
-        'public.projects_externalsystem',
-        'public.projects_tasktype',
-        'public.projects_project',
-        'public.projects_usergroup',
-    )
-
-# endregion
 
 
 class ProjectTaskTestResult:
@@ -63,33 +46,7 @@ class ProjectTaskTestResult:
         self.url = url
 
 
-class TestProjectStatusForUser(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-        clear_test_data()
-        insert_data_from_csv_multiple(
-                (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
-                (TEST_DATA_FOLDER + 'project_data_PSFU.csv', 'public.projects_project'),
-                (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),
-                (TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem'),
-                (TEST_DATA_FOLDER + 'projecttask_data_PSFU.csv', 'public.projects_projecttask'),
-                (TEST_DATA_FOLDER + 'projectgroupvisibility_data.csv', 'public.projects_projectgroupvisibility'),
-                (TEST_DATA_FOLDER + 'projecttaskgroupvisibility_data.csv','public.projects_projecttaskgroupvisibility'),
-                (TEST_DATA_FOLDER + 'user_data_PSFU.csv', 'public.projects_user'),
-                (TEST_DATA_FOLDER + 'usergroupmembership_data.csv', 'public.projects_usergroupmembership'),
-                (TEST_DATA_FOLDER + 'userproject_PSFU.csv', 'public.projects_userproject'),
-                (TEST_DATA_FOLDER + 'usertask_PSFU.csv', 'public.projects_usertask'),
-        )
-
-
-    @classmethod
-    def tearDownClass(cls):
-        if DELETE_TEST_DATA:
-            clear_test_data()
-
-        set_running_unit_tests(False)
+class TestProjectStatusForUser(test_utils.DbTestCase):
 
     def check_project_status_for_single_user_base(self, parameter_name, parameter_value, expected_results,
                                                   target_function=get_project_status_for_user_api, base_url=ENTITY_BASE_URL):
