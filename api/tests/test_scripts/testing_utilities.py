@@ -17,9 +17,10 @@
 #
 
 import csv
+import os
+import requests
 import uuid
 from dateutil import parser
-from requests import get, post, patch
 
 import api.endpoints.user as user
 from common.hubspot import HubSpotClient
@@ -27,91 +28,72 @@ from api.common.utilities import get_secret, now_with_tz, get_logger, get_countr
 from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
 
 
-def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
+def _aws_request(method, url, params=None, data=None):
+    full_url = AWS_TEST_API + url
+    headers = {'Content-Type': 'application/json', 'x-api-key': get_secret('aws-connection')['aws-api-key']}
+    try:
+        response = requests.request(
+            method=method,
+            url=full_url,
+            params=params,
+            headers=headers,
+            data=data,
+        )
+        return {'statusCode': response.status_code, 'body': response.text}
+    except Exception as err:
+        raise err
+
+
+def aws_get(url, params):
+    return _aws_request(method='GET', url=url, params=params)
+
+
+def aws_post(url, request_body):
+    return _aws_request(method='POST', url=url, data=request_body)
+
+
+def aws_patch(url, request_body):
+    return _aws_request(method='PATCH', url=url, data=request_body)
+
+
+def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, correlation_id=None):
     logger = get_logger()
-    if TEST_ON_AWS:
+
+    test_on_aws = os.environ.get('TEST_ON_AWS')
+    if test_on_aws is None:
+        test_on_aws = TEST_ON_AWS
+    elif test_on_aws.lower() == 'false':
+        test_on_aws = False
+
+    if test_on_aws:
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
         else:
             url = aws_url
-        logger.info(f'Url passed to aws_get: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
-        return aws_get(url, querystring_parameters, correlation_id)
+        logger.info(f'Url passed to _aws_request: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
+        return _aws_request(method=request_method, url=url, params=querystring_parameters, data=request_body)
     else:
+        event = {}
         if path_parameters is not None:
-            event = {'pathParameters': path_parameters}
-        elif querystring_parameters is not None:
-            event = {'queryStringParameters': querystring_parameters}
-        else:
-            event = None
+            event['pathParameters'] = path_parameters
+        if querystring_parameters is not None:
+            event['queryStringParameters'] = querystring_parameters
+        if request_body is not None:
+            event['body'] = request_body
         return local_method(event, correlation_id)
 
 
-def aws_get(url, params, correlation_id):
-    aws_connection = get_secret('aws-connection')
-    aws_api_key = aws_connection['aws-api-key']
-    full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
-    try:
-        response = get(full_url, params=params, headers=headers)
-        return {'statusCode': response.status_code, 'body': response.text}
-    except Exception as err:
-        raise err
+def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id=None):
+    return _test_request('GET', local_method, aws_url, path_parameters=path_parameters,
+                         querystring_parameters=querystring_parameters, correlation_id=correlation_id)
 
 
 def test_post(local_method, aws_url, path_parameters, request_body, correlation_id):
-    if TEST_ON_AWS:
-        if path_parameters is not None:
-            url = aws_url + '/' + path_parameters['id']
-        else:
-            url = aws_url
-        return aws_post(url, request_body, correlation_id)
-    else:
-        event = {}
-        if path_parameters is not None:
-            event['pathParameters'] = path_parameters
-        if request_body is not None:
-            event['body'] = request_body
-        return local_method(event, correlation_id)
-
-
-def aws_post(url, request_body, correlation_id):
-    aws_connection = get_secret('aws-connection')
-    aws_api_key = aws_connection['aws-api-key']
-    full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
-    try:
-        response = post(full_url, data=request_body, headers=headers)
-        return {'statusCode': response.status_code, 'body': response.text}
-    except Exception as err:
-        raise err
+    return _test_request('POST', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
 def test_patch(local_method, aws_url, path_parameters, request_body, correlation_id):
-    if TEST_ON_AWS:
-        if path_parameters is not None:
-            url = aws_url + '/' + path_parameters['id']
-        else:
-            url = aws_url
-        return aws_patch(url, request_body, correlation_id)
-    else:
-        event = {}
-        if path_parameters is not None:
-            event['pathParameters'] = path_parameters
-        if request_body is not None:
-            event['body'] = request_body
-        return local_method(event, correlation_id)
-
-
-def aws_patch(url, request_body, correlation_id):
-    aws_connection = get_secret('aws-connection')
-    aws_api_key = aws_connection['aws-api-key']
-    full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
-    try:
-        response = patch(full_url, data=request_body, headers=headers)
-        return {'statusCode': response.status_code, 'body': response.text}
-    except Exception as err:
-        raise err
+    return _test_request('PATCH', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
 def test_and_remove_now_datetime(test_case, entity_json, datetime_attribute_name, tolerance=10):
