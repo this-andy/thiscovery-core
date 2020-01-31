@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import sys
@@ -10,6 +11,7 @@ TARGET_ENV = 'test-afs25'
 MAX_RETRIES = 1
 
 logger = utils.get_logger()
+logger.setLevel(logging.WARNING)
 
 def run_all_tests(on_aws=False):
     if on_aws:
@@ -21,7 +23,9 @@ def run_all_tests(on_aws=False):
     while True:
         try:
             subprocess.run(
-                ['python', '-m', 'unittest', 'discover', '-s' './api/tests/test_scripts', '-t', './api/tests/test_scripts'],
+                ['python', '-m', 'unittest', 'discover', '-b', '-c', '-f',
+                 '-v',
+                 '-s', './api/tests/test_scripts', '-t', './api/tests/test_scripts'],
                 stdout=sys.stdout,
                 stderr=sys.stderr,
                 check=True,
@@ -29,7 +33,7 @@ def run_all_tests(on_aws=False):
             logger.info('Tests passed!')
             break
 
-        except Exception as err:
+        except subprocess.SubprocessError as err:
             if retries > MAX_RETRIES:
                 raise err
             else:
@@ -37,11 +41,16 @@ def run_all_tests(on_aws=False):
                 retries += 1
 
 
-if __name__ == "__main__":
+def main():
     target_branch = d2aws.get_git_branch()
-    d2aws.deployment_confirmation(target_branch, TARGET_ENV)
+    d2aws.deployment_confirmation(TARGET_ENV, target_branch)
 
     run_all_tests()
     d2aws.deploy(TARGET_ENV, target_branch)
     time.sleep(10)
     run_all_tests(on_aws=True)
+    d2aws.slack_message(TARGET_ENV, target_branch, message=f':tada: Branch {target_branch} passed all tests locally and on AWS!')
+
+
+if __name__ == "__main__":
+    main()

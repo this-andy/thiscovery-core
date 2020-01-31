@@ -47,13 +47,19 @@ def get_git_branch():
                             text=True).stdout.strip()
     status = subprocess.run(['git', 'status'], capture_output=True, check=True, text=True).stdout.strip()
     if ('Your branch is ahead' in status) or ('Changes not staged for commit' in status):
-        proceed = input('It looks like your local branch is out of sync with remote. Continue anyway? [y/N]')
-        if not proceed.lower() in ['y', 'yes']:
-            sys.exit('Deployment aborted')
+        while True:
+            proceed = input('It looks like your local branch is out of sync with remote. Continue anyway? [y/N] (or "s" to show "git status")')
+            if proceed.lower() == 's':
+                print(status)
+                print("--------------------------")
+            elif proceed.lower() not in ['y', 'yes']:
+                sys.exit('Deployment aborted')
+            else:
+                break
     return branch
 
 
-def deployment_confirmation(branch, environment):
+def deployment_confirmation(environment, branch):
     proceed = input(f'About to deploy branch {branch} to {environment}. Continue? [y/N]')
     if not proceed.lower() in ['y', 'yes']:
         sys.exit('Deployment aborted')
@@ -69,13 +75,19 @@ def deploy(environment, branch=None):
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
-    slack_message(environment, branch)
+
+
+def main(environment):
+    target_branch = get_git_branch()
+    deployment_confirmation(target_environment, target_branch)
+    deploy(environment, target_branch)
+    slack_message(environment, target_branch)
 
 
 if __name__ == '__main__':
+
     # target_environment = 'dev-afs25'
     target_environment = 'test-afs25'
 
-    target_branch = get_git_branch()
-    deployment_confirmation(target_branch, target_environment)
-    deploy(target_environment, target_branch)
+    main(environment=target_environment)
+
