@@ -1,6 +1,35 @@
 from jinja2 import Template
 
 # region project
+MINIMAL_PROJECT_SELECT_SQL = '''
+    SELECT row_to_json(project_row) 
+    from (
+        select 
+            id, 
+            short_name,
+            visibility,
+            status,
+            (
+                select coalesce(json_agg(task_row), '[]'::json)
+                from (
+                    select 
+                        id,
+                        description,
+                        signup_status,
+                        visibility,
+                        status                         
+                    from public.projects_projecttask task
+                    where task.project_id = project.id
+                        AND task.status != 'planned'
+                    order by created
+                    ) task_row
+            ) as tasks
+        from public.projects_project project
+        where project.status != 'planned'
+        order by created
+        ) project_row
+'''
+
 BASE_PROJECT_SELECT_SQL = '''
     SELECT row_to_json(project_row) 
     from (
@@ -28,35 +57,6 @@ BASE_PROJECT_SELECT_SQL = '''
                         external_system_id,                       
                         external_task_id, 
                         base_url,                      
-                        status                         
-                    from public.projects_projecttask task
-                    where task.project_id = project.id
-                        AND task.status != 'planned'
-                    order by created
-                    ) task_row
-            ) as tasks
-        from public.projects_project project
-        where project.status != 'planned'
-        order by created
-        ) project_row
-'''
-
-MINIMAL_PROJECT_SELECT_SQL = '''
-    SELECT row_to_json(project_row) 
-    from (
-        select 
-            id, 
-            short_name,
-            visibility,
-            status,
-            (
-                select coalesce(json_agg(task_row), '[]'::json)
-                from (
-                    select 
-                        id,
-                        description,
-                        signup_status,
-                        visibility,
                         status                         
                     from public.projects_projecttask task
                     where task.project_id = project.id
@@ -163,31 +163,31 @@ PROJECT_USER_SELECT_SQL = '''
 
 get_project_status_for_user_template = {
     'sql0': Template("""
-        SELECT project_id, project_name, group_id, group_name, user_id, email{{ extra_columns }}
+        SELECT project_id, project_name, group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
         FROM public.project_group_users
         WHERE {{ filter }} = %s
     """),
 
     'sql1': Template("""
-        SELECT project_id, project_name, testing_group_id, group_name, user_id, email{{ extra_columns }}
+        SELECT project_id, project_name, testing_group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
         FROM public.project_testgroup_users
         WHERE {{ filter }} = %s
     """),
 
     'sql2': Template("""
-        SELECT project_task_id, description, group_id, group_name, user_id, email{{ extra_columns }}
+        SELECT project_task_id, description, group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
         FROM public.projecttask_group_users
         WHERE {{ filter }} = %s
     """),
 
     'sql3': Template("""
-        SELECT project_task_id, description, testing_group_id, group_name, user_id, email{{ extra_columns }}
+        SELECT project_task_id, description, testing_group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
         FROM public.projecttask_testgroup_users
         WHERE {{ filter }} = %s
     """),
 
     'sql4': Template("""
-        SELECT project_task_id, ut.id, ut.status{{ extra_columns }}
+        SELECT project_task_id, ut.id, ut.status {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE {{ filter }} = %s
@@ -197,9 +197,9 @@ get_project_status_for_user_template = {
 get_project_status_for_user_sql = {k: v.render(filter='user_id') for k, v in get_project_status_for_user_template.items()}
 get_project_status_for_user_sql['sql4'] = get_project_status_for_user_template['sql4'].render(filter='up.user_id')
 
-get_project_status_for_external_user_sql = {k: v.render(extra_columns=', ext_user_project_id', filter='ext_user_project_id') for k, v in
+get_project_status_for_external_user_sql = {k: v.render(extra_columns=['ext_user_project_id'], filter='ext_user_project_id') for k, v in
                                             get_project_status_for_user_template.items()}
 get_project_status_for_external_user_sql['sql4'] = get_project_status_for_user_template['sql4'].render(
-    extra_columns=', up.ext_user_project_id as ext_user_project_id, ut.ext_user_task_id as ext_user_task_id',
+    extra_columns=['up.ext_user_project_id as ext_user_project_id', 'ut.ext_user_task_id as ext_user_task_id'],
     filter='ext_user_project_id')
 # endregion
