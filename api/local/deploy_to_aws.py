@@ -42,19 +42,27 @@ def stackery_login():
         raise err
 
 
-def deploy(environment):
+def get_git_branch():
     branch = subprocess.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, check=True,
                             text=True).stdout.strip()
     status = subprocess.run(['git', 'status'], capture_output=True, check=True, text=True).stdout.strip()
-    if 'Your branch is ahead' in status:
-        proceed = input('It looks like your local branch is ahead of remote. Continue anyway? [y/N]')
+    if ('Your branch is ahead' in status) or ('Changes not staged for commit' in status):
+        proceed = input('It looks like your local branch is out of sync with remote. Continue anyway? [y/N]')
         if not proceed.lower() in ['y', 'yes']:
             sys.exit('Deployment aborted')
+    return branch
 
+
+def deployment_confirmation(branch, environment):
+    proceed = input(f'About to deploy branch {branch} to {environment}. Continue? [y/N]')
+    if not proceed.lower() in ['y', 'yes']:
+        sys.exit('Deployment aborted')
+
+
+def deploy(environment, branch=None):
+    if branch is None:
+        branch = get_git_branch()
     try:
-        proceed = input(f'About to deploy branch {branch} to {environment}. Continue? [y/N]')
-        if not proceed.lower() in ['y', 'yes']:
-            sys.exit('Deployment aborted')
         stackery_deployment(environment, branch)
     except subprocess.CalledProcessError as err:
         if err.stderr.decode('utf-8').strip() == "Error: Failed to get settings: Attempting to access Stackery " \
@@ -65,8 +73,9 @@ def deploy(environment):
 
 
 if __name__ == '__main__':
-    # deploy('dev-afs25')
-    deploy('test-afs25')
+    # target_environment = 'dev-afs25'
+    target_environment = 'test-afs25'
 
-    # deploy('dev')
-    # deploy('test')
+    target_branch = get_git_branch()
+    deployment_confirmation(target_branch, target_environment)
+    deploy(target_environment, target_branch)

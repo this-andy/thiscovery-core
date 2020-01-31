@@ -38,6 +38,7 @@ class BaseTestCase(TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
+
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
@@ -132,26 +133,6 @@ class DbTestCase(BaseTestCase):
             delete_all_notifications()
 
 
-
-def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
-    logger = get_logger()
-    if TEST_ON_AWS:
-        if path_parameters is not None:
-            url = aws_url + '/' + path_parameters['id']
-        else:
-            url = aws_url
-        logger.info(f'Url passed to aws_get: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
-        return aws_get(url, querystring_parameters, correlation_id)
-    else:
-        if path_parameters is not None:
-            event = {'pathParameters': path_parameters}
-        elif querystring_parameters is not None:
-            event = {'queryStringParameters': querystring_parameters}
-        else:
-            event = None
-        return local_method(event, correlation_id)
-
-
 def _aws_request(method, url, params=None, data=None):
     full_url = AWS_TEST_API + url
     headers = {'Content-Type': 'application/json', 'x-api-key': get_secret('aws-connection')['aws-api-key']}
@@ -207,16 +188,16 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
         return local_method(event, correlation_id)
 
 
-def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id=None):
+def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
     return _test_request('GET', local_method, aws_url, path_parameters=path_parameters,
                          querystring_parameters=querystring_parameters, correlation_id=correlation_id)
 
 
-def test_post(local_method, aws_url, path_parameters, request_body, correlation_id):
+def test_post(local_method, aws_url, path_parameters=None, request_body=None, correlation_id=None):
     return _test_request('POST', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
-def test_patch(local_method, aws_url, path_parameters, request_body, correlation_id):
+def test_patch(local_method, aws_url, path_parameters=None, request_body=None, correlation_id=None):
     return _test_request('PATCH', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
