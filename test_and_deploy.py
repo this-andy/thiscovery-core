@@ -33,7 +33,7 @@ def run_all_tests(on_aws=False):
             if retries > MAX_RETRIES:
                 raise err
             else:
-                logger.error(f'Tests failed after {retries} attempts. Trying again...')
+                logger.error(f'Tests failed after {retries + 1} attempts. Trying again...')
                 retries += 1
 
 
