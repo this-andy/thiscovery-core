@@ -118,6 +118,5 @@ class TestDynamoDB(test_utils.BaseTestCase):
         item['details'] = {'att1': 'val1', 'att3': 'val3'}
         update_item(TEST_TABLE_NAME, item['key'], {'details': item['details']})
         result = get_item(TEST_TABLE_NAME, item['key'])
-        result_modified_datetime = parser.parse(result['modified'])
-        self.common_assertions(item, result, result_modified_datetime)
+        self.common_assertions(item, result, 'modified')
         self.assertEqual(item['country_code'], result['country_code'])

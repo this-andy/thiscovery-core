@@ -99,16 +99,16 @@ def update_item(table_name: str, key: str, name_value_pairs: dict, correlation_i
                 attr_name = map_name + '.' + attr_name
             update_expr += ', ' + attr_name + ' = ' + param_name
 
-            values_expr[param_name] = str(value)
+            values_expr[param_name] = value
 
             param_count += 1
 
         logger.info('dynamodb update', extra={'table_name': table_name, 'key': key, 'update_expr': update_expr, 'values_expr': values_expr, 'correlation_id': correlation_id})
         response = table.update_item(
             Key=key_json,
-            UpdateExpression = update_expr,
-            ExpressionAttributeValues = values_expr,
-            ExpressionAttributeNames = attr_names_expr,
+            UpdateExpression=update_expr,
+            ExpressionAttributeValues=values_expr,
+            ExpressionAttributeNames=attr_names_expr,
         )
         return response
     except Exception as ex:
