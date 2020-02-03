@@ -137,6 +137,7 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
+        print(result_json)
 
         self.assertTrue(
             ('error' in result_json) and

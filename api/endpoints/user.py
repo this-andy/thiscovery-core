@@ -219,7 +219,7 @@ def get_user_by_email_api(event, context):
         try:
             user_email = parameters.get('email')
             ext_user_project_id = parameters.get('ext_user_project_id')
-        except KeyError:  # e.g. parameters is None instead of dict
+        except AttributeError:  # e.g. parameters is None instead of dict
             errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
             raise DetailedValueError('This endpoint requires one query parameter (email or ext_user_project_id); none were found', errorjson)
 
