@@ -137,29 +137,23 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
-        print(result_json)
-
         self.assertTrue(
             ('error' in result_json) and
-            ('Query parameters invalid or missing' in result_json['error'])
+            ('This endpoint requires one query parameter (email or ext_user_project_id); none were found' in result_json['error'])
         )
 
         query_parameters = {
             'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1",
             'email': 'altha@email.co.uk',
         }
-
         result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
-        print(result_json)
-
-        # test results returned from api call
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
-            ('message' in result_json) and
-            ('Please query by either email or ext_user_project_id, but not both' in result_json['message'])
+            ('error' in result_json) and
+            ('Please query by either email or ext_user_project_id, but not both' in result_json['error'])
         )
 
     def test_16_get_user_by_uuid_api_not_exists(self):

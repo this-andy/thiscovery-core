@@ -216,12 +216,12 @@ def get_user_by_email_api(event, context):
         correlation_id = get_correlation_id(event)
         parameters = event['queryStringParameters']
 
-        try:
-            user_email = parameters.get('email')
-            ext_user_project_id = parameters.get('ext_user_project_id')
-        except AttributeError:  # e.g. parameters is None instead of dict
+        if not parameters:  # e.g. parameters is None or an empty dict
             errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
             raise DetailedValueError('This endpoint requires one query parameter (email or ext_user_project_id); none were found', errorjson)
+        else:
+            user_email = parameters.get('email')
+            ext_user_project_id = parameters.get('ext_user_project_id')
 
         if user_email and ext_user_project_id:
             errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
@@ -234,7 +234,7 @@ def get_user_by_email_api(event, context):
             result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
         else:
             errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-            raise DetailedValueError('Query parameters invalid or missing', errorjson)
+            raise DetailedValueError('Query parameters invalid', errorjson)
 
         if len(result) > 0:
             response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
