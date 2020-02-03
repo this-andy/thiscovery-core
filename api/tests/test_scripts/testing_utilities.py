@@ -17,17 +17,123 @@
 #
 
 import csv
+import os
 import uuid
 from dateutil import parser
 from requests import get, post, patch
+from unittest import TestCase
 
 import api.endpoints.user as user
+import common.pg_utilities as pg_utils
+from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
-from api.common.utilities import get_secret, now_with_tz, get_logger, get_country_name
-from api.common.dev_config import TEST_ON_AWS, AWS_TEST_API
+from common.notifications import delete_all_notifications
+from common.pg_utilities import truncate_table_multiple
+from common.utilities import get_secret, now_with_tz, get_logger, get_country_name, set_running_unit_tests
+
+TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
-def test_get(local_method, aws_url, path_parameters, querystring_parameters, correlation_id):
+class BaseTestCase(TestCase):
+    """
+    Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
+    """
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+
+    @classmethod
+    def tearDownClass(cls):
+        set_running_unit_tests(False)
+
+    def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
+        actual_value = entity_dict[attribute_name]
+        del entity_dict[attribute_name]
+        self.assertEqual(expected_value, actual_value)
+        return actual_value
+
+    def now_datetime_test_and_remove(self, entity_dict, datetime_attribute_name, tolerance=10):
+        datetime_string = entity_dict[datetime_attribute_name]
+        del entity_dict[datetime_attribute_name]
+        now = now_with_tz()
+        datetime_value = parser.parse(datetime_string)
+        difference = abs(now - datetime_value)
+        self.assertLess(difference.seconds, tolerance)
+        return datetime_string
+
+    def uuid_test_and_remove(self, entity_dict, uuid_attribute_name):
+        uuid_value = entity_dict[uuid_attribute_name]
+        del entity_dict[uuid_attribute_name]
+        self.assertTrue(uuid.UUID(uuid_value).version == 4)
+        return uuid_value
+
+    def new_uuid_test_and_remove(self, entity_dict):
+        try:
+            uuid_value = self.uuid_test_and_remove(entity_dict, 'id')
+            return uuid_value
+        except KeyError:
+            self.assertTrue(False, 'id missing')
+
+    @staticmethod
+    def remove_dict_items_to_be_ignored_by_tests(entity_dict, list_of_keys):
+        for key in list_of_keys:
+            del entity_dict[key]
+
+
+class DbTestCase(BaseTestCase):
+    delete_test_data = False
+    delete_notifications = False
+
+    @classmethod
+    def setUpClass(cls):
+        set_running_unit_tests(True)
+        cls.clear_test_data()
+        pg_utils.insert_data_from_csv_multiple(
+            (os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup'),
+            (os.path.join(TEST_DATA_FOLDER, 'project_data_PSFU.csv'), 'public.projects_project'),
+            (os.path.join(TEST_DATA_FOLDER, 'tasktype_data.csv'), 'public.projects_tasktype'),
+            (os.path.join(TEST_DATA_FOLDER, 'external_system_data.csv'), 'public.projects_externalsystem'),
+            (os.path.join(TEST_DATA_FOLDER, 'projecttask_data_PSFU.csv'), 'public.projects_projecttask'),
+            (os.path.join(TEST_DATA_FOLDER, 'projectgroupvisibility_data.csv'), 'public.projects_projectgroupvisibility'),
+            (os.path.join(TEST_DATA_FOLDER, 'projecttaskgroupvisibility_data.csv'), 'public.projects_projecttaskgroupvisibility'),
+            (os.path.join(TEST_DATA_FOLDER, 'user_data_PSFU.csv'), 'public.projects_user'),
+            (os.path.join(TEST_DATA_FOLDER, 'usergroupmembership_data.csv'), 'public.projects_usergroupmembership'),
+            (os.path.join(TEST_DATA_FOLDER, 'userproject_PSFU.csv'), 'public.projects_userproject'),
+            (os.path.join(TEST_DATA_FOLDER, 'usertask_PSFU.csv'), 'public.projects_usertask'),
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.delete_test_data:
+            cls.clear_test_data()
+        set_running_unit_tests(False)
+
+    @classmethod
+    def clear_test_data(cls):
+        """
+        Clears all PostgreSQL database tables used by the test suite. Optionally deletes all notifications in AWS Dynamodb if cls.delete_notifications == True.
+        """
+        truncate_table_multiple(
+            'public.projects_entityupdate',
+            'public.projects_usertask',
+            'public.projects_userproject',
+            'public.projects_usergroupmembership',
+            'public.projects_user',
+            'public.projects_projecttaskgroupvisibility',
+            'public.projects_projectgroupvisibility',
+            'public.projects_projecttask',
+            'public.projects_externalsystem',
+            'public.projects_tasktype',
+            'public.projects_project',
+            'public.projects_usergroup',
+            'public.projects_userexternalaccount',
+        )
+        if cls.delete_notifications:
+            delete_all_notifications()
+
+
+
+def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
     logger = get_logger()
     if TEST_ON_AWS:
         if path_parameters is not None:
@@ -112,26 +218,6 @@ def aws_patch(url, request_body, correlation_id):
         return {'statusCode': response.status_code, 'body': response.text}
     except Exception as err:
         raise err
-
-
-def test_and_remove_now_datetime(test_case, entity_json, datetime_attribute_name, tolerance=10):
-    datetime_string = entity_json[datetime_attribute_name]
-    del entity_json[datetime_attribute_name]
-
-    # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-    now = now_with_tz()
-    datetime_value = parser.parse(datetime_string)
-    difference = abs(now - datetime_value)
-    test_case.assertLess(difference.seconds, tolerance)
-
-
-def test_and_remove_new_uuid(test_case, entity_json):
-    try:
-        id = entity_json['id']
-        del entity_json['id']
-        test_case.assertTrue(uuid.UUID(id).version == 4)
-    except KeyError:
-        test_case.assertTrue(False, 'id missing')
 
 
 def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):

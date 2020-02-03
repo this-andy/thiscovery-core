@@ -396,15 +396,6 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetExtProjectStatuses.Arn}/invocations
               responses: {}
-          /v1/user-ext/{id}:
-            get:
-              security:
-                - api_key: []
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUserByExtProjId.Arn}/invocations
-              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -1361,44 +1352,6 @@ Resources:
             Path: /v1/project-user-status-ext
             Method: GET
             RestApiId: !Ref CoreAPI
-  GetUserByExtProjId:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-GetUserByExtProjId
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: GetUserByExtProjId
-      CodeUri: api/endpoints
-      Handler: user.get_user_by_ext_user_project_id_api
-      Runtime: python3.7
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIGETv1userextid:
-          Type: Api
-          Properties:
-            Path: /v1/user-ext/{id}
-            Method: GET
-            RestApiId: !Ref CoreAPI
-      Environment:
-        Variables:
-          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref ThiscoveryDB
-          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
-          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
 Parameters:
   StackTagName:
     Type: String

@@ -21,11 +21,11 @@ import uuid
 from http import HTTPStatus
 from dateutil import parser
 from time import sleep
-from unittest import TestCase
 
 import api.endpoints.notification_process as np
 import api.endpoints.user as u
 import common.pg_utilities as pg_utils
+import testing_utilities as test_utils
 
 from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
 from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
@@ -40,40 +40,39 @@ from common.utilities import new_correlation_id, now_with_tz, set_running_unit_t
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'user'
 
+# region expected results
+if TIMEZONE_IS_BST:
+    tz_hour = "13"
+    tz_offset = "01:00"
+else:
+    tz_hour = "12"
+    tz_offset = "00:00"
 
-def clear_database():
-    pg_utils.truncate_table_multiple(
-        'public.projects_usergroup',
-        'public.projects_project',
-        'public.projects_user',
-        'public.projects_userproject',
-        'public.projects_entityupdate',
-    )
+EXPECTED_USER = {
+    "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+    "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
+    "modified": f"2018-08-17T{tz_hour}:10:56.833885+{tz_offset}",
+    "email": "altha@email.co.uk",
+    "email_address_verified": False,
+    "title": "Mrs",
+    "first_name": "Altha",
+    "last_name": "Alcorn",
+    "country_code": "GB",
+    "country_name": "United Kingdom",
+    "auth0_id": None,
+    "crm_id": None,
+    "status": None,
+    "avatar_string": "AA",
+}
+# endregion
 
-class TestUser(TestCase):
+
+class TestUser(test_utils.DbTestCase):
     maxDiff = None
-
-    @classmethod
-    def setUpClass(self):
-        set_running_unit_tests(True)
-        clear_database()
-        pg_utils.insert_data_from_csv_multiple(
-            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
-            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
-            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
-            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
-        )
-
-    @classmethod
-    def tearDownClass(self):
-        if DELETE_TEST_DATA:
-            clear_database()
-            delete_all_notifications()
-        set_running_unit_tests(False)
+    delete_notifications = True
 
     def test_01_get_user_by_uuid_api_exists(self):
         """
@@ -85,37 +84,13 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.OK
 
-        if TIMEZONE_IS_BST:
-            tz_hour = "13"
-            tz_offset = "01:00"
-        else:
-            tz_hour = "12"
-            tz_offset = "00:00"
-
-        expected_body = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
-            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "status": None,
-            "avatar_string": "AA",
-        }
-
         result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(expected_body, result_json)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
         # check that login notification exists
         # notifications = get_notifications('type', ['user-login'])
@@ -130,42 +105,17 @@ class TestUser(TestCase):
         Tests:
             - we can retrieve an user by querying by ext_user_project_id (using path parameter ?id=)
         """
-        path_parameters = {'id': "c02b6a0f-d85c-4c75-9547-f895ce424388"}
+        query_parameters = {'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"}
 
         expected_status = HTTPStatus.OK
 
-        if TIMEZONE_IS_BST:
-            tz_hour = "13"
-            tz_offset = "01:00"
-        else:
-            tz_hour = "12"
-            tz_offset = "00:00"
-
-        expected_body = {
-            "id": "c02b6a0f-d85c-4c75-9547-f895ce424388",
-            "user_id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T{}:10:56.798192+{}".format(tz_hour, tz_offset),
-            "modified": "2018-08-17T{}:10:56.833885+{}".format(tz_hour, tz_offset),
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "status": None,
-            "avatar_string": "AA",
-        }
-
-        result = test_get(u.get_user_by_ext_user_project_id_api, 'user-ext', path_parameters, None, None)
+        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(expected_body, result_json)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
     def test_16_get_user_by_uuid_api_not_exists(self):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
@@ -199,47 +149,12 @@ class TestUser(TestCase):
 
         expected_status = HTTPStatus.OK
 
-        expected_body_bst = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "modified": "2018-08-17T13:10:56.833885+01:00",
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "avatar_string": "AA",
-            "status": None
-        }
-
-        expected_body_gmt = {
-            "id": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
-            "created": "2018-08-17T12:10:56.798192+00:00",
-            "modified": "2018-08-17T12:10:56.833885+00:00",
-            "email": "altha@email.co.uk",
-            "email_address_verified": False,
-            "title": "Mrs",
-            "first_name": "Altha",
-            "last_name": "Alcorn",
-            "country_code": "FR",
-            "country_name": "France",
-            "auth0_id": None,
-            "crm_id": None,
-            "avatar_string": "AA",
-            "status": None
-        }
-        expected_body = expected_body_gmt
-
         result = test_get(get_user_by_email_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(result_json, expected_body)
+        self.assertDictEqual(EXPECTED_USER, result_json)
 
     def test_05_get_user_email_not_exists(self):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
@@ -274,30 +189,12 @@ class TestUser(TestCase):
         result_status = result['statusCode']
 
         self.assertEqual(expected_status, result_status)
-
         # now check database values...
-        from api.endpoints.user import get_user_by_id_api
         path_parameters = {'id': user_id}
 
-        expected_body_bst = {
+        expected_body = {
             "id": user_id,
-            "created": "2018-08-17T13:10:56.798192+01:00",
-            "email": "simon.smith@dancingbear.com",
-            "email_address_verified": True,
-            "title": "Sir",
-            "first_name": "simon",
-            "last_name": "smith",
-            "auth0_id": "new-auth0-id",
-            "country_code": "IT",
-            "country_name": "Italy",
-            "crm_id": None,
-            "avatar_string": "ss",
-            "status": "singing"
-        }
-
-        expected_body_gmt = {
-            "id": user_id,
-            "created": "2018-08-17T12:10:56.798192+00:00",
+            "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
             "email": "simon.smith@dancingbear.com",
             "email_address_verified": True,
             "title": "Sir",
@@ -311,23 +208,11 @@ class TestUser(TestCase):
             "status": "singing"
         }
 
-        expected_body = expected_body_gmt
-
-        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
-        result_modified = result_json['modified']
-        del result_json['modified']
-
-        # check the rest of the result excluding modified
-        self.assertDictEqual(expected_body, result_json)
-
-        # now check modified datetime - allow up to TIME_TOLERANCE_SECONDS difference
-        now = now_with_tz()
-        result_modified_datetime = parser.parse(result_modified)
-        difference = abs(now - result_modified_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
+        self.now_datetime_test_and_remove(result_json, 'modified', tolerance=TIME_TOLERANCE_SECONDS)
 
         # now check that we have a corresponding entity update record
         entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
@@ -335,22 +220,18 @@ class TestUser(TestCase):
         if len(entity_updates) > 0:
             # get most recent update record
             last_entity_update = entity_updates[-1]
+
+            # remove from returned value those things we don't want to test
+            self.remove_dict_items_to_be_ignored_by_tests(last_entity_update, ['id', 'modified'])
+
             # remove and store data items to be tested individually
-            result_created = last_entity_update['created']
-            del last_entity_update['created']
+            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
+            self.now_datetime_test_and_remove(last_entity_update, 'created', tolerance=TIME_TOLERANCE_SECONDS)
+
             result_json_reverse_patch = last_entity_update['json_reverse_patch']
             del last_entity_update['json_reverse_patch']
             result_json_patch = last_entity_update['json_patch']
             del last_entity_update['json_patch']
-
-            # now remove from returned value those things we don't want to test
-            del last_entity_update['id']
-            del last_entity_update['modified']
-
-            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
-            result_created_datetime = parser.parse(result_created)
-            difference = abs(now - result_created_datetime)
-            self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
             # check jsonpatch - compare as lists in case order different
             result_json_patch = json.loads(result_json_patch)
@@ -366,7 +247,7 @@ class TestUser(TestCase):
                 {"op": "replace", "path": "/status", "value": None},
                 {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
                 {"op": "replace", "path": "/email_address_verified", "value": False},
-                {"op": "replace", "path": "/country_code", "value": "FR"},
+                {"op": "replace", "path": "/country_code", "value": "GB"},
             ]
             self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
 
@@ -524,14 +405,9 @@ class TestUser(TestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        id = result_json['id']
-        del result_json['id']
-
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
+        self.new_uuid_test_and_remove(result_json)
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
 
         auth0_id = result_json['auth0_id']
         del result_json['auth0_id']
@@ -555,16 +431,6 @@ class TestUser(TestCase):
         self.assertDictEqual(result_json, user_json)
 
         # now check individual data items
-        self.assertTrue(uuid.UUID(id).version == 4)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
-
         self.assertIsNone(auth0_id)
         self.assertFalse(email_address_verified)
         # self.assertTrue(uuid.UUID(email_verification_token).version == 4)
@@ -603,43 +469,29 @@ class TestUser(TestCase):
         # create an user
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
-            "email": "sid@email.co.uk",
+            "email": "clive@email.co.uk",
             "first_name": "Sidney",
             "last_name": "Silva",
             "country_code": "PT",
             "status": "new"}
-        body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, None, json.dumps(user_json), None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         expected_message = 'Database integrity error'
         expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
-                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
+                         '(lower(email::text))=(clive@email.co.uk) already exists.\n'
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
 
-    def test_15_user_email_unique_constraint_is_case_insensitive(self):
-        """
-        Tests that unique constraint on email field in user database table is case insensitive
-        """
-        # create an user
-        expected_status = HTTPStatus.BAD_REQUEST
-        user_json = {
-            "email": "SID@email.co.uk",
-            "first_name": "Sidney",
-            "last_name": "Silva",
-            "country_code": "PT",
-            "status": "new"}
+        # now make sure the unique contraint is case insensitive
+        user_json['email'] = "CLIVE@email.co.uk"
         body = json.dumps(user_json)
 
         result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
-        expected_message = 'Database integrity error'
-        expected_error = 'duplicate key value violates unique constraint "email_index"\nDETAIL:  Key ' \
-                         '(lower(email::text))=(sid@email.co.uk) already exists.\n'
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
