@@ -76,7 +76,7 @@ class DetailedIntegrityError(DetailedValueError):
 
 
 def error_as_response_body(error_msg, correlation_id):
-    return json.dumps({'error:': error_msg, 'correlation_id': str(correlation_id)})
+    return json.dumps({'error': error_msg, 'correlation_id': str(correlation_id)})
 
 # endregion
 
