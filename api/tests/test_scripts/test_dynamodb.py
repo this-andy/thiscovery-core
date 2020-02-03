@@ -20,7 +20,7 @@ from dateutil import parser
 
 import testing_utilities as test_utils
 from common.utilities import set_running_unit_tests, DetailedValueError, now_with_tz
-from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item
+from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item, update_item
 
 TEST_TABLE_NAME = 'testdata'
 TIME_TOLERANCE_SECONDS = 10
@@ -29,6 +29,12 @@ TEST_ITEM_01 = {
     'key': 'test01',
     'item_type': 'test data',
     'details': {'att1': 'val1', 'att2': 'val2'},
+}
+
+TEST_ITEM_02 = {
+    **TEST_ITEM_01,
+    'processing_status': 'new',
+    'country_code': 'GB',
 }
 
 
@@ -105,3 +111,12 @@ class TestDynamoDB(test_utils.BaseTestCase):
         delete_item(TEST_TABLE_NAME, key)
         result = get_item(TEST_TABLE_NAME, key)
         self.assertIsNone(result)
+
+    def test_09_update_ok(self):
+        item = TEST_ITEM_02
+        put_item(TEST_TABLE_NAME, item['key'], item['item_type'], item['details'], item, False)
+        item['details'] = {'att1': 'val1', 'att3': 'val3'}
+        update_item(TEST_TABLE_NAME, item['key'], {'details': item['details']})
+        result = get_item(TEST_TABLE_NAME, item['key'])
+        self.common_assertions(item, result, 'modified')
+        self.assertEqual(item['country_code'], result['country_code'])

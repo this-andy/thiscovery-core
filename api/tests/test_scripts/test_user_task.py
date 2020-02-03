@@ -18,11 +18,13 @@
 
 import json
 import uuid
-from http import HTTPStatus
-
 from dateutil import parser
-from unittest import TestCase
+from http import HTTPStatus
 from time import sleep
+from unittest import TestCase
+
+import api.endpoints.notification_process as np
+
 
 import testing_utilities as test_utils
 from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
@@ -186,9 +188,12 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertEqual(NotificationType.TASK_SIGNUP.value, notification['type'])
         # self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
 
+        # process notification
+        np.process_notifications(event=None, context=None)
+
         # check user now has sign-up timeline event
         hs_client = HubSpotClient()
-        sleep(10)
+        # sleep(10)
         tle_type_id = hs_client.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
         result = hs_client.get_timeline_event(tle_type_id, ut_id, None)
         self.assertEqual(ut_id, result['id'])
