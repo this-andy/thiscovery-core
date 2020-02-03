@@ -15,21 +15,21 @@ logger = utils.get_logger()
 logger.setLevel(logging.WARNING)
 
 test_modules = [
-    # 'test_dynamodb',
-    # 'test_entity_base',
-    # 'test_hubspot',
-    # 'test_misc',
-    # 'test_notifications',
+    'test_dynamodb',
+    'test_entity_base',
+    'test_hubspot',
+    'test_misc',
+    'test_notifications',
     'test_progress',
     'test_project',
     'test_project_status_for_user',
-    # 'test_user',
-    # 'test_user_external_account',
-    # 'test_user_group',
-    # 'test_user_group_membership',
-    # 'test_user_project',
-    # 'test_user_task',
-    # 'test_utilities',
+    'test_user',
+    'test_user_external_account',
+    'test_user_group',
+    'test_user_group_membership',
+    'test_user_project',
+    'test_user_task',
+    'test_utilities',
 ]
 
 
