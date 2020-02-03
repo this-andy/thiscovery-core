@@ -84,7 +84,7 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.OK
 
-        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -122,7 +122,7 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -135,7 +135,7 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.BAD_REQUEST
 
-        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -149,7 +149,7 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.OK
 
-        result = test_get(get_user_by_email_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result = test_get(get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -160,7 +160,7 @@ class TestUser(test_utils.DbTestCase):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = test_get(get_user_by_email_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result = test_get(get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -185,7 +185,7 @@ class TestUser(test_utils.DbTestCase):
         body = json.dumps(user_jsonpatch)
         path_parameters = {'id': user_id}
 
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters, body, None)
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
         result_status = result['statusCode']
 
         self.assertEqual(expected_status, result_status)
@@ -208,7 +208,7 @@ class TestUser(test_utils.DbTestCase):
             "status": "singing"
         }
 
-        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters, None, None)
+        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
         result_json = json.loads(result['body'])
 
         # will test modified separately so extract it from dictionary here
@@ -267,7 +267,7 @@ class TestUser(test_utils.DbTestCase):
         body = json.dumps(user_jsonpatch)
         path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdd'}
 
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters, body, None)
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -281,7 +281,7 @@ class TestUser(test_utils.DbTestCase):
         body = json.dumps(user_jsonpatch)
         path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters, body, None)
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -295,7 +295,7 @@ class TestUser(test_utils.DbTestCase):
         body = json.dumps(user_jsonpatch)
         path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters, body, None)
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -309,7 +309,7 @@ class TestUser(test_utils.DbTestCase):
         body = json.dumps(user_jsonpatch)
         path_parameters = {'id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
 
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters, body, None)
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -335,7 +335,7 @@ class TestUser(test_utils.DbTestCase):
             "status": "new"}
         body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -362,7 +362,7 @@ class TestUser(test_utils.DbTestCase):
         np.process_notifications(event=None, context=None)
         # check user now has crm (hubspot) id
         # sleep(10)
-        result = test_get(get_user_by_id_api, 'user', {'id': user_id}, None, None)
+        result = test_get(get_user_by_id_api, 'user', path_parameters={'id': user_id})
         result_json = json.loads(result['body'])
         self.assertIsNotNone(result_json['crm_id'])
 
@@ -381,7 +381,7 @@ class TestUser(test_utils.DbTestCase):
         # duplicate checking...
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
 
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -400,7 +400,7 @@ class TestUser(test_utils.DbTestCase):
             "status": "new"}
         body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -453,7 +453,7 @@ class TestUser(test_utils.DbTestCase):
             "status": "new"}
         body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -475,7 +475,7 @@ class TestUser(test_utils.DbTestCase):
             "country_code": "PT",
             "status": "new"}
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, json.dumps(user_json), None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=json.dumps(user_json))
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         expected_message = 'Database integrity error'
@@ -489,7 +489,7 @@ class TestUser(test_utils.DbTestCase):
         user_json['email'] = "CLIVE@email.co.uk"
         body = json.dumps(user_json)
 
-        result = test_post(create_user_api, ENTITY_BASE_URL, None, body, None)
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
