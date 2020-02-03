@@ -23,6 +23,8 @@ from http import HTTPStatus
 from dateutil import parser
 from unittest import TestCase
 from time import sleep
+
+import testing_utilities as test_utils
 from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
@@ -37,106 +39,48 @@ from api.tests.test_scripts.testing_utilities import test_get, test_post, test_p
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
-DELETE_TEST_DATA = True
 
 ENTITY_BASE_URL = 'v1/usertask'
 USER_BASE_URL = 'v1/user'
 TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
 
 # region expected bodies setup
-if TIMEZONE_IS_BST:
-    tz_hour = "13"
-    tz_offset = "01:00"
-else:
-    tz_hour = "12"
-    tz_offset = "00:00"
-
 USER_TASK_01_EXPECTED_BODY = {
-    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
-    'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-    'user_project_status': None,
-    'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
-    'task_description': 'Systematic review for CTG monitoring',
-    'user_task_id': 'dd8d4003-bb8e-4cb8-af7f-7c82816a5ff4',
-    'created': f'2018-08-17T{tz_hour}:10:57.827727+{tz_offset}',
-    'modified': f'2018-08-17T{tz_hour}:10:57.883217+{tz_offset}',
-    'status': 'active',
-    'consented': None,
-    'progress_info': None,
+        "user_id": "851f7b34-f76c-49de-a382-7e4089b744e2",
+        "user_project_id": "000aa7fd-759b-4a8e-9fa8-f2457108e16f",
+        "user_project_status": None,
+        "project_task_id": "07af2fbe-5cd1-447f-bae1-3a2f8de82829",
+        "task_description": "PSFU-03-A",
+        "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5",
+        "created": f"2018-11-06T12:48:46.46246+00:00",
+        "modified": f"2018-11-06T12:48:46.462483+00:00",
+        "status": "active",
+        "consented": f"2018-11-06T12:48:40+00:00",
+        "progress_info": None,
 }
 
 USER_TASK_02_EXPECTED_BODY = {
-    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
-    'user_project_id': '8fdb6137-e196-4c17-8091-7a0d370fadba',
-    'user_project_status': None,
-    'project_task_id': '6f1c63e2-fbe8-4d24-8680-c68a30b407e3',
-    'task_description': 'Systematic review for ambulance bag',
-    'user_task_id': 'a3313e72-3532-482f-af5e-d31b0fa8efd6',
-    'created': f'2018-08-17T{tz_hour}:10:58.104983+{tz_offset}',
-    'modified': f'2018-08-17T{tz_hour}:10:58.170637+{tz_offset}',
-    'status': 'complete',
-    'consented': None,
-    'progress_info': None,
-}
-
-USER_TASK_03_EXPECTED_BODY = {
-    'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2',
-    'user_project_id': '3fd54ed7-d25c-40ba-9005-4c4da1321748',
-    'user_project_status': None,
-    'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
-    'task_description': 'Midwife assessment for CTG monitoring',
-    'user_task_id': '70083082-1ffd-4e45-a8a7-364f4214af12',
-    'created': f'2018-08-17T{tz_hour}:10:58.228041+{tz_offset}',
-    'modified': f'2018-08-17T{tz_hour}:10:58.263516+{tz_offset}',
-    'status': 'active',
-    'consented': None,
-    'progress_info': None,
+        "user_id": "851f7b34-f76c-49de-a382-7e4089b744e2",
+        "user_project_id": "53320854-72f1-491a-b562-d84c252f4252",
+        "user_project_status": None,
+        "project_task_id": "6cf2f34e-e73f-40b1-99a1-d06c1f24381a",
+        "task_description": "PSFU-05-A",
+        "user_task_id": "3c7978a8-c618-4e39-9ca9-7073faafeb56",
+        "created": f"2018-11-06T13:02:04.793202+00:00",
+        "modified": f"2018-11-06T13:02:04.793225+00:00",
+        "status": "complete",
+        "consented": f"2018-11-06T13:02:02+00:00",
+        "progress_info": None,
 }
 # endregion
 
 
-def clear_database():
-    truncate_table_multiple(
-        'public.projects_usertask',
-        'public.projects_projecttask',
-        'public.projects_tasktype',
-        'public.projects_userproject',
-        'public.projects_externalsystem',
-        'public.projects_project',
-        'public.projects_user',
-        'public.projects_usergroup',
-    )
-    delete_all_notifications()
-
-
-class TestUserTask(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        set_running_unit_tests(True)
-        clear_database()
-
-        insert_data_from_csv_multiple(
-            (TEST_DATA_FOLDER + 'usergroup_data.csv', 'public.projects_usergroup'),
-            (TEST_DATA_FOLDER + 'user_data.csv', 'public.projects_user'),
-            (TEST_DATA_FOLDER + 'project_data.csv', 'public.projects_project'),
-            (TEST_DATA_FOLDER + 'external_system_data.csv', 'public.projects_externalsystem'),
-            (TEST_DATA_FOLDER + 'user_project_data.csv', 'public.projects_userproject'),
-            (TEST_DATA_FOLDER + 'tasktype_data.csv', 'public.projects_tasktype'),
-            (TEST_DATA_FOLDER + 'projecttask_data.csv', 'public.projects_projecttask'),
-            (TEST_DATA_FOLDER + 'user_task_data.csv', 'public.projects_usertask'),
-        )
-
-    @classmethod
-    def tearDownClass(self):
-        if DELETE_TEST_DATA:
-            clear_database()
-
-        set_running_unit_tests(False)
+class TestUserTask(test_utils.DbTestCase):
+    delete_notifications = True
 
     def test_1_list_user_tasks_api_ok(self):
         expected_status = HTTPStatus.OK
-        expected_body = [USER_TASK_01_EXPECTED_BODY, USER_TASK_02_EXPECTED_BODY, USER_TASK_03_EXPECTED_BODY]
+        expected_body = [USER_TASK_01_EXPECTED_BODY, USER_TASK_02_EXPECTED_BODY]
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
 
         result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
@@ -168,7 +112,7 @@ class TestUserTask(TestCase):
         expected_status = HTTPStatus.OK
         expected_body = []
 
-        querystring_parameters = {'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'}
+        querystring_parameters = {'user_id': 'dceac123-03a7-4e29-ab5a-739e347b374d'}
 
         result = test_get(list_user_projects_api, ENTITY_BASE_URL, None, querystring_parameters, None)
         result_status = result['statusCode']
@@ -203,7 +147,7 @@ class TestUserTask(TestCase):
         ut_id = '9620089b-e9a4-46fd-bb78-091c8449d777'
         ut_json = {
             'user_id': user_id,
-            'project_task_id': 'c92c8289-3590-4a85-b699-98bc8171ccde',
+            'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',
             'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
@@ -233,7 +177,7 @@ class TestUserTask(TestCase):
 
         self.assertEqual('Cochrane', task_provider_name)
         self.assertEqual(f'http://crowd.cochrane.org/index.html?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=1234&env={TEST_ENV}', url)
+                         f'&external_task_id=ext-5a&env={TEST_ENV}', url)
 
         # check that notification message exists
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
@@ -251,7 +195,7 @@ class TestUserTask(TestCase):
         notification_details = notification['details']
         self.assertEqual(notification_details['project_task_id'], result['task_id'])
         self.assertEqual('CONTACT', result['objectType'])
-        self.assertEqual('CTG Monitoring', result['project_name'])
+        self.assertEqual('PSFU-05-pub-act', result['project_name'])
 
         # check that notification message has been processewd
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
@@ -276,10 +220,10 @@ class TestUserTask(TestCase):
 
     def test_5_create_user_task_api_with_defaults(self):
         expected_status = HTTPStatus.CREATED
-        user_id = "851f7b34-f76c-49de-a382-7e4089b744e2"
+        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
             'user_id': user_id,
-            'project_task_id': 'f3316529-e073-435e-b5c7-053da4127e96',
+            'project_task_id': '683598e8-435f-4052-a417-f0f6d808373a',
             'consented': '2018-07-19 16:16:56.087895+01'
         }
         body = json.dumps(ut_json)
@@ -289,14 +233,10 @@ class TestUserTask(TestCase):
         result_json = json.loads(result['body'])
 
         # now remove from returned object those that weren't in input json and test separately
-        ut_id = result_json['id']
-        del result_json['id']
-
-        created = result_json['created']
-        del result_json['created']
-
-        modified = result_json['modified']
-        del result_json['modified']
+        ut_id = self.new_uuid_test_and_remove(result_json)
+        self.uuid_test_and_remove(result_json, 'ext_user_task_id')
+        self.now_datetime_test_and_remove(result_json, 'created')
+        self.now_datetime_test_and_remove(result_json, 'modified')
 
         status = result_json['status']
         del result_json['status']
@@ -310,29 +250,16 @@ class TestUserTask(TestCase):
         user_project_id = result_json['user_project_id']
         del result_json['user_project_id']
 
-        ext_user_task_id = result_json['ext_user_task_id']
-        del result_json['ext_user_task_id']
-
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(ut_json, result_json)
 
         # now check individual data items
-        self.assertTrue(uuid.UUID(ut_id).version == 4)
-        self.assertTrue(uuid.UUID(ext_user_task_id).version == 4)
         self.assertEqual('Qualtrics', task_provider_name)
         self.assertEqual(f'https://www.qualtrics.com?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=8e368360-a708-4336-8feb-a8903fde0210&env={TEST_ENV}', url)
-
-        result_datetime = parser.parse(created)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
-
-        result_datetime = parser.parse(modified)
-        difference = abs(now_with_tz() - result_datetime)
-        self.assertLess(difference.seconds, 10)
+                         f'&external_task_id=ext-6b&env={TEST_ENV}', url)
 
         self.assertEqual('active', status)
-        self.assertEqual('8fdb6137-e196-4c17-8091-7a0d370fadba', user_project_id)
+        self.assertEqual('ddf0750a-758e-47de-aef3-055d0af41d3d', user_project_id)
 
     def test_6_create_user_task_api_invalid_status(self):
         expected_status = HTTPStatus.BAD_REQUEST
