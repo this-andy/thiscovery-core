@@ -18,7 +18,6 @@
 
 import json
 import requests
-from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime
