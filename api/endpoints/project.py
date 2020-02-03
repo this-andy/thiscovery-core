@@ -373,7 +373,7 @@ def get_project_status_for_user(user_id, correlation_id):
     return project_list
 
 
-def get_project_status_for_external_user(ext_user_project_id, correlation_id):
+def get_project_status_for_external_user(user_id, correlation_id):
 
     logger = get_logger()
 
@@ -382,38 +382,38 @@ def get_project_status_for_external_user(ext_user_project_id, correlation_id):
     sql0 = """
         SELECT project_id, project_name, group_id, group_name, user_id, email, ext_user_project_id
         FROM public.project_group_users
-        WHERE ext_user_project_id = %s
+        WHERE user_id = %s
     """
 
     sql1 = """
         SELECT project_id, project_name, testing_group_id, group_name, user_id, email, ext_user_project_id
         FROM public.project_testgroup_users
-        WHERE ext_user_project_id = %s
+        WHERE user_id = %s
     """
 
     sql2 = """
         SELECT project_task_id, description, group_id, group_name, user_id, email, ext_user_project_id
         FROM public.projecttask_group_users
-        WHERE ext_user_project_id = %s
+        WHERE user_id = %s
     """
 
     sql3 = """
         SELECT project_task_id, description, testing_group_id, group_name, user_id, email, ext_user_project_id
         FROM public.projecttask_testgroup_users
-        WHERE ext_user_project_id = %s
+        WHERE user_id = %s
     """
 
     sql4 = """
         SELECT project_task_id, ut.id, ut.status, up.ext_user_project_id as ext_user_project_id, ut.ext_user_task_id as ext_user_task_id 
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
-        WHERE ext_user_project_id = %s
+        WHERE up.user_id = %s
     """
 
-    tuple_ext_user_project_id = (str(ext_user_project_id),)
+    tuple_user_id = (str(user_id),)
     results = execute_query_multiple(
         (sql0, sql1, sql2, sql3, sql4),
-        (tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id, tuple_ext_user_project_id),
+        (tuple_user_id, tuple_user_id, tuple_user_id, tuple_user_id, tuple_user_id),
         correlation_id)
 
     project_group_users = results[0]
@@ -462,6 +462,7 @@ def get_project_status_for_external_user(ext_user_project_id, correlation_id):
                 # only give url if user has signedup (inc if completed)
                 if task['task_is_visible'] and task['user_is_signedup']:
                     if task['url'] is not None:
+                        ext_user_project_id = projects_usertasks_dict[task_id]['ext_user_project_id']
                         ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
                         external_task_id = task['external_task_id']
                         task['url'] += create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
@@ -531,6 +532,9 @@ def get_project_status_for_user_api(event, context):
 
 
 def get_project_status_for_external_user_api(event, context):
+    """
+    Lambda handler linked to API endpoint /v1/project-user-status-ext
+    """
     start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
@@ -541,12 +545,12 @@ def get_project_status_for_external_user_api(event, context):
 
     try:
         params = event['queryStringParameters']
-        ext_user_project_id = params['ext_user_project_id']  # all public id are uuids
+        user_id = params['user_id']
         correlation_id = get_correlation_id(event)
-        logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": HTTPStatus.OK,
-            "body": json.dumps(get_project_status_for_external_user(ext_user_project_id, correlation_id))
+            "body": json.dumps(get_project_status_for_external_user(user_id, correlation_id))
         }
 
     except Exception as ex:
