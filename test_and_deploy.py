@@ -100,10 +100,10 @@ def main():
     target_branch = d2aws.get_git_branch()
     d2aws.deployment_confirmation(TARGET_ENV, target_branch)
 
-    run_and_retry()
+    print(f'All tests passed locally: {run_and_retry()} ran')
     d2aws.deploy(TARGET_ENV, target_branch)
     time.sleep(10)
-    run_and_retry(on_aws=True)
+    print(f'All tests passed on AWS: {run_and_retry(on_aws=True)} ran')
     d2aws.slack_message(TARGET_ENV, target_branch, message=f':tada: Branch {target_branch} passed all tests locally and on AWS!')
 
 
