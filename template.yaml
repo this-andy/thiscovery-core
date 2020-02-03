@@ -1126,13 +1126,6 @@ Resources:
         SubnetIds:
           - !Ref VirtualNetworkPrivateSubnet1
           - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        notifications:
-          Type: DynamoDB
-          Properties:
-            Stream: !GetAtt notifications.StreamArn
-            StartingPosition: TRIM_HORIZON
-            BatchSize: 1
       Environment:
         Variables:
           TABLE_NAME: !Ref notifications
@@ -1142,6 +1135,13 @@ Resources:
           TABLE_ARN_2: !GetAtt tokens.Arn
           TABLE_NAME_3: !Ref lookups
           TABLE_ARN_3: !GetAtt lookups.Arn
+      Events:
+        Timer9:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+          Metadata:
+            StackeryName: timer-process-notifications
     Metadata:
       StackeryName: process-notifications
   tokens:
