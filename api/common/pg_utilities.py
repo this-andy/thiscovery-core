@@ -357,7 +357,22 @@ def create_sql_from_updates_list(tables_to_update, columns_to_update, id_column,
 
 
 def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_time, correlation_id=new_correlation_id()):
+    """
+
+    Args:
+        id_column:
+        id_to_update:
+        mappings:
+        patch_json:
+        modified_time:
+        correlation_id:
+
+    Returns:
+        Total number of rows updated in RDS database
+
+    """
     # todo - wrap in transaction if ever extended to multi table updates
+    updated_rows = 0
     try:
         tables_to_update, columns_to_update = create_updates_list_from_jsonpatch(mappings, patch_json, correlation_id)
         sql_updates = create_sql_from_updates_list(tables_to_update, columns_to_update, id_column, id_to_update, modified_time)
@@ -366,6 +381,8 @@ def execute_jsonpatch(id_column, id_to_update, mappings, patch_json, modified_ti
             if rowcount == 0:
                 errorjson = {'id_column': id_column, 'id_to_update': id_to_update, 'sql_update': sql_update, 'correlation_id': str(correlation_id)}
                 raise ObjectDoesNotExistError('user does not exist', errorjson)
+            updated_rows += rowcount
+        return updated_rows
     except Exception as ex:
         # all exceptions will be dealt with by calling method
         raise ex
