@@ -17,6 +17,7 @@
 #
 
 import json
+import os
 from http import HTTPStatus
 from unittest import TestCase
 from api.tests.test_scripts.testing_utilities import test_get
@@ -38,7 +39,14 @@ class TestUserExternalAccount(TestCase):
         from api.endpoints.misc import ping
 
         expected_status = HTTPStatus.OK
-        if TEST_ON_AWS:
+
+        test_on_aws = os.environ.get('TEST_ON_AWS')
+        if test_on_aws is None:
+            test_on_aws = TEST_ON_AWS
+        elif test_on_aws.lower() == 'false':
+            test_on_aws = False
+
+        if test_on_aws:
             expected_region = 'eu-west-1'
         else:
             expected_region = ''
