@@ -34,12 +34,6 @@ test_modules = [
 
 
 suite = unittest.TestLoader().loadTestsFromNames(test_modules)
-runner = unittest.TextTestRunner(
-    sys.stdout,
-    verbosity=2,
-    # failfast=True,
-)
-
 total_number_of_tests_run = None
 
 
@@ -64,16 +58,34 @@ def _print_tracebacks(test_result_instance):
         eprint('\n')
 
 
-def run_and_retry(test_suite=suite, on_aws=False, remaining_retries=MAX_RETRIES, first_run=True):
+def run_and_retry(test_suite=suite, on_aws=False, remaining_retries=MAX_RETRIES, failfast=False, _first_run=True):
+    """
+    Runs all tests in test_suite. If any fails, re-runs those remaining_retries times.
+
+    Args:
+        test_suite: instance of unittest.TestSuite (https://docs.python.org/3/library/unittest.html#unittest.TestSuite)
+        on_aws: if True, runs test suite on AWS
+        remaining_retries: number of attempts to run the test suite successfully
+        failfast: option passed to unittest.TextTestRunner. If True, the runner raises an error as soon as a test fails
+        _first_run: private variable set to False by this function after the first run
+
+    Returns:
+        Total number of tests run (i.e. number of tests discovered in test_suite
+    """
 
     if on_aws:
         os.environ['TEST_ON_AWS'] = 'true'
     else:
         os.environ['TEST_ON_AWS'] = 'false'
 
+    runner = unittest.TextTestRunner(
+        sys.stdout,
+        verbosity=2,
+        failfast=failfast,
+    )
     results = runner.run(test_suite)
 
-    if first_run:
+    if _first_run:
         global total_number_of_tests_run
         total_number_of_tests_run = results.testsRun
 
@@ -85,7 +97,7 @@ def run_and_retry(test_suite=suite, on_aws=False, remaining_retries=MAX_RETRIES,
             failed_tests_names += [x[0].id() for x in results.errors]
             new_suite = unittest.TestLoader().loadTestsFromNames(failed_tests_names)
             remaining_retries = remaining_retries - 1
-            run_and_retry(new_suite, remaining_retries=remaining_retries, first_run=False)
+            run_and_retry(new_suite, remaining_retries=remaining_retries, _first_run=False, failfast=failfast)
         else:
             _print_tracebacks(results)
             print('len(results.errors):', len(results.errors))
