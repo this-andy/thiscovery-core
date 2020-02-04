@@ -1,5 +1,7 @@
 from jinja2 import Template
 
+import common.sql_templates as sql_t
+
 
 # region notification_process
 SIGNUP_DETAILS_SELECT_SQL = '''
@@ -25,14 +27,8 @@ WHERE
 
 
 # region progress_process
-project_task_id_subquery = '''
-    SELECT
-    pt.id as project_task_id
-    FROM
-    public.projects_projecttask pt
-    JOIN projects_externalsystem es on pt.external_system_id = es.id
-    WHERE external_task_id = (%s)
-'''
+project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id')
+
 
 ut_sql = f'''
     UPDATE public.projects_usertask
@@ -136,19 +132,14 @@ MINIMAL_PROJECT_SELECT_SQL = '''
 '''
 
 
-TASKS_BY_EXTERNAL_ID_SQL = '''
-    SELECT
-        pt.id,
-        project_id,
-        task_type_id,
-        base_url,
-        external_system_id,
-        external_task_id,
-        es.short_name as task_provider_name
-    FROM public.projects_projecttask pt
-    JOIN projects_externalsystem es on pt.external_system_id = es.id
-    WHERE external_task_id = (%s)
-'''
+TASKS_BY_EXTERNAL_ID_SQL = sql_t.project_tasks_by_external_id.render(extra_columns=[
+    'project_id',
+    'task_type_id',
+    'base_url',
+    'external_system_id',
+    'external_task_id',
+    'es.short_name as task_provider_name',
+])
 
 
 LIST_PROJECTS_SQL = '''
