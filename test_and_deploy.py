@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import unittest
+from copy import deepcopy
 
 import api.local.deploy_to_aws as d2aws
 import api.common.utilities as utils
@@ -33,7 +34,6 @@ test_modules = [
 ]
 
 
-suite = unittest.TestLoader().loadTestsFromNames(test_modules)
 total_number_of_tests_run = None
 
 
@@ -58,7 +58,7 @@ def _print_tracebacks(test_result_instance):
         eprint('\n')
 
 
-def run_and_retry(test_suite=suite, on_aws=False, remaining_retries=MAX_RETRIES, failfast=False, _first_run=True):
+def run_and_retry(test_suite, on_aws=False, remaining_retries=MAX_RETRIES, failfast=False, _first_run=True):
     """
     Runs all tests in test_suite. If any fails, re-runs those remaining_retries times.
 
@@ -111,11 +111,12 @@ def run_and_retry(test_suite=suite, on_aws=False, remaining_retries=MAX_RETRIES,
 def main():
     target_branch = d2aws.get_git_branch()
     d2aws.deployment_confirmation(TARGET_ENV, target_branch)
-
-    print(f'All tests passed locally: {run_and_retry()} ran')
+    suite = unittest.TestLoader().loadTestsFromNames(test_modules)
+    aws_suite = deepcopy(suite)
+    print(f'All tests passed locally: {run_and_retry(test_suite=suite)} ran')
     d2aws.deploy(TARGET_ENV, target_branch)
     time.sleep(10)
-    print(f'All tests passed on AWS: {run_and_retry(on_aws=True)} ran')
+    print(f'All tests passed on AWS: {run_and_retry(test_suite=aws_suite, on_aws=True)} ran')
     d2aws.slack_message(TARGET_ENV, target_branch, message=f':tada: Branch {target_branch} passed all tests locally and on AWS!')
 
 
