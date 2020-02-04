@@ -20,6 +20,8 @@ import json
 from http import HTTPStatus
 
 from common.pg_utilities import execute_query, execute_non_query
+from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, LIST_USER_TASKS_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
+    CREATE_USER_TASK_SQL
 from common.utilities import DuplicateInsertError, ObjectDoesNotExistError, DetailedValueError, DetailedIntegrityError, \
     validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, validate_uuid, non_prod_env_url_param, create_url_params
@@ -49,25 +51,7 @@ def validate_status(s):
 
 
 def get_user_task(ut_id, correlation_id):
-
-    base_sql = '''
-        SELECT 
-            ut.id,
-            ut.user_project_id,
-            ut.project_task_id,
-            ut.created,
-            ut.modified,               
-            ut.status,
-            ut.consented,
-            ut.progress_info,
-            up.user_id              
-        FROM 
-            public.projects_usertask ut
-        JOIN projects_userproject up on ut.user_project_id = up.id
-        WHERE ut.id = %s
-    '''
-
-    result = execute_query(base_sql, (str(ut_id),), correlation_id)
+    result = execute_query(GET_USER_TASK_SQL, (str(ut_id),), correlation_id)
     return result
 
 
@@ -83,14 +67,7 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
 
 def update_user_task_progress_info(ut_id, progress_info_dict, correlation_id):
     progress_info_json = json.dumps(progress_info_dict)
-
-    base_sql = '''
-                UPDATE public.projects_usertask
-                SET progress_info = (%s)
-                WHERE id = (%s);
-            '''
-
-    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, ut_id], correlation_id)
+    number_of_updated_rows = execute_non_query(UPDATE_USER_TASK_PROGRESS_INFO_SQL, [progress_info_json, ut_id], correlation_id)
     return number_of_updated_rows
 
 
@@ -107,28 +84,7 @@ def list_user_tasks(user_id, correlation_id):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
-    base_sql = '''
-        SELECT 
-            up.user_id,
-            ut.user_project_id,
-            up.status as user_project_status,
-            ut.project_task_id,
-            pt.description as task_description,
-            ut.id as user_task_id,
-            ut.created,
-            ut.modified,               
-            ut.status,
-            ut.consented,
-            ut.progress_info         
-        FROM 
-            public.projects_usertask ut
-            inner join public.projects_projecttask pt on pt.id = ut.project_task_id
-            inner join public.projects_userproject up on up.id = ut.user_project_id
-        WHERE up.user_id = %s
-        ORDER BY ut.created
-    '''
-
-    return execute_query(base_sql, (str(user_id),), correlation_id)
+    return execute_query(LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
 
 
 def list_user_tasks_api(event, context):
@@ -168,17 +124,7 @@ def list_user_tasks_api(event, context):
 
 
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):
-    base_sql = '''
-      SELECT 
-        ut.id
-      FROM projects_usertask ut
-      JOIN projects_userproject up on ut.user_project_id = up.id
-      WHERE
-        up.user_id = %s
-        AND ut.project_task_id = %s
-    '''
-
-    return execute_query(base_sql, (str(user_id), str(project_task_id)), correlation_id, False)
+    return execute_query(CHECK_IF_USER_TASK_EXISTS_SQL, (str(user_id), str(project_task_id)), correlation_id, False)
 
 
 def create_user_task(ut_json, correlation_id):
@@ -252,18 +198,7 @@ def create_user_task(ut_json, correlation_id):
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user_task already exists', errorjson)
 
-    sql = '''INSERT INTO public.projects_usertask (
-            id,
-            created,
-            modified,
-            user_project_id,
-            project_task_id,
-            status,
-            consented,
-            ext_user_task_id
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s );'''
-
-    execute_non_query(sql, (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id), correlation_id)
+    execute_non_query(CREATE_USER_TASK_SQL, (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id), correlation_id)
 
     url = base_url + create_url_params(user_id, id, external_task_id) + non_prod_env_url_param()
 
@@ -318,22 +253,3 @@ def create_user_task_api(event, context):
     logger.info('API response',
                 extra={'response': response, 'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
-
-
-if __name__ == "__main__":
-    ut_json = {
-        'user_id': "82b4577a-07bb-4de6-bd55-129e5db6578c",
-        'project_task_id': "273b420e-09cb-419c-8b57-b393595dba78",
-        'consented': '2019-05-26 17:30:56.087895+01'
-    }
-    # print(ut_json)
-
-    ev = {'body': json.dumps(ut_json)}
-    print(create_user_task_api(ev, None))
-
-    # print(list_user_tasks("851f7b34-f76c-49de-a382-7e4089b744e2", None))
-
-    # user_task_id = "524c8b64-c63b-437d-bb6f-b9503f980fa5"
-    # user_task_json = get_user_task(user_task_id, None)
-    # notify_new_task_signup(user_task_json[0], None)
-    pass

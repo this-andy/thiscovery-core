@@ -21,6 +21,7 @@ import uuid
 from http import HTTPStatus
 
 from common.pg_utilities import execute_query, execute_non_query
+from common.sql_queries import CHECK_USER_ID_AND_EXTERNAL_ACCOUNT_SQL, CREATE_USER_EXTERNAL_ACCOUNT_SQL
 from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, validate_uuid
@@ -44,16 +45,7 @@ def validate_status(s):
 
 
 def check_user_id_and_external_account(user_id, external_system_id, correlation_id):
-
-    base_sql = '''
-      SELECT 
-        id
-      FROM public.projects_userexternalaccount
-      WHERE
-        user_id = %s AND external_system_id = %s
-    '''
-
-    return execute_query(base_sql, (str(user_id), str(external_system_id)), correlation_id)
+    return execute_query(CHECK_USER_ID_AND_EXTERNAL_ACCOUNT_SQL, (str(user_id), str(external_system_id)), correlation_id)
 
 
 def create_user_external_account(uea_json, correlation_id):
@@ -71,7 +63,6 @@ def create_user_external_account(uea_json, correlation_id):
     except KeyError as err:
         errorjson = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
         raise DetailedValueError('mandatory data missing', errorjson) from err
-
 
     # now process optional json data
     if 'id' in uea_json:
@@ -113,17 +104,7 @@ def create_user_external_account(uea_json, correlation_id):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
-    sql = '''INSERT INTO public.projects_userexternalaccount (
-            id,
-            created,
-            modified,
-            external_system_id,
-            user_id,
-            external_user_id,
-            status
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
-
-    execute_non_query(sql, (id, created, created, external_system_id, user_id, external_user_id, status), correlation_id)
+    execute_non_query(CREATE_USER_EXTERNAL_ACCOUNT_SQL, (id, created, created, external_system_id, user_id, external_user_id, status), correlation_id)
 
     new_user_external_account = {
         'id': id,
@@ -197,23 +178,3 @@ def get_or_create_user_external_account(user_id, external_system_id, correlation
 
 def get_user_id_from_external_system(external_system_id, user_id, correlation_id):
     return None
-
-
-if __name__ == "__main__":
-    uea_json = {
-        'external_system_id': 'e056e0bf-8d24-487e-a57b-4e812b40c4d8',
-        'user_id': '35224bd5-f8a8-41f6-8502-f96e12d6ddde',
-        'external_user_id': 'cc02'
-        # 'status': 'active',
-        # 'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
-        # 'created': '2018-06-13 14:15:16.171819+00'
-    }
-    correlation_id = None
-    print(create_user_external_account(uea_json, correlation_id))
-
-    # ev = {'body': json.dumps(uea_json)}
-    # print(create_user_external_account_api(ev, None))
-
-    # print (check_user_id_and_external_account('35224bd5-f8a8-41f6-8502-f96e12d6ddde', 'e056e0bf-8d24-487e-a57b-4e812b40c4d8', correlation_id))
-
-    # print(validate_status('active'))
