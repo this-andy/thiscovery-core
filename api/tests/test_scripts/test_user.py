@@ -117,6 +117,46 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
+    def test_17_get_user_by_ext_user_project_id_api_not_exists(self):
+        query_parameters = {'ext_user_project_id': "7da7a740-f6b0-4177-809b-5e2852605ff2"}
+
+        expected_status = HTTPStatus.NOT_FOUND
+
+        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        # test results returned from api call
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
+
+    def test_18_get_user_by_email_api_takes_one_and_only_one_querystring_parameter(self):
+        expected_status = HTTPStatus.INTERNAL_SERVER_ERROR
+        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters={})
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue(
+            ('error' in result_json) and
+            ('This endpoint requires one query parameter (email or ext_user_project_id); none were found' in result_json['error'])
+        )
+
+        query_parameters = {
+            'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1",
+            'email': 'altha@email.co.uk',
+        }
+        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        self.assertEqual(expected_status, result_status)
+        self.assertTrue('correlation_id' in result_json)
+        self.assertTrue(
+            ('error' in result_json) and
+            ('Please query by either email or ext_user_project_id, but not both' in result_json['error'])
+        )
+
     def test_16_get_user_by_uuid_api_not_exists(self):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
 
