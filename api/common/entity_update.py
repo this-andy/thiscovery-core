@@ -19,6 +19,7 @@
 import uuid
 from jsonpatch import JsonPatch
 from common.pg_utilities import execute_non_query, execute_query
+from common.sql_queries import SAVE_ENTITY_UPDATE_SQL, GET_ENTITY_UPDATES_FOR_ENTITY_SQL
 
 
 class EntityUpdate:
@@ -46,62 +47,10 @@ class EntityUpdate:
 
     def save(self):
         id = str(uuid.uuid4())
-
-        sql = '''INSERT INTO public.projects_entityupdate (
-                id,
-                created,
-                modified,
-                entity_name,
-                entity_id,
-                json_patch,
-                json_reverse_patch
-            ) VALUES ( %s, %s, %s, %s, %s, %s, %s);'''
-
-        rowcount = execute_non_query(sql, (id, self.modified, self.modified, self.entity_name, self.entity_id, self.json_patch.to_string(),
+        rowcount = execute_non_query(SAVE_ENTITY_UPDATE_SQL, (id, self.modified, self.modified, self.entity_name, self.entity_id, self.json_patch.to_string(),
                                            self.reverse_json_patch.to_string()), self.correlation_id)
-
         return rowcount
 
     @staticmethod
     def get_entity_updates_for_entity(entity_name:str, entity_id:uuid, correlation_id):
-
-        select_sql = '''
-            SELECT
-                id,
-                created,
-                modified,
-                entity_name,
-                entity_id,
-                json_patch,
-                json_reverse_patch
-            FROM public.projects_entityupdate 
-            WHERE entity_name = %s 
-                AND entity_id = %s
-            ORDER BY created
-        '''
-
-        return execute_query(select_sql, (entity_name, str(entity_id)), correlation_id)
-
-
-if __name__ == "__main__":
-    # user_json = {
-    #     "id": "48e30e54-b4fc-4303-963f-2943dda2b139",
-    #     "created": "2018-08-21T11:16:56+01:00",
-    #     "email": "sw@email.addr",
-    #     "title": "Mr",
-    #     "first_name": "Steven",
-    #     "last_name": "Walcorn",
-    #     "auth0_id": "1234abcd",
-    #     "status": "new"}
-    # jp = [
-    #     {'op': 'replace', 'path': '/first_name', 'value': 'zahra'},
-    #     {'op': 'replace', 'path': '/last_name', 'value': 'hhyth'},
-    #     {'op': 'replace', 'path': '/email', 'value': 'zahra@somewhere.com'}
-    # ]
-    # jp = JsonPatch(jp)
-    # eu = EntityUpdate('user', user_json, jp, '1234abcd')
-    # eu.save()
-    # print(eu)
-
-    result = EntityUpdate.get_entity_updates_for_entity('user', '48e30e54-b4fc-4303-963f-2943dda2b139', '1234567ab')
-    print(result)
+        return execute_query(GET_ENTITY_UPDATES_FOR_ENTITY_SQL, (entity_name, str(entity_id)), correlation_id)
