@@ -49,7 +49,7 @@ class ProjectTaskTestResult:
 class TestProjectStatusForUser(test_utils.DbTestCase):
 
     def check_project_status_for_single_user_base(self, parameter_name, parameter_value, expected_results,
-                                                  target_function=get_project_status_for_user_api, base_url=ENTITY_BASE_URL):
+                                                  target_function=get_project_status_for_user_api, base_url=f'v1/{ENTITY_BASE_URL}'):
         querystring_parameters = {parameter_name: parameter_value}
         # event = {'queryStringParameters': querystring_parameters}
 
@@ -91,7 +91,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
     def check_project_status_for_single_external_user(self, user_id, expected_results):
         self.check_project_status_for_single_user_base('user_id', user_id, expected_results,
                                                        target_function=get_project_status_for_external_user_api,
-                                                       base_url='project-user-status-ext')
+                                                       base_url='v2/project-user-status')
 
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr

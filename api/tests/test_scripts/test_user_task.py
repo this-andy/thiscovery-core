@@ -42,8 +42,8 @@ from api.tests.test_scripts.testing_utilities import test_get, test_post, test_p
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 
-ENTITY_BASE_URL = 'usertask'
-USER_BASE_URL = 'user'
+ENTITY_BASE_URL = 'v1/usertask'
+USER_BASE_URL = 'v1/user'
 TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
 
 # region expected bodies setup

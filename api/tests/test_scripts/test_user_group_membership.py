@@ -26,7 +26,7 @@ from common.utilities import set_running_unit_tests, DetailedValueError, ObjectD
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 
-ENTITY_BASE_URL = 'usergroupmembership'
+ENTITY_BASE_URL = 'v1/usergroupmembership'
 
 
 class TestUserGroupMembership(test_utils.DbTestCase):
