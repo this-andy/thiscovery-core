@@ -22,8 +22,7 @@ import common.pg_utilities as pg_utils
 import project as p
 from common.cochrane import get_progress
 import common.sql_queries as sql_q
-from common.utilities import get_correlation_id, get_logger, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
-from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
+from common.utilities import get_correlation_id, get_logger, get_start_time, get_elapsed_ms
 
 
 def update_cochrane_progress(event, context):

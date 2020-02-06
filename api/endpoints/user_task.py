@@ -65,12 +65,6 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     return None
 
 
-def update_user_task_progress_info(ut_id, progress_info_dict, correlation_id):
-    progress_info_json = json.dumps(progress_info_dict)
-    number_of_updated_rows = execute_non_query(UPDATE_USER_TASK_PROGRESS_INFO_SQL, [progress_info_json, ut_id], correlation_id)
-    return number_of_updated_rows
-
-
 def list_user_tasks(user_id, correlation_id):
 
     try:
