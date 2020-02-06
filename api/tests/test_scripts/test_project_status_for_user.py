@@ -91,7 +91,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
     def check_project_status_for_single_external_user(self, user_id, expected_results):
         self.check_project_status_for_single_user_base('user_id', user_id, expected_results,
                                                        target_function=get_project_status_for_external_user_api,
-                                                       base_url='v1/project-user-status-ext')
+                                                       base_url='v2/project-user-status')
 
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr

@@ -11,6 +11,7 @@ import api.common.utilities as utils
 
 TARGET_ENV = 'test-afs25'
 MAX_RETRIES = 5
+MIN_EXPECTED_TESTS = 119
 
 logger = utils.get_logger()
 logger.setLevel(logging.WARNING)
@@ -83,6 +84,7 @@ def run_and_retry(test_suite, on_aws=False, remaining_retries=MAX_RETRIES, failf
         verbosity=2,
         failfast=failfast,
     )
+
     results = runner.run(test_suite)
 
     if _first_run:
@@ -90,6 +92,8 @@ def run_and_retry(test_suite, on_aws=False, remaining_retries=MAX_RETRIES, failf
         total_number_of_tests_run = results.testsRun
 
     if results.wasSuccessful():
+        assert total_number_of_tests_run >= MIN_EXPECTED_TESTS, \
+            f'Passed {total_number_of_tests_run} rather than at least {MIN_EXPECTED_TESTS}. This probably means that some tests failed to load.'
         return total_number_of_tests_run
     else:
         if (results.failures or results.errors) and remaining_retries:
@@ -97,7 +101,7 @@ def run_and_retry(test_suite, on_aws=False, remaining_retries=MAX_RETRIES, failf
             failed_tests_names += [x[0].id() for x in results.errors]
             new_suite = unittest.TestLoader().loadTestsFromNames(failed_tests_names)
             remaining_retries = remaining_retries - 1
-            run_and_retry(new_suite, remaining_retries=remaining_retries, _first_run=False, failfast=failfast)
+            run_and_retry(new_suite, on_aws=on_aws, remaining_retries=remaining_retries, _first_run=False, failfast=failfast)
         else:
             _print_tracebacks(results)
             print('len(results.errors):', len(results.errors))
