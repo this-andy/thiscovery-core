@@ -51,7 +51,7 @@ class TestUserExternalAccount(TestCase):
         else:
             expected_region = ''
 
-        result = test_get(ping, 'ping', None, None, None)
+        result = test_get(ping, 'v1/ping', None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 

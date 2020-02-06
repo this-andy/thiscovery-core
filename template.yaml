@@ -387,10 +387,8 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusergroupmembership.Arn}/invocations
               responses: {}
-          /v1/project-user-status-ext:
+          /v2/project-user-status:
             get:
-              security:
-                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -1346,10 +1344,10 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
       Events:
-        CoreAPIGETv1projectuserstatusext:
+        CoreAPIGETv2projectuserstatus:
           Type: Api
           Properties:
-            Path: /v1/project-user-status-ext
+            Path: /v2/project-user-status
             Method: GET
             RestApiId: !Ref CoreAPI
 Parameters:

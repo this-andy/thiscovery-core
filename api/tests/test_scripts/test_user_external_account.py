@@ -31,7 +31,7 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 DELETE_TEST_DATA = True
 
-ENTITY_BASE_URL = 'userexternalaccount'
+ENTITY_BASE_URL = 'v1/userexternalaccount'
 
 
 class TestUserExternalAccount(test_utils.DbTestCase):

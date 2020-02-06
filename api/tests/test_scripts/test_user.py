@@ -41,7 +41,7 @@ TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
 
-ENTITY_BASE_URL = 'user'
+ENTITY_BASE_URL = 'v1/user'
 
 # region expected results
 if TIMEZONE_IS_BST:
@@ -103,13 +103,13 @@ class TestUser(test_utils.DbTestCase):
     def test_02_get_user_by_ext_user_project_id_api_exists(self):
         """
         Tests:
-            - we can retrieve an user by querying by ext_user_project_id (using path parameter ?id=)
+            - we can retrieve an user by querying by ext_user_project_id
         """
         query_parameters = {'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"}
 
         expected_status = HTTPStatus.OK
 
-        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
+        result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -122,7 +122,7 @@ class TestUser(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
+        result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -133,7 +133,7 @@ class TestUser(test_utils.DbTestCase):
 
     def test_18_get_user_by_email_api_takes_one_and_only_one_querystring_parameter(self):
         expected_status = HTTPStatus.INTERNAL_SERVER_ERROR
-        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters={})
+        result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters={})
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
@@ -147,7 +147,7 @@ class TestUser(test_utils.DbTestCase):
             'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1",
             'email': 'altha@email.co.uk',
         }
-        result = test_get(u.get_user_by_email_api, 'user', querystring_parameters=query_parameters)
+        result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=query_parameters)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
@@ -402,7 +402,7 @@ class TestUser(test_utils.DbTestCase):
         np.process_notifications(event=None, context=None)
         # check user now has crm (hubspot) id
         # sleep(10)
-        result = test_get(get_user_by_id_api, 'user', path_parameters={'id': user_id})
+        result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters={'id': user_id})
         result_json = json.loads(result['body'])
         self.assertIsNotNone(result_json['crm_id'])
 

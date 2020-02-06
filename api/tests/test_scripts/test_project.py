@@ -287,7 +287,7 @@ class TestProject(test_utils.DbTestCase):
         expected_status = HTTPStatus.OK
         expected_body = [json.loads(x) for x in [PROJECT_01_JSON, PROJECT_02_JSON, PROJECT_03_JSON, PROJECT_04_JSON, PROJECT_05_JSON,
                                                  PROJECT_06_JSON, PROJECT_07_JSON]]
-        result = test_get(p.list_projects_api, ENTITY_BASE_URL, None, None, None)
+        result = test_get(p.list_projects_api, f'v1/{ENTITY_BASE_URL}', None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -307,7 +307,8 @@ class TestProject(test_utils.DbTestCase):
         expected_body = [json.loads(PROJECT_02_JSON)]
         # result = get_project_api(event, None)
 
-        result = test_get(p.get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(p.get_project_api, endpoint, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -319,7 +320,8 @@ class TestProject(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.NOT_FOUND
 
-        result = test_get(p.get_project_api, ENTITY_BASE_URL, path_parameters, None, None)
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(p.get_project_api, endpoint, path_parameters, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
