@@ -1,0 +1,8 @@
+SELECT
+    pt.id {% if pt_id_alias %} as {{ pt_id_alias }} {% endif %}
+    {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+FROM
+    public.projects_projecttask pt
+    {% block join_clause %}{% endblock %}
+{% block where_clause %}{% endblock %}
+{% block order_clause %}{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'project_tasks_select.jinja2' %}
+
+{% block join_clause %}
+    JOIN projects_externalsystem es on pt.external_system_id = es.id
+{% endblock %}
+
+{% block where_clause %}
+    WHERE
+        external_task_id = (%s)
+{% endblock %}

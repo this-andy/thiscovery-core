@@ -3,6 +3,34 @@ from jinja2 import Template
 import common.sql_templates as sql_t
 
 
+class BaseTable:
+    def __init__(self):
+        self.table = f'projects_{self.__class__.__name__.lower()}'
+        self.id = f'{self.table}.id'
+        self.created = f'{self.table}.created'
+        self.modified = f'{self.table}.modified'
+
+
+class User(BaseTable):
+    def __init__(self):
+        super().__init__()
+        self.email = f'{self.table}.email'
+
+        email_address_verified = models.BooleanField(default=False)
+        email_verification_token = models.UUIDField(default=uuid.uuid4(), null=True, editable=False)
+        email_verification_expiry = models.DateTimeField(null=True, editable=False)
+        title = models.CharField(max_length=20, blank=True, null=True)
+        first_name = models.CharField(max_length=50, blank=True, null=True)
+        last_name = models.CharField(max_length=50, blank=True, null=True)
+        country_code = models.CharField(max_length=6, blank=True, null=True)
+        auth0_id = models.CharField(max_length=50, blank=True, null=True)
+        crm_id = models.CharField(max_length=50, blank=True, null=True)
+        status = models.CharField(max_length=12, blank=True, null=True)
+
+user = User()
+print(user.created)
+
+
 # region notification_process
 SIGNUP_DETAILS_SELECT_SQL = '''
 SELECT 
@@ -27,7 +55,10 @@ WHERE
 
 
 # region progress_process
-project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id')
+project_task_id_subquery = sql_t.project_tasks_by_external_id.render(
+    # project_tasks_select=sql_t.project_tasks_select,
+    pt_id_alias='project_task_id'
+)
 
 
 ut_sql = f'''
@@ -62,7 +93,28 @@ pt_sql = f'''
 
 
 # region project
-BASE_PROJECT_SELECT_SQL = '''
+project_task_subquery = """
+    select 
+        id,
+        description,
+        created,
+        modified,
+        task_type_id,
+        earliest_start_date,
+        closing_date,
+        signup_status,
+        visibility,
+        external_system_id,                       
+        external_task_id, 
+        base_url,                      
+        status                         
+    from public.projects_projecttask task
+    where task.project_id = project.id
+        AND task.status != 'planned'
+    order by created
+"""
+
+BASE_PROJECT_SELECT_SQL = f'''
     SELECT row_to_json(project_row) 
     from (
         select 
@@ -76,24 +128,7 @@ BASE_PROJECT_SELECT_SQL = '''
             (
                 select coalesce(json_agg(task_row), '[]'::json)
                 from (
-                    select 
-                        id,
-                        description,
-                        created,
-                        modified,
-                        task_type_id,
-                        earliest_start_date,
-                        closing_date,
-                        signup_status,
-                        visibility,
-                        external_system_id,                       
-                        external_task_id, 
-                        base_url,                      
-                        status                         
-                    from public.projects_projecttask task
-                    where task.project_id = project.id
-                        AND task.status != 'planned'
-                    order by created
+                    {project_task_subquery}
                     ) task_row
             ) as tasks
         from public.projects_project project

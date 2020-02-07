@@ -1,0 +1,5 @@
+{% extends 'project_tasks_select.jinja2' %}
+{% block where_clause %}
+    WHERE
+        {{ where |where_equals }}
+{% endblock %}
