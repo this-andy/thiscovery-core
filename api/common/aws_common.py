@@ -17,16 +17,18 @@
 #
 import boto3
 
-from common.utilities import get_logger, get_aws_namespace
+from common.utilities import get_logger, get_aws_namespace, DEFAULT_AWS_REGION
 
 
 ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 
 
 class BaseClient:
-    def __init__(self):
+    def __init__(self, service_name):
+        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
         self.logger = get_logger()
         self.aws_namespace = None
+
 
     def get_namespace(self):
         if self.aws_namespace is None:

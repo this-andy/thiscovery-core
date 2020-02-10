@@ -24,8 +24,7 @@ from common.utilities import get_logger, get_aws_namespace
 class Lambda(BaseClient):
 
     def __init__(self):
-        super().__init__()
-        self.client = boto3.client('lambda')
+        super().__init__('lambda')
 
     def list_functions(self):
         """
