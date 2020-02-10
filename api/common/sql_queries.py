@@ -1,35 +1,73 @@
-from jinja2 import Template
+from jinja2 import Environment, PackageLoader, Template
+from typing import NamedTuple
 
-import common.sql_templates as sql_t
-
-
-class BaseTable:
-    def __init__(self):
-        self.table = f'projects_{self.__class__.__name__.lower()}'
-        self.id = f'{self.table}.id'
-        self.created = f'{self.table}.created'
-        self.modified = f'{self.table}.modified'
+import common.sql_tables as tables
 
 
-class User(BaseTable):
-    def __init__(self):
-        super().__init__()
-        self.email = f'{self.table}.email'
+class Join(NamedTuple):
+    """
+    Represents a SQL join clause
+    """
+    table_class: object
+    field_1: tuple = None
+    field_2: tuple = None
+    join_type: str = 'INNER JOIN'
 
-        email_address_verified = models.BooleanField(default=False)
-        email_verification_token = models.UUIDField(default=uuid.uuid4(), null=True, editable=False)
-        email_verification_expiry = models.DateTimeField(null=True, editable=False)
-        title = models.CharField(max_length=20, blank=True, null=True)
-        first_name = models.CharField(max_length=50, blank=True, null=True)
-        last_name = models.CharField(max_length=50, blank=True, null=True)
-        country_code = models.CharField(max_length=6, blank=True, null=True)
-        auth0_id = models.CharField(max_length=50, blank=True, null=True)
-        crm_id = models.CharField(max_length=50, blank=True, null=True)
-        status = models.CharField(max_length=12, blank=True, null=True)
 
-user = User()
-print(user.created)
+# region jinja2 custom filters
+def where_equals(fields_list):
+    return ',\n'.join([f'{x[0]} = (%s)' for x in fields_list])
 
+
+def tables_filter(tables_list):
+    output_str = tables_list[0].table
+    try:
+        for j in tables_list[1:]:
+            output_str += f'\n{j.join_type} {j.table_class.table} ON {j.field_1[0]} = {j.field_2[0]}'
+    except IndexError:
+        pass
+    return output_str
+# endregion
+
+
+env = Environment(
+    loader=PackageLoader('common', 'sql_templates'),
+)
+
+env.filters['where_equals'] = where_equals
+env.filters['tables_filter'] = tables_filter
+
+p = tables.Project()
+pt = tables.ProjectTask()
+tt = tables.TaskType()
+u = tables.User()
+up = tables.UserProject()
+ut = tables.UserTask()
+
+signup_details_select_sql = env.get_template('select.jinja2').render(
+    columns=[
+        p.id[1],
+        p.name[1],
+        pt.id[1],
+        pt.description[1],
+        tt.id[1],
+        tt.name[1],
+        u.crm_id[0],
+    ],
+    tables=[
+        p,
+        Join(pt, p.id, pt.project_id),
+        Join(tt, pt.task_type_id, tt.id),
+        Join(ut, pt.id, ut.project_task_id),
+        Join(up, ut.user_project_id, up.id),
+        Join(u, up.user_id, u.id),
+    ],
+    where=[
+        ut.id,
+    ]
+)
+
+print(signup_details_select_sql)
 
 # region notification_process
 SIGNUP_DETAILS_SELECT_SQL = '''
@@ -55,7 +93,7 @@ WHERE
 
 
 # region progress_process
-project_task_id_subquery = sql_t.project_tasks_by_external_id.render(
+project_task_id_subquery = env.get_template('project_tasks_by_external_id.jinja2').render(
     # project_tasks_select=sql_t.project_tasks_select,
     pt_id_alias='project_task_id'
 )

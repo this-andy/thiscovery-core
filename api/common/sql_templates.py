@@ -1,4 +1,4 @@
-from jinja2 import Environment, PackageLoader, select_autoescape, Template
+from jinja2 import Environment, PackageLoader, Template
 
 
 def where_equals(where_dict, value=None, indent=None):

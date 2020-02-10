@@ -1,0 +1,8 @@
+SELECT
+    {{ columns|join(', \n') }}
+FROM
+    {{ tables|tables_filter }}
+{% if where -%} WHERE
+    {{ where|where_equals }}
+{% endif %}
+{% block order_clause %}{% endblock %}
