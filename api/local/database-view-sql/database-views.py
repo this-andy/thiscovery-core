@@ -15,10 +15,9 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import psycopg2
 
-import os
-import sys
-from api.common.pg_utilities import run_sql_script_file
+from api.common.pg_utilities import run_sql_script_file, execute_non_query
 
 
 
@@ -26,13 +25,22 @@ VIEW_SQL_FOLDER = './'
 
 
 def create_all_views():
-    print(os.getcwd())
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_group_users_create.sql', None)
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_project_testgroup_users_create.sql', None)
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_group_users_create.sql', None)
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_projecttask_testgroup_users_create.sql', None)
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_task_signups.sql', None)
-    run_sql_script_file(VIEW_SQL_FOLDER + 'view_external_users_identity.sql', None)
+    files_and_views = [
+        ('view_project_group_users_create.sql', 'project_group_users'),
+        ('view_project_testgroup_users_create.sql', 'project_testgroup_users'),
+        ('view_projecttask_group_users_create.sql', 'projecttask_group_users'),
+        ('view_projecttask_testgroup_users_create.sql', 'projecttask_testgroup_users'),
+        ('view_task_signups.sql', 'task_signups'),
+        ('view_external_users_identity.sql', 'external_users_identity'),
+    ]
+
+    for file, view in files_and_views:
+        try:
+            run_sql_script_file(VIEW_SQL_FOLDER + file, None)
+        except psycopg2.errors.InvalidTableDefinition:  # added this here because CREATE OR REPLACE cannot rename columns (https://dba.stackexchange.com/a/589)
+            sql = f'DROP VIEW IF EXISTS public.{view};'
+            execute_non_query(sql, None, None)
+            run_sql_script_file(VIEW_SQL_FOLDER + file, None)
 
 
 if __name__ == "__main__":
