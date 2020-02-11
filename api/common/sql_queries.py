@@ -2,9 +2,41 @@ from jinja2 import Environment, PackageLoader, Template
 from typing import NamedTuple
 
 import common.sql_tables as tables
+import common.sql_templates as sql_t  #temporary use
+
+# region setup
+# region jinja2 custom filters
+def joins_filter(joins_list):
+    output = str()
+    for j in joins_list:
+        output += f'\n{j.join_type} {j.table_class.table} ON {j.field_1[0]} = {j.field_2[0]}'
+    return output
 
 
-class Join(NamedTuple):
+def where_filter(where_list):
+    return ' \nAND '.join(f'{x.field[0]} = {x.value}' for x in where_list)
+
+env = Environment(
+    loader=PackageLoader('common', 'sql_templates'),
+)
+
+env.filters['where_filter'] = where_filter
+env.filters['joins_filter'] = joins_filter
+# endregion
+
+# region db table instances
+es = tables.ExternalSystem()
+p = tables.Project()
+pt = tables.ProjectTask()
+tt = tables.TaskType()
+u = tables.User()
+up = tables.UserProject()
+ut = tables.UserTask()
+# endregion
+# endregion
+
+
+class _JoinClause(NamedTuple):
     """
     Represents a SQL join clause
     """
@@ -14,37 +46,63 @@ class Join(NamedTuple):
     join_type: str = 'INNER JOIN'
 
 
-# region jinja2 custom filters
-def where_equals(fields_list):
-    return ',\n'.join([f'{x[0]} = (%s)' for x in fields_list])
+class _WhereSetClause(NamedTuple):
+    """
+    Represents the body of a SQL where or set clause
+    """
+    field: tuple
+    value: str = "(%s)"
 
 
-def tables_filter(tables_list):
-    output_str = tables_list[0].table
-    try:
-        for j in tables_list[1:]:
-            output_str += f'\n{j.join_type} {j.table_class.table} ON {j.field_1[0]} = {j.field_2[0]}'
-    except IndexError:
+class _Query:
+    """
+    Represents a SQL query
+    """
+
+    def __init__(self):
         pass
-    return output_str
-# endregion
 
 
-env = Environment(
-    loader=PackageLoader('common', 'sql_templates'),
-)
+class Select(_Query):
+    """
+    Represents a SQL Select query
+    """
+    def __init__(self, columns, table, joins=None, where=None):
+        self.template = env.get_template('select.jinja2')
+        self.columns = columns
+        self.table = table
+        self.joins = joins
+        self.where = where
 
-env.filters['where_equals'] = where_equals
-env.filters['tables_filter'] = tables_filter
+    def render(self):
+        return self.template.render(
+            columns=self.columns,
+            table=self.table.table,
+            joins=[_JoinClause(*x) for x in self.joins] if self.joins else None,
+            where=[_WhereSetClause(*x) for x in self.where] if self.where else None,
+        )
 
-p = tables.Project()
-pt = tables.ProjectTask()
-tt = tables.TaskType()
-u = tables.User()
-up = tables.UserProject()
-ut = tables.UserTask()
 
-signup_details_select_sql = env.get_template('select.jinja2').render(
+class Update(_Query):
+    """
+    Represents a SQL Update query
+    """
+    def __init__(self, table, columns_values, where=None):
+        self.template = env.get_template('update.jinja2')
+        self.table = table
+        self.column_values = columns_values,
+        self.where = where
+
+    def render(self):
+        return self.template.render(
+            table=self.table.table,
+            columns_values=[_WhereSetClause(*x) for x in self.column_values] if self.column_values else None,
+            where=[_WhereSetClause(*x) for x in self.where] if self.where else None,
+        )
+
+
+# region notification_process
+signup_details_select = Select(
     columns=[
         p.id[1],
         p.name[1],
@@ -54,50 +112,48 @@ signup_details_select_sql = env.get_template('select.jinja2').render(
         tt.name[1],
         u.crm_id[0],
     ],
-    tables=[
-        p,
-        Join(pt, p.id, pt.project_id),
-        Join(tt, pt.task_type_id, tt.id),
-        Join(ut, pt.id, ut.project_task_id),
-        Join(up, ut.user_project_id, up.id),
-        Join(u, up.user_id, u.id),
+    table=p,
+    joins=[
+        (pt, p.id, pt.project_id),
+        (tt, pt.task_type_id, tt.id),
+        (ut, pt.id, ut.project_task_id),
+        (up, ut.user_project_id, up.id),
+        (u, up.user_id, u.id),
     ],
     where=[
-        ut.id,
+        (ut.id,),
     ]
 )
-
-print(signup_details_select_sql)
-
-# region notification_process
-SIGNUP_DETAILS_SELECT_SQL = '''
-SELECT 
-    p.id as project_id,
-    p.name as project_name,
-    pt.id as task_id,
-    pt.description as task_name,
-    tt.id as task_type_id,
-    tt.name as task_type_name,
-    u.crm_id
-FROM 
-    public.projects_project p
-    JOIN projects_projecttask pt on p.id = pt.project_id
-    JOIN projects_tasktype tt on pt.task_type_id = tt.id
-    JOIN projects_usertask ut on pt.id = ut.project_task_id
-    JOIN projects_userproject up on ut.user_project_id = up.id
-    JOIN projects_user u on up.user_id = u.id
-WHERE
-    ut.id = %s
-'''
+SIGNUP_DETAILS_SELECT_SQL = signup_details_select.render()
 # endregion
 
 
 # region progress_process
-project_task_id_subquery = env.get_template('project_tasks_by_external_id.jinja2').render(
-    # project_tasks_select=sql_t.project_tasks_select,
-    pt_id_alias='project_task_id'
+project_task_id_subquery = Select(
+    columns=[
+      pt.id[1],
+    ],
+    table=pt,
+    joins=[
+        (es, pt.external_system_id, es.id),
+    ],
+    where=[
+        (pt.external_task_id,),
+    ]
 )
+project_task_id_subquery_sql = project_task_id_subquery.render()
 
+ut_update = Update(
+    table=ut,
+    columns_values=[
+        (ut.user_project_id,),
+    ],
+    where=[
+        (ut.id, project_task_id_subquery_sql),
+    ]
+)
+ut_sql = ut_update.render()
+print(ut_sql)
 
 ut_sql = f'''
     UPDATE public.projects_usertask
