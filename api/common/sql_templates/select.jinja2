@@ -1,8 +1,11 @@
 SELECT
     {{ columns|join(', \n') }}
 FROM
-    {{ tables|tables_filter }}
+    {{ table }}
+{% if joins -%}
+    {{ joins|joins_filter }}
+{% endif %}
 {% if where -%} WHERE
-    {{ where|where_equals }}
+    {{ where|where_filter }}
 {% endif %}
 {% block order_clause %}{% endblock %}

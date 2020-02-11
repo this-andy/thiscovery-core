@@ -153,7 +153,6 @@ ut_update = Update(
     ]
 )
 ut_sql = ut_update.render()
-print(ut_sql)
 
 ut_sql = f'''
     UPDATE public.projects_usertask

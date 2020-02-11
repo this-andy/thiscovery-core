@@ -1,0 +1,7 @@
+UPDATE
+    {{ table }}
+SET
+    {{ columns_values|join(', \n') }}
+{% if where -%} WHERE
+    {{ where|where_filter }}
+{% endif %}

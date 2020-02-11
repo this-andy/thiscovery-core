@@ -431,10 +431,10 @@ class HubSpotClient:
             'eventTypeId': tle_type_id,
             'project_id': signup_details['project_id'],
             'project_name': signup_details['project_name'],
-            'task_id': signup_details['task_id'],
-            'task_name': signup_details['task_name'],
-            'task_type_id': signup_details['task_type_id'],
-            'task_type_name': signup_details['task_type_name'],
+            'task_id': signup_details['projecttask_id'],
+            'task_name': signup_details['projecttask_description'],
+            'task_type_id': signup_details['tasktype_id'],
+            'task_type_name': signup_details['tasktype_name'],
             'signup_event_type': signup_details['signup_event_type'],
             'timestamp': hubspot_timestamp(signup_details['created'])
         }
