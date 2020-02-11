@@ -27,8 +27,7 @@ ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 class CloudWatch(BaseClient):
 
     def __init__(self):
-        super().__init__()
-        self.client = boto3.client('cloudwatch')
+        super().__init__('cloudwatch')
 
     def get_alarms(self, prefix=None):
         """
@@ -93,8 +92,7 @@ class CloudWatch(BaseClient):
 class CloudWatchLogs(BaseClient):
 
     def __init__(self):
-        super().__init__()
-        self.client = boto3.client('logs')
+        super().__init__('logs')
 
     def get_thiscovery_log_groups(self, prefix=f"/aws/lambda/thiscovery-core-{get_aws_namespace()[1:-1]}"):
         """

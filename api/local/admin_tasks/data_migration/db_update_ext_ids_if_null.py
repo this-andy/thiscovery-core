@@ -15,22 +15,25 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import boto3
-
-from common.utilities import get_logger, get_aws_namespace, DEFAULT_AWS_REGION
+import common.pg_utilities as pg_utils
 
 
-ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
+UPDATE_EXT_USER_PROJECT_ID_IF_NULL = '''
+    UPDATE public.projects_userproject
+    SET ext_user_project_id = user_id
+    WHERE ext_user_project_id IS NULL;
+'''
+
+UPDATE_EXT_USER_TASK_ID_IF_NULL = '''
+    UPDATE public.projects_usertask
+    SET ext_user_task_id = id
+    WHERE ext_user_task_id IS NULL;
+'''
 
 
-class BaseClient:
-    def __init__(self, service_name):
-        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
-        self.logger = get_logger()
-        self.aws_namespace = None
+def main():
+    pg_utils.execute_non_query_multiple([UPDATE_EXT_USER_PROJECT_ID_IF_NULL, UPDATE_EXT_USER_TASK_ID_IF_NULL], [None, None])
 
 
-    def get_namespace(self):
-        if self.aws_namespace is None:
-            self.aws_namespace = get_aws_namespace()[1:-1]
-        return self.aws_namespace
+if __name__ == "__main__":
+    main()
