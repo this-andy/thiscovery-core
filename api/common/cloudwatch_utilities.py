@@ -58,8 +58,17 @@ class CloudWatch(BaseClient):
 
         Returns:
         """
-        # if 'Threshold' not in kwargs, set default
+        # set different defaults for production and staging
+        actions_enabled_default = False
+        alarm_actions_default = list()
+        if ('thiscovery-core-prod' in kwargs['AlarmName']) or ('thiscovery-core-staging' in kwargs['AlarmName']):
+            actions_enabled_default = True
+            alarm_actions_default = ['arn:aws:sns:eu-west-1:595383251813:AWS-Alerts']
+
+        # if parameters below not in kwargs, set default
         kwargs['Threshold'] = kwargs.get('Threshold', 1.5)
+        kwargs['ActionsEnabled'] = kwargs.get('ActionsEnabled', actions_enabled_default)
+        kwargs['AlarmActions'] = kwargs.get('AlarmActions', alarm_actions_default)
 
         try:
             response = self.client.put_metric_alarm(
@@ -76,8 +85,9 @@ class CloudWatch(BaseClient):
                 Statistic='Maximum',
                 Threshold=kwargs['Threshold'],
                 TreatMissingData='notBreaching',
-                ActionsEnabled=False,
                 Unit='Seconds',
+                ActionsEnabled=kwargs['ActionsEnabled'],
+                AlarmActions=kwargs['AlarmActions'],
             )
 
             assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_metric_alarm failed with response: {response}'
