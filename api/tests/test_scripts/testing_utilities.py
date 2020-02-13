@@ -133,9 +133,9 @@ class DbTestCase(BaseTestCase):
             delete_all_notifications()
 
 
-def _aws_request(method, url, params=None, data=None):
+def _aws_request(method, url, params=None, data=None, aws_api_key=get_secret('aws-connection')['aws-api-key']):
     full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json', 'x-api-key': get_secret('aws-connection')['aws-api-key']}
+    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
     try:
         response = requests.request(
             method=method,
@@ -161,7 +161,8 @@ def aws_patch(url, request_body):
     return _aws_request(method='PATCH', url=url, data=request_body)
 
 
-def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, correlation_id=None):
+def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, aws_api_key=None,
+                  correlation_id=None):
     logger = get_logger()
 
     test_on_aws = os.environ.get('TEST_ON_AWS')
@@ -176,7 +177,7 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
         else:
             url = aws_url
         logger.info(f'Url passed to _aws_request: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
-        return _aws_request(method=request_method, url=url, params=querystring_parameters, data=request_body)
+        return _aws_request(method=request_method, url=url, params=querystring_parameters, data=request_body, aws_api_key=aws_api_key)
     else:
         event = {}
         if path_parameters is not None:
@@ -188,9 +189,9 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
         return local_method(event, correlation_id)
 
 
-def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, correlation_id=None):
+def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, aws_api_key=None, correlation_id=None):
     return _test_request('GET', local_method, aws_url, path_parameters=path_parameters,
-                         querystring_parameters=querystring_parameters, correlation_id=correlation_id)
+                         querystring_parameters=querystring_parameters, aws_api_key=aws_api_key, correlation_id=correlation_id)
 
 
 def test_post(local_method, aws_url, path_parameters=None, request_body=None, correlation_id=None):
