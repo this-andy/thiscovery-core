@@ -16,6 +16,12 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/*
+ Purpose: To list the private project tasks that each user can see on the web UI.  Project tasks are either public (visible to all) or private in which case
+ visibility is controlled by membership of user groups with permission to see that project task.
+ Usage:  Normally queried by user_id.  This gives one row for each project task the user can see, i.e. row exits = visible, no row = not visible.
+ The columns returned may not be required by caller, but enable this view's contents to be easily understood and checked
+ */
 CREATE OR REPLACE VIEW public.projecttask_group_users AS
  SELECT pt.id AS project_task_id,
     pt.description,
