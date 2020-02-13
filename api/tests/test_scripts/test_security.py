@@ -44,21 +44,27 @@ class TestApiEndpoints(test_utils.BaseTestCase):
     def setUpClass(cls):
         os.environ['TEST_ON_AWS'] = 'true'
 
-    def common_assertions(self, local_method, aws_url, path_parameters=None, querystring_parameters=None):
+    def common_assertions(self, request_verb, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None):
         blank_api_key = ''
         invalid_api_key = '3c907908-44a7-490a-9661-3866b3732d22'
 
         expected_status = HTTPStatus.FORBIDDEN
 
         for key in [blank_api_key, invalid_api_key]:
-            result = test_get(local_method, aws_url, path_parameters=path_parameters, querystring_parameters=querystring_parameters, aws_api_key=key)
+            result = test_utils._test_request(request_verb, local_method, aws_url, path_parameters=path_parameters,
+                                              querystring_parameters=querystring_parameters, request_body=request_body, aws_api_key=key)
             result_status = result['statusCode']
             self.assertEqual(expected_status, result_status)
 
     def test_01_get_user_by_uuid_api_requires_valid_key(self):
         path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
-        self.common_assertions(get_user_by_id_api, 'v1/user', path_parameters=path_parameters)
+        self.common_assertions('GET', get_user_by_id_api, 'v1/user', path_parameters=path_parameters)
 
     def test_02_get_user_email_api_requires_valid_key(self):
         querystring_parameters = {'email': 'altha@email.co.uk'}
-        self.common_assertions(get_user_by_id_api, 'v1/user', querystring_parameters=querystring_parameters)
+        self.common_assertions('GET', get_user_by_id_api, 'v1/user', querystring_parameters=querystring_parameters)
+
+    def test_03_patch_user_api_requires_valid_key(self):
+        path_parameters = {'id': "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"}
+        body = json.dumps([{'op': 'replace', 'path': '/first_name', 'value': 'simon'}])
+        self.common_assertions('PATCH', patch_user_api, 'v1/user', path_parameters=path_parameters, request_body=body)
