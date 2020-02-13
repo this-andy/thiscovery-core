@@ -278,14 +278,44 @@ PROJECT_07_JSON = """
         ]
     }
 """
+
+PROJECT_08_JSON = """
+    {
+        "id": "3ffc498f-8add-4448-b452-4fc7f463aa21",
+        "name": "CTG Monitoring",
+        "short_name": "CTG Monitoring",
+        "created": "2018-08-17T12:10:56.084487+00:00",
+        "modified": "2018-08-17T12:10:56.119612+00:00",
+        "visibility": "public",
+        "status": "complete",
+        "tasks": [
+            {
+              "id": "c92c8289-3590-4a85-b699-98bc8171ccde",
+              "description": "Systematic review for CTG monitoring",
+              "created": "2018-08-17T12:10:56.98669+00:00",
+              "modified": "2018-08-17T12:10:57.023286+00:00",
+              "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6",
+              "earliest_start_date": "2018-09-15T12:00:00+00:00",
+              "closing_date": "2018-08-17T12:00:00+00:00",
+              "signup_status": "not-open",
+              "visibility": "public",
+              "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+              "external_task_id": "1234",
+              "base_url": "http://crowd.cochrane.org/index.html",
+              "status": "active"
+            }
+        ]
+    }
+"""
 # endregion
 
 
 class TestProject(test_utils.DbTestCase):
+    maxDiff = None
 
     def test_1_list_projects_api(self):
         expected_status = HTTPStatus.OK
-        expected_body = [json.loads(x) for x in [PROJECT_01_JSON, PROJECT_02_JSON, PROJECT_03_JSON, PROJECT_04_JSON, PROJECT_05_JSON,
+        expected_body = [json.loads(x) for x in [PROJECT_08_JSON, PROJECT_01_JSON, PROJECT_02_JSON, PROJECT_03_JSON, PROJECT_04_JSON, PROJECT_05_JSON,
                                                  PROJECT_06_JSON, PROJECT_07_JSON]]
         result = test_get(p.list_projects_api, f'v1/{ENTITY_BASE_URL}', None, None, None)
         result_status = result['statusCode']
@@ -295,9 +325,6 @@ class TestProject(test_utils.DbTestCase):
         self.assertEqual(len(expected_body), len(result_json))
         for (result, expected) in zip(result_json, expected_body):
             self.assertDictEqual(expected, result)
-
-        # self.assertDictEqual(result_json[0], expected_body[0])
-        # self.assertDictEqual(result_json[1], expected_body[1])
 
     def test_2_get_project_api_exists(self):
         path_parameters = {'id': "a099d03b-11e3-424c-9e97-d1c095f9823b"}
