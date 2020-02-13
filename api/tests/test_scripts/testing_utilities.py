@@ -135,7 +135,9 @@ class DbTestCase(BaseTestCase):
 
 def _aws_request(method, url, params=None, data=None, aws_api_key=get_secret('aws-connection')['aws-api-key']):
     full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json', 'x-api-key': aws_api_key}
+    headers = {'Content-Type': 'application/json'}
+    if aws_api_key:
+        headers['x-api-key'] = aws_api_key
     try:
         response = requests.request(
             method=method,
