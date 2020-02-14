@@ -73,7 +73,10 @@ class MyTestCase(test_utils.DbTestCase):
 
         # check project task progress was updated
         for ext_task_id, expected_pt_assessments in [('ext-6a', 45), ('ext-5a', 1868)]:
-            pt = p.get_project_task(p.get_project_task_by_external_task_id(ext_task_id)[0]['id'])[0]
+            pts = p.get_project_task_by_external_task_id(ext_task_id)
+            # todo: p.get_project_task_by_external_task_id and p.get_project_task execute very similar SQL queries; could join using a template
+            pt = [x for x in pts if x['task_provider_name'] == 'Cochrane'][0]
+            pt = p.get_project_task(pt['id'])[0]
             actual_pt_assessments = pt['progress_info']['total assessments']
             self.assertEqual(expected_pt_assessments, actual_pt_assessments)
             expected_pt_progress_modified = '2019-12-18T12:16:42+00:00'
