@@ -48,9 +48,9 @@ def update_cochrane_progress(event, context):
                 tasks_progress[r['task']] = [{'count': r['count'], 'uuid': r['uuid']}]
         return tasks_progress
 
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = get_correlation_id(event)
+    external_system_name = 'Cochrane Crowd'
 
     progress_dict = get_progress()
     progress_info_modified = progress_dict['daterun']
@@ -85,5 +85,4 @@ def update_cochrane_progress(event, context):
     assert len(updated_rows) == len(project_tasks_sql_queries) + len(user_tasks_sql_queries), 'Number of updated database rows does not match number of ' \
                                                                                               'executed sql queries'
 
-    logger.info('Total execution time', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
     return {'updated_project_tasks': len(project_tasks_sql_queries), 'updated_user_tasks': len(user_tasks_sql_queries)}
