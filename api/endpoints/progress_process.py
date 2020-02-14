@@ -68,8 +68,6 @@ def update_cochrane_progress(event, context):
             user_task_assessments = record['count']
             user_task_progress_info_json = json.dumps({'total assessments': user_task_assessments})
 
-
-
             # updated_user_tasks += pg_utils.execute_non_query(ut_sql, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
             user_tasks_sql_queries.append((sql_q.ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
 

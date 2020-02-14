@@ -27,7 +27,7 @@ WHERE
 
 
 # region progress_process
-project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id')
+project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id', external_system_id=True)
 
 
 ut_sql = f'''

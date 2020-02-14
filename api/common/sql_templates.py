@@ -10,16 +10,9 @@ project_tasks_by_external_id = Template(
         public.projects_projecttask pt
         JOIN projects_externalsystem es on pt.external_system_id = es.id
     WHERE 
-        external_task_id = (%s)
+        external_task_id = (%s) 
+        {%- if external_system_id %} AND external_system_id = (%s) {% endif %}
     """
 )
-
-
-update_user_task = Template(
-    """
-    
-    """
-)
-
 
 
