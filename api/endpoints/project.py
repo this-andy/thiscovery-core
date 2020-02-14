@@ -20,119 +20,21 @@ import json
 from http import HTTPStatus
 
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
+from common.sql_queries import BASE_PROJECT_SELECT_SQL, MINIMAL_PROJECT_SELECT_SQL, TASKS_BY_EXTERNAL_ID_SQL, LIST_PROJECTS_SQL, GET_PROJECT_TASK_SQL, \
+    UPDATE_PROJECT_TASK_SQL, PROJECT_USER_SELECT_SQL
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, non_prod_env_url_param, create_url_params, create_anonymous_url_params
 
 
-BASE_PROJECT_SELECT_SQL = '''
-    SELECT row_to_json(project_row) 
-    from (
-        select 
-            id, 
-            name,
-            short_name,
-            created,
-            modified,
-            visibility,
-            status,
-            (
-                select coalesce(json_agg(task_row), '[]'::json)
-                from (
-                    select 
-                        id,
-                        description,
-                        created,
-                        modified,
-                        task_type_id,
-                        earliest_start_date,
-                        closing_date,
-                        signup_status,
-                        visibility,
-                        external_system_id,                       
-                        external_task_id, 
-                        base_url,                      
-                        status                         
-                    from public.projects_projecttask task
-                    where task.project_id = project.id
-                        AND task.status != 'planned'
-                    order by created
-                    ) task_row
-            ) as tasks
-        from public.projects_project project
-        where project.status != 'planned'
-        order by created
-        ) project_row
-'''
 
-MINIMAL_PROJECT_SELECT_SQL = '''
-    SELECT row_to_json(project_row) 
-    from (
-        select 
-            id, 
-            short_name,
-            visibility,
-            status,
-            (
-                select coalesce(json_agg(task_row), '[]'::json)
-                from (
-                    select 
-                        id,
-                        description,
-                        signup_status,
-                        visibility,
-                        status                         
-                    from public.projects_projecttask task
-                    where task.project_id = project.id
-                        AND task.status != 'planned'
-                    order by created
-                    ) task_row
-            ) as tasks
-        from public.projects_project project
-        where project.status != 'planned'
-        order by created
-        ) project_row
-'''
-
-
-TASKS_BY_EXTERNAL_ID_SQL = '''
-            SELECT
-                pt.id,
-                project_id,
-                task_type_id,
-                base_url,
-                external_system_id,
-                external_task_id,
-                es.short_name as task_provider_name
-            FROM public.projects_projecttask pt
-            JOIN projects_externalsystem es on pt.external_system_id = es.id
-            WHERE external_task_id = (%s)
-    '''
 
 
 def list_projects(correlation_id):
-    base_sql = '''
-      SELECT 
-        id, 
-        name,
-        short_name,
-        created,
-        modified,
-        visibility,
-        status
-      FROM 
-        public.projects_project
-      WHERE projects_project.status != 'planned'
-      ORDER BY 
-        created
-    '''
-
-    return execute_query(base_sql, None, correlation_id)
+    return execute_query(LIST_PROJECTS_SQL, None, correlation_id)
 
 
 def list_projects_with_tasks(correlation_id):
-
     result = execute_query(BASE_PROJECT_SELECT_SQL, None, correlation_id, True, False)
-
     return result
 
 
@@ -163,34 +65,12 @@ def list_projects_api(event, context):
 
 
 def get_project_task(project_task_id, correlation_id=None):
-    sql = '''
-        SELECT
-            pt.id as project_task_id,
-            project_id,
-            task_type_id,
-            base_url,
-            external_system_id,
-            external_task_id,
-            progress_info,
-            progress_info_modified,
-            es.short_name as task_provider_name
-        FROM public.projects_projecttask pt
-        JOIN projects_externalsystem es on pt.external_system_id = es.id
-        WHERE pt.id = %s
-    '''
-    return execute_query(sql, (str(project_task_id),), correlation_id)
+    return execute_query(GET_PROJECT_TASK_SQL, (str(project_task_id),), correlation_id)
 
 
 def update_project_task_progress_info(project_task_id, progress_info_dict, progress_info_modified, correlation_id):
     progress_info_json = json.dumps(progress_info_dict)
-
-    base_sql = '''
-                UPDATE public.projects_projecttask
-                SET progress_info = (%s), progress_info_modified = (%s)
-                WHERE id = (%s);
-            '''
-
-    number_of_updated_rows = execute_non_query(base_sql, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
+    number_of_updated_rows = execute_non_query(UPDATE_PROJECT_TASK_SQL, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
     return number_of_updated_rows
 
 
@@ -200,7 +80,6 @@ def get_project_with_tasks(project_uuid, correlation_id):
     # put where clause before final order by
     order_by_index = BASE_PROJECT_SELECT_SQL.rfind('order by')
     sql = BASE_PROJECT_SELECT_SQL[:order_by_index] + sql_where_clause + BASE_PROJECT_SELECT_SQL[order_by_index:]
-
     result = execute_query(sql, (str(project_uuid),), correlation_id, True, False)
 
     return result
@@ -242,45 +121,6 @@ def get_project_api(event, context):
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
-
-
-PROJECT_USER_SELECT_SQL = '''
-    SELECT row_to_json(project_row) 
-    from (
-        select 
-            id, 
-            short_name,
-            visibility,
-            status,
-            FALSE as project_is_visible,
-            (
-                select coalesce(json_agg(task_row), '[]'::json)
-                from (
-                    select 
-                        task.id,
-                        description,
-                        signup_status,
-                        visibility,   
-                        external_task_id,
-                        base_url as url,                    
-                        status,
-                        es.short_name as task_provider_name,
-                        FALSE as task_is_visible,
-                        FALSE as user_is_signedup,
-                        FALSE as signup_available,
-                        null as user_task_status
-                    from public.projects_projecttask task
-                    join public.projects_externalsystem es on task.external_system_id = es.id
-                    where task.project_id = project.id
-                        AND task.status != 'planned'                   
-                    order by task.created
-                    ) task_row
-            ) as tasks
-        from public.projects_project project
-        where project.status != 'planned'
-        order by created
-        ) project_row
-    '''
 
 
 def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
@@ -437,39 +277,3 @@ def get_project_status_for_external_user_api(event, context):
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
-
-
-if __name__ == "__main__":
-    # result = get_project_with_tasks('5907275b-6d75-4ec0-ada8-5854b44fb955',None)
-
-    # result = get_project_task("07af2fbe-5cd1-447f-bae1-3a2f8de82829", None)
-
-    # pp = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceecd"}
-    # ev = {'pathParameters': pp}
-    # result = get_project_api(ev, None)
-
-    # result = list_projects_api(None, None)
-    # result_status = result['statusCode']
-    # result_json = json.loads(result['body'])
-
-    # result = list_publicly_visible_projects('123')
-    # j "04306e5c-b04f-4d2c-9e82-97fee2d135af"
-    # d "26ee974a-08de-4a89-a85e-bcdabc7d9944"
-    # s "6b78f0fc-9266-40fb-a212-b06889a6811d"
-    # a "a5634be4-af2a-4d4a-a282-663e8c816507"
-    # result = list_user_visible_projects("6b78f0fc-9266-40fb-a212-b06889a6811d",'123')
-    qsp = {'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"}
-    ev = {'queryStringParameters': qsp}
-    result = get_project_status_for_user_api(ev, None)
-    print(json.dumps(result, indent=2))
-    body = result['body']
-    body_json = json.loads(body)
-    print(json.dumps(body_json, indent=2))
-    # if len(result) == 0:
-    #     print(result)
-    # else:
-    #     for item in result:
-    #         print(item)
-
-    # print(list_projects_with_tasks(None))
-    # print(json.dumps(list_projects(None)))

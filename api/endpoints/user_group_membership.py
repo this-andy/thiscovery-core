@@ -20,6 +20,7 @@ import json
 from http import HTTPStatus
 
 from common.pg_utilities import execute_non_query, execute_query_multiple
+from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
 from common.entity_base import EntityBase
@@ -88,26 +89,7 @@ class UserGroupMembership(EntityBase):
         Checks that the ids in self actually exist in database and that self does not already exist
         :return: nothing, but raises errors if not valid
         """
-
-        sql_user = """
-            SELECT id
-            FROM public.projects_user
-            WHERE id = %s
-        """
-
-        sql_user_group = """
-            SELECT id
-            FROM public.projects_usergroup
-            WHERE id = %s
-        """
-
-        sql_user_group_membership = """
-            SELECT id
-            FROM public.projects_usergroupmembership
-            WHERE user_id = %s and user_group_id = %s
-        """
-
-        results = execute_query_multiple((sql_user, sql_user_group, sql_user_group_membership), ((self.user_id,), (self.user_group_id,), (self.user_id, self.user_group_id)), correlation_id)
+        results = execute_query_multiple((SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP), ((self.user_id,), (self.user_group_id,), (self.user_id, self.user_group_id)), correlation_id)
 
         user_data = results[0]
         user_group_data = results[1]
@@ -129,15 +111,7 @@ class UserGroupMembership(EntityBase):
 
     def insert_to_db(self, correlation_id):
         # todo ref integrity check
-        sql = '''INSERT INTO public.projects_usergroupmembership (
-                id,
-                created,
-                modified,
-                user_id,
-                user_group_id
-            ) VALUES ( %s, %s, %s, %s, %s );'''
-
-        execute_non_query(sql, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
+        execute_non_query(INSERT_USER_GROUP_MEMBERSHIP_SQL, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
 
 
 def create_user_group_membership_api(event, context):
@@ -173,19 +147,3 @@ def create_user_group_membership_api(event, context):
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
-
-
-if __name__ == "__main__":
-    test_ugm_json = {
-        # "created": "2019-08-17 12:26:09.023588+01:00",
-        # "id": "11110edd-5fa4-461c-b57c-aaf6b16f6822",
-        # "modified": "2019-09-17 12:26:09.023665+01:00",
-        'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
-        'user_group_id': 'de1192a0-bce9-4a74-b177-2a209c8deeb4',
-    }
-    corr_id = None
-    # ugm = UserGroupMembership.new_from_json(test_ugm_json, corr_id)
-    # print(ugm.to_json())
-
-    ev = {'body': json.dumps(test_ugm_json)}
-    print(create_user_group_membership_api(ev, None))

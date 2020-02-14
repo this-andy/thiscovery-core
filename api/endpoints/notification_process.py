@@ -24,10 +24,12 @@ import sys
 import json
 from datetime import datetime
 
-from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+
 from common.hubspot import HubSpotClient
-from common.pg_utilities import execute_query
 from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+from common.pg_utilities import execute_query
+from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
+from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
 from user import patch_user
 
 
@@ -90,27 +92,6 @@ def process_user_registration(notification):
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)
-
-
-SIGNUP_DETAILS_SELECT_SQL = '''
-  SELECT 
-    p.id as project_id,
-    p.name as project_name,
-    pt.id as task_id,
-    pt.description as task_name,
-    tt.id as task_type_id,
-    tt.name as task_type_name,
-    u.crm_id
-  FROM 
-    public.projects_project p
-    JOIN projects_projecttask pt on p.id = pt.project_id
-    JOIN projects_tasktype tt on pt.task_type_id = tt.id
-    JOIN projects_usertask ut on pt.id = ut.project_task_id
-    JOIN projects_userproject up on ut.user_project_id = up.id
-    JOIN projects_user u on up.user_id = u.id
-  WHERE
-    ut.id = %s
-    '''
 
 
 def get_task_signup_data_for_crm(user_task_id, correlation_id):
@@ -187,21 +168,3 @@ def dateformattest(event, context):
         return response
     except:
         logger.error(sys.exc_info()[0])
-
-
-if __name__ == "__main__":
-
-    result = process_notifications(None, None)
-    # print(str(notifications))
-    # notification_id = notifications[0]['id']
-
-    # date_json = {
-    #     "date": "2019-05-16 15:20:51.264658+00:00",
-    #     "format": "%Y-%m-%d %H:%M:%S.%f%z"
-    # }
-    # ev = {'body': json.dumps(date_json)}
-    # print(dateformattest(ev, None))
-
-    # details = {'id': '010d3058-d329-448a-b155-4e574e9e2e57'}
-    # result = get_task_signup_data_for_crm(details)
-    print(result)

@@ -24,31 +24,13 @@ from jsonpatch import JsonPatch, JsonPatchException
 
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
+from common.sql_queries import BASE_USER_SELECT_SQL, GET_USER_BY_EXT_USER_PROJECT_ID_SQL, CREATE_USER_SQL, VALIDATE_USER_EMAIL_SQL
 from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
     now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
 from common.entity_update import EntityUpdate
 # from utils import validate_uuid
 from common.notification_send import notify_new_user_registration, notify_user_login
-
-
-BASE_USER_SELECT_SQL = '''
-  SELECT 
-    id, 
-    created, 
-    modified, 
-    email, 
-    email_address_verified,
-    title, 
-    first_name, 
-    last_name, 
-    country_code,
-    auth0_id, 
-    crm_id,
-    status
-  FROM 
-    public.projects_user
-    '''
 
 
 def validate_status(s):
@@ -90,35 +72,13 @@ def append_calculated_properties(user):
 
 
 def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
-
-    sql = '''
-        SELECT 
-            u.id, 
-            u.created, 
-            u.modified, 
-            u.email, 
-            u.email_address_verified,
-            u.title, 
-            u.first_name, 
-            u.last_name, 
-            u.country_code,
-            u.auth0_id, 
-            u.crm_id,
-            u.status
-        FROM 
-            public.projects_user as u
-            JOIN public.projects_userproject as up on up.user_id = u.id
-        WHERE
-            up.ext_user_project_id = (%s)
-    '''
-
     try:
         ext_user_project_id = validate_uuid(ext_user_project_id)
     except DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
 
-    user_json = execute_query(sql, (str(ext_user_project_id),), correlation_id)
+    user_json = execute_query(GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(ext_user_project_id),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -411,24 +371,10 @@ def create_user(user_json, correlation_id):
         errorjson = {'id': id, 'correlation_id': str(correlation_id)}
         raise DuplicateInsertError('user already exists', errorjson)
 
-    sql = '''INSERT INTO public.projects_user (
-            id,
-            created,
-            modified,
-            email,
-            email_address_verified,
-            email_verification_token,
-            email_verification_expiry,
-            title,
-            first_name,
-            last_name,
-            country_code,
-            auth0_id,
-            status
-        ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );'''
+
 
     params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry, title, first_name, last_name, country_code, auth0_id, status)
-    execute_non_query(sql, params, correlation_id)
+    execute_non_query(CREATE_USER_SQL, params, correlation_id)
 
     new_user = {
         'id': id,
@@ -489,12 +435,4 @@ def create_user_api(event, context):
 
 
 def validate_user_email(user_id, email_verification_token_to_check, correlation_id):
-    sql = """
-        SELECT 
-            email_verification_token, email_verification_expiry
-        FROM 
-            public.projects_user
-        WHERE
-            id = %s
-    """
-    result = execute_query(sql, (str(user_id),), correlation_id)
+    result = execute_query(VALIDATE_USER_EMAIL_SQL, (str(user_id),), correlation_id)
