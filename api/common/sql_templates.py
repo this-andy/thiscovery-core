@@ -11,8 +11,12 @@ project_tasks_by_external_id = Template(
         JOIN projects_externalsystem es on pt.external_system_id = es.id
     WHERE 
         external_task_id = (%s) 
-        {%- if external_system_id %} AND external_system_id = (%s) {% endif %}
+        {%- if external_system_id %} AND external_system_id = {{ external_system_id }} {% endif %}
     """
 )
+
+
+
+
 
 
