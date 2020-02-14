@@ -229,14 +229,17 @@ class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
             cls.t_dict = yaml.load(f, Loader=yaml.Loader)
 
     def test_16_defined_endpoints_are_secure(self):
+        endpoint_counter = 0
         api_paths = self.t_dict['Resources']['CoreAPI']['Properties']['DefinitionBody']['paths']
         for url, value in api_paths.items():
             for verb in ['delete', 'get', 'head', 'patch', 'post', 'put']:
                 endpoint_config = value.get(verb)
                 if endpoint_config:
+                    endpoint_counter += 1
                     self.logger.info(f'Found endpoint {verb.upper()} {url} in template.yaml. Checking if it is secure',
                                      extra={'endpoint_config': endpoint_config})
                     if (url, verb) in self.public_endpoints:
                         self.assertIsNone(endpoint_config.get('security'))
                     else:
                         self.assertEqual([{'api_key': []}], endpoint_config.get('security'))
+        self.logger.info(f'The configuration of {endpoint_counter} endpoints in template.yaml is as expected')
