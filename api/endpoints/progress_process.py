@@ -56,8 +56,6 @@ def update_cochrane_progress(event, context):
     progress_info_modified = progress_dict['daterun']
 
     progress_by_task = sort_progress_by_task(progress_dict)
-    # updated_project_tasks = 0
-    # updated_user_tasks = 0
     logger.info('Execution time before for loop', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
     user_tasks_sql_queries, project_tasks_sql_queries = list(), list()
     for external_task_id, v in progress_by_task.items():
