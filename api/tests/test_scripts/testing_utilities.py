@@ -40,6 +40,7 @@ class BaseTestCase(TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
+    logger = get_logger()
 
     @classmethod
     def setUpClass(cls):
