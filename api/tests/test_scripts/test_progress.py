@@ -33,12 +33,46 @@ TEST_DATA_FOLDER = '../test_data/'
 class MyTestCase(test_utils.DbTestCase):
 
     def test_01_update_cochrane_progress(self):
+        """
+        This test relies on data from a mock API response. The body returned by that mock API is:
+        {
+            "records": [
+                {
+                    "task": "ext-6a",
+                    "count": 15,
+                    "uuid": "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
+                },
+                {
+                    "task": "ext-6a",
+                    "count": 30,
+                    "uuid": "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
+                },
+                {
+                    "task": "ext-5a",
+                    "count": 1867,
+                    "uuid": "851f7b34-f76c-49de-a382-7e4089b744e2"
+                },
+                {
+                    "task": "ext-5a",
+                    "count": 1,
+                    "uuid": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"
+                },
+                {
+                    "task": 1234,
+                    "count": 579,
+                    "uuid": "d1070e81-557e-40eb-a7ba-b951ddb7ebdc"
+                }
+            ],
+            "daterun": "2019-12-18 12:16:42 UTC",
+            "caption": "THIS task summary"
+        }
+        """
         expected_result = {'updated_project_tasks': 3, 'updated_user_tasks': 5}
         result = prog_proc.update_cochrane_progress(event=None, context=None)
         self.assertEqual(expected_result, result)
 
         # check project task progress was updated
-        for ext_task_id, expected_pt_assessments in [('ext-3a', 45), ('ext-5a', 1868)]:
+        for ext_task_id, expected_pt_assessments in [('ext-6a', 45), ('ext-5a', 1868)]:
             pt = p.get_project_task(p.get_project_task_by_external_task_id(ext_task_id)[0]['id'])[0]
             actual_pt_assessments = pt['progress_info']['total assessments']
             self.assertEqual(expected_pt_assessments, actual_pt_assessments)
@@ -46,14 +80,14 @@ class MyTestCase(test_utils.DbTestCase):
             actual_pt_progress_modified = pt['progress_info_modified']
             self.assertEqual(expected_pt_progress_modified, actual_pt_progress_modified)
 
-        # check user task progress was updated
+        # check user task progress was updated (tip: db view user_tasks_with_external_ids is the best source for the info below)
         user_tasks_lookup = {
-            'ext-3a-851f7b34-f76c-49de-a382-7e4089b744e2': {
-                'ut_id': '615ff0e6-0b41-4870-b9db-527345d1d9e5',
+            'ext-6a-35224bd5-f8a8-41f6-8502-f96e12d6ddde': {
+                'ut_id': 'ade342a2-a1ec-49fb-ab0f-2f81357cbced',
                 'expected_ut_assessments': 15,
             },
-            'ext-3a-8518c7ed-1df4-45e9-8dc4-d49b57ae0663': {
-                'ut_id': 'dad64b2c-8315-4ec4-9824-5e2fdffc11e5',
+            'ext-6a-8518c7ed-1df4-45e9-8dc4-d49b57ae0663': {
+                'ut_id': 'd4a47805-fbec-4e43-938c-94af7214326d',
                 'expected_ut_assessments': 30,
             },
             'ext-5a-851f7b34-f76c-49de-a382-7e4089b744e2': {
