@@ -18,13 +18,10 @@
 
 import json
 import os
-import uuid
+import yaml
 from http import HTTPStatus
-from dateutil import parser
-from time import sleep
 
 import api.endpoints.misc as m
-import api.endpoints.notification_process as np
 import api.endpoints.project as p
 import api.endpoints.user as u
 import api.endpoints.user_external_account as uea
@@ -191,3 +188,17 @@ class TestUserExternalAccountApiEndpoints(TestApiEndpoints):
             'created': '2018-06-13 14:15:16.171819+00'
         })
         self.check_api_is_restricted('POST', uea.create_user_external_account_api, self.ENTITY_BASE_URL, request_body=body)
+
+
+class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        template_file = os.path.join(test_utils.BASE_FOLDER, 'template.yaml')
+        with open(template_file) as f:
+            cls.t_dict = yaml.load(f, Loader=yaml.FullLoader)
+
+    def test_16_defined_endpoints_are_secure(self):
+        print(self.t_dict)
+

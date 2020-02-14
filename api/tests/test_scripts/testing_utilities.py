@@ -31,6 +31,8 @@ from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple
 from common.utilities import get_secret, now_with_tz, get_logger, get_country_name, set_running_unit_tests
 
+
+BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..')  # thiscovery-core/
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
