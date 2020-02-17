@@ -21,22 +21,13 @@ import json
 from http import HTTPStatus
 
 from common.pg_utilities import execute_query
+from common.sql_queries import USER_GROUP_BASE_SELECT_SQL
 from common.utilities import validate_uuid, DetailedValueError
 from common.entity_base import EntityBase
 
 
 # todo how best to deal with correlation ids
-BASE_SELECT_SQL = '''
-  SELECT 
-    id, 
-    created, 
-    modified, 
-    name, 
-    short_name, 
-    url_code
-  FROM 
-    public.projects_usergroup
-    '''
+
 
 class UserGroup(EntityBase):
 
@@ -86,7 +77,7 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE id = %s"
 
-        ug_json = execute_query(BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
+        ug_json = execute_query(USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
         if len(ug_json) > 0:
             ug_json = ug_json[0]
             return cls.from_json(ug_json, correlation_id)
@@ -98,7 +89,7 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE url_code = %s"
 
-        ug_json = execute_query(BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
+        ug_json = execute_query(USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
 
         if len(ug_json) > 0:
             ug_json = ug_json[0]
@@ -110,18 +101,3 @@ class UserGroup(EntityBase):
 def re(cls):
     error_json = {'parameter': 'err.args[0]', 'correlation_id': str('correlation_id')}
     raise DetailedValueError('just testing', error_json)
-
-if __name__ == "__main__":
-    ug_json = {
-        'name': 'my test UG',
-        'short_name': 'myUG',
-        'url_code': 'UG001'
-    }
-    correlation_id = None
-    # ug = UserGroup.from_json(ug_json, correlation_id)
-    # print(ug.to_json())
-
-    # ug = UserGroup.get_by_id('9cabcdea-8169-4101-87bd-24fd92c9a6da', correlation_id)
-    ug = UserGroup.get_by_url_code('ug#2', correlation_id)
-    ug_d = ug.to_dict()
-    print(ug.to_json())

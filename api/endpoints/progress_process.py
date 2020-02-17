@@ -21,8 +21,8 @@ import json
 import common.pg_utilities as pg_utils
 import project as p
 from common.cochrane import get_progress
-from common.utilities import get_correlation_id, get_logger, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
-from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
+import common.sql_queries as sql_q
+from common.utilities import get_correlation_id, get_logger, get_start_time, get_elapsed_ms
 
 
 def update_cochrane_progress(event, context):
@@ -48,72 +48,35 @@ def update_cochrane_progress(event, context):
                 tasks_progress[r['task']] = [{'count': r['count'], 'uuid': r['uuid']}]
         return tasks_progress
 
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = get_correlation_id(event)
+    external_system_name = 'Cochrane Crowd'
+    try:
+        external_system_id = pg_utils.execute_query(sql_q.external_system_id_by_name, [external_system_name])[0]['id']
+    except TypeError as err:
+        logger.error(f'Could not find an external system named "{external_system_name}"')
+        raise err
 
     progress_dict = get_progress()
     progress_info_modified = progress_dict['daterun']
 
     progress_by_task = sort_progress_by_task(progress_dict)
-    # updated_project_tasks = 0
-    # updated_user_tasks = 0
-    logger.info('Execution time before for loop', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
     user_tasks_sql_queries, project_tasks_sql_queries = list(), list()
     for external_task_id, v in progress_by_task.items():
         logger.info(f'Working on task {external_task_id}')
         project_task_assessments = 0
+
         for record in v:
             user_id = record['uuid']
             user_task_assessments = record['count']
             user_task_progress_info_json = json.dumps({'total assessments': user_task_assessments})
-
-            project_task_id_subquery = '''
-                    SELECT
-                    pt.id as project_task_id
-                    FROM
-                    public.projects_projecttask pt
-                    JOIN projects_externalsystem es on pt.external_system_id = es.id
-                    WHERE external_task_id = (%s)
-            '''
-
-            ut_sql = f'''
-                UPDATE public.projects_usertask
-                SET progress_info = (%s)
-                WHERE id = 
-                (
-                    SELECT 
-                        ut.id as user_task_id 
-                    FROM 
-                        public.projects_usertask ut 
-                        JOIN public.projects_projecttask pt on pt.id = ut.project_task_id
-                        JOIN public.projects_userproject up on up.id = ut.user_project_id
-                    WHERE up.user_id = (%s) AND ut.project_task_id = 
-                         (
-                         {project_task_id_subquery}
-                         )
-                    ORDER BY ut.created
-                );
-            '''
-
-            # updated_user_tasks += pg_utils.execute_non_query(ut_sql, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
-            user_tasks_sql_queries.append((ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
-
+            user_tasks_sql_queries.append((sql_q.UPDATE_USER_TASK_PROGRESS_SQL,
+                                           (user_task_progress_info_json, user_id, external_task_id, external_system_id)))
             project_task_assessments += user_task_assessments
 
         project_task_progress_info_json = json.dumps({'total assessments': project_task_assessments})
-
-        pt_sql = f'''
-                UPDATE public.projects_projecttask
-                SET progress_info = (%s), progress_info_modified = (%s)
-                WHERE id = 
-                    (
-                    {project_task_id_subquery}
-                    );
-            '''
-
-        # updated_project_tasks += pg_utils.execute_non_query(pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
-        project_tasks_sql_queries.append((pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
+        project_tasks_sql_queries.append((sql_q.UPDATE_PROJECT_TASK_PROGRESS_SQL,
+                                          (project_task_progress_info_json, progress_info_modified, external_task_id, external_system_id)))
 
     multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
     multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]
@@ -122,5 +85,4 @@ def update_cochrane_progress(event, context):
     assert len(updated_rows) == len(project_tasks_sql_queries) + len(user_tasks_sql_queries), 'Number of updated database rows does not match number of ' \
                                                                                               'executed sql queries'
 
-    logger.info('Total execution time', extra={'progress items processed': progress_by_task, 'elapsed_ms': get_elapsed_ms(start_time)})
     return {'updated_project_tasks': len(project_tasks_sql_queries), 'updated_user_tasks': len(user_tasks_sql_queries)}
