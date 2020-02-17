@@ -19,9 +19,8 @@
 import json
 from http import HTTPStatus
 
+import common.sql_queries as sql_q
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
-from common.sql_queries import BASE_PROJECT_SELECT_SQL, MINIMAL_PROJECT_SELECT_SQL, TASKS_BY_EXTERNAL_ID_SQL, LIST_PROJECTS_SQL, GET_PROJECT_TASK_SQL, \
-    UPDATE_PROJECT_TASK_SQL, PROJECT_USER_SELECT_SQL
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, non_prod_env_url_param, create_url_params, create_anonymous_url_params
 
@@ -30,11 +29,11 @@ from common.utilities import get_correlation_id, get_logger, error_as_response_b
 
 
 def list_projects(correlation_id):
-    return execute_query(LIST_PROJECTS_SQL, None, correlation_id)
+    return execute_query(sql_q.LIST_PROJECTS_SQL, None, correlation_id)
 
 
 def list_projects_with_tasks(correlation_id):
-    result = execute_query(BASE_PROJECT_SELECT_SQL, None, correlation_id, True, False)
+    result = execute_query(sql_q.BASE_PROJECT_SELECT_SQL, None, correlation_id, True, False)
     return result
 
 
@@ -65,12 +64,12 @@ def list_projects_api(event, context):
 
 
 def get_project_task(project_task_id, correlation_id=None):
-    return execute_query(GET_PROJECT_TASK_SQL, (str(project_task_id),), correlation_id)
+    return execute_query(sql_q.GET_PROJECT_TASK_SQL, (str(project_task_id),), correlation_id)
 
 
 def update_project_task_progress_info(project_task_id, progress_info_dict, progress_info_modified, correlation_id):
     progress_info_json = json.dumps(progress_info_dict)
-    number_of_updated_rows = execute_non_query(UPDATE_PROJECT_TASK_SQL, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
+    number_of_updated_rows = execute_non_query(sql_q.UPDATE_PROJECT_TASK_SQL, [progress_info_json, progress_info_modified, project_task_id], correlation_id)
     return number_of_updated_rows
 
 
@@ -78,15 +77,15 @@ def get_project_with_tasks(project_uuid, correlation_id):
     # take base sql query and insert a where clause to get specified project
     sql_where_clause = " AND id = %s "
     # put where clause before final order by
-    order_by_index = BASE_PROJECT_SELECT_SQL.rfind('order by')
-    sql = BASE_PROJECT_SELECT_SQL[:order_by_index] + sql_where_clause + BASE_PROJECT_SELECT_SQL[order_by_index:]
+    order_by_index = sql_q.BASE_PROJECT_SELECT_SQL.rfind('order by')
+    sql = sql_q.BASE_PROJECT_SELECT_SQL[:order_by_index] + sql_where_clause + sql_q.BASE_PROJECT_SELECT_SQL[order_by_index:]
     result = execute_query(sql, (str(project_uuid),), correlation_id, True, False)
 
     return result
 
 
 def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
-    return execute_query(TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
+    return execute_query(sql_q.TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
 
 
 def get_project_api(event, context):
@@ -125,7 +124,7 @@ def get_project_api(event, context):
 
 def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
 
-    project_list = execute_query(PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
+    project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
     sql0 = """
         SELECT project_id, project_name, group_id, group_name, user_id, email, ext_user_project_id

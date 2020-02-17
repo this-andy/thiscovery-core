@@ -30,7 +30,7 @@ WHERE
 project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id')
 
 
-ut_sql = f'''
+UPDATE_USER_TASK_PROGRESS_SQL = f'''
     UPDATE public.projects_usertask
     SET progress_info = (%s)
     WHERE id = 
@@ -50,7 +50,7 @@ ut_sql = f'''
 '''
 
 
-pt_sql = f'''
+UPDATE_PROJECT_TASK_PROGRESS_SQL = f'''
     UPDATE public.projects_projecttask
     SET progress_info = (%s), progress_info_modified = (%s)
     WHERE id = 

@@ -70,15 +70,15 @@ def update_cochrane_progress(event, context):
 
 
 
-            # updated_user_tasks += pg_utils.execute_non_query(ut_sql, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
-            user_tasks_sql_queries.append((sql_q.ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
+            # updated_user_tasks += pg_utils.execute_non_query(UPDATE_USER_TASK_PROGRESS_SQL, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
+            user_tasks_sql_queries.append((sql_q.UPDATE_USER_TASK_PROGRESS_SQL, (user_task_progress_info_json, user_id, external_task_id)))
 
             project_task_assessments += user_task_assessments
 
         project_task_progress_info_json = json.dumps({'total assessments': project_task_assessments})
 
-        # updated_project_tasks += pg_utils.execute_non_query(pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
-        project_tasks_sql_queries.append((sql_q.pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
+        # updated_project_tasks += pg_utils.execute_non_query(UPDATE_PROJECT_TASK_PROGRESS_SQL, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
+        project_tasks_sql_queries.append((sql_q.UPDATE_PROJECT_TASK_PROGRESS_SQL, (project_task_progress_info_json, progress_info_modified, external_task_id)))
 
     multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
     multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]
