@@ -32,14 +32,16 @@ def update_cochrane_progress(event, context):
 
     def sort_progress_by_task(progress_dict_):
         """
-        Sorts Cochrane progress report by tasks. Returns a sorted dictionary in the format:
+        Converts task ids in Cochrane progress report from integer to string. Sorts Cochrane progress report by tasks.
+        Returns a sorted dictionary in the format:
         {
-        4000: [{"count":6,"uuid":"2a328477-c47e-4758-a43f-2db537983438"}, {"count":7,"uuid":"2ef570b4-c0d5-4de9-8198-f8287942e4e4"}],
-        5500: [{"count":5,"uuid":"2a328477-c47e-4758-a43f-2db537983438"}, {"count":19,"uuid":"2ef570b4-c0d5-4de9-8198-f8287942e4e4"}]
+        "4000": [{"count":6,"uuid":"2a328477-c47e-4758-a43f-2db537983438"}, {"count":7,"uuid":"2ef570b4-c0d5-4de9-8198-f8287942e4e4"}],
+        "5500": [{"count":5,"uuid":"2a328477-c47e-4758-a43f-2db537983438"}, {"count":19,"uuid":"2ef570b4-c0d5-4de9-8198-f8287942e4e4"}]
         }
         """
         tasks_progress = dict()
         for r in progress_dict_['records']:
+            r['task'] = str(r['task'])
             if r['task'] in tasks_progress.keys():
                 tasks_progress[r['task']].append({'count': r['count'], 'uuid': r['uuid']})
             else:
