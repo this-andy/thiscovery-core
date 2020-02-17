@@ -371,13 +371,6 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ping.Arn}/invocations
               responses: {}
-          /v1/dateformattest:
-            post:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${dateformattest.Arn}/invocations
-              responses: {}
           /v1/usergroupmembership:
             post:
               security:
@@ -389,6 +382,8 @@ Resources:
               responses: {}
           /v2/project-user-status:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
@@ -1157,37 +1152,6 @@ Resources:
       TableName: !Sub ${AWS::StackName}-tokens
     Metadata:
       StackeryName: Tokens
-  dateformattest:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-dateformattest
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: dateformattest
-      CodeUri: api/endpoints
-      Handler: notification_process.dateformattest
-      Runtime: python3.7
-      MemorySize: 1408
-      Timeout: 22
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Events:
-        CoreAPIPOSTv1dateformattest:
-          Type: Api
-          Properties:
-            Path: /v1/dateformattest
-            Method: POST
-            RestApiId: !Ref CoreAPI
-    Metadata:
-      StackeryName: dateformattest
   lookups:
     Type: AWS::DynamoDB::Table
     Properties:

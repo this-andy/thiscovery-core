@@ -16,7 +16,11 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-CREATE OR REPLACE VIEW public.external_users_identity AS
+/*
+ Purpose: To list all user tasks together with the internal and external ids, together with useful identifying info, names etc.  Returns one row per user task.
+ Usage:  For manual querying.  Not used in code.
+ */
+CREATE OR REPLACE VIEW public.user_tasks_with_external_ids AS
     SELECT
         u.id AS user_id,
         u.email,
@@ -24,6 +28,7 @@ CREATE OR REPLACE VIEW public.external_users_identity AS
         u.last_name,
         ut.id AS user_task_id,
         ut.ext_user_task_id,
+        ut.created as usre_task_created,
         up.id AS user_project_id,
         up.ext_user_project_id,
         pt.id AS project_task_id,

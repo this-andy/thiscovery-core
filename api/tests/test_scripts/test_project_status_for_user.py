@@ -34,6 +34,16 @@ TEST_ENV = UNIT_TEST_NAMESPACE[1:-1]
 
 ENTITY_BASE_URL = 'project-user-status'
 
+PSFU_IDS = [
+    "6b95e66d-1ff8-453a-88ce-ae0dc4b21df9",
+    "11220597-137d-4452-888d-053f27a78355",
+    "a099d03b-11e3-424c-9e97-d1c095f9823b",
+    "7c18c259-ace6-4f48-9206-93cd15501348",
+    "5907275b-6d75-4ec0-ada8-5854b44fb955",
+    "ce36d4d9-d3d3-493f-98e4-04f4b29ccf49",
+    "183c23a1-76a7-46c3-8277-501f0740939d",
+    "2d03957f-ca35-4f6d-8ec6-1b05ee7d279c",
+]
 
 class ProjectTaskTestResult:
 
@@ -61,6 +71,9 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
+
+        # keep only results for rows in original PSFU dataset
+        result_json = [x for x in result_json if x['id'] in PSFU_IDS]
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):

@@ -16,6 +16,12 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/*
+ Purpose: To list the private projects that each user can see on the web UI.  Projects are either public (visible to all) or private in which case
+ visibility is controlled by membership of user groups with permission to see that project.
+ Usage:  Normally queried by user_id.  This gives one row for each project the user can see, i.e. row exits = visible, no row = not visible.
+ The columns returned may not be required by caller, but enable this view's contents to be easily understood and checked
+ */
 CREATE OR REPLACE VIEW public.project_group_users AS
  SELECT p.id AS project_id,
     p.short_name AS project_name,
