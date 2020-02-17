@@ -41,7 +41,7 @@ external_system_id_by_name = """
 """
 
 
-project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id', external_system_id=subquery(external_system_id_by_name))
+project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id', filter_by_external_system_id=True)
 
 
 UPDATE_USER_TASK_PROGRESS_SQL = f'''

@@ -51,6 +51,11 @@ def update_cochrane_progress(event, context):
     logger = get_logger()
     correlation_id = get_correlation_id(event)
     external_system_name = 'Cochrane Crowd'
+    try:
+        external_system_id = pg_utils.execute_query(sql_q.external_system_id_by_name, [external_system_name])[0]['id']
+    except TypeError as err:
+        logger.error(f'Could not find an external system named "{external_system_name}"')
+        raise err
 
     progress_dict = get_progress()
     progress_info_modified = progress_dict['daterun']
@@ -66,12 +71,12 @@ def update_cochrane_progress(event, context):
             user_task_assessments = record['count']
             user_task_progress_info_json = json.dumps({'total assessments': user_task_assessments})
             user_tasks_sql_queries.append((sql_q.UPDATE_USER_TASK_PROGRESS_SQL,
-                                           (user_task_progress_info_json, user_id, external_task_id, external_system_name)))
+                                           (user_task_progress_info_json, user_id, external_task_id, external_system_id)))
             project_task_assessments += user_task_assessments
 
         project_task_progress_info_json = json.dumps({'total assessments': project_task_assessments})
         project_tasks_sql_queries.append((sql_q.UPDATE_PROJECT_TASK_PROGRESS_SQL,
-                                          (project_task_progress_info_json, progress_info_modified, external_task_id, external_system_name)))
+                                          (project_task_progress_info_json, progress_info_modified, external_task_id, external_system_id)))
 
     multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
     multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]
@@ -81,3 +86,6 @@ def update_cochrane_progress(event, context):
                                                                                               'executed sql queries'
 
     return {'updated_project_tasks': len(project_tasks_sql_queries), 'updated_user_tasks': len(user_tasks_sql_queries)}
+
+
+update_cochrane_progress(None,None)
