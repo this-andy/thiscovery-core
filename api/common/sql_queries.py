@@ -3,6 +3,10 @@ from jinja2 import Template
 import common.sql_templates as sql_t
 
 
+def subquery(query):
+    return f'(\n{query}\n)'
+
+
 # region notification_process
 SIGNUP_DETAILS_SELECT_SQL = '''
 SELECT 
@@ -27,7 +31,17 @@ WHERE
 
 
 # region progress_process
-project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id')
+external_system_id_by_name = """
+    SELECT 
+        id
+    FROM
+        public.projects_externalsystem
+    WHERE
+        name = (%s)
+"""
+
+
+project_task_id_subquery = sql_t.project_tasks_by_external_id.render(pt_id_alias='project_task_id', filter_by_external_system_id=True)
 
 
 UPDATE_USER_TASK_PROGRESS_SQL = f'''

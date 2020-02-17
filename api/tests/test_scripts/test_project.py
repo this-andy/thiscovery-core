@@ -290,19 +290,34 @@ PROJECT_08_JSON = """
         "status": "complete",
         "tasks": [
             {
-              "id": "c92c8289-3590-4a85-b699-98bc8171ccde",
-              "description": "Systematic review for CTG monitoring",
-              "created": "2018-08-17T12:10:56.98669+00:00",
-              "modified": "2018-08-17T12:10:57.023286+00:00",
-              "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6",
-              "earliest_start_date": "2018-09-15T12:00:00+00:00",
-              "closing_date": "2018-08-17T12:00:00+00:00",
-              "signup_status": "not-open",
-              "visibility": "public",
-              "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
-              "external_task_id": "1234",
-              "base_url": "http://crowd.cochrane.org/index.html",
-              "status": "active"
+                "id": "c92c8289-3590-4a85-b699-98bc8171ccde",
+                "description": "Systematic review for CTG monitoring",
+                "created": "2018-08-17T12:10:56.98669+00:00",
+                "modified": "2018-08-17T12:10:57.023286+00:00",
+                "task_type_id": "86118f6f-15e9-4c4b-970c-4c9f15c4baf6",
+                "earliest_start_date": "2018-09-15T12:00:00+00:00",
+                "closing_date": "2018-08-17T12:00:00+00:00",
+                "signup_status": "not-open",
+                "visibility": "public",
+                "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+                "external_task_id": "1234",
+                "base_url": "http://crowd.cochrane.org/index.html",
+                "status": "active"
+            },
+            {
+                "id": "4ee70544-6797-4e21-8cec-5653c8d5b234",
+                "description": "Midwife assessment for CTG monitoring",
+                "created": "2018-08-17T12:10:57.074321+00:00",
+                "modified": "2018-08-17T12:10:57.111495+00:00",
+                "task_type_id": "d92d9935-cb9e-4422-9dbb-65c3423599b1",
+                "earliest_start_date": null,
+                "closing_date": "2018-08-17T09:30:00+00:00",
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-6a",
+                "base_url": "https://www.qualtrics.com",
+                "status": "active"
             }
         ]
     }
