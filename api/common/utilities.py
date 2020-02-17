@@ -188,7 +188,6 @@ def validate_utc_datetime(s):
 # region Logging
 logger = None
 
-
 def get_logger():
     global logger
     if logger is None:
@@ -206,6 +205,7 @@ def get_logger():
 
         for handler in [log_handler, epsagon_handler]:
             logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
         logger.propagate = False
     return logger
 # endregion
