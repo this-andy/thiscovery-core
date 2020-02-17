@@ -19,6 +19,7 @@ import uuid
 import json
 from http import HTTPStatus
 
+import common.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, LIST_USER_TASKS_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
     CREATE_USER_TASK_SQL
@@ -81,8 +82,8 @@ def list_user_tasks(user_id, correlation_id):
     return execute_query(LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
 
 
+@utils.time_execution
 def list_user_tasks_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -102,9 +103,11 @@ def list_user_tasks_api(event, context):
         }
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -112,8 +115,6 @@ def list_user_tasks_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response',
-                extra={'response': response, 'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -215,8 +216,8 @@ def create_user_task(ut_json, correlation_id):
     return new_user_task
 
 
+@utils.time_execution
 def create_user_task_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -234,9 +235,11 @@ def create_user_task_api(event, context):
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
 
     except DuplicateInsertError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except (DetailedIntegrityError, DetailedValueError) as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -244,6 +247,4 @@ def create_user_task_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response',
-                extra={'response': response, 'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response

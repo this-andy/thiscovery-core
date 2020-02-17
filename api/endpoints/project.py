@@ -87,8 +87,8 @@ def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
     return execute_query(sql_q.TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
 
 
+@utils.time_execution
 def get_project_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -110,6 +110,7 @@ def get_project_api(event, context):
             raise ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -117,7 +118,6 @@ def get_project_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -216,8 +216,8 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
     return project_list
 
 
+@utils.time_execution
 def get_project_status_for_user_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -242,15 +242,14 @@ def get_project_status_for_user_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
+@utils.time_execution
 def get_project_status_for_external_user_api(event, context):
     """
     Lambda handler linked to API endpoint /v1/project-user-status-ext
     """
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -273,5 +272,4 @@ def get_project_status_for_external_user_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response

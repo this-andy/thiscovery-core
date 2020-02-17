@@ -98,8 +98,8 @@ def get_user_by_id(user_id, correlation_id=None):
     return append_calculated_properties_to_list(user_json)
 
 
+@utils.time_execution
 def get_user_by_id_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -130,9 +130,11 @@ def get_user_by_id_api(event, context):
             raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -140,7 +142,6 @@ def get_user_by_id_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -203,6 +204,7 @@ def get_user_by_email_api(event, context):
             raise ObjectDoesNotExistError('user does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -256,8 +258,8 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
         raise PatchInvalidJsonError('invalid jsonpatch', errorjson)
 
 
+@utils.time_execution
 def patch_user_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -286,17 +288,17 @@ def patch_user_api(event, context):
         entity_update.save()
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except (PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, PatchInvalidJsonError, DetailedValueError) as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
-
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
 
     return response
 
@@ -401,8 +403,8 @@ def create_user(user_json, correlation_id):
     return new_user
 
 
+@utils.time_execution
 def create_user_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -420,9 +422,11 @@ def create_user_api(event, context):
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
 
     except DuplicateInsertError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except DetailedValueError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -430,7 +434,6 @@ def create_user_api(event, context):
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 

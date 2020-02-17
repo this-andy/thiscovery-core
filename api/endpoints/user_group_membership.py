@@ -19,6 +19,7 @@
 import json
 from http import HTTPStatus
 
+import common.utilities as utils
 from common.pg_utilities import execute_non_query, execute_query_multiple
 from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
@@ -114,8 +115,8 @@ class UserGroupMembership(EntityBase):
         execute_non_query(INSERT_USER_GROUP_MEMBERSHIP_SQL, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
 
 
+@utils.time_execution
 def create_user_group_membership_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -131,13 +132,16 @@ def create_user_group_membership_api(event, context):
         ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
 
-    except DuplicateInsertError:
+    except DuplicateInsertError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps({})}
 
     except ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
@@ -145,5 +149,4 @@ def create_user_group_membership_api(event, context):
         logger.error(error_msg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
