@@ -13,9 +13,3 @@ project_tasks_by_external_id = Template(
         external_task_id = (%s)
     """
 )
-
-
-
-
-
-
