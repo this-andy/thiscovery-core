@@ -20,6 +20,7 @@ import json
 from http import HTTPStatus
 
 import common.sql_queries as sql_q
+import common.utilities as utils
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
 from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, non_prod_env_url_param, create_url_params, create_anonymous_url_params
@@ -37,8 +38,8 @@ def list_projects_with_tasks(correlation_id):
     return result
 
 
+@utils.time_execution
 def list_projects_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -58,8 +59,6 @@ def list_projects_api(event, context):
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
-
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 

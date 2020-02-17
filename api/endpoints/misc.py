@@ -98,17 +98,16 @@ def raise_error_api(event, context):
         }
 
     except ObjectDoesNotExistError as err:
-        epsagon.error(err)
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
-        epsagon.error(err)
+        logger.error(err.as_response_body())
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        # epsagon.error(ex)
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
     return response
