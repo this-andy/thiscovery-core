@@ -21,8 +21,8 @@ import json
 import common.pg_utilities as pg_utils
 import project as p
 from common.cochrane import get_progress
-from common.utilities import get_correlation_id, get_logger, ObjectDoesNotExistError, get_start_time, get_elapsed_ms
-from user_task import filter_user_tasks_by_project_task_id, update_user_task_progress_info
+import common.sql_queries as sql_q
+from common.utilities import get_correlation_id, get_logger, get_start_time, get_elapsed_ms
 
 
 def update_cochrane_progress(event, context):
@@ -68,52 +68,17 @@ def update_cochrane_progress(event, context):
             user_task_assessments = record['count']
             user_task_progress_info_json = json.dumps({'total assessments': user_task_assessments})
 
-            project_task_id_subquery = '''
-                    SELECT
-                    pt.id as project_task_id
-                    FROM
-                    public.projects_projecttask pt
-                    JOIN projects_externalsystem es on pt.external_system_id = es.id
-                    WHERE external_task_id = (%s)
-            '''
 
-            ut_sql = f'''
-                UPDATE public.projects_usertask
-                SET progress_info = (%s)
-                WHERE id = 
-                (
-                    SELECT 
-                        ut.id as user_task_id 
-                    FROM 
-                        public.projects_usertask ut 
-                        JOIN public.projects_projecttask pt on pt.id = ut.project_task_id
-                        JOIN public.projects_userproject up on up.id = ut.user_project_id
-                    WHERE up.user_id = (%s) AND ut.project_task_id = 
-                         (
-                         {project_task_id_subquery}
-                         )
-                    ORDER BY ut.created
-                );
-            '''
 
-            # updated_user_tasks += pg_utils.execute_non_query(ut_sql, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
-            user_tasks_sql_queries.append((ut_sql, (user_task_progress_info_json, user_id, external_task_id)))
+            # updated_user_tasks += pg_utils.execute_non_query(UPDATE_USER_TASK_PROGRESS_SQL, (user_task_progress_info_json, user_id, external_task_id), correlation_id)
+            user_tasks_sql_queries.append((sql_q.UPDATE_USER_TASK_PROGRESS_SQL, (user_task_progress_info_json, user_id, external_task_id)))
 
             project_task_assessments += user_task_assessments
 
         project_task_progress_info_json = json.dumps({'total assessments': project_task_assessments})
 
-        pt_sql = f'''
-                UPDATE public.projects_projecttask
-                SET progress_info = (%s), progress_info_modified = (%s)
-                WHERE id = 
-                    (
-                    {project_task_id_subquery}
-                    );
-            '''
-
-        # updated_project_tasks += pg_utils.execute_non_query(pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
-        project_tasks_sql_queries.append((pt_sql, (project_task_progress_info_json, progress_info_modified, external_task_id)))
+        # updated_project_tasks += pg_utils.execute_non_query(UPDATE_PROJECT_TASK_PROGRESS_SQL, (project_task_progress_info_json, progress_info_modified, external_task_id), correlation_id)
+        project_tasks_sql_queries.append((sql_q.UPDATE_PROJECT_TASK_PROGRESS_SQL, (project_task_progress_info_json, progress_info_modified, external_task_id)))
 
     multiple_sql_queries = [x[0] for x in user_tasks_sql_queries] + [x[0] for x in project_tasks_sql_queries]
     multiple_params = [x[1] for x in user_tasks_sql_queries] + [x[1] for x in project_tasks_sql_queries]

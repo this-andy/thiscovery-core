@@ -24,10 +24,12 @@ import sys
 import json
 from datetime import datetime
 
-from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+
 from common.hubspot import HubSpotClient
-from common.pg_utilities import execute_query
 from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+from common.pg_utilities import execute_query
+from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
+from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
 from user import patch_user
 
 
@@ -92,27 +94,6 @@ def process_user_registration(notification):
         mark_notification_failure(notification, error_message, correlation_id)
 
 
-SIGNUP_DETAILS_SELECT_SQL = '''
-  SELECT 
-    p.id as project_id,
-    p.name as project_name,
-    pt.id as task_id,
-    pt.description as task_name,
-    tt.id as task_type_id,
-    tt.name as task_type_name,
-    u.crm_id
-  FROM 
-    public.projects_project p
-    JOIN projects_projecttask pt on p.id = pt.project_id
-    JOIN projects_tasktype tt on pt.task_type_id = tt.id
-    JOIN projects_usertask ut on pt.id = ut.project_task_id
-    JOIN projects_userproject up on ut.user_project_id = up.id
-    JOIN projects_user u on up.user_id = u.id
-  WHERE
-    ut.id = %s
-    '''
-
-
 def get_task_signup_data_for_crm(user_task_id, correlation_id):
     extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),), correlation_id)
     if len(extra_data) == 1:
@@ -168,3 +149,22 @@ def process_user_login(notification):
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)
+
+
+def dateformattest(event, context):
+    logger = get_logger()
+    logger.info('dateformattest', extra=event)
+    try:
+        test_json = json.loads(event['body'])
+        logger.info('body:', extra=test_json)
+        date_string = test_json['date']
+        date_string = date_string[:19]   # strip timezone and milliseconds
+        format_string = test_json['format']
+        logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
+        datetime_obj = datetime.strptime(date_string, format_string)
+        created_timestamp = int(datetime_obj.timestamp() * 1000)
+
+        response = {"statusCode": 200, "body": json.dumps({"created_timestamp": str(created_timestamp)})}
+        return response
+    except:
+        logger.error(sys.exc_info()[0])

@@ -21,6 +21,7 @@ import json
 from http import HTTPStatus
 
 from common.pg_utilities import execute_query, execute_non_query
+from common.sql_queries import LIST_USER_PROJECTS_SQL, GET_EXISTING_USER_PROJECT_ID_SQL, CREATE_USER_PROJECT_SQL
 from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
     validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
     triggered_by_heartbeat, validate_uuid
@@ -58,20 +59,7 @@ def list_user_projects(user_id, correlation_id):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
-    base_sql = '''
-        SELECT 
-            id,
-            user_id,
-            project_id,
-            created,
-            modified,               
-            status                
-        FROM 
-            public.projects_userproject
-        WHERE user_id = %s
-    '''
-
-    return execute_query(base_sql, (str(user_id),), correlation_id)
+    return execute_query(LIST_USER_PROJECTS_SQL, (str(user_id),), correlation_id)
 
 
 def list_user_projects_api(event, context):
@@ -110,17 +98,7 @@ def list_user_projects_api(event, context):
 
 
 def get_existing_user_project_id(user_id, project_id, correlation_id):
-
-    base_sql = """
-      SELECT 
-        id
-      FROM public.projects_userproject
-      WHERE 
-        project_id = %s
-        AND user_id = %s
-    """
-
-    return execute_query(base_sql, (str(project_id), str(user_id)), correlation_id)
+    return execute_query(GET_EXISTING_USER_PROJECT_ID_SQL, (str(project_id), str(user_id)), correlation_id)
 
 
 def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
@@ -186,17 +164,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise ObjectDoesNotExistError('user does not exist', errorjson)
 
-    sql = '''INSERT INTO public.projects_userproject (
-        id,
-        created,
-        modified,
-        user_id,
-        project_id,
-        status,
-        ext_user_project_id
-    ) VALUES ( %s, %s, %s, %s, %s, %s, %s );'''
-
-    execute_non_query(sql, (id, created, created, user_id, project_id, status, ext_user_project_id), correlation_id)
+    execute_non_query(CREATE_USER_PROJECT_SQL, (id, created, created, user_id, project_id, status, ext_user_project_id), correlation_id)
 
     new_user_project = {
         'id': id,
@@ -251,20 +219,3 @@ def create_user_project_if_not_exists(user_id, project_id, correlation_id):
         'status': 'active'
     }
     return create_user_project(up_json, correlation_id, True)
-
-
-if __name__ == "__main__":
-    # print('running user_project')
-    # up_json = {
-    #     'user_id': "0bef3b7e-ab4a-437e-936a-6b7b557fb059",
-    #     'project_id': "0c137d9d-e087-448b-ba8d-24141b6ceecd",
-    #     'status': 'active'
-    # }
-    # # print(up_json)
-    #
-    # ev = {'body': json.dumps(up_json)}
-    # print(create_user_project_if_not_exists("0bef3b7e-ab4a-437e-936a-6b7b557fb059", "0c137d9d-e087-448b-ba8d-24141b6ceecd", 'abc'))
-    # print(create_user_project_api(ev, None))
-    #
-    # # ev = {}
-    print(list_user_projects("851f7b34-f76c-49de-a382-7e4089b744e2", None))
