@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
+import epsagon
 import json
 from http import HTTPStatus
 
