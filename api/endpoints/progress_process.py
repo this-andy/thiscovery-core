@@ -86,6 +86,3 @@ def update_cochrane_progress(event, context):
                                                                                               'executed sql queries'
 
     return {'updated_project_tasks': len(project_tasks_sql_queries), 'updated_user_tasks': len(user_tasks_sql_queries)}
-
-
-update_cochrane_progress(None,None)
