@@ -16,6 +16,12 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+/*
+ Purpose: To list the projects with status=testing that each user can see on the web UI.
+ When a project has status=testing then only those users who are in the user group designated as the test user group can see the project
+ Usage:  Normally queried by user_id.  This gives one row for each project the user can see, i.e. row exits = visible, no row = not visible.
+ The columns returned may not be required by caller, but enable this view's contents to be easily understood and checked
+ */
 CREATE OR REPLACE VIEW public.project_testgroup_users AS
  SELECT p.id AS project_id,
     p.short_name AS project_name,
