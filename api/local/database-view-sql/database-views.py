@@ -30,8 +30,7 @@ def create_all_views():
         ('view_project_testgroup_users_create.sql', 'project_testgroup_users'),
         ('view_projecttask_group_users_create.sql', 'projecttask_group_users'),
         ('view_projecttask_testgroup_users_create.sql', 'projecttask_testgroup_users'),
-        ('view_task_signups.sql', 'task_signups'),
-        ('view_external_users_identity.sql', 'external_users_identity'),
+        ('view_user_tasks_with_external_ids.sql', 'user_tasks_with_external_ids'),
     ]
 
     for file, view in files_and_views:

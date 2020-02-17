@@ -33,7 +33,7 @@ TEST_DATA_FOLDER = '../test_data/'
 class MyTestCase(test_utils.DbTestCase):
 
     def test_01_update_cochrane_progress(self):
-        expected_result = {'updated_project_tasks': 2, 'updated_user_tasks': 4}
+        expected_result = {'updated_project_tasks': 3, 'updated_user_tasks': 5}
         result = prog_proc.update_cochrane_progress(event=None, context=None)
         self.assertEqual(expected_result, result)
 
