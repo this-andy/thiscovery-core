@@ -21,6 +21,7 @@ import os
 import time
 from http import HTTPStatus
 
+import common.utilities as utils
 from common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
         get_elapsed_ms, obfuscate_data
 
@@ -64,8 +65,8 @@ def ping(event, context):
     return response
 
 
+@utils.time_execution
 def raise_error_api(event, context):
-    start_time = get_start_time()
     logger = get_logger()
     correlation_id = None
 
@@ -97,18 +98,19 @@ def raise_error_api(event, context):
         }
 
     except ObjectDoesNotExistError as err:
+        epsagon.error(err)
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except DetailedValueError as err:
+        epsagon.error(err)
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        epsagon.error(ex)
+        # epsagon.error(ex)
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
 
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
     return response
 
 
@@ -146,120 +148,3 @@ def sqs_send_example():
     logger.info('sqs_send_example', extra={'result': str(result)})
 
     return result
-
-
-if __name__ == "__main__":
-    # ev = {
-    #     "resource": "/v1/ping",
-    #     "path": "/v1/ping",
-    #     "httpMethod": "GET",
-    #     "headers": {
-    #         "Accept": "*/*",
-    #         "accept-encoding": "gzip, deflate",
-    #         "cache-control": "no-cache",
-    #         "Host": "dev-api.thiscovery.org",
-    #         "Postman-Token": "4522af16-c8aa-49b8-aae2-db2320e8a44b",
-    #         "User-Agent": "PostmanRuntime/7.4.0",
-    #         "X-Amzn-Trace-Id": "Root=1-5c98eead-5a16e9b022c4b0e834876ca0",
-    #         "x-api-key": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
-    #         "X-Forwarded-For": "192.168.100.57",
-    #         "X-Forwarded-Port": "443",
-    #         "X-Forwarded-Proto": "https"
-    #     },
-    #     "multiValueHeaders": {
-    #         "Accept": [
-    #             "*/*"
-    #         ],
-    #         "accept-encoding": [
-    #             "gzip, deflate"
-    #         ],
-    #         "cache-control": [
-    #             "no-cache"
-    #         ],
-    #         "Host": [
-    #             "dev-api.thiscovery.org"
-    #         ],
-    #         "Postman-Token": [
-    #             "4522af16-c8aa-49b8-aae2-db2320e8a44b"
-    #         ],
-    #         "User-Agent": [
-    #             "PostmanRuntime/7.4.0"
-    #         ],
-    #         "X-Amzn-Trace-Id": [
-    #             "Root=1-5c98eead-5a16e9b022c4b0e834876ca0"
-    #         ],
-    #         "x-api-key": [
-    #             "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0"
-    #         ],
-    #         "X-Forwarded-For": [
-    #             "192.168.100.57"
-    #         ],
-    #         "X-Forwarded-Port": [
-    #             "443"
-    #         ],
-    #         "X-Forwarded-Proto": [
-    #             "https"
-    #         ]
-    #     },
-    #     "queryStringParameters": None,
-    #     "multiValueQueryStringParameters": None,
-    #     "pathParameters": None,
-    #     "stageVariables": None,
-    #     "requestContext": {
-    #         "resourceId": "mm6l6n",
-    #         "resourcePath": "/v1/ping",
-    #         "httpMethod": "GET",
-    #         "extendedRequestId": "XGo7KHBDjoEFapA=",
-    #         "requestTime": "25/Mar/2019:15:07:25 +0000",
-    #         "path": "/v1/ping",
-    #         "accountId": "1234567890",
-    #         "protocol": "HTTP/1.1",
-    #         "stage": "dev",
-    #         "domainPrefix": "dev-api",
-    #         "requestTimeEpoch": 1553526445814,
-    #         "requestId": "b306299f-4f0f-11e9-a8c6-19f48fc11706",
-    #         "identity": {
-    #             "cognitoIdentityPoolId": None,
-    #             "cognitoIdentityId": None,
-    #             "apiKey": "test-ApSCXlbiB1uMhX3sg7XxgN2Aai3uW5OLPU0",
-    #             "cognitoAuthenticationType": None,
-    #             "userArn": None,
-    #             "apiKeyId": "ujtgn3be02",
-    #             "userAgent": "PostmanRuntime/7.4.0",
-    #             "accountId": None,
-    #             "caller": None,
-    #             "sourceIp": "192.168.100.57",
-    #             "accessKey": None,
-    #             "cognitoAuthenticationProvider": None,
-    #             "user": None
-    #         },
-    #         "domainName": "dev-api.thiscovery.org",
-    #         "apiId": "3dquxzv0a3"
-    #     },
-    #     "body": None,
-    #     "isBase64Encoded": False
-    # }
-    #
-    # obfuscate_data(ev, ('headers', 'x-api-key'))
-    # obfuscate_data(ev, ('headers', 'X-Forwarded-For'))
-    # obfuscate_data(ev, ('multiValueHeaders', 'x-api-key'))
-    # obfuscate_data(ev, ('multiValueHeaders', 'X-Forwarded-For'))
-    # obfuscate_data(ev, ('requestContext', 'identity'))
-    #
-    # print(ev)
-    # result = ping(ev, None)
-
-    # error_id = 'none'
-    # error_id = '4xx'
-    # error_id = '5xx'
-    # error_id = 'slow'
-    # error_id = 'timeout'
-
-    # qsp = {'error_id': error_id}
-    # ev = {'queryStringParameters': qsp}
-    # result = raise_error_api(ev, None)
-
-    # print(result)
-
-    result = sqs_send_example()
-    print(result)
