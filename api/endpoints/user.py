@@ -22,9 +22,9 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
+import common.sql_queries as sql_q
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
-from common.sql_queries import BASE_USER_SELECT_SQL, GET_USER_BY_EXT_USER_PROJECT_ID_SQL, CREATE_USER_SQL, VALIDATE_USER_EMAIL_SQL
 from common.utilities import get_correlation_id, get_logger, DetailedValueError, DuplicateInsertError, ObjectDoesNotExistError, \
     PatchInvalidJsonError, PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, error_as_response_body, validate_utc_datetime, \
     now_with_tz, get_start_time, get_elapsed_ms, triggered_by_heartbeat, get_country_name, append_country_name_to_list, append_country_name, validate_uuid
@@ -78,7 +78,7 @@ def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
         err.add_correlation_id(correlation_id)
         raise err
 
-    user_json = execute_query(GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(ext_user_project_id),), correlation_id)
+    user_json = execute_query(sql_q.GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(ext_user_project_id),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -93,7 +93,7 @@ def get_user_by_id(user_id, correlation_id=None):
 
     sql_where_clause = " WHERE id = %s"
 
-    user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
+    user_json = execute_query(sql_q.BASE_USER_SELECT_SQL + sql_where_clause, (str(user_id),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -148,7 +148,7 @@ def get_user_by_email(user_email, correlation_id):
 
     sql_where_clause = " WHERE email = %s"
 
-    user_json = execute_query(BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
+    user_json = execute_query(sql_q.BASE_USER_SELECT_SQL + sql_where_clause, (str(user_email),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -374,7 +374,7 @@ def create_user(user_json, correlation_id):
 
 
     params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry, title, first_name, last_name, country_code, auth0_id, status)
-    execute_non_query(CREATE_USER_SQL, params, correlation_id)
+    execute_non_query(sql_q.CREATE_USER_SQL, params, correlation_id)
 
     new_user = {
         'id': id,
@@ -435,4 +435,4 @@ def create_user_api(event, context):
 
 
 def validate_user_email(user_id, email_verification_token_to_check, correlation_id):
-    result = execute_query(VALIDATE_USER_EMAIL_SQL, (str(user_id),), correlation_id)
+    result = execute_query(sql_q.VALIDATE_USER_EMAIL_SQL, (str(user_id),), correlation_id)
