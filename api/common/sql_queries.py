@@ -236,47 +236,38 @@ PROJECT_USER_SELECT_SQL = '''
 '''
 
 
-get_project_status_for_user_template = {
-    'sql0': Template("""
-        SELECT project_id, project_name, group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+get_project_status_for_user_sql = {
+    'sql0': """
+        SELECT project_id
         FROM public.project_group_users
-        WHERE {{ filter }} = %s
-    """),
+        WHERE user_id = %s;
+    """,
 
-    'sql1': Template("""
-        SELECT project_id, project_name, testing_group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+    'sql1': """
+        SELECT project_id
         FROM public.project_testgroup_users
-        WHERE {{ filter }} = %s
-    """),
+        WHERE user_id = %s;
+    """,
 
-    'sql2': Template("""
-        SELECT project_task_id, description, group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+    'sql2': """
+        SELECT project_task_id
         FROM public.projecttask_group_users
-        WHERE {{ filter }} = %s
-    """),
+        WHERE user_id = %s;
+    """,
 
-    'sql3': Template("""
-        SELECT project_task_id, description, testing_group_id, group_name, user_id, email {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+    'sql3': """
+        SELECT project_task_id
         FROM public.projecttask_testgroup_users
-        WHERE {{ filter }} = %s
-    """),
+        WHERE user_id = %s;
+    """,
 
-    'sql4': Template("""
-        SELECT project_task_id, ut.id, ut.status {%- if extra_columns %}, {{ extra_columns|join(', ') }}{% endif %}
+    'sql4': """
+        SELECT project_task_id, ext_user_project_id, ext_user_task_id
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
-        WHERE {{ filter }} = %s
-    """),
+        WHERE up.user_id = %s;
+    """,
 }
-
-get_project_status_for_user_sql = {k: v.render(filter='user_id') for k, v in get_project_status_for_user_template.items()}
-get_project_status_for_user_sql['sql4'] = get_project_status_for_user_template['sql4'].render(filter='up.user_id')
-
-get_project_status_for_external_user_sql = {k: v.render(extra_columns=['ext_user_project_id'], filter='ext_user_project_id') for k, v in
-                                            get_project_status_for_user_template.items()}
-get_project_status_for_external_user_sql['sql4'] = get_project_status_for_user_template['sql4'].render(
-    extra_columns=['up.ext_user_project_id as ext_user_project_id', 'ut.ext_user_task_id as ext_user_task_id'],
-    filter='ext_user_project_id')
 # endregion
 
 
