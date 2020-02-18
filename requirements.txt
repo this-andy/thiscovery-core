@@ -1,9 +1,11 @@
-epsagon
-jinja2
+# IMPORTANT: Remember to also add any new dependencies to api/common/requirements.txt.
+# Otherwise, Stackery will not include those modules in the AWS deployment package!
+#
 atomicwrites >=1.1.5
 attrs >= 18.1.0
 boto3
 coverage
+jinja2
 jsonpatch >= 1.23
 more-itertools	>= 4.2.0
 pip	>= 19.0.1
