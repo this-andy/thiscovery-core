@@ -1,5 +1,6 @@
 boto3
 botocore
+jinja2
 pip	>= 19.0.1
 psycopg2-binary
 jsonpatch
