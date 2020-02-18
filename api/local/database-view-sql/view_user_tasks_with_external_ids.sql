@@ -39,4 +39,4 @@ CREATE OR REPLACE VIEW public.user_tasks_with_external_ids AS
     JOIN projects_userproject up on u.id = up.user_id
     JOIN projects_project p on up.project_id = p.id
     JOIN projects_usertask ut on up.id = ut.user_project_id
-    JOIN projects_projecttask pt on pt.project_id = p.id;
+    JOIN projects_projecttask pt on pt.id = ut.project_task_id;

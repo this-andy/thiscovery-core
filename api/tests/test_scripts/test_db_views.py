@@ -28,8 +28,8 @@ import testing_utilities as test_utils
 
 
 class MyTestCase(test_utils.DbTestCase):
-    def test_01_external_users_identity_length_matches_usertask_table(self):
-        view_sql = "SELECT * FROM public.external_users_identity"
+    def test_01_user_tasks_with_external_ids_length_matches_usertask_table(self):
+        view_sql = "SELECT * FROM public.user_tasks_with_external_ids"
         table_sql = "SELECT * FROM public.projects_usertask"
         view_result, table_result = pg_utils.execute_query_multiple((view_sql, table_sql))
         self.assertEqual(len(view_result), len(table_result))
