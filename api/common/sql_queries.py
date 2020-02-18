@@ -240,32 +240,32 @@ get_project_status_for_user_sql = {
     'sql0': """
         SELECT project_id
         FROM public.project_group_users
-        WHERE user_id = %s;
+        WHERE user_id = %s
     """,
 
     'sql1': """
         SELECT project_id
         FROM public.project_testgroup_users
-        WHERE user_id = %s;
+        WHERE user_id = %s
     """,
 
     'sql2': """
         SELECT project_task_id
         FROM public.projecttask_group_users
-        WHERE user_id = %s;
+        WHERE user_id = %s
     """,
 
     'sql3': """
         SELECT project_task_id
         FROM public.projecttask_testgroup_users
-        WHERE user_id = %s;
+        WHERE user_id = %s
     """,
 
     'sql4': """
         SELECT project_task_id, ext_user_project_id, ext_user_task_id
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
-        WHERE up.user_id = %s;
+        WHERE up.user_id = %s
     """,
 }
 # endregion
