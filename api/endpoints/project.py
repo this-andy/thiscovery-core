@@ -134,9 +134,9 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
 
     project_group_users_dict = dict_from_dataset(results[0], 'project_id')
     project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
-    projecttask_group_users_dict = dict_from_dataset(results[2],'project_task_id')
-    projecttask_testgroup_users_dict = dict_from_dataset(results[3],'project_task_id')
-    projects_usertasks_dict = dict_from_dataset(results[4],'project_task_id')
+    projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
+    projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
+    projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
 
     # now add calculated attributes to returned json...
     try:
@@ -207,7 +207,7 @@ def get_project_status_for_user_api(event, context):
 
     except Exception as ex:
         error_msg = ex.args[0]
-        logger.error(error_msg, extra={'correlation_id': correlation_id})
+        logger.error(error_msg, extra={'correlation_id': correlation_id}, exc_info=True)
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
@@ -238,7 +238,7 @@ def get_project_status_for_external_user_api(event, context):
 
     except Exception as ex:
         error_msg = ex.args[0]
-        logger.error(error_msg, extra={'correlation_id': correlation_id})
+        logger.error(error_msg, extra={'correlation_id': correlation_id}, exc_info=True)
         response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
 
     logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})

@@ -262,7 +262,7 @@ get_project_status_for_user_sql = {
     """,
 
     'sql4': """
-        SELECT project_task_id, ext_user_project_id, ext_user_task_id
+        SELECT project_task_id, ut.id, ut.status, ext_user_project_id, ext_user_task_id
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
