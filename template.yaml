@@ -260,7 +260,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyuuid.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyuuidAliaslive}/invocations
               responses: {}
             patch:
               security:
@@ -268,7 +268,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${patchuser.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${patchuserAliaslive}/invocations
               responses: {}
           /v1/user:
             get:
@@ -277,7 +277,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyemail.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getuserbyemailAliaslive}/invocations
               responses: {}
             post:
               security:
@@ -285,7 +285,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserapi.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createuserapiAliaslive}/invocations
               responses: {}
           /v1/project:
             get:
@@ -312,7 +312,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectstatuses.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${getprojectstatusesAliaslive}/invocations
               responses: {}
           /v1/userexternalaccount:
             post:
@@ -355,7 +355,7 @@ Resources:
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusertask.Arn}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusertaskAliaslive}/invocations
               responses: {}
           /v1/raise-error:
             post:
@@ -434,13 +434,11 @@ Resources:
             Path: /v1/user/{id}
             Method: GET
             RestApiId: !Ref CoreAPI
-        Timer5:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-get-user-by-uuid
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: get-user-by-uuid
   getuserbyemail:
@@ -474,13 +472,6 @@ Resources:
             Path: /v1/user
             Method: GET
             RestApiId: !Ref CoreAPI
-        Timer:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-get-user-by-email
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -488,6 +479,11 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: get-user-by-email
   createuserapi:
@@ -525,13 +521,6 @@ Resources:
             Path: /v1/user
             Method: POST
             RestApiId: !Ref CoreAPI
-        Timer6:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-create-user
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
@@ -543,6 +532,11 @@ Resources:
           TABLE_ARN: !GetAtt notifications.Arn
           TABLE_NAME_2: !Ref tokens
           TABLE_ARN_2: !GetAtt tokens.Arn
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: create-user
   patchuser:
@@ -576,13 +570,6 @@ Resources:
             Path: /v1/user/{id}
             Method: PATCH
             RestApiId: !Ref CoreAPI
-        Timer4:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-patch-user-api
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
@@ -590,6 +577,11 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: patch-user-api
   listprojects:
@@ -703,13 +695,6 @@ Resources:
             Path: /v1/project-user-status
             Method: GET
             RestApiId: !Ref CoreAPI
-        Timer5:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-get-project-statuses
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
@@ -717,6 +702,11 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: get-project-statuses
   createuserexternalaccount:
@@ -925,13 +915,11 @@ Resources:
             Path: /v1/usertask
             Method: POST
             RestApiId: !Ref CoreAPI
-        Timer3:
-          Type: Schedule
-          Properties:
-            Schedule: !Ref EnvConfigheartbeatintervalAsString
-            Input: '{"heartbeat": "Y"}'
-          Metadata:
-            StackeryName: timer-create-user-task
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: !Ref EnvConfiglambdaprovisionedconcurrencyAsString
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
     Metadata:
       StackeryName: create-user-task
   ThiscoveryDB:
@@ -1330,9 +1318,6 @@ Parameters:
   EnvConfigDeletionProtectionAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/db/deletion-protection
-  EnvConfigheartbeatintervalAsString:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/lambda/heartbeat-interval
   EnvConfiglambdamemorysizeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/memory-size
@@ -1372,11 +1357,13 @@ Parameters:
   EnvConfigVPCIngressDesc4AsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/vpc-ingress/desc4
+  EnvConfiglambdaprovisionedconcurrencyAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/lambda/provisioned-concurrency
 Metadata:
   EnvConfigParameters:
     EnvConfigdbpasswordAsString: db.password
     EnvConfigDeletionProtectionAsString: db.deletion-protection
-    EnvConfigheartbeatintervalAsString: lambda.heartbeat-interval
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
     EnvConfigdbinstancetypeAsString: db.instance-type
@@ -1390,6 +1377,7 @@ Metadata:
     EnvConfigVPCIngressDesc3AsString: vpc-ingress.desc3
     EnvConfigVPCIngressCidr4AsString: vpc-ingress.cidr4
     EnvConfigVPCIngressDesc4AsString: vpc-ingress.desc4
+    EnvConfiglambdaprovisionedconcurrencyAsString: lambda.provisioned-concurrency
 Outputs:
   DatabaseURL:
     Description: URL of database instance created
