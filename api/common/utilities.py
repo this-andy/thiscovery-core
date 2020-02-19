@@ -332,6 +332,8 @@ def get_secret(secret_name, namespace_override=None):
             logger.error("The request was invalid due to:" + str(e))
         elif e.response['Error']['Code'] == 'InvalidParameterException':
             logger.error("The request had invalid params:" + str(e))
+        else:
+            logger.error("An unexpected exception occurred:" + str(e), exc_info=True)
         raise
     except:
         logger.error(sys.exc_info()[0])
@@ -434,17 +436,3 @@ def time_execution(func):
         return result
     return time_execution_wrapper
 # endregion
-
-
-if __name__ == "__main__":
-    pass
-    # result = get_secret('database-connection')
-    # result = {"dbname": "citsci_platform", **result}
-    # result = now_with_tz()
-    # result = str(result)
-    # result = get_country_name('US')
-    # result = get_aws_namespace()
-    # print(result)
-
-    # print(feature_flag('hubspot-tle'))
-    # print(feature_flag('hubspot-contacts'))
