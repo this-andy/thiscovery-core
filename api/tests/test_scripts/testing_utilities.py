@@ -84,6 +84,25 @@ class BaseTestCase(TestCase):
             del entity_dict[key]
 
 
+class AlwaysOnAwsTestCase(BaseTestCase):
+    """
+    Runs tests on AWS regardless of the value of the 'TEST_ON_AWS' environmental variable or of the value of the TEST_ON_AWS setting in dev.config.py
+    """
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.old_value_of_test_on_aws_env_var = os.environ.get('TEST_ON_AWS')
+        os.environ['TEST_ON_AWS'] = 'true'
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.old_value_of_test_on_aws_env_var is None:
+            del os.environ['TEST_ON_AWS']
+        else:
+            os.environ['TEST_ON_AWS'] = cls.old_value_of_test_on_aws_env_var
+        super().tearDownClass()
+
+
 class DbTestCase(BaseTestCase):
     delete_test_data = False
     delete_notifications = False
@@ -175,6 +194,7 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
     logger = get_logger()
 
     test_on_aws = os.environ.get('TEST_ON_AWS')
+    logger.info(f'TEST_ON_AWS environmental variable: {test_on_aws}')
     if test_on_aws is None:
         test_on_aws = TEST_ON_AWS
     elif test_on_aws.lower() == 'false':
