@@ -15,34 +15,57 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
-import json
-from http import HTTPStatus
-
-import api.endpoints.progress_process as prog_proc
-import api.endpoints.project as p
-import api.endpoints.user_task as ut
 import common.pg_utilities as pg_utils
-import common.sql_queries as sql_q
 import testing_utilities as test_utils
 
 
-class MyTestCase(test_utils.DbTestCase):
+class DbViewsTestCase(test_utils.DbTestCase):
+    tester_group = {
+        'group_name': 'testers',
+        'users': ["bernie@email.co.uk", "clive@email.co.uk", "delia@email.co.uk"],
+        'projects': ["PSFU-01-pub-plan", "PSFU-03-pub-tst-grp", "PSFU-04-prv-tst-grp", "PSFU-05-pub-act", "PSFU-06-prv-act"],
+        'tasks': ["PSFU-03-A", "PSFU-04-A"],
+    }
+    group_1 = {
+        'group_name': 'G1',
+        'users': ["clive@email.co.uk", "delia@email.co.uk"],
+        'projects': ["PSFU-03-pub-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
+        'tasks': ["PSFU-03-A", "PSFU-05-B", "PSFU-06-A"],
+    }
+    group_2 = {
+        'group_name': 'G2',
+        'users': ["delia@email.co.uk", "eddie@email.co.uk"],
+        'projects': ["PSFU-04-prv-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
+        'tasks': ["PSFU-04-A", "PSFU-05-C", "PSFU-06-B", "PSFU-08-A"],
+    }
 
-    def _check_all_rows_are_expected(self, groups, view_result):
+    def _common_assertions(self, groups, view_name, view_entity='p'):
         """
         Args:
             groups (dict or list of dicts): One or more dictionaries representing groups of users and visible projects
-            view_result (list): List of all view rows
+            view_name (str): Name of the view being tested
+            view_entity (str): 'p' if each view row represents a project or 't' if they represent tasks
         """
-        unexpected_rows = view_result.copy()
         if isinstance(groups, dict):
             groups = [groups]
+
+        if view_entity == 'p':
+            entity_key = 'projects'
+            entity_name_column = 'project_name'
+        elif view_entity == 't':
+            entity_key = 'tasks'
+            entity_name_column = 'description'
+        else:
+            raise NotImplementedError(f'view_entity must be "p" or "t" (not {view_entity})')
+
+        view_result = pg_utils.execute_query(f"SELECT * FROM public.{view_name}")
+
+        unexpected_rows = view_result.copy()
         for g in groups:
             for u in g['users']:
-                for pr in g['projects']:
+                for e in g[entity_key]:
                     for r in view_result:
-                        if (r['email'] == u) and (r['project_name'] == pr) and (r['group_name'] == g['group_name']):
+                        if (r['email'] == u) and (r[entity_name_column] == e) and (r['group_name'] == g['group_name']):
                             self.logger.debug(f'About to remove an expected row from list of unexpected rows', extra={'expected row': r})
                             unexpected_rows.remove(r)
         self.assertFalse(unexpected_rows)
@@ -54,32 +77,13 @@ class MyTestCase(test_utils.DbTestCase):
         self.assertEqual(len(view_result), len(table_result))
 
     def test_02_project_group_users(self):
-        group_1 = {
-            'group_name': 'G1',
-            'users': ["clive@email.co.uk", "delia@email.co.uk"],
-            'projects': ["PSFU-03-pub-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
-        }
-        group_2 = {
-            'group_name': 'G2',
-            'users': ["delia@email.co.uk", "eddie@email.co.uk"],
-            'projects': ["PSFU-04-prv-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
-        }
-        expected_rows = (len(group_1['users']) * len(group_1['projects'])) + (len(group_2['users']) * len(group_2['projects']))
-
-        view_sql = "SELECT * FROM public.project_group_users"
-        view_result = pg_utils.execute_query(view_sql)
-        self.assertEqual(expected_rows, len(view_result))
-        self._check_all_rows_are_expected([group_1, group_2], view_result)
+        self._common_assertions([self.group_1, self.group_2], 'project_group_users')
 
     def test_03_project_testgroup_users(self):
-        tester_group = {
-            'group_name': 'testers',
-            'users': ["bernie@email.co.uk", "clive@email.co.uk", "delia@email.co.uk"],
-            'projects': ["PSFU-01-pub-plan", "PSFU-03-pub-tst-grp", "PSFU-04-prv-tst-grp", "PSFU-05-pub-act", "PSFU-06-prv-act"],
-        }
-        expected_rows = len(tester_group['users']) * len(tester_group['projects'])
+        self._common_assertions(self.tester_group, 'project_testgroup_users')
 
-        view_sql = "SELECT * FROM public.project_testgroup_users"
-        view_result = pg_utils.execute_query(view_sql)
-        self.assertEqual(expected_rows, len(view_result))
-        self._check_all_rows_are_expected(tester_group, view_result)
+    def test_04_project_group_users(self):
+        self._common_assertions([self.group_1, self.group_2], 'projecttask_group_users', view_entity='t')
+
+    def test_05_projecttask_testgroup_users(self):
+        self._common_assertions(self.tester_group, 'projecttask_testgroup_users', view_entity='t')
