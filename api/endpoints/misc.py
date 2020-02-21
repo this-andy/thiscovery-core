@@ -26,6 +26,7 @@ import common.utilities as utils
 @utils.lambda_wrapper
 def ping(event, context):
 
+    del event['logger']
     region = ''
     aws = ''
 
