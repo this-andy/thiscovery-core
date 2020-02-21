@@ -27,11 +27,12 @@ template_contents = str()
 with open(template_file) as f:
     template_contents = f.read()
 
-env_p = re.compile("Environment .+ Virtual Network")
+
+env_p = re.compile("EnvironmentTagName:\w+Default: (.)\w+Description: Environment Name \(injected by Stackery at deployment time\)")
 env_m = env_p.match(template_contents)
 
 try:
-    env_name = env_m.group()
+    env_name = env_m.group(1)
 except AttributeError:
     print(f"Couldn't find any match of pattern {env_p} in file {template_file}")
     print(f"template_contents: {template_contents}")
