@@ -426,7 +426,7 @@ countries = load_countries()
 #region decorators
 def lambda_wrapper(func):
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def thiscovery_lambda_wrapper(*args, **kwargs):
         logger = get_logger()
         start_time = get_start_time()
 
@@ -443,7 +443,7 @@ def lambda_wrapper(func):
                                                                            'result': result, 'func args': args, 'func kwargs': kwargs,
                                                                            'elapsed_ms': get_elapsed_ms(start_time), 'correlation_id': correlation_id})
         return result
-    return wrapper
+    return thiscovery_lambda_wrapper
 
 
 def time_execution(func):
