@@ -223,7 +223,7 @@ def get_correlation_id(event):
         correlation_id = http_header['Correlation_Id']
     except (KeyError, TypeError):  # KeyError if no correlation_id in headers, TypeError if no headers
         correlation_id = new_correlation_id()
-    return correlation_id
+    return str(correlation_id)
 
 # endregion
 

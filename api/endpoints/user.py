@@ -252,7 +252,7 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 
 @utils.lambda_wrapper
 def patch_user_api(event, context):
-    logger = ['logger']
+    logger = event['logger']
     correlation_id = event['correlation_id']
 
     if utils.triggered_by_heartbeat(event):
