@@ -19,7 +19,7 @@
 import os
 import re
 
-import api.common.utilities as utils
+import common.utilities as utils
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
 template_file = os.path.join(BASE_FOLDER, '.stackery', 'template.yaml')
