@@ -63,10 +63,10 @@ def list_user_projects(user_id, correlation_id):
     return execute_query(LIST_USER_PROJECTS_SQL, (str(user_id),), correlation_id)
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def list_user_projects_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
     if triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
@@ -75,21 +75,19 @@ def list_user_projects_api(event, context):
     try:
         params = event['queryStringParameters']
         user_id = params['user_id']  # all public id are uuids
-        correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
-
         response = {
             "statusCode": HTTPStatus.OK,
             "body": json.dumps(list_user_projects(user_id, correlation_id))
         }
 
     except ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body())
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
+        logger.error(err.as_response_body(correlation_id=correlation_id))
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
 
     except DetailedValueError as err:
-        logger.error(err.as_response_body())
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
+        logger.error(err.as_response_body(correlation_id=correlation_id))
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
 
     except Exception as ex:
         errorMsg = ex.args[0]
@@ -181,10 +179,10 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     return new_user_project
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def create_user_project_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
     if triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
@@ -192,19 +190,16 @@ def create_user_project_api(event, context):
 
     try:
         up_json = json.loads(event['body'])
-        correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})
-
         new_user_project = create_user_project(up_json, correlation_id)
-
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
 
     except DuplicateInsertError as err:
-        logger.error(err.as_response_body())
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
+        logger.error(err.as_response_body(correlation_id=correlation_id))
+        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body(correlation_id=correlation_id)}
 
     except (ObjectDoesNotExistError, DetailedIntegrityError, DetailedValueError) as err:
-        logger.error(err.as_response_body())
+        logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
