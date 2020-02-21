@@ -15,37 +15,37 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import boto3
 import datetime
 import functools
+import json
 import logging
 import os
 import re
 import sys
 import uuid
 
-from timeit import default_timer as timer
-from dateutil import parser, tz
-from pythonjsonlogger import jsonlogger
-import json
-import boto3
 from botocore.exceptions import ClientError
+from dateutil import parser, tz
+from http import HTTPStatus
+from pythonjsonlogger import jsonlogger
+from timeit import default_timer as timer
 
 from common.log_color_handler import ColorHandler, EpsagonHandler
 
-# region Custom error classes and handling
 
+# region Custom error classes and handling
 class DetailedValueError(ValueError):
     def __init__(self, message, details):
         self.message = message
         self.details = details
 
-    def as_response_body(self, correlation_id=None):
+    def as_response_body(self):
         try:
-            return json.dumps({**{'message': self.message, 'correlation_id': correlation_id}, **self.details})
+            return json.dumps({'message': self.message, **self.details})
         except TypeError:
-            print(f"message: {self.message}; details: {self.details}; correlation_id: {correlation_id}")
-            return json.dumps({**{'message': self.message, 'correlation_id': correlation_id}, **self.details})
+            print(f"message: {self.message}; details: {self.details}")
+            return json.dumps({'message': self.message, **self.details})
 
     def add_correlation_id(self, correlation_id):
         self.details['correlation_id'] = str(correlation_id)
@@ -78,6 +78,17 @@ class DetailedIntegrityError(DetailedValueError):
 def error_as_response_body(error_msg, correlation_id):
     return json.dumps({'error': error_msg, 'correlation_id': str(correlation_id)})
 
+
+def log_exception_and_return_edited_api_response(exception, status_code, logger_instance, correlation_id):
+    if isinstance(exception, DetailedValueError):
+        exception.add_correlation_id(correlation_id)
+        logger_instance.error(exception)
+        return {"statusCode": status_code, "body": exception.as_response_body()}
+
+    else:
+        error_message = exception.args[0]
+        logger_instance.error(error_message, extra={'correlation_id': correlation_id})
+        return {"statusCode": status_code, "body": error_as_response_body(error_message, correlation_id)}
 # endregion
 
 
@@ -423,7 +434,28 @@ countries = load_countries()
 # endregion
 
 
-#region decorators
+# region decorators
+def api_error_handler(func):
+    """
+    Error handler decorator for thiscovery API endpoints. Use with lambda_wrapper as the outer decorator. E.g.:
+        @lambda_wrapper
+        @api_error_handler
+        def decorated_function():
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        correlation_id = args[0]['correlation_id']
+        try:
+            return func(*args, **kwargs)
+        except ObjectDoesNotExistError as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
+        except DetailedValueError as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
+        except Exception as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    return wrapper
+
+
 def lambda_wrapper(func):
     @functools.wraps(func)
     def thiscovery_lambda_wrapper(*args, **kwargs):

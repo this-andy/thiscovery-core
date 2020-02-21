@@ -81,17 +81,13 @@ def list_user_projects_api(event, context):
         }
 
     except utils.ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
+        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
 
     except utils.DetailedValueError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
+        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
 
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
+    except Exception as err:
+        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
 
     return response
 
@@ -191,22 +187,19 @@ def create_user_project_api(event, context):
         up_json = json.loads(event['body'])
         logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})
         new_user_project = create_user_project(up_json, correlation_id)
-        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
+        return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
 
     except utils.DuplicateInsertError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body(correlation_id=correlation_id)}
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.CONFLICT, logger, correlation_id)
+
+    except utils.ObjectDoesNotExistError as err:
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
 
     except (utils.ObjectDoesNotExistError, utils.DetailedIntegrityError, utils.DetailedValueError) as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
 
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    except Exception as err:
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
 
 
 def create_user_project_if_not_exists(user_id, project_id, correlation_id):

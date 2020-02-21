@@ -99,12 +99,14 @@ def list_user_tasks_api(event, context):
         }
 
     except utils.ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
+        err.add_correlation_id(correlation_id)
+        logger.error(err)
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except utils.DetailedValueError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
+        err.add_correlation_id(correlation_id)
+        logger.error(err)
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
@@ -230,12 +232,15 @@ def create_user_task_api(event, context):
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
 
     except utils.DuplicateInsertError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body(correlation_id=correlation_id)}
+        err.add_correlation_id(correlation_id)
+        logger.error(err)
+        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
 
     except (utils.DetailedIntegrityError, utils.DetailedValueError) as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
+        err.add_correlation_id(correlation_id)
+        logger.error(err)
+        logger.error(err)
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         error_msg = ex.args[0]

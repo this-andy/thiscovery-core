@@ -60,47 +60,32 @@ def ping(event, context):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def raise_error_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    try:
-        params = event['queryStringParameters']
-        error_id = params['error_id']
-        logger.info('API call', extra={'error_id': error_id, 'correlation_id': correlation_id, 'event': event})
+    params = event['queryStringParameters']
+    error_id = params['error_id']
+    logger.info('API call', extra={'error_id': error_id, 'correlation_id': correlation_id, 'event': event})
 
-        errorjson = {'error_id': error_id, 'correlation_id': str(correlation_id)}
-        msg = 'no error'
+    errorjson = {'error_id': error_id, 'correlation_id': str(correlation_id)}
+    msg = 'no error'
 
-        if error_id == '4xx':
-            msg = 'error triggered for testing purposes'
-            raise utils.ObjectDoesNotExistError(msg, errorjson)
-        elif error_id == '5xx':
-            msg = 'error triggered for testing purposes'
-            raise Exception(msg)
-        elif error_id == 'slow':
-            msg = 'slow response triggered for testing purposes'
-            time.sleep(2)  # this should trigger lambda duration alarm
-        elif error_id == 'timeout':
-            msg = 'timeout response triggered for testing purposes'
-            time.sleep(10)  # this should trigger lambda timeout
+    if error_id == '4xx':
+        msg = 'error triggered for testing purposes'
+        raise utils.ObjectDoesNotExistError(msg, errorjson)
+    elif error_id == '5xx':
+        msg = 'error triggered for testing purposes'
+        raise Exception(msg)
+    elif error_id == 'slow':
+        msg = 'slow response triggered for testing purposes'
+        time.sleep(2)  # this should trigger lambda duration alarm
+    elif error_id == 'timeout':
+        msg = 'timeout response triggered for testing purposes'
+        time.sleep(10)  # this should trigger lambda timeout
 
-        response = {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(msg)
-        }
-
-    except utils.ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except utils.DetailedValueError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(msg)
+    }
