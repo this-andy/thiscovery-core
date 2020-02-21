@@ -1,4 +1,5 @@
-#
+#!/usr/bin/env python3
+
 #   Thiscovery API - THIS Institute’s citizen science platform
 #   Copyright (C) 2019 THIS Institute
 #
@@ -14,7 +15,7 @@
 #
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
-#
+
 import os
 import re
 
