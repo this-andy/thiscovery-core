@@ -45,10 +45,8 @@ if env_name in ['prod', 'staging']:
     print(f'Deploying to {env_name}; {template_file} left untouched')
 else:
     p_conc_config_p = re.compile(r"\s+ProvisionedConcurrencyConfig:"
-                                 r"\s*ProvisionedConcurrentExecutions: \d+"
-                                 r"\s+AutoPublishAlias: live"
-                                 r"\s+DeploymentPreference:"
-                                 r"\s+Type: AllAtOnce")
+                                 r"\s*ProvisionedConcurrentExecutions:"
+                                 r"\s+Ref: EnvConfiglambdaprovisionedconcurrencyAsString")
 
     template_contents_without_concurrency = re.sub(p_conc_config_p, "", template_contents)
 
