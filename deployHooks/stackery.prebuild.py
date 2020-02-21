@@ -28,8 +28,11 @@ with open(template_file) as f:
     template_contents = f.read()
 
 
-env_p = re.compile(r"EnvironmentTagName:\s+Default: (.+)\s+Description: Environment Name \(injected by Stackery at deployment time\)\s+Type: String")
-env_m = env_p.match(template_contents)
+env_p = re.compile(r"EnvironmentTagName:"
+                   r"\s+Default: (.+)"
+                   r"\s+Description: Environment Name \(injected by Stackery at deployment time\)"
+                   r"\s+Type: String")
+env_m = env_p.search(template_contents)
 
 try:
     env_name = env_m.group(1)
