@@ -19,7 +19,6 @@
 import os
 import re
 
-import common.utilities as utils
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
 template_file = os.path.join(BASE_FOLDER, '.stackery', 'template.yaml')
@@ -34,7 +33,7 @@ env_m = env_p.match(template_contents)
 try:
     env_name = env_m.group()
 except AttributeError:
-    raise utils.ObjectDoesNotExistError(f"Couldn't find any match of pattern {env_t} in file {template_file}")
+    raise AttributeError(f"Couldn't find any match of pattern {env_t} in file {template_file}")
 
 if env_name in ['prod', 'staging']:
     print(f'Deploying to {env_name}; {template_file} left untouched')
