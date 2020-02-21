@@ -28,7 +28,7 @@ with open(template_file) as f:
     template_contents = f.read()
 
 
-env_p = re.compile("EnvironmentTagName:\w+Default: (.)\w+Description: Environment Name \(injected by Stackery at deployment time\)")
+env_p = re.compile(r"EnvironmentTagName:\s+Default: (.+)\s+Description: Environment Name \(injected by Stackery at deployment time\)\s+Type: String")
 env_m = env_p.match(template_contents)
 
 try:
@@ -41,14 +41,16 @@ except AttributeError:
 if env_name in ['prod', 'staging']:
     print(f'Deploying to {env_name}; {template_file} left untouched')
 else:
-    p_conc_config_p = re.compile("\w+ProvisionedConcurrencyConfig:"
-                                 "\w*ProvisionedConcurrentExecutions: \d+"
-                                 "\w+AutoPublishAlias: live\w+DeploymentPreference:"
-                                 "\w+Type: AllAtOnce")
+    p_conc_config_p = re.compile(r"\s+ProvisionedConcurrencyConfig:"
+                                 r"\s*ProvisionedConcurrentExecutions: \d+"
+                                 r"\s+AutoPublishAlias: live"
+                                 r"\s+DeploymentPreference:"
+                                 r"\s+Type: AllAtOnce")
 
     template_contents_without_concurrency = re.sub(p_conc_config_p, "", template_contents)
 
     assert template_contents_without_concurrency != template_contents, "Failed to strip provisioned concurrency from template " \
-                                                                       "(or template does not define provisioned concurrency)"
+                                                                       f"(or template does not define provisioned concurrency)\n" \
+                                                                       f"template_contents: {template_contents}"
     with open(template_file, 'w') as f:
         f.write(template_contents_without_concurrency)
