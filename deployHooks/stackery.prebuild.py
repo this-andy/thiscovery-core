@@ -50,8 +50,8 @@ else:
 
     template_contents_without_concurrency = re.sub(p_conc_config_p, "", template_contents)
 
-    assert template_contents_without_concurrency != template_contents, "Failed to strip provisioned concurrency from template " \
-                                                                       f"(or template does not define provisioned concurrency)\n" \
-                                                                       f"template_contents: {template_contents}"
+    assert "ProvisionedConcurrencyConfig" not in template_contents_without_concurrency, "Failed to strip provisioned concurrency from template " \
+                                                                                        f"template_contents: {template_contents}"
+
     with open(template_file, 'w') as f:
         f.write(template_contents_without_concurrency)
