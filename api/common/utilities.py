@@ -424,6 +424,28 @@ countries = load_countries()
 
 
 #region decorators
+def lambda_wrapper(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        logger = get_logger()
+        start_time = get_start_time()
+
+        # check if the lambda event dict includes a correlation id; if it does not, add one and pass it to the wrapped lambda
+        # also add a logger to the event dict
+        event = args[0]
+        correlation_id = get_correlation_id(event)
+        event['correlation_id'] = correlation_id
+        event['logger'] = logger
+        updated_args = (event, *args[1:])
+
+        result = func(*updated_args, **kwargs)
+        logger.info('Decorated function result and execution time', extra={'decorated func module': func.__module__, 'decorated func name': func.__name__,
+                                                                           'result': result, 'func args': args, 'func kwargs': kwargs,
+                                                                           'elapsed_ms': get_elapsed_ms(start_time), 'correlation_id': correlation_id})
+        return result
+    return wrapper
+
+
 def time_execution(func):
     @functools.wraps(func)
     def time_execution_wrapper(*args, **kwargs):

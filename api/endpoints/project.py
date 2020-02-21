@@ -217,10 +217,9 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
     return project_list
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def get_project_status_for_user_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
 
     if triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
@@ -229,7 +228,7 @@ def get_project_status_for_user_api(event, context):
     try:
         params = event['queryStringParameters']
         user_id = params['user_id']  # all public id are uuids
-        correlation_id = get_correlation_id(event)
+        correlation_id = event['correlation_id']
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
             raise ValueError('Deliberate error raised to test error handling')
