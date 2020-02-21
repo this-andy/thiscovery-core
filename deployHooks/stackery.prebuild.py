@@ -34,7 +34,7 @@ try:
     env_name = env_m.group()
 except AttributeError:
     print(f"Couldn't find any match of pattern {env_p} in file {template_file}")
-    print(f"template_contents: {template_contents}"))
+    print(f"template_contents: {template_contents}")
     raise AttributeError
 
 if env_name in ['prod', 'staging']:
