@@ -444,17 +444,4 @@ def lambda_wrapper(func):
                                                                            'elapsed_ms': get_elapsed_ms(start_time), 'correlation_id': correlation_id})
         return result
     return thiscovery_lambda_wrapper
-
-
-def time_execution(func):
-    @functools.wraps(func)
-    def time_execution_wrapper(*args, **kwargs):
-        logger = get_logger()
-        start_time = get_start_time()
-        result = func(*args, **kwargs)
-        logger.info('Decorated function result and execution time', extra={'decorated func module': func.__module__, 'decorated func name': func.__name__,
-                                                                           'result': result, 'func args': args, 'func kwargs': kwargs,
-                                                                           'elapsed_ms': get_elapsed_ms(start_time)})
-        return result
-    return time_execution_wrapper
 # endregion

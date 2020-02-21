@@ -23,9 +23,6 @@ from http import HTTPStatus
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import LIST_USER_PROJECTS_SQL, GET_EXISTING_USER_PROJECT_ID_SQL, CREATE_USER_PROJECT_SQL
-from common.utilities import ObjectDoesNotExistError, DuplicateInsertError, DetailedIntegrityError, DetailedValueError, \
-    validate_utc_datetime, get_correlation_id, get_logger, error_as_response_body, now_with_tz, get_start_time, get_elapsed_ms, \
-    triggered_by_heartbeat, validate_uuid
 from user import get_user_by_id
 # from utils import validate_uuid
 
@@ -40,25 +37,27 @@ DEFAULT_STATUS = 'active'
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
 ext_user_project_id, created, status = None, None, None
 
+
 def validate_status(s):
     if s in STATUS_CHOICES:
         return s
     else:
         errorjson = {'status': s}
-        raise DetailedValueError('invalid user_project status', errorjson)
+        raise utils.DetailedValueError('invalid user_project status', errorjson)
+
 
 def list_user_projects(user_id, correlation_id):
 
     try:
-        user_id = validate_uuid(user_id)
-    except DetailedValueError:
+        user_id = utils.validate_uuid(user_id)
+    except utils.DetailedValueError:
         raise
 
     # check that user exists
     result = get_user_by_id(user_id, correlation_id)
     if len(result) == 0:
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
-        raise ObjectDoesNotExistError('user does not exist', errorjson)
+        raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
     return execute_query(LIST_USER_PROJECTS_SQL, (str(user_id),), correlation_id)
 
@@ -68,7 +67,7 @@ def list_user_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
@@ -81,18 +80,18 @@ def list_user_projects_api(event, context):
             "body": json.dumps(list_user_projects(user_id, correlation_id))
         }
 
-    except ObjectDoesNotExistError as err:
+    except utils.ObjectDoesNotExistError as err:
         logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
 
-    except DetailedValueError as err:
+    except utils.DetailedValueError as err:
         logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
 
     return response
 
@@ -114,26 +113,26 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     """
     # extract mandatory data from json
     try:
-        user_id = validate_uuid(up_json['user_id'])    # all public id are uuids
-        project_id = validate_uuid(up_json['project_id'])
-    except DetailedValueError as err:
+        user_id = utils.validate_uuid(up_json['user_id'])    # all public id are uuids
+        project_id = utils.validate_uuid(up_json['project_id'])
+    except utils.DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
     except KeyError as err:
         errorjson = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
-        raise DetailedValueError('mandatory data missing', errorjson) from err
+        raise utils.DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
     optional_fields_name_default_and_validator = [
-        ('ext_user_project_id', str(uuid.uuid4()), validate_uuid),
-        ('created', str(now_with_tz()), validate_utc_datetime),
+        ('ext_user_project_id', str(uuid.uuid4()), utils.validate_uuid),
+        ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
     ]
     for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
         if variable_name in up_json:
             try:
                 globals()[variable_name] = validating_func(up_json[variable_name])  # https://stackoverflow.com/a/4687672
-            except DetailedValueError as err:
+            except utils.DetailedValueError as err:
                 err.add_correlation_id(correlation_id)
                 raise err
         else:
@@ -142,8 +141,8 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     # id shadows builtin function, so treat if separately (using globals() approach above would overwrite that function)
     if 'id' in up_json:
         try:
-            id = validate_uuid(up_json['id'])
-        except DetailedValueError as err:
+            id = utils.validate_uuid(up_json['id'])
+        except utils.DetailedValueError as err:
             err.add_correlation_id(correlation_id)
             raise err
     else:
@@ -156,13 +155,13 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
             return existing[0]
         else:
             errorjson = {'user_id': user_id, 'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise DuplicateInsertError('user_project already exists', errorjson)
+            raise utils.DuplicateInsertError('user_project already exists', errorjson)
 
     # lookup user id (needed for insert) for user uuid (supplied in json)
     result = get_user_by_id(user_id, correlation_id)
     if len(result) == 0:
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
-        raise ObjectDoesNotExistError('user does not exist', errorjson)
+        raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
     execute_non_query(CREATE_USER_PROJECT_SQL, (id, created, created, user_id, project_id, status, ext_user_project_id), correlation_id)
 
@@ -184,7 +183,7 @@ def create_user_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
@@ -194,18 +193,18 @@ def create_user_project_api(event, context):
         new_user_project = create_user_project(up_json, correlation_id)
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
 
-    except DuplicateInsertError as err:
+    except utils.DuplicateInsertError as err:
         logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body(correlation_id=correlation_id)}
 
-    except (ObjectDoesNotExistError, DetailedIntegrityError, DetailedValueError) as err:
+    except (utils.ObjectDoesNotExistError, utils.DetailedIntegrityError, utils.DetailedValueError) as err:
         logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
 
     return response
 

@@ -16,18 +16,12 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import epsagon
 import json
 from http import HTTPStatus
 
 import common.sql_queries as sql_q
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
-from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-    triggered_by_heartbeat, non_prod_env_url_param, create_url_params, create_anonymous_url_params
-
-
-
 
 
 def list_projects(correlation_id):
@@ -39,17 +33,16 @@ def list_projects_with_tasks(correlation_id):
     return result
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def list_projects_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
     try:
-        correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": HTTPStatus.OK,
@@ -59,7 +52,7 @@ def list_projects_api(event, context):
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
     return response
 
 
@@ -88,17 +81,16 @@ def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
     return execute_query(sql_q.TASKS_BY_EXTERNAL_ID_SQL, (str(external_task_id),), correlation_id)
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def get_project_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
     try:
-        correlation_id = get_correlation_id(event)
         project_id = event['pathParameters']['id']
         logger.info('API call', extra={'project_id': project_id, 'correlation_id': correlation_id, 'event': event})
 
@@ -108,16 +100,16 @@ def get_project_api(event, context):
             response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
+            raise utils.ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
 
-    except ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body())
+    except utils.ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
 
     except Exception as ex:
         errorMsg = ex.args[0]
         logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
 
     return response
 
@@ -204,10 +196,10 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                         ext_user_project_id = projects_usertasks_dict[task_id]['ext_user_project_id']
                         ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
                         if anonymise_url:
-                            task['url'] += create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
+                            task['url'] += utils.create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
                         else:
-                            task['url'] += create_url_params(user_id, user_task_id, external_task_id)
-                        task['url'] += non_prod_env_url_param()
+                            task['url'] += utils.create_url_params(user_id, user_task_id, external_task_id)
+                        task['url'] += utils.non_prod_env_url_param()
                 else:
                     task['url'] = None
                     # task['task_provider_name'] = None
@@ -222,7 +214,7 @@ def get_project_status_for_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
@@ -240,27 +232,26 @@ def get_project_status_for_user_api(event, context):
     except Exception as ex:
         error_msg = ex.args[0]
         logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(error_msg, correlation_id)}
 
     return response
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def get_project_status_for_external_user_api(event, context):
     """
     Lambda handler linked to API endpoint /v1/project-user-status-ext
     """
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
     try:
         params = event['queryStringParameters']
         user_id = params['user_id']
-        correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         response = {
             "statusCode": HTTPStatus.OK,
@@ -270,6 +261,6 @@ def get_project_status_for_external_user_api(event, context):
     except Exception as ex:
         error_msg = ex.args[0]
         logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(error_msg, correlation_id)}
 
     return response

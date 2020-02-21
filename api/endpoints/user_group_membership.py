@@ -22,8 +22,6 @@ from http import HTTPStatus
 import common.utilities as utils
 from common.pg_utilities import execute_non_query, execute_query_multiple
 from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
-from common.utilities import get_correlation_id, get_logger, error_as_response_body, ObjectDoesNotExistError, get_start_time, get_elapsed_ms, \
-    triggered_by_heartbeat, validate_uuid, DetailedValueError, DuplicateInsertError
 from common.entity_base import EntityBase
 from user_group import UserGroup
 
@@ -47,14 +45,14 @@ class UserGroupMembership(EntityBase):
         :return: new ugm object
         """
         try:
-            user_id = validate_uuid(ugm_json['user_id'])
-            user_group_id = validate_uuid(ugm_json['user_group_id'])
-        except DetailedValueError as err:   # uuids are not valid
+            user_id = utils.validate_uuid(ugm_json['user_id'])
+            user_group_id = utils.validate_uuid(ugm_json['user_group_id'])
+        except utils.DetailedValueError as err:   # uuids are not valid
             err.add_correlation_id(correlation_id)
             raise err
         except KeyError as err:   # mandatory data not present
             error_json = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
-            raise DetailedValueError('mandatory data missing', error_json) from err
+            raise utils.DetailedValueError('mandatory data missing', error_json) from err
 
         ugm = cls(user_id, user_group_id, ugm_json, correlation_id)
 
@@ -76,7 +74,7 @@ class UserGroupMembership(EntityBase):
                 ugm_json['user_group_id'] = user_group.id
             else:  # url_code not found
                 errorjson = {'url_code': url_code, 'correlation_id': str(correlation_id)}
-                raise ObjectDoesNotExistError('user group url_code does not exist', errorjson)
+                raise utils.ObjectDoesNotExistError('user group url_code does not exist', errorjson)
         try:
             ugm = UserGroupMembership.from_json(ugm_json, correlation_id)
             ugm.validate(correlation_id)
@@ -98,15 +96,15 @@ class UserGroupMembership(EntityBase):
 
         if len(user_data) == 0:
             errorjson = {'user_id': self.user_id, 'correlation_id': str(correlation_id)}
-            raise ObjectDoesNotExistError('user does not exist', errorjson)
+            raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
         if len(user_group_data) == 0:
             errorjson = {'user_group_id': self.user_group_id, 'correlation_id': str(correlation_id)}
-            raise ObjectDoesNotExistError('user group does not exist', errorjson)
+            raise utils.ObjectDoesNotExistError('user group does not exist', errorjson)
 
         if len(user_group_membership_data) > 0:
             errorjson = {'user_id': self.user_id, 'user_group_id': self.user_group_id, 'correlation_id': str(correlation_id)}
-            raise DuplicateInsertError('user group membership already exists', errorjson)
+            raise utils.DuplicateInsertError('user group membership already exists', errorjson)
 
         # if no errors nothing to do, nothing to return, let things carry on...
 
@@ -115,38 +113,37 @@ class UserGroupMembership(EntityBase):
         execute_non_query(INSERT_USER_GROUP_MEMBERSHIP_SQL, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
 
 
-@utils.time_execution
+@utils.lambda_wrapper
 def create_user_group_membership_api(event, context):
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
-    if triggered_by_heartbeat(event):
+    if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
     try:
         ugm_json = json.loads(event['body'])
-        correlation_id = get_correlation_id(event)
         logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
 
         ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
         response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
 
-    except DuplicateInsertError as err:
-        logger.error(err.as_response_body())
+    except utils.DuplicateInsertError as err:
+        logger.error(err.as_response_body(correlation_id=correlation_id))
         response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps({})}
 
-    except ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body())
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
+    except utils.ObjectDoesNotExistError as err:
+        logger.error(err.as_response_body(correlation_id=correlation_id))
+        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
 
-    except DetailedValueError as err:
-        logger.error(err.as_response_body())
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
+    except utils.DetailedValueError as err:
+        logger.error(err.as_response_body(correlation_id=correlation_id))
+        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
 
     except Exception as ex:
         error_msg = ex.args[0]
         logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(error_msg, correlation_id)}
+        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(error_msg, correlation_id)}
 
     return response
