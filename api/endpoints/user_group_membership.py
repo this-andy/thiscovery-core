@@ -127,23 +127,13 @@ def create_user_group_membership_api(event, context):
         logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
 
         ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
-        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
+        return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
 
     except utils.DuplicateInsertError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps({})}
-
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NO_CONTENT, logger, correlation_id)
     except utils.ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
-
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
     except utils.DetailedValueError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except Exception as ex:
-        error_msg = ex.args[0]
-        logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(error_msg, correlation_id)}
-
-    return response
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
+    except Exception as err:
+        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)

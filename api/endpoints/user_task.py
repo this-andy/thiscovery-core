@@ -80,6 +80,7 @@ def list_user_tasks(user_id, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def list_user_tasks_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -88,32 +89,14 @@ def list_user_tasks_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        params = event['queryStringParameters']
-        user_id = params['user_id']
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
+    params = event['queryStringParameters']
+    user_id = params['user_id']
+    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
 
-        response = {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(list_user_tasks(user_id, correlation_id))
-        }
-
-    except utils.ObjectDoesNotExistError as err:
-        err.add_correlation_id(correlation_id)
-        logger.error(err)
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
-
-    except utils.DetailedValueError as err:
-        err.add_correlation_id(correlation_id)
-        logger.error(err)
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(list_user_tasks(user_id, correlation_id))
+    }
 
 
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):
@@ -215,6 +198,7 @@ def create_user_task(ut_json, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def create_user_task_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -223,28 +207,7 @@ def create_user_task_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        ut_json = json.loads(event['body'])
-        logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
-
-        new_user_task = create_user_task(ut_json, correlation_id)
-
-        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
-
-    except utils.DuplicateInsertError as err:
-        err.add_correlation_id(correlation_id)
-        logger.error(err)
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
-
-    except (utils.DetailedIntegrityError, utils.DetailedValueError) as err:
-        err.add_correlation_id(correlation_id)
-        logger.error(err)
-        logger.error(err)
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
-
-    except Exception as ex:
-        error_msg = ex.args[0]
-        logger.error(error_msg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(error_msg, correlation_id)}
-
-    return response
+    ut_json = json.loads(event['body'])
+    logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
+    new_user_task = create_user_task(ut_json, correlation_id)
+    return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}

@@ -63,6 +63,7 @@ def list_user_projects(user_id, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def list_user_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -71,25 +72,13 @@ def list_user_projects_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        params = event['queryStringParameters']
-        user_id = params['user_id']  # all public id are uuids
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
-        response = {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(list_user_projects(user_id, correlation_id))
-        }
-
-    except utils.ObjectDoesNotExistError as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-
-    except utils.DetailedValueError as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
-
-    except Exception as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
-
-    return response
+    params = event['queryStringParameters']
+    user_id = params['user_id']  # all public id are uuids
+    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(list_user_projects(user_id, correlation_id))
+    }
 
 
 def get_existing_user_project_id(user_id, project_id, correlation_id):
@@ -175,6 +164,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def create_user_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -183,23 +173,10 @@ def create_user_project_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        up_json = json.loads(event['body'])
-        logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})
-        new_user_project = create_user_project(up_json, correlation_id)
-        return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
-
-    except utils.DuplicateInsertError as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.CONFLICT, logger, correlation_id)
-
-    except utils.ObjectDoesNotExistError as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-
-    except (utils.ObjectDoesNotExistError, utils.DetailedIntegrityError, utils.DetailedValueError) as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
-
-    except Exception as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    up_json = json.loads(event['body'])
+    logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})
+    new_user_project = create_user_project(up_json, correlation_id)
+    return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
 
 
 def create_user_project_if_not_exists(user_id, project_id, correlation_id):

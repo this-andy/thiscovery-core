@@ -34,6 +34,7 @@ def list_projects_with_tasks(correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def list_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -42,15 +43,11 @@ def list_projects_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
-        return {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(list_projects_with_tasks(correlation_id))
-        }
-
-    except Exception as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(list_projects_with_tasks(correlation_id))
+    }
 
 
 def get_project_task(project_task_id, correlation_id=None):
@@ -79,6 +76,7 @@ def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def get_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -87,23 +85,16 @@ def get_project_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        project_id = event['pathParameters']['id']
-        logger.info('API call', extra={'project_id': project_id, 'correlation_id': correlation_id, 'event': event})
+    project_id = event['pathParameters']['id']
+    logger.info('API call', extra={'project_id': project_id, 'correlation_id': correlation_id, 'event': event})
 
-        result = get_project_with_tasks(project_id, correlation_id)
+    result = get_project_with_tasks(project_id, correlation_id)
 
-        if len(result) > 0:
-            return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
-        else:
-            errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise utils.ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
-
-    except utils.ObjectDoesNotExistError as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-
-    except Exception as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    if len(result) > 0:
+        return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
+    else:
+        errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
 
 
 def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
@@ -202,6 +193,7 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def get_project_status_for_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -210,22 +202,19 @@ def get_project_status_for_user_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        params = event['queryStringParameters']
-        user_id = params['user_id']  # all public id are uuids
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
-        if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
-            raise ValueError('Deliberate error raised to test error handling')
-        return {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
-        }
-
-    except Exception as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    params = event['queryStringParameters']
+    user_id = params['user_id']  # all public id are uuids
+    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+    if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
+        raise ValueError('Deliberate error raised to test error handling')
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
+    }
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def get_project_status_for_external_user_api(event, context):
     """
     Lambda handler linked to API endpoint /v1/project-user-status-ext
@@ -237,14 +226,10 @@ def get_project_status_for_external_user_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        params = event['queryStringParameters']
-        user_id = params['user_id']
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
-        return {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(get_project_status_for_user(user_id, correlation_id, anonymise_url=True))
-        }
-
-    except Exception as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    params = event['queryStringParameters']
+    user_id = params['user_id']
+    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(get_project_status_for_user(user_id, correlation_id, anonymise_url=True))
+    }

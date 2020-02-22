@@ -96,6 +96,7 @@ def get_user_by_id(user_id, correlation_id=None):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def get_user_by_id_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -104,37 +105,24 @@ def get_user_by_id_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        user_id = event['pathParameters']['id']
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+    user_id = event['pathParameters']['id']
+    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
 
-        result = get_user_by_id(user_id, correlation_id)
+    result = get_user_by_id(user_id, correlation_id)
 
-        if len(result) > 0:
-            user_json = result[0]
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
+    if len(result) > 0:
+        user_json = result[0]
+        login_info = {
+            'email': user_json['email'],
+            'user_id': user_id,
+            'login_datetime': str(utils.now_with_tz())
+        }
+        notify_user_login(login_info, correlation_id)
+        return {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
 
-            login_info = {
-                'email': user_json['email'],
-                'user_id': user_id,
-                'login_datetime': str(utils.now_with_tz())
-            }
-            notify_user_login(login_info, correlation_id)
-
-        else:
-            errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
-            raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
-
-    except utils.ObjectDoesNotExistError as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-
-    except utils.DetailedValueError as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
-
-    except Exception as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
-
-    return response
+    else:
+        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
 
 def get_user_by_email(user_email, correlation_id):
@@ -144,6 +132,7 @@ def get_user_by_email(user_email, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def get_user_by_email_api(event, context):
     """
     Handler for Lambda function supporting the /v1/user API endpoint. Supports retrieval of user info by email or ext_user_project_id
@@ -156,48 +145,38 @@ def get_user_by_email_api(event, context):
     """
     logger = event['logger']
     correlation_id = event['correlation_id']
-    logger.info('debugging', extra={'event': event})
 
     if utils.triggered_by_heartbeat(event):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        parameters = event['queryStringParameters']
+    parameters = event['queryStringParameters']
 
-        if not parameters:  # e.g. parameters is None or an empty dict
-            errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-            raise utils.DetailedValueError('This endpoint requires one query parameter (email or ext_user_project_id); none were found', errorjson)
-        else:
-            user_email = parameters.get('email')
-            ext_user_project_id = parameters.get('ext_user_project_id')
+    if not parameters:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires one query parameter (email or ext_user_project_id); none were found', errorjson)
+    else:
+        user_email = parameters.get('email')
+        ext_user_project_id = parameters.get('ext_user_project_id')
 
-        if user_email and ext_user_project_id:
-            errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
-            raise utils.DetailedValueError('Please query by either email or ext_user_project_id, but not both', errorjson)
-        elif user_email:
-            logger.info('API call', extra={'user_email': user_email, 'correlation_id': correlation_id, 'event': event})
-            result = get_user_by_email(user_email, correlation_id)
-        elif ext_user_project_id:
-            logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
-            result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
-        else:
-            errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-            raise utils.DetailedValueError('Query parameters invalid', errorjson)
+    if user_email and ext_user_project_id:
+        errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('Please query by either email or ext_user_project_id, but not both', errorjson)
+    elif user_email:
+        logger.info('API call', extra={'user_email': user_email, 'correlation_id': correlation_id, 'event': event})
+        result = get_user_by_email(user_email, correlation_id)
+    elif ext_user_project_id:
+        logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
+        result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
+    else:
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('Query parameters invalid', errorjson)
 
-        if len(result) > 0:
-            response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
-        else:
-            errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
-            raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
-
-    except utils.ObjectDoesNotExistError as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-
-    except Exception as err:
-        response = utils.log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
-
-    return response
+    if len(result) > 0:
+        return {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
+    else:
+        errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
 
 def patch_user(id_to_update, patch_json, modified_time=utils.now_with_tz(), correlation_id=new_correlation_id()):
@@ -244,6 +223,7 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def patch_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -252,37 +232,20 @@ def patch_user_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        # get info supplied to api call
-        user_id = event['pathParameters']['id']
-        user_jsonpatch = JsonPatch.from_string(event['body'])
+    # get info supplied to api call
+    user_id = event['pathParameters']['id']
+    user_jsonpatch = JsonPatch.from_string(event['body'])
 
-        logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
+    logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
 
-        modified_time = utils.now_with_tz()
+    modified_time = utils.now_with_tz()
 
-        # create an audit record of update, inc 'undo' patch
-        entity_update = create_user_entity_update(user_id, user_jsonpatch, modified_time, correlation_id)
-        patch_user(user_id, user_jsonpatch, modified_time, correlation_id)
-        response = {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps('')}
-
-        # on successful update save audit record
-        entity_update.save()
-
-    except utils.ObjectDoesNotExistError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except (utils.PatchAttributeNotRecognisedError, utils.PatchOperationNotSupportedError, utils.PatchInvalidJsonError, utils.DetailedValueError) as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    # create an audit record of update, inc 'undo' patch
+    entity_update = create_user_entity_update(user_id, user_jsonpatch, modified_time, correlation_id)
+    patch_user(user_id, user_jsonpatch, modified_time, correlation_id)
+    # on successful update save audit record
+    entity_update.save()
+    return {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps('')}
 
 
 # User create JSON should look like this:
@@ -387,6 +350,7 @@ def create_user(user_json, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def create_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -395,28 +359,10 @@ def create_user_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        user_json = json.loads(event['body'])
-        logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})
-
-        new_user = create_user(user_json, correlation_id)
-
-        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
-
-    except utils.DuplicateInsertError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except utils.DetailedValueError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    user_json = json.loads(event['body'])
+    logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})
+    new_user = create_user(user_json, correlation_id)
+    return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
 
 
 def validate_user_email(user_id, email_verification_token_to_check, correlation_id):

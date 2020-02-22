@@ -117,6 +117,7 @@ def create_user_external_account(uea_json, correlation_id):
 
 
 @utils.lambda_wrapper
+@utils.api_error_handler
 def create_user_external_account_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -125,28 +126,10 @@ def create_user_external_account_api(event, context):
         logger.info('API call (heartbeat)', extra={'event': event})
         return
 
-    try:
-        uea_json = json.loads(event['body'])
-        logger.info('API call', extra={'uea_json': uea_json, 'correlation_id': correlation_id, 'event': event})
-
-        new_user_external_account = create_user_external_account(uea_json, correlation_id)
-
-        response = {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_external_account)}
-
-    except utils.DuplicateInsertError as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.CONFLICT, "body": err.as_response_body()}
-
-    except (utils.ObjectDoesNotExistError, utils.DetailedIntegrityError, utils.DetailedValueError) as err:
-        logger.error(err.as_response_body(correlation_id=correlation_id))
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body(correlation_id=correlation_id)}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": utils.error_as_response_body(errorMsg, correlation_id)}
-
-    return response
+    uea_json = json.loads(event['body'])
+    logger.info('API call', extra={'uea_json': uea_json, 'correlation_id': correlation_id, 'event': event})
+    new_user_external_account = create_user_external_account(uea_json, correlation_id)
+    return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_external_account)}
 
 
 def get_or_create_user_external_account(user_id, external_system_id, correlation_id):

@@ -82,7 +82,7 @@ def error_as_response_body(error_msg, correlation_id):
 def log_exception_and_return_edited_api_response(exception, status_code, logger_instance, correlation_id):
     if isinstance(exception, DetailedValueError):
         exception.add_correlation_id(correlation_id)
-        logger_instance.exception(exception)
+        logger_instance.error(exception)
         return {"statusCode": status_code, "body": exception.as_response_body()}
 
     else:
@@ -447,9 +447,11 @@ def api_error_handler(func):
         correlation_id = args[0]['correlation_id']
         try:
             return func(*args, **kwargs)
+        except DuplicateInsertError as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.CONFLICT, logger, correlation_id)
         except ObjectDoesNotExistError as err:
             return log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
-        except DetailedValueError as err:
+        except (PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, PatchInvalidJsonError, DetailedIntegrityError, DetailedValueError) as err:
             return log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
         except Exception as err:
             return log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
