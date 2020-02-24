@@ -29,7 +29,6 @@ class BaseClient:
         self.logger = get_logger()
         self.aws_namespace = None
 
-
     def get_namespace(self):
         if self.aws_namespace is None:
             self.aws_namespace = get_aws_namespace()[1:-1]

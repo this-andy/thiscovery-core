@@ -29,6 +29,7 @@ from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple
+from common.ssm_utilities import Ssm
 from common.utilities import get_secret, now_with_tz, get_logger, get_country_name, set_running_unit_tests
 
 
@@ -41,14 +42,24 @@ class BaseTestCase(TestCase):
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
     logger = get_logger()
+    aws_running_tests_parameter = None
+    ssm_client = None
 
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
+        if cls.aws_running_tests_parameter in [None, 'false']:
+            cls.ssm_client = Ssm()
+            cls.aws_running_tests_parameter = 'true'
+            cls.ssm.put_parameter('running-tests', cls.aws_running_tests_parameter, prefix='/thiscovery/')
 
     @classmethod
     def tearDownClass(cls):
+        if cls.aws_running_tests_parameter == 'true':
+            cls.aws_running_tests_parameter = 'false'
+            cls.ssm.put_parameter('running-tests', cls.aws_running_tests_parameter, prefix='/thiscovery/')
         set_running_unit_tests(False)
+
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
         actual_value = entity_dict[attribute_name]

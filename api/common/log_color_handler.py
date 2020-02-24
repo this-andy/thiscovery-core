@@ -24,6 +24,7 @@ import sys
 import logging
 
 import common.utilities as utils
+from common.ssm_utilities import Ssm
 
 
 class _AnsiColorizer(object):
@@ -93,18 +94,13 @@ class ColorHandler(logging.StreamHandler):
 
 
 class EpsagonHandler(logging.Handler):
+    ssm = Ssm()
+    running_tests = ssm.get_parameter('running-tests', prefix='/thiscovery/')
 
     def emit(self, exception_instance):
-        if not utils.running_unit_tests():
+        if self.running_tests == 'false':
             epsagon.error(exception_instance)
-
-
-if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.DEBUG)
-    logging.getLogger().addHandler(ColorHandler())
-
-    logging.debug("Some debugging output")
-    logging.info("Some info output")
-    logging.error("Some error output")
-    logging.warning("Some warning output")
-
+        elif self.running_tests == 'true':
+            pass
+        else:
+            raise utils.DetailedValueError(f'AWS SSM parameter /thiscovery/running-tests is neither "true" nor "false": {self.running_tests}')
