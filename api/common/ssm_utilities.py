@@ -16,7 +16,6 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 from common.aws_common import BaseClient
-from common.utilities import get_logger, get_aws_namespace
 
 
 class Ssm(BaseClient):

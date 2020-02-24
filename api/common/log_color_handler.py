@@ -23,9 +23,6 @@ import epsagon
 import sys
 import logging
 
-import common.utilities as utils
-from common.ssm_utilities import Ssm
-
 
 class _AnsiColorizer(object):
     """
@@ -94,13 +91,18 @@ class ColorHandler(logging.StreamHandler):
 
 
 class EpsagonHandler(logging.Handler):
-    ssm = Ssm()
-    running_tests = ssm.get_parameter('running-tests', prefix='/thiscovery/')
+    ssm_client = None
+    running_tests = None
 
     def emit(self, exception_instance):
+        if self.ssm_client is None:
+            from common.ssm_utilities import Ssm  # delayed import to circumvent circular import problem
+            ssm_client = Ssm()
+            self.running_tests = ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
+
         if self.running_tests == 'false':
             epsagon.error(exception_instance)
         elif self.running_tests == 'true':
             pass
         else:
-            raise utils.DetailedValueError(f'AWS SSM parameter /thiscovery/running-tests is neither "true" nor "false": {self.running_tests}')
+            raise AttributeError(f'AWS SSM parameter /thiscovery/running-tests is neither "true" nor "false": {self.running_tests}')
