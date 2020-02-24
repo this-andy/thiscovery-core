@@ -27,9 +27,6 @@ template_contents = str()
 with open(template_file) as f:
     template_contents = f.read()
 
-print(f'Template contents: {template_contents}')
-raise Exception
-
 env_p = re.compile(r"EnvironmentTagName:"
                    r"\s+Default: (.+)"
                    r"\s+Description: Environment Name \(injected by Stackery at deployment time\)"
