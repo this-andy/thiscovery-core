@@ -23,6 +23,8 @@ import re
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
 template_file = os.path.join(BASE_FOLDER, '.stackery', 'template.yaml')
 template_contents = str()
+print(f'Template contents: {template_contents}')
+raise Exception
 
 with open(template_file) as f:
     template_contents = f.read()
