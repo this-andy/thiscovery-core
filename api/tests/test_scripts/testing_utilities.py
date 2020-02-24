@@ -42,22 +42,16 @@ class BaseTestCase(TestCase):
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
     logger = get_logger()
-    aws_running_tests_parameter = None
-    ssm_client = None
+    ssm_client = Ssm()
 
     @classmethod
     def setUpClass(cls):
         set_running_unit_tests(True)
-        if cls.aws_running_tests_parameter in [None, 'false']:
-            cls.ssm_client = Ssm()
-            cls.aws_running_tests_parameter = 'true'
-            cls.ssm.put_parameter('running-tests', cls.aws_running_tests_parameter, prefix='/thiscovery/')
+        cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
 
     @classmethod
     def tearDownClass(cls):
-        if cls.aws_running_tests_parameter == 'true':
-            cls.aws_running_tests_parameter = 'false'
-            cls.ssm.put_parameter('running-tests', cls.aws_running_tests_parameter, prefix='/thiscovery/')
+        cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
         set_running_unit_tests(False)
 
 
