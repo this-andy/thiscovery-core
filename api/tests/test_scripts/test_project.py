@@ -328,6 +328,22 @@ PROJECT_08_JSON = """
 class TestProject(test_utils.DbTestCase):
     maxDiff = None
 
+    def get_project_api_assertions(self, project_id, expected_status=HTTPStatus.OK, correlation_id_in_result=False, expected_body=None, expected_message=None):
+        path_parameters = {'id': project_id}
+
+        endpoint = f'v1/{ENTITY_BASE_URL}'
+        result = test_get(p.get_project_api, endpoint, path_parameters)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        if correlation_id_in_result:
+            self.assertTrue('correlation_id' in result_json)
+        if expected_body:
+            self.assertDictEqual(expected_body[0], result_json[0])
+        if expected_message:
+            self.assertTrue('message' in result_json and result_json['message'] == expected_message)
+
     def test_1_list_projects_api(self):
         expected_status = HTTPStatus.OK
         expected_body = [json.loads(x) for x in [PROJECT_08_JSON, PROJECT_01_JSON, PROJECT_02_JSON, PROJECT_03_JSON, PROJECT_04_JSON, PROJECT_05_JSON,
@@ -342,31 +358,12 @@ class TestProject(test_utils.DbTestCase):
             self.assertDictEqual(expected, result)
 
     def test_2_get_project_api_exists(self):
-        path_parameters = {'id': "a099d03b-11e3-424c-9e97-d1c095f9823b"}
-        # event = {'pathParameters': path_parameters}
-
-        expected_status = HTTPStatus.OK
-        expected_body = [json.loads(PROJECT_02_JSON)]
-        # result = get_project_api(event, None)
-
-        endpoint = f'v1/{ENTITY_BASE_URL}'
-        result = test_get(p.get_project_api, endpoint, path_parameters, None, None)
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
-
-        self.assertEqual(expected_status, result_status)
-        self.assertDictEqual(expected_body[0], result_json[0])
+        self.get_project_api_assertions("a099d03b-11e3-424c-9e97-d1c095f9823b", expected_body=[json.loads(PROJECT_02_JSON)])
 
     def test_3_get_project_api_not_exists(self):
-        path_parameters = {'id': "0c137d9d-e087-448b-ba8d-24141b6ceece"}
+        self.get_project_api_assertions("0c137d9d-e087-448b-ba8d-24141b6ceece", expected_status=HTTPStatus.NOT_FOUND, correlation_id_in_result=True,
+                                        expected_message='project is planned or does not exist')
 
-        expected_status = HTTPStatus.NOT_FOUND
-
-        endpoint = f'v1/{ENTITY_BASE_URL}'
-        result = test_get(p.get_project_api, endpoint, path_parameters, None, None)
-        result_status = result['statusCode']
-        result_json = json.loads(result['body'])
-
-        self.assertEqual(expected_status, result_status)
-        self.assertTrue('correlation_id' in result_json)
-        self.assertTrue('message' in result_json and result_json['message'] == 'project does not exist or has no tasks')
+    def test_4_get_project_api_planned_not_returned(self):
+        self.get_project_api_assertions("6b95e66d-1ff8-453a-88ce-ae0dc4b21df9", expected_status=HTTPStatus.NOT_FOUND, correlation_id_in_result=True,
+                                        expected_message='project is planned or does not exist')

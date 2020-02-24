@@ -108,7 +108,7 @@ def get_project_api(event, context):
             response = {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
         else:
             errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-            raise ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
+            raise ObjectDoesNotExistError('project is planned or does not exist', errorjson)
 
     except ObjectDoesNotExistError as err:
         response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
