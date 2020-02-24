@@ -94,7 +94,7 @@ def get_project_api(event, context):
         return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
     else:
         errorjson = {'project_id': project_id, 'correlation_id': str(correlation_id)}
-        raise utils.ObjectDoesNotExistError('project does not exist or has no tasks', errorjson)
+        raise utils.ObjectDoesNotExistError('project is planned or does not exist', errorjson)
 
 
 def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
