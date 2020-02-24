@@ -129,8 +129,8 @@ def create_user_group_membership_api(event, context):
         ugm = UserGroupMembership.new_from_json(ugm_json, correlation_id)
         return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(ugm.to_dict())}
 
-    except utils.DuplicateInsertError as err:
-        return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NO_CONTENT, logger, correlation_id)
+    except utils.DuplicateInsertError:
+        return {"statusCode": HTTPStatus.NO_CONTENT, "body": json.dumps({})}
     except utils.ObjectDoesNotExistError as err:
         return utils.log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
     except utils.DetailedValueError as err:
