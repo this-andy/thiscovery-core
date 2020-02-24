@@ -23,6 +23,8 @@ import epsagon
 import sys
 import logging
 
+import common.utilities as utils
+
 
 class _AnsiColorizer(object):
     """
@@ -74,6 +76,7 @@ class _AnsiColorizer(object):
 
 
 class ColorHandler(logging.StreamHandler):
+
     def __init__(self, stream=sys.stderr):
         super(ColorHandler, self).__init__(_AnsiColorizer(stream))
 
@@ -92,7 +95,8 @@ class ColorHandler(logging.StreamHandler):
 class EpsagonHandler(logging.Handler):
 
     def emit(self, exception_instance):
-        epsagon.error(exception_instance)
+        if not utils.running_unit_tests():
+            epsagon.error(exception_instance)
 
 
 if __name__ == "__main__":

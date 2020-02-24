@@ -19,7 +19,6 @@ logger.setLevel(logging.WARNING)
 test_modules = [
     'test_dynamodb',
     'test_entity_base',
-    'test_error_handling',
     'test_hubspot',
     'test_misc',
     'test_notifications',
