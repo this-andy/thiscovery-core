@@ -238,6 +238,37 @@ class SsmClient(BaseClient):
         )
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_parameter failed with response: {response}'
         return response
+
+
+class SecretsManager(BaseClient):
+    def __init__(self):
+        super().__init__('secretsmanager')
+
+    def _prefix_name(self, name, prefix):
+        if prefix is None:
+            prefix = f"/{super().get_namespace()}/"
+        return prefix + name
+
+    def update_secret(self, name, value, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.update_secret
+
+        Args:
+            name (str): the secret name, excluding an environment prefix
+            value (json or dict): key/value pairs in either dict or JSON string format
+            prefix (str): if None, environment name will be used as prefix; use an empty string in calls where no prefix is required
+
+        """
+        secret_id = self._prefix_name(name, prefix)
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.logger.debug(f'Adding or updating Secret {secret_id} with value {value}')
+        response = self.client.update_secret(
+            SecretId=secret_id,
+            SecretString=value,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.update_secret failed with response: {response}'
+        return response
 # endregion
 
 
@@ -311,8 +342,9 @@ class ColorHandler(logging.StreamHandler):
 class EpsagonHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        self.ssm_client = SsmClient()
-        self.running_tests = self.ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
+        # self.ssm_client = SsmClient()
+        # self.running_tests = self.ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
+        self.running_tests = get_secret('running-tests', namespace_override='/thiscovery/')['running-tests']
 
     def emit(self, exception_instance):
         if self.running_tests == 'false':

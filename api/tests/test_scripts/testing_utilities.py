@@ -40,19 +40,21 @@ class BaseTestCase(TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
-    ssm_client = utils.SsmClient()
+    # ssm_client = utils.SsmClient()
+    secrets_client = utils.SecretsManager()
 
     @classmethod
     def setUpClass(cls):
         utils.set_running_unit_tests(True)
-        cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
+        # cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
+        cls.secrets_client.update_secret('running-tests', {'running-tests': 'true'}, prefix='/thiscovery/')
         cls.logger = utils.get_logger()
 
     @classmethod
     def tearDownClass(cls):
-        cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
+        # cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
+        cls.secrets_client.update_secret('running-tests', {'running-tests': 'false'}, prefix='/thiscovery/')
         utils.set_running_unit_tests(False)
-
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
         actual_value = entity_dict[attribute_name]
