@@ -192,7 +192,7 @@ def validate_utc_datetime(s):
 
 # region boto3 clients
 class BaseClient:
-    def __init__(self, service_name):
+    def __init__(self, service_name, obtain_logger=True):
         self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
         self.logger = get_logger()
         self.aws_namespace = None
@@ -249,9 +249,27 @@ class SecretsManager(BaseClient):
             prefix = f"/{super().get_namespace()}/"
         return prefix + name
 
-    def update_secret(self, name, value, prefix=None):
+    def _create_secret(self, secret_id, value):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.create_secret
+        """
+        return self.client.create_secret(
+            SecretId=secret_id,
+            SecretString=value,
+        )
+
+    def _update_secret(self, secret_id, value):
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.update_secret
+        """
+        return self.client.update_secret(
+            SecretId=secret_id,
+            SecretString=value,
+        )
+
+    def create_or_update_secret(self, name, value, prefix=None):
+        """
+        Creates or updates a secret in AWS Secrets Manager.
 
         Args:
             name (str): the secret name, excluding an environment prefix
@@ -263,11 +281,14 @@ class SecretsManager(BaseClient):
         if isinstance(value, dict):
             value = json.dumps(value)
         self.logger.debug(f'Adding or updating Secret {secret_id} with value {value}')
-        response = self.client.update_secret(
-            SecretId=secret_id,
-            SecretString=value,
-        )
-        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.update_secret failed with response: {response}'
+        try:
+            response = self._update_secret(secret_id, value)
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.update_secret failed with response: {response}'
+        except Exception as exception:
+            error_message = exception.args[0]
+            self.logger.error(error_message)
+            response = self._create_secret(secret_id, value)
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.create_secret failed with response: {response}'
         return response
 # endregion
 
@@ -344,7 +365,8 @@ class EpsagonHandler(logging.Handler):
         super().__init__()
         # self.ssm_client = SsmClient()
         # self.running_tests = self.ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
-        self.running_tests = get_secret('running-tests', namespace_override='/thiscovery/')['running-tests']
+        self.running_tests = get_secret('runtime-parameters')['running-tests']
+
 
     def emit(self, exception_instance):
         if self.running_tests == 'false':
@@ -352,7 +374,7 @@ class EpsagonHandler(logging.Handler):
         elif self.running_tests == 'true':
             pass
         else:
-            raise AttributeError(f'AWS SSM parameter /thiscovery/running-tests is neither "true" nor "false": {self.running_tests}')
+            raise AttributeError(f'Secret runtime-parameters.running-tests is neither "true" nor "false": {self.running_tests}')
 
 
 logger = None

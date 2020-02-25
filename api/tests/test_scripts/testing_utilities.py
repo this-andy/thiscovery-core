@@ -47,13 +47,13 @@ class BaseTestCase(TestCase):
     def setUpClass(cls):
         utils.set_running_unit_tests(True)
         # cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
-        cls.secrets_client.update_secret('running-tests', {'running-tests': 'true'}, prefix='/thiscovery/')
+        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'true'})
         cls.logger = utils.get_logger()
 
     @classmethod
     def tearDownClass(cls):
         # cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
-        cls.secrets_client.update_secret('running-tests', {'running-tests': 'false'}, prefix='/thiscovery/')
+        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'false'})
         utils.set_running_unit_tests(False)
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
