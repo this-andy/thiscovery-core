@@ -25,12 +25,11 @@ from unittest import TestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
+import common.utilities as utils
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple
-from common.ssm_utilities import Ssm
-from common.utilities import get_secret, now_with_tz, get_logger, get_country_name, set_running_unit_tests
 
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..')  # thiscovery-core/
@@ -41,18 +40,18 @@ class BaseTestCase(TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
-    logger = get_logger()
-    ssm_client = Ssm()
+    ssm_client = utils.SsmClient()
 
     @classmethod
     def setUpClass(cls):
-        set_running_unit_tests(True)
+        utils.set_running_unit_tests(True)
         cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
+        cls.logger = utils.get_logger()
 
     @classmethod
     def tearDownClass(cls):
         cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
-        set_running_unit_tests(False)
+        utils.set_running_unit_tests(False)
 
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
@@ -64,7 +63,7 @@ class BaseTestCase(TestCase):
     def now_datetime_test_and_remove(self, entity_dict, datetime_attribute_name, tolerance=10):
         datetime_string = entity_dict[datetime_attribute_name]
         del entity_dict[datetime_attribute_name]
-        now = now_with_tz()
+        now = utils.now_with_tz()
         datetime_value = parser.parse(datetime_string)
         difference = abs(now - datetime_value)
         self.assertLess(difference.seconds, tolerance)
@@ -95,7 +94,7 @@ class DbTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        set_running_unit_tests(True)
+        super().setUpClass()
         cls.clear_test_data()
         pg_utils.insert_data_from_csv_multiple(
             (os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup'),
@@ -115,7 +114,7 @@ class DbTestCase(BaseTestCase):
     def tearDownClass(cls):
         if cls.delete_test_data:
             cls.clear_test_data()
-        set_running_unit_tests(False)
+        super().tearDownClass()
 
     @classmethod
     def clear_test_data(cls):
@@ -146,7 +145,7 @@ def _aws_request(method, url, params=None, data=None, aws_api_key=None):
     headers = {'Content-Type': 'application/json'}
 
     if aws_api_key is None:
-        headers['x-api-key'] = get_secret('aws-connection')['aws-api-key']
+        headers['x-api-key'] = utils.get_secret('aws-connection')['aws-api-key']
     else:
         headers['x-api-key'] = aws_api_key
 
@@ -177,7 +176,7 @@ def aws_patch(url, request_body):
 
 def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, aws_api_key=None,
                   correlation_id=None):
-    logger = get_logger()
+    logger = utils.get_logger()
 
     test_on_aws = os.environ.get('TEST_ON_AWS')
     if test_on_aws is None:
@@ -227,7 +226,7 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
                 "first_name": row[5],
                 "last_name": row[6],
                 "country_code": row[12],
-                "country_name": get_country_name(row[12]),
+                "country_name": utils.get_country_name(row[12]),
                 "avatar_string": f'{row[5][0].upper()}{row[6][0].upper()}',
                 "status": "new"
             }
@@ -236,4 +235,4 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
             user_jsonpatch = [
                 {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
             ]
-            user.patch_user(user_json['id'], user_jsonpatch, now_with_tz(), correlation_id=None)
+            user.patch_user(user_json['id'], user_jsonpatch, utils.now_with_tz(), correlation_id=None)

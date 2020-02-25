@@ -190,6 +190,57 @@ def validate_utc_datetime(s):
 # endregion
 
 
+# region boto3 clients
+class BaseClient:
+    def __init__(self, service_name):
+        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
+        self.logger = get_logger()
+        self.aws_namespace = None
+
+    def get_namespace(self):
+        if self.aws_namespace is None:
+            self.aws_namespace = get_aws_namespace()[1:-1]
+        return self.aws_namespace
+
+
+class SsmClient(BaseClient):
+    def __init__(self):
+        super().__init__('ssm')
+
+    def _prefix_name(self, name, prefix):
+        if prefix is None:
+            prefix = f"/{super().get_namespace()}/"
+        return prefix + name
+
+    def get_parameter(self, name, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.get_parameter
+        """
+        parameter_name = self._prefix_name(name, prefix)
+        self.logger.debug(f'Getting SSM parameter {parameter_name}')
+        response = self.client.get_parameter(
+            Name=parameter_name,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.get_parameter failed with response: {response}'
+        return response['Parameter']['Value']
+
+    def put_parameter(self, name, value, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.put_parameter
+        """
+        parameter_name = self._prefix_name(name, prefix)
+        self.logger.debug(f'Adding or updating SSM parameter {parameter_name} with value {value}')
+        response = self.client.put_parameter(
+            Name=parameter_name,
+            Value=value,
+            Type='String',
+            Overwrite=True,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_parameter failed with response: {response}'
+        return response
+# endregion
+
+
 # region Logging
 class _AnsiColorizer(object):
     """
@@ -258,16 +309,18 @@ class ColorHandler(logging.StreamHandler):
 
 
 class EpsagonHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.ssm_client = SsmClient()
+        self.running_tests = self.ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
 
     def emit(self, exception_instance):
-        running_tests = get_secret("running-tests", namespace_override="/thiscovery/")
-
-        if running_tests == 'false':
+        if self.running_tests == 'false':
             epsagon.error(exception_instance)
-        elif running_tests == 'true':
+        elif self.running_tests == 'true':
             pass
         else:
-            raise AttributeError(f'AWS secret /thiscovery/running-tests is neither "true" nor "false": {running_tests}')
+            raise AttributeError(f'AWS SSM parameter /thiscovery/running-tests is neither "true" nor "false": {self.running_tests}')
 
 
 logger = None
@@ -309,20 +362,6 @@ def get_correlation_id(event):
     except (KeyError, TypeError):  # KeyError if no correlation_id in headers, TypeError if no headers
         correlation_id = new_correlation_id()
     return str(correlation_id)
-# endregion
-
-
-# region Base boto3 client
-class BaseClient:
-    def __init__(self, service_name):
-        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
-        self.logger = get_logger()
-        self.aws_namespace = None
-
-    def get_namespace(self):
-        if self.aws_namespace is None:
-            self.aws_namespace = get_aws_namespace()[1:-1]
-        return self.aws_namespace
 # endregion
 
 
