@@ -15,10 +15,10 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-from common.aws_common import BaseClient
+import common.utilities as utils
 
 
-class Ssm(BaseClient):
+class Ssm(utils.BaseClient):
 
     def __init__(self):
         super().__init__('ssm')

@@ -17,6 +17,7 @@
 #
 import boto3
 import datetime
+import epsagon
 import functools
 import json
 import logging
@@ -30,8 +31,6 @@ from dateutil import parser, tz
 from http import HTTPStatus
 from pythonjsonlogger import jsonlogger
 from timeit import default_timer as timer
-
-from common.log_color_handler import ColorHandler, EpsagonHandler
 
 
 # region Custom error classes and handling
@@ -93,7 +92,6 @@ def log_exception_and_return_edited_api_response(exception, status_code, logger_
 
 
 # region unit test methods
-
 def set_running_unit_tests(flag):
     if flag:
         os.environ["TESTING"] = 'true'
@@ -104,7 +102,6 @@ def set_running_unit_tests(flag):
 def running_unit_tests():
     testing = os.getenv("TESTING")
     return testing == 'true'
-
 # endregion
 
 
@@ -157,12 +154,10 @@ def obfuscate_data(input, item_key_path):
     except TypeError:
         # if called with None or non-subscriptable arguments then do nothing
         pass
-
 # endregion
 
 
 # region Validation methods
-
 def validate_int(s):
     try:
         int(s)
@@ -192,12 +187,91 @@ def validate_utc_datetime(s):
     except ValueError:
         errorjson = {'datetime': s}
         raise DetailedValueError('invalid utc format datetime', errorjson)
-
 # endregion
 
 
 # region Logging
+class _AnsiColorizer(object):
+    """
+    A colorizer is an object that loosely wraps around a stream, allowing
+    callers to write text to the stream in a particular color.
+
+    Colorizer classes must implement C{supported()} and C{write(text, color)}.
+    """
+    _colors = dict(black=30, red=31, green=32, yellow=33,
+                   blue=34, magenta=35, cyan=36, white=37)
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    @classmethod
+    def supported(cls, stream=sys.stdout):
+        """
+        A class method that returns True if the current platform supports
+        coloring terminal output using this method. Returns False otherwise.
+        """
+        if not stream.isatty():
+            return False  # auto color only on TTYs
+        try:
+            import curses
+        except ImportError:
+            return False
+        else:
+            try:
+                try:
+                    return curses.tigetnum("colors") > 2
+                except curses.error:
+                    curses.setupterm()
+                    return curses.tigetnum("colors") > 2
+            except:
+                raise
+                # guess false in case of error
+                return False
+
+    def write(self, text, color):
+        """
+        Write the given text to the stream in the given color.
+
+        @param text: Text to be written to the stream.
+
+        @param color: A string label for a color. e.g. 'red', 'white'.
+        """
+        color = self._colors[color]
+        self.stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
+
+
+class ColorHandler(logging.StreamHandler):
+
+    def __init__(self, stream=sys.stderr):
+        super(ColorHandler, self).__init__(_AnsiColorizer(stream))
+
+    def emit(self, record):
+        msg_colors = {
+            logging.DEBUG: "green",
+            logging.INFO: "blue",
+            logging.WARNING: "yellow",
+            logging.ERROR: "red"
+        }
+
+        color = msg_colors.get(record.levelno, "blue")
+        self.stream.write(self.format(record) + "\n", color)
+
+
+class EpsagonHandler(logging.Handler):
+
+    def emit(self, exception_instance):
+        running_tests = get_secret("running-tests", namespace_override="/thiscovery/")
+
+        if running_tests == 'false':
+            epsagon.error(exception_instance)
+        elif running_tests == 'true':
+            pass
+        else:
+            raise AttributeError(f'AWS secret /thiscovery/running-tests is neither "true" nor "false": {running_tests}')
+
+
 logger = None
+
 
 def get_logger():
     global logger
@@ -235,19 +309,31 @@ def get_correlation_id(event):
     except (KeyError, TypeError):  # KeyError if no correlation_id in headers, TypeError if no headers
         correlation_id = new_correlation_id()
     return str(correlation_id)
+# endregion
 
+
+# region Base boto3 client
+class BaseClient:
+    def __init__(self, service_name):
+        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
+        self.logger = get_logger()
+        self.aws_namespace = None
+
+    def get_namespace(self):
+        if self.aws_namespace is None:
+            self.aws_namespace = get_aws_namespace()[1:-1]
+        return self.aws_namespace
 # endregion
 
 
 # region Secrets processing
-
 DEFAULT_AWS_REGION = 'eu-west-1'
 
 
 def get_aws_region():
     try:
         region = os.environ['AWS_REGION']
-    except:
+    except KeyError:
         region = DEFAULT_AWS_REGION
     return region
 
@@ -272,16 +358,6 @@ def get_environment_name():
     # strip leading and trailing '/' chars
     return namespace[1:-1]
 
-
-# def append_env_to_url(url):
-#     return url + '&env=' + get_environment_name()
-#
-#
-# def append_nonprodenv_to_url(url):
-#     if get_environment_name() == 'prod':
-#         return url
-#     else:
-#         return append_env_to_url(url)
 
 # this belongs in user_task class as a property - moved here to avoid circular includes
 def create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id):
@@ -399,6 +475,7 @@ def feature_flag(name: str) -> bool:
 # system_parameters = load_system_params()
 
 # endregion
+
 
 # region Country code/name processing
 
