@@ -180,7 +180,7 @@ def delete_item(table_name: str, key: str, correlation_id=new_correlation_id()):
         table = get_table(table_name)
         key_json = {'id': key}
         logger.info('dynamodb delete', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
-        response = table.delete_item(Key=key_json)
+        return table.delete_item(Key=key_json)
     except Exception as err:
         raise err
 

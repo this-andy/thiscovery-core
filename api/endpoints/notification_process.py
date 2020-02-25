@@ -16,15 +16,15 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-# import os
-# import uuid
-# import logging
-
+import http
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil import parser, tz
 
-
+import common.dynamodb_utilities as ddb_utils
+import common.notifications as c_notif
+import common.utilities as utils
 from common.hubspot import HubSpotClient
 from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
 from common.pg_utilities import execute_query
@@ -33,6 +33,7 @@ from common.utilities import get_logger, new_correlation_id, now_with_tz, Detail
 from user import patch_user
 
 
+# region processing
 def process_notifications(event, context):
     logger = get_logger()
     notifications = get_notifications(NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
@@ -149,6 +150,29 @@ def process_user_login(notification):
     except Exception as ex:
         error_message = str(ex)
         mark_notification_failure(notification, error_message, correlation_id)
+# endregion
+
+
+# region cleanup
+@utils.lambda_wrapper
+def clear_notification_queue(event, context):
+    logger = event['logger']
+    correlation_id = event['correlation_id']
+    seven_days_ago = now_with_tz() - timedelta(seconds=7)
+    processed_notifications = get_notifications('processing_status', ['processed'])
+    old_proc_notifications = [x for x in processed_notifications if parser.isoparse(x['modified']) < seven_days_ago]
+    deleted_notifications = list()
+    for n in old_proc_notifications:
+        response = ddb_utils.delete_item(c_notif.NOTIFICATION_TABLE_NAME, n['id'], correlation_id=correlation_id)
+        if response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK:
+            deleted_notifications.append(n)
+        else:
+            logger.info(f'Notifications deleted before an error occurred', extra={'deleted_notifications': deleted_notifications,
+                                                                                  'correlation_id': correlation_id})
+            logger.error('Failed to delete notification', extra={'notification': n, 'response': response})
+            raise Exception(f'Failed to delete notification {n}; received response: {response}')
+    return deleted_notifications
+# endregion
 
 
 def dateformattest(event, context):
