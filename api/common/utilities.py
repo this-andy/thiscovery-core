@@ -110,6 +110,9 @@ def get_file_as_string(path):
 
 
 def running_on_aws():
+    """
+    Checks if calling code is running on an AWS machine
+    """
     try:
         region = os.environ['AWS_REGION']
     except:

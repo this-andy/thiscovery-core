@@ -19,12 +19,13 @@
 import csv
 import os
 import requests
+import unittest
 import uuid
 from dateutil import parser
-from unittest import TestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
+import common.utilities as utils
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
@@ -36,7 +37,19 @@ BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '.
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
-class BaseTestCase(TestCase):
+def tests_running_on_aws():
+    """
+    Checks if tests are calling AWS API endpoints
+    """
+    test_on_aws = os.environ.get('TEST_ON_AWS')
+    if test_on_aws is None:
+        test_on_aws = TEST_ON_AWS
+    elif test_on_aws.lower() == 'false':
+        test_on_aws = False
+    return test_on_aws
+
+
+class BaseTestCase(unittest.TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
@@ -84,23 +97,12 @@ class BaseTestCase(TestCase):
             del entity_dict[key]
 
 
+@unittest.skipIf(not tests_running_on_aws(), "Testing are using local methods and this test only makes sense if calling an AWS API endpoint")
 class AlwaysOnAwsTestCase(BaseTestCase):
     """
-    Runs tests on AWS regardless of the value of the 'TEST_ON_AWS' environmental variable or of the value of the TEST_ON_AWS setting in dev.config.py
+    Skips tests if tests are running locally
     """
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.old_value_of_test_on_aws_env_var = os.environ.get('TEST_ON_AWS')
-        os.environ['TEST_ON_AWS'] = 'true'
-
-    @classmethod
-    def tearDownClass(cls):
-        if cls.old_value_of_test_on_aws_env_var is None:
-            del os.environ['TEST_ON_AWS']
-        else:
-            os.environ['TEST_ON_AWS'] = cls.old_value_of_test_on_aws_env_var
-        super().tearDownClass()
+    pass
 
 
 class DbTestCase(BaseTestCase):
@@ -193,14 +195,7 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
                   correlation_id=None):
     logger = get_logger()
 
-    test_on_aws = os.environ.get('TEST_ON_AWS')
-    logger.info(f'TEST_ON_AWS environmental variable: {test_on_aws}')
-    if test_on_aws is None:
-        test_on_aws = TEST_ON_AWS
-    elif test_on_aws.lower() == 'false':
-        test_on_aws = False
-
-    if test_on_aws:
+    if tests_running_on_aws():
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
         else:
