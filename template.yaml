@@ -1238,7 +1238,6 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          SECRETS_NAMESPACE_2: !Sub /${EnvironmentTagName}/
   UpdateCochraneProgress:
     Type: AWS::Serverless::Function
     Properties:
