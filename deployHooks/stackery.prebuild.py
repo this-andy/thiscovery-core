@@ -62,37 +62,37 @@ def strip_provisioned_concurrency_config(template_contents_):
     return edited_template
 
 
-def remove_additional_subnets(template_contents):
+def remove_additional_subnets(template_contents_):
     """
     Args:
-        template_contents (str): the full contents of template.yaml
+        template_contents_ (str): the full contents of template.yaml
 
     Returns:
         template_contents with only one private and one public subnet configured (all additional subnets removed)
 
     """
-    def delete_resources(template_contents_):
-        template_as_dict = yaml.load(template_contents_, Loader=yaml.Loader)
+    template_as_dict = yaml.load(template_contents_, Loader=yaml.Loader)
 
-        subnet_p = re.compile(
-            r"(VirtualNetwork(?:Public|Private)Subnet(\d+)):"
-        )
+    subnet_p = re.compile(
+        r"(VirtualNetwork(?:Public|Private)Subnet(\d+)):"
+    )
 
-        for name, number in subnet_p.findall(template_contents_):
-            if not number == "1":
-                for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
-                    del template_as_dict['Resources'][f'{name}{resource}']
+    # delete resources
+    for name, number in subnet_p.findall(template_contents_):
+        if not number == "1":
+            for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
+                del template_as_dict['Resources'][f'{name}{resource}']
+    edited_template = yaml.dump(template_as_dict)
 
-        edited_template_ = yaml.dump(template_as_dict)
-        assert "Subnet2" not in edited_template_, "Failed to strip subnets from template; " \
-                                                 f"template_contents_: {template_contents_}"
-        return edited_template_
+    # delete references
+    for name, number in subnet_p.findall(edited_template):
+        if not number == "1":
+            ref_p = re.compile(fr"\s+- Ref: {name}\n")
+            edited_template = re.sub(ref_p, "", edited_template)
 
-    def delete_references(template_contents_):
-        #todo: implement this to get rid of lines like: "- Ref: VirtualNetworkPrivateSubnet2"
-        raise NotImplementedError
-
-    edited_template = delete_resources(template_contents)
+    assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
+                                             f"template_contents_: {template_contents_}"
+    return edited_template
 
 
 def main():
@@ -110,9 +110,10 @@ def main():
         print(f'Deploying to {env_name}; {template_file} left untouched')
     else:
         edited_template = strip_provisioned_concurrency_config(template_contents)
-        edited_template = remove_additional_nat_gateways(edited_template)
+        edited_template = remove_additional_subnets(edited_template)
         with open(template_file, 'w') as f:
             f.write(edited_template)
+        print(f"Edited template:\n{edited_template}")
 
 
 if __name__ == "__main__":

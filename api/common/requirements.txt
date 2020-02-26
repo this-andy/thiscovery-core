@@ -5,7 +5,7 @@ pip	>= 19.0.1
 psycopg2-binary
 jsonpatch
 jsons
+pyYAML
 python-json-logger
 requests
 urllib3
-yaml

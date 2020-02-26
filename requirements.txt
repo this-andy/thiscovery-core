@@ -12,6 +12,7 @@ pip	>= 19.0.1
 pluggy	>=	0.6.0
 psycopg2	>=	2.7.5
 py	>=	1.5.4
+pyYAML
 pytest	>=	3.6.3
 python-dateutil	>=	2.7.3
 python-json-logger >=0.1.9
@@ -19,4 +20,3 @@ requests
 setuptools	>=	40.0.0
 six	>=	1.11.0
 # testing.postgres >= 1.3.0  # this needs to be commented out for deployment to AWS Lambda
-yaml

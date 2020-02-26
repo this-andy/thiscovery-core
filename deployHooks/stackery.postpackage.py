@@ -15,17 +15,3 @@
 #
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
-#
-# import os
-# import re
-#
-#
-# BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
-# template_file = os.path.join(BASE_FOLDER, '.aws-sam', 'build', 'packaged-template.yaml')
-# template_contents = str()
-#
-# with open(template_file) as f:
-#     template_contents = f.read()
-#
-# print(f'Template contents: {template_contents}')
-# raise Exception
