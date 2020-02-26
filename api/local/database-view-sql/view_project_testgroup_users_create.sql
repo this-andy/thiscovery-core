@@ -28,10 +28,8 @@ CREATE OR REPLACE VIEW public.project_testgroup_users AS
     p.testing_group_id,
     ug.short_name AS group_name,
     u.id AS user_id,
-    u.email,
-    up.ext_user_project_id AS ext_user_project_id
+    u.email
    FROM projects_project p
      JOIN projects_usergroup ug ON ug.id = p.testing_group_id
      JOIN projects_usergroupmembership ugm ON ug.id = ugm.user_group_id
-     JOIN projects_user u ON ugm.user_id = u.id
-     JOIN projects_userproject up ON p.id = up.project_id;
+     JOIN projects_user u ON ugm.user_id = u.id;

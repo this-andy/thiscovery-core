@@ -19,9 +19,9 @@
 import csv
 import os
 import requests
+import unittest
 import uuid
 from dateutil import parser
-from unittest import TestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
@@ -36,7 +36,19 @@ BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '.
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
-class BaseTestCase(TestCase):
+def tests_running_on_aws():
+    """
+    Checks if tests are calling AWS API endpoints
+    """
+    test_on_aws = os.environ.get('TEST_ON_AWS')
+    if test_on_aws is None:
+        test_on_aws = TEST_ON_AWS
+    elif test_on_aws.lower() == 'false':
+        test_on_aws = False
+    return test_on_aws
+
+
+class BaseTestCase(unittest.TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
@@ -88,6 +100,14 @@ class BaseTestCase(TestCase):
     def remove_dict_items_to_be_ignored_by_tests(entity_dict, list_of_keys):
         for key in list_of_keys:
             del entity_dict[key]
+
+
+@unittest.skipIf(not tests_running_on_aws(), "Testing are using local methods and this test only makes sense if calling an AWS API endpoint")
+class AlwaysOnAwsTestCase(BaseTestCase):
+    """
+    Skips tests if tests are running locally
+    """
+    pass
 
 
 class DbTestCase(BaseTestCase):
@@ -180,13 +200,7 @@ def _test_request(request_method, local_method, aws_url, path_parameters=None, q
                   correlation_id=None):
     logger = utils.get_logger()
 
-    test_on_aws = os.environ.get('TEST_ON_AWS')
-    if test_on_aws is None:
-        test_on_aws = TEST_ON_AWS
-    elif test_on_aws.lower() == 'false':
-        test_on_aws = False
-
-    if test_on_aws:
+    if tests_running_on_aws():
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
         else:
