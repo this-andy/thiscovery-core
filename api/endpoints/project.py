@@ -101,50 +101,17 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
 
     project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
-    sql0 = """
-        SELECT project_id, project_name, group_id, group_name, user_id, email, ext_user_project_id
-        FROM public.project_group_users
-        WHERE user_id = %s
-    """
-
-    sql1 = """
-        SELECT project_id, project_name, testing_group_id, group_name, user_id, email, ext_user_project_id
-        FROM public.project_testgroup_users
-        WHERE user_id = %s
-    """
-
-    sql2 = """
-        SELECT project_task_id, description, group_id, group_name, user_id, email, ext_user_project_id
-        FROM public.projecttask_group_users
-        WHERE user_id = %s
-    """
-
-    sql3 = """
-        SELECT project_task_id, description, testing_group_id, group_name, user_id, email, ext_user_project_id
-        FROM public.projecttask_testgroup_users
-        WHERE user_id = %s
-    """
-
-    sql4 = """
-        SELECT project_task_id, ut.id, ut.status, up.ext_user_project_id as ext_user_project_id, ut.ext_user_task_id as ext_user_task_id 
-        FROM public.projects_usertask ut
-        JOIN public.projects_userproject up ON ut.user_project_id = up.id
-        WHERE up.user_id = %s
-    """
     str_user_id = (str(user_id),)
-    results = execute_query_multiple((sql0, sql1, sql2, sql3, sql4), (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
+    results = execute_query_multiple(
+        (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
+         sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4']),
+        (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
 
-    project_group_users = results[0]
-    project_testgroup_users = results[1]
-    projecttask_group_users = results[2]
-    projecttask_testgroup_users = results[3]
-    projects_usertasks = results[4]
-
-    project_group_users_dict = dict_from_dataset(project_group_users, 'project_id')
-    project_testgroup_users_dict = dict_from_dataset(project_testgroup_users, 'project_id')
-    projecttask_group_users_dict = dict_from_dataset(projecttask_group_users,'project_task_id')
-    projecttask_testgroup_users_dict = dict_from_dataset(projecttask_testgroup_users,'project_task_id')
-    projects_usertasks_dict = dict_from_dataset(projects_usertasks,'project_task_id')
+    project_group_users_dict = dict_from_dataset(results[0], 'project_id')
+    project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
+    projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
+    projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
+    projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
 
     # now add calculated attributes to returned json...
     try:
@@ -217,7 +184,7 @@ def get_project_status_for_user_api(event, context):
 @utils.api_error_handler
 def get_project_status_for_external_user_api(event, context):
     """
-    Lambda handler linked to API endpoint /v1/project-user-status-ext
+    Lambda handler linked to API endpoint /v2/project-user-status
     """
     logger = event['logger']
     correlation_id = event['correlation_id']

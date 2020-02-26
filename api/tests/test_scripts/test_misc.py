@@ -20,7 +20,8 @@ import json
 import os
 from http import HTTPStatus
 from unittest import TestCase
-from api.tests.test_scripts.testing_utilities import test_get
+
+from api.tests.test_scripts.testing_utilities import test_get, tests_running_on_aws
 from api.common.dev_config import TEST_ON_AWS
 from api.common.utilities import set_running_unit_tests
 
@@ -40,13 +41,7 @@ class TestUserExternalAccount(TestCase):
 
         expected_status = HTTPStatus.OK
 
-        test_on_aws = os.environ.get('TEST_ON_AWS')
-        if test_on_aws is None:
-            test_on_aws = TEST_ON_AWS
-        elif test_on_aws.lower() == 'false':
-            test_on_aws = False
-
-        if test_on_aws:
+        if tests_running_on_aws():
             expected_region = 'eu-west-1'
         else:
             expected_region = ''

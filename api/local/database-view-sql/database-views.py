@@ -20,7 +20,6 @@ import psycopg2
 from api.common.pg_utilities import run_sql_script_file, execute_non_query
 
 
-
 VIEW_SQL_FOLDER = './'
 
 
