@@ -163,25 +163,7 @@ class DbTestCase(BaseTestCase):
 
 
 def _aws_request(method, url, params=None, data=None, aws_api_key=None):
-    full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json'}
-
-    if aws_api_key is None:
-        headers['x-api-key'] = utils.get_secret('aws-connection')['aws-api-key']
-    else:
-        headers['x-api-key'] = aws_api_key
-
-    try:
-        response = requests.request(
-            method=method,
-            url=full_url,
-            params=params,
-            headers=headers,
-            data=data,
-        )
-        return {'statusCode': response.status_code, 'body': response.text}
-    except Exception as err:
-        raise err
+    return utils.aws_request(method, url, AWS_TEST_API, params=params, data=data, aws_api_key=aws_api_key)
 
 
 def aws_get(url, params):
