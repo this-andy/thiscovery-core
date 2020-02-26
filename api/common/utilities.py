@@ -23,6 +23,7 @@ import json
 import logging
 import os
 import re
+import requests
 import sys
 import uuid
 
@@ -31,6 +32,23 @@ from dateutil import parser, tz
 from http import HTTPStatus
 from pythonjsonlogger import jsonlogger
 from timeit import default_timer as timer
+
+
+# region constants
+def name2namespace(name):
+    return f'/{name}/'
+
+
+def namespace2name(namespace):
+    return namespace[1:-1]
+
+
+PRODUCTION_ENV_NAME = 'prod'
+STAGING_ENV_NAME = 'staging'
+
+PRODUCTION_NAMESPACE = name2namespace(PRODUCTION_ENV_NAME)
+STAGING_NAMESPACE = name2namespace(STAGING_ENV_NAME)
+# endregion
 
 
 # region Custom error classes and handling
@@ -372,7 +390,7 @@ class EpsagonHandler(logging.Handler):
             self.running_tests = 'false'
 
     def emit(self, exception_instance):
-        if (self.running_tests == 'false') or (get_aws_namespace() in ['/prod/', '/staging/']):
+        if (self.running_tests == 'false') or (get_aws_namespace() in [PRODUCTION_NAMESPACE, STAGING_NAMESPACE]):
             epsagon.error(exception_instance)
         elif self.running_tests == 'true':
             pass
@@ -651,4 +669,40 @@ def lambda_wrapper(func):
                                                                            'elapsed_ms': get_elapsed_ms(start_time), 'correlation_id': correlation_id})
         return result
     return thiscovery_lambda_wrapper
+# endregion
+
+
+# region aws api requests
+def aws_request(method, endpoint_url, base_url, params=None, data=None, aws_api_key=None):
+    full_url = base_url + endpoint_url
+    headers = {'Content-Type': 'application/json'}
+
+    if aws_api_key is None:
+        headers['x-api-key'] = get_secret('aws-connection')['aws-api-key']
+    else:
+        headers['x-api-key'] = aws_api_key
+
+    try:
+        response = requests.request(
+            method=method,
+            url=full_url,
+            params=params,
+            headers=headers,
+            data=data,
+        )
+        return {'statusCode': response.status_code, 'body': response.text}
+    except Exception as err:
+        raise err
+
+
+def aws_get(endpoint_url, base_url, params):
+    return aws_request(method='GET', endpoint_url=endpoint_url, base_url=base_url, params=params)
+
+
+def aws_post(endpoint_url, base_url, params=None, request_body=None):
+    return aws_request(method='POST', endpoint_url=endpoint_url, base_url=base_url, params=params, data=request_body)
+
+
+def aws_patch(endpoint_url, base_url, request_body):
+    return aws_request(method='PATCH', endpoint_url=endpoint_url, base_url=base_url, data=request_body)
 # endregion

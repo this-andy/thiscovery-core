@@ -89,3 +89,13 @@ def raise_error_api(event, context):
         "statusCode": HTTPStatus.OK,
         "body": json.dumps(msg)
     }
+
+
+def call_raise_error_on_prod_and_staging(event, context):
+    api_base = {
+        utils.PRODUCTION_ENV_NAME: 'https://api.thiscovery.org/',
+        utils.STAGING_ENV_NAME: f'https://{utils.STAGING_ENV_NAME}-api.thiscovery.org/',
+    }
+    env_name = utils.namespace2name(utils.get_aws_namespace())
+    if env_name in [utils.PRODUCTION_ENV_NAME, utils.STAGING_ENV_NAME]:
+        utils.aws_post('v1/raise-error', api_base[env_name], params='error_id=5xx')
