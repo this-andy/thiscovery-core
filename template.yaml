@@ -1352,6 +1352,40 @@ Resources:
             Schedule: rate(1 day)
           Metadata:
             StackeryName: timer-clear-processed-notifications
+  CallRaiseError:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-CallRaiseError
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: CallRaiseError
+      CodeUri: api/endpoints
+      Handler: misc.call_raise_error_on_prod_and_staging
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        Timer5:
+          Type: Schedule
+          Properties:
+            Schedule: cron(* 10 * * 2)
+          Metadata:
+            StackeryName: timer-call-raise-error
 Parameters:
   StackTagName:
     Type: String
