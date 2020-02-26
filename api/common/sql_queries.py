@@ -218,6 +218,7 @@ PROJECT_USER_SELECT_SQL = '''
                         base_url as url,                    
                         status,
                         es.short_name as task_provider_name,
+                        es.display_method as display_method,
                         FALSE as task_is_visible,
                         FALSE as user_is_signedup,
                         FALSE as signup_available,
