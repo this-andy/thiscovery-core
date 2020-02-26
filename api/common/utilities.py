@@ -390,7 +390,7 @@ class EpsagonHandler(logging.Handler):
             self.running_tests = 'false'
 
     def emit(self, exception_instance):
-        if (self.running_tests == 'false') or (get_aws_namespace() in ['/prod/', '/staging/']):
+        if (self.running_tests == 'false') or (get_aws_namespace() in [PRODUCTION_NAMESPACE, STAGING_NAMESPACE]):
             epsagon.error(exception_instance)
         elif self.running_tests == 'true':
             pass
