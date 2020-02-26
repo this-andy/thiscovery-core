@@ -101,7 +101,7 @@ class TestUserExternalAccount(test_utils.DbTestCase):
     def test_03_create_user_external_account_api_user_not_exists(self):
         from api.endpoints.user_external_account import create_user_external_account_api
 
-        expected_status = HTTPStatus.BAD_REQUEST
+        expected_status = HTTPStatus.NOT_FOUND
         uea_json = {
             'external_system_id': '4a7ceb98-888c-4e38-8803-4a25ddf64ef4',
             'user_id': '8e385316-5827-4c72-8d4b-af5c57ff4670',

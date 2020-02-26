@@ -15,16 +15,13 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import boto3
-
-from common.aws_common import BaseClient
-from common.utilities import get_logger, get_aws_namespace
+import common.utilities as utils
 
 
 ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 
 
-class CloudWatch(BaseClient):
+class CloudWatch(utils.BaseClient):
 
     def __init__(self):
         super().__init__('cloudwatch')
@@ -99,12 +96,12 @@ class CloudWatch(BaseClient):
     #     pass
 
 
-class CloudWatchLogs(BaseClient):
+class CloudWatchLogs(utils.BaseClient):
 
     def __init__(self):
         super().__init__('logs')
 
-    def get_thiscovery_log_groups(self, prefix=f"/aws/lambda/thiscovery-core-{get_aws_namespace()[1:-1]}"):
+    def get_thiscovery_log_groups(self, prefix=f"/aws/lambda/thiscovery-core-{utils.get_aws_namespace()[1:-1]}"):
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
         """
