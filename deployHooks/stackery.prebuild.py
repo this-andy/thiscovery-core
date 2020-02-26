@@ -18,39 +18,102 @@
 
 import os
 import re
+import yaml
 
 
-BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
-template_file = os.path.join(BASE_FOLDER, '.stackery', 'template.yaml')
-template_contents = str()
+def extract_environment_name_from_template(template_contents_):
+    """
+    Args:
+        template_contents_ (str): the full contents of template.yaml
 
-with open(template_file) as f:
-    template_contents = f.read()
+    Returns:
+        The environment name as a string
 
-env_p = re.compile(r"EnvironmentTagName:"
+    """
+    env_p = re.compile(r"EnvironmentTagName:"
                    r"\s+Default: (.+)"
                    r"\s+Description: Environment Name \(injected by Stackery at deployment time\)"
                    r"\s+Type: String")
-env_m = env_p.search(template_contents)
+    env_m = env_p.search(template_contents_)
+    try:
+        return env_m.group(1)
+    except AttributeError:
+        print(f"Couldn't find any match of pattern {env_p} in template file")
+        print(f"template_contents: {template_contents_}")
+        raise AttributeError
 
-try:
-    env_name = env_m.group(1)
-except AttributeError:
-    print(f"Couldn't find any match of pattern {env_p} in file {template_file}")
-    print(f"template_contents: {template_contents}")
-    raise AttributeError
 
-if env_name in ['prod', 'staging']:
-    print(f'Deploying to {env_name}; {template_file} left untouched')
-else:
+def strip_provisioned_concurrency_config(template_contents_):
+    """
+    Args:
+        template_contents_ (str): the full contents of template.yaml
+
+    Returns:
+        template_contents_ with all settings related to provisioned concurrency removed
+
+    """
     p_conc_config_p = re.compile(r"\s+ProvisionedConcurrencyConfig:"
                                  r"\s*ProvisionedConcurrentExecutions:"
                                  r"\s+Ref: EnvConfiglambdaprovisionedconcurrencyAsString")
 
-    template_contents_without_concurrency = re.sub(p_conc_config_p, "", template_contents)
+    edited_template = re.sub(p_conc_config_p, "", template_contents_)
+    assert "ProvisionedConcurrencyConfig" not in edited_template, "Failed to strip provisioned concurrency from template; " \
+                                                                                        f"template_contents_: {template_contents_}"
+    return edited_template
 
-    assert "ProvisionedConcurrencyConfig" not in template_contents_without_concurrency, "Failed to strip provisioned concurrency from template " \
-                                                                                        f"template_contents: {template_contents}"
 
-    with open(template_file, 'w') as f:
-        f.write(template_contents_without_concurrency)
+def remove_additional_subnets(template_contents):
+    """
+    Args:
+        template_contents (str): the full contents of template.yaml
+
+    Returns:
+        template_contents with only one private and one public subnet configured (all additional subnets removed)
+
+    """
+    def delete_resources(template_contents_):
+        template_as_dict = yaml.load(template_contents_, Loader=yaml.Loader)
+
+        subnet_p = re.compile(
+            r"(VirtualNetwork(?:Public|Private)Subnet(\d+)):"
+        )
+
+        for name, number in subnet_p.findall(template_contents_):
+            if not number == "1":
+                for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
+                    del template_as_dict['Resources'][f'{name}{resource}']
+
+        edited_template_ = yaml.dump(template_as_dict)
+        assert "Subnet2" not in edited_template_, "Failed to strip subnets from template; " \
+                                                 f"template_contents_: {template_contents_}"
+        return edited_template_
+
+    def delete_references(template_contents_):
+        #todo: implement this to get rid of lines like: "- Ref: VirtualNetworkPrivateSubnet2"
+        raise NotImplementedError
+
+    edited_template = delete_resources(template_contents)
+
+
+def main():
+    """
+    The main script routine
+    """
+    base_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
+    template_file = os.path.join(base_folder, '.stackery', 'template.yaml')
+    template_contents = str()
+    with open(template_file) as f:
+        template_contents = f.read()
+    env_name = extract_environment_name_from_template(template_contents)
+
+    if env_name in ['prod', 'staging']:
+        print(f'Deploying to {env_name}; {template_file} left untouched')
+    else:
+        edited_template = strip_provisioned_concurrency_config(template_contents)
+        edited_template = remove_additional_nat_gateways(edited_template)
+        with open(template_file, 'w') as f:
+            f.write(edited_template)
+
+
+if __name__ == "__main__":
+    main()
