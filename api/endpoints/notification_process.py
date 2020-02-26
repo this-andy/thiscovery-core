@@ -158,7 +158,7 @@ def process_user_login(notification):
 def clear_notification_queue(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-    seven_days_ago = now_with_tz() - timedelta(seconds=7)
+    seven_days_ago = now_with_tz() - timedelta(days=7)
     processed_notifications = get_notifications('processing_status', ['processed'])
     old_proc_notifications = [x for x in processed_notifications if parser.isoparse(x['modified']) < seven_days_ago]
     deleted_notifications = list()
