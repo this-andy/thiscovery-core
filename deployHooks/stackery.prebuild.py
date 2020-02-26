@@ -80,7 +80,7 @@ def remove_additional_subnets(template_contents_):
     # delete resources
     for name, number in subnet_p.findall(template_contents_):
         if not number == "1":
-            for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
+            for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']:
                 del template_as_dict['Resources'][f'{name}{resource}']
     edited_template = yaml.dump(template_as_dict)
 
