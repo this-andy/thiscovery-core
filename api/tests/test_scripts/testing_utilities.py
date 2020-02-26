@@ -118,6 +118,7 @@ class DbTestCase(BaseTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.clear_test_data()
+        delete_all_notifications()
         pg_utils.insert_data_from_csv_multiple(
             (os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup'),
             (os.path.join(TEST_DATA_FOLDER, 'project_data_PSFU.csv'), 'public.projects_project'),
@@ -136,6 +137,8 @@ class DbTestCase(BaseTestCase):
     def tearDownClass(cls):
         if cls.delete_test_data:
             cls.clear_test_data()
+        if cls.delete_notifications:
+            delete_all_notifications()
         super().tearDownClass()
 
     @classmethod
@@ -158,8 +161,6 @@ class DbTestCase(BaseTestCase):
             'public.projects_usergroup',
             'public.projects_userexternalaccount',
         )
-        if cls.delete_notifications:
-            delete_all_notifications()
 
 
 def _aws_request(method, url, params=None, data=None, aws_api_key=None):
