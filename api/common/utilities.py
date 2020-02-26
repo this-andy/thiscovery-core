@@ -254,7 +254,7 @@ class SecretsManager(BaseClient):
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.create_secret
         """
         return self.client.create_secret(
-            SecretId=secret_id,
+            Name=secret_id,
             SecretString=value,
         )
 
@@ -363,13 +363,13 @@ class ColorHandler(logging.StreamHandler):
 class EpsagonHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        # self.ssm_client = SsmClient()
-        # self.running_tests = self.ssm_client.get_parameter('running-tests', prefix='/thiscovery/')
-        self.running_tests = get_secret('runtime-parameters')['running-tests']
-
+        try:
+            self.running_tests = get_secret('runtime-parameters')['running-tests']
+        except TypeError:  # get_secret('runtime-parameters') is None
+            self.running_tests = 'false'
 
     def emit(self, exception_instance):
-        if self.running_tests == 'false':
+        if (self.running_tests == 'false') or (get_aws_namespace() in ['/prod/', '/staging/']):
             epsagon.error(exception_instance)
         elif self.running_tests == 'true':
             pass
