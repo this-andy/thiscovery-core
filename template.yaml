@@ -1383,7 +1383,7 @@ Resources:
         Timer5:
           Type: Schedule
           Properties:
-            Schedule: cron(* 10 * * 2)
+            Schedule: cron(0 10 * * 2)
           Metadata:
             StackeryName: timer-call-raise-error
 Parameters:
