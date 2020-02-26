@@ -186,7 +186,7 @@ class TestUserProject(test_utils.DbTestCase):
         )
 
     def test_07_create_user_projects_api_user_not_exists(self):
-        expected_status = HTTPStatus.BAD_REQUEST
+        expected_status = HTTPStatus.NOT_FOUND
         up_json = {
             'user_id': "1cbe9aad-b29f-46b5-920e-b4c496d42516",
             'project_id': "3ffc498f-8add-4448-b452-4fc7f463aa21",

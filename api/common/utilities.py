@@ -15,26 +15,25 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import boto3
 import datetime
+import epsagon
 import functools
+import json
 import logging
 import os
 import re
 import sys
 import uuid
 
-from timeit import default_timer as timer
-from dateutil import parser, tz
-from pythonjsonlogger import jsonlogger
-import json
-import boto3
 from botocore.exceptions import ClientError
+from dateutil import parser, tz
+from http import HTTPStatus
+from pythonjsonlogger import jsonlogger
+from timeit import default_timer as timer
 
-from common.log_color_handler import ColorHandler
 
 # region Custom error classes and handling
-
 class DetailedValueError(ValueError):
     def __init__(self, message, details):
         self.message = message
@@ -42,10 +41,10 @@ class DetailedValueError(ValueError):
 
     def as_response_body(self):
         try:
-            return json.dumps({**{'message': self.message}, **self.details})
+            return json.dumps({'message': self.message, **self.details})
         except TypeError:
             print(f"message: {self.message}; details: {self.details}")
-            return json.dumps({**{'message': self.message}, **self.details})
+            return json.dumps({'message': self.message, **self.details})
 
     def add_correlation_id(self, correlation_id):
         self.details['correlation_id'] = str(correlation_id)
@@ -78,11 +77,21 @@ class DetailedIntegrityError(DetailedValueError):
 def error_as_response_body(error_msg, correlation_id):
     return json.dumps({'error': error_msg, 'correlation_id': str(correlation_id)})
 
+
+def log_exception_and_return_edited_api_response(exception, status_code, logger_instance, correlation_id):
+    if isinstance(exception, DetailedValueError):
+        exception.add_correlation_id(correlation_id)
+        logger_instance.error(exception)
+        return {"statusCode": status_code, "body": exception.as_response_body()}
+
+    else:
+        error_message = exception.args[0]
+        logger_instance.error(error_message, extra={'correlation_id': correlation_id})
+        return {"statusCode": status_code, "body": error_as_response_body(error_message, correlation_id)}
 # endregion
 
 
 # region unit test methods
-
 def set_running_unit_tests(flag):
     if flag:
         os.environ["TESTING"] = 'true'
@@ -93,7 +102,6 @@ def set_running_unit_tests(flag):
 def running_unit_tests():
     testing = os.getenv("TESTING")
     return testing == 'true'
-
 # endregion
 
 
@@ -146,12 +154,10 @@ def obfuscate_data(input, item_key_path):
     except TypeError:
         # if called with None or non-subscriptable arguments then do nothing
         pass
-
 # endregion
 
 
 # region Validation methods
-
 def validate_int(s):
     try:
         int(s)
@@ -181,11 +187,195 @@ def validate_utc_datetime(s):
     except ValueError:
         errorjson = {'datetime': s}
         raise DetailedValueError('invalid utc format datetime', errorjson)
+# endregion
 
+
+# region boto3 clients
+class BaseClient:
+    def __init__(self, service_name, obtain_logger=True):
+        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
+        self.logger = get_logger()
+        self.aws_namespace = None
+
+    def get_namespace(self):
+        if self.aws_namespace is None:
+            self.aws_namespace = get_aws_namespace()[1:-1]
+        return self.aws_namespace
+
+
+class SsmClient(BaseClient):
+    def __init__(self):
+        super().__init__('ssm')
+
+    def _prefix_name(self, name, prefix):
+        if prefix is None:
+            prefix = f"/{super().get_namespace()}/"
+        return prefix + name
+
+    def get_parameter(self, name, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.get_parameter
+        """
+        parameter_name = self._prefix_name(name, prefix)
+        self.logger.debug(f'Getting SSM parameter {parameter_name}')
+        response = self.client.get_parameter(
+            Name=parameter_name,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.get_parameter failed with response: {response}'
+        return response['Parameter']['Value']
+
+    def put_parameter(self, name, value, prefix=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ssm.html#SSM.Client.put_parameter
+        """
+        parameter_name = self._prefix_name(name, prefix)
+        self.logger.debug(f'Adding or updating SSM parameter {parameter_name} with value {value}')
+        response = self.client.put_parameter(
+            Name=parameter_name,
+            Value=value,
+            Type='String',
+            Overwrite=True,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_parameter failed with response: {response}'
+        return response
+
+
+class SecretsManager(BaseClient):
+    def __init__(self):
+        super().__init__('secretsmanager')
+
+    def _prefix_name(self, name, prefix):
+        if prefix is None:
+            prefix = f"/{super().get_namespace()}/"
+        return prefix + name
+
+    def _create_secret(self, secret_id, value):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.create_secret
+        """
+        return self.client.create_secret(
+            Name=secret_id,
+            SecretString=value,
+        )
+
+    def _update_secret(self, secret_id, value):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.update_secret
+        """
+        return self.client.update_secret(
+            SecretId=secret_id,
+            SecretString=value,
+        )
+
+    def create_or_update_secret(self, name, value, prefix=None):
+        """
+        Creates or updates a secret in AWS Secrets Manager.
+
+        Args:
+            name (str): the secret name, excluding an environment prefix
+            value (json or dict): key/value pairs in either dict or JSON string format
+            prefix (str): if None, environment name will be used as prefix; use an empty string in calls where no prefix is required
+
+        """
+        secret_id = self._prefix_name(name, prefix)
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        self.logger.debug(f'Adding or updating Secret {secret_id} with value {value}')
+        try:
+            response = self._update_secret(secret_id, value)
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.update_secret failed with response: {response}'
+        except Exception as exception:
+            error_message = exception.args[0]
+            self.logger.error(error_message)
+            response = self._create_secret(secret_id, value)
+            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'Call to boto3.client.create_secret failed with response: {response}'
+        return response
 # endregion
 
 
 # region Logging
+class _AnsiColorizer(object):
+    """
+    A colorizer is an object that loosely wraps around a stream, allowing
+    callers to write text to the stream in a particular color.
+
+    Colorizer classes must implement C{supported()} and C{write(text, color)}.
+    """
+    _colors = dict(black=30, red=31, green=32, yellow=33,
+                   blue=34, magenta=35, cyan=36, white=37)
+
+    def __init__(self, stream):
+        self.stream = stream
+
+    @classmethod
+    def supported(cls, stream=sys.stdout):
+        """
+        A class method that returns True if the current platform supports
+        coloring terminal output using this method. Returns False otherwise.
+        """
+        if not stream.isatty():
+            return False  # auto color only on TTYs
+        try:
+            import curses
+        except ImportError:
+            return False
+        else:
+            try:
+                try:
+                    return curses.tigetnum("colors") > 2
+                except curses.error:
+                    curses.setupterm()
+                    return curses.tigetnum("colors") > 2
+            except:
+                raise
+                # guess false in case of error
+                return False
+
+    def write(self, text, color):
+        """
+        Write the given text to the stream in the given color.
+
+        @param text: Text to be written to the stream.
+
+        @param color: A string label for a color. e.g. 'red', 'white'.
+        """
+        color = self._colors[color]
+        self.stream.write('\x1b[%s;1m%s\x1b[0m' % (color, text))
+
+
+class ColorHandler(logging.StreamHandler):
+
+    def __init__(self, stream=sys.stderr):
+        super(ColorHandler, self).__init__(_AnsiColorizer(stream))
+
+    def emit(self, record):
+        msg_colors = {
+            logging.DEBUG: "green",
+            logging.INFO: "blue",
+            logging.WARNING: "yellow",
+            logging.ERROR: "red"
+        }
+
+        color = msg_colors.get(record.levelno, "blue")
+        self.stream.write(self.format(record) + "\n", color)
+
+
+class EpsagonHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.running_tests = get_secret('runtime-parameters')['running-tests']
+        except TypeError:  # get_secret('runtime-parameters') is None
+            self.running_tests = 'false'
+
+    def emit(self, exception_instance):
+        if (self.running_tests == 'false') or (get_aws_namespace() in ['/prod/', '/staging/']):
+            epsagon.error(exception_instance)
+        elif self.running_tests == 'true':
+            pass
+        else:
+            raise AttributeError(f'Secret runtime-parameters.running-tests is neither "true" nor "false": {self.running_tests}')
+
 
 logger = None
 
@@ -194,15 +384,22 @@ def get_logger():
     global logger
     if logger is None:
         logger = logging.getLogger('thiscovery')
-        log_handler = ColorHandler()
         formatter = jsonlogger.JsonFormatter('%(asctime)s %(module)s %(funcName)s %(lineno)d %(name)-2s %(levelname)-8s %(message)s')
         formatter.default_msec_format = '%s.%03d'
+
+        log_handler = ColorHandler()
+        log_handler.setLevel(logging.DEBUG)
         log_handler.setFormatter(formatter)
-        logger.addHandler(log_handler)
-        logger.setLevel(logging.INFO)
+
+        epsagon_handler = EpsagonHandler()
+        epsagon_handler.setLevel(logging.ERROR)
+        epsagon_handler.setFormatter(formatter)
+
+        for handler in [log_handler, epsagon_handler]:
+            logger.addHandler(handler)
+        logger.setLevel(logging.DEBUG)
         logger.propagate = False
     return logger
-
 # endregion
 
 
@@ -218,20 +415,18 @@ def get_correlation_id(event):
         correlation_id = http_header['Correlation_Id']
     except (KeyError, TypeError):  # KeyError if no correlation_id in headers, TypeError if no headers
         correlation_id = new_correlation_id()
-    return correlation_id
-
+    return str(correlation_id)
 # endregion
 
 
 # region Secrets processing
-
 DEFAULT_AWS_REGION = 'eu-west-1'
 
 
 def get_aws_region():
     try:
         region = os.environ['AWS_REGION']
-    except:
+    except KeyError:
         region = DEFAULT_AWS_REGION
     return region
 
@@ -256,16 +451,6 @@ def get_environment_name():
     # strip leading and trailing '/' chars
     return namespace[1:-1]
 
-
-# def append_env_to_url(url):
-#     return url + '&env=' + get_environment_name()
-#
-#
-# def append_nonprodenv_to_url(url):
-#     if get_environment_name() == 'prod':
-#         return url
-#     else:
-#         return append_env_to_url(url)
 
 # this belongs in user_task class as a property - moved here to avoid circular includes
 def create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id):
@@ -384,6 +569,7 @@ def feature_flag(name: str) -> bool:
 
 # endregion
 
+
 # region Country code/name processing
 
 def append_country_name_to_list(entity_list):
@@ -418,16 +604,48 @@ countries = load_countries()
 # endregion
 
 
-#region decorators
-def time_execution(func):
+# region decorators
+def api_error_handler(func):
+    """
+    Error handler decorator for thiscovery API endpoints. Use with lambda_wrapper as the outer decorator. E.g.:
+        @lambda_wrapper
+        @api_error_handler
+        def decorated_function():
+    """
     @functools.wraps(func)
-    def time_execution_wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):
+        correlation_id = args[0]['correlation_id']
+        try:
+            return func(*args, **kwargs)
+        except DuplicateInsertError as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.CONFLICT, logger, correlation_id)
+        except ObjectDoesNotExistError as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.NOT_FOUND, logger, correlation_id)
+        except (PatchAttributeNotRecognisedError, PatchOperationNotSupportedError, PatchInvalidJsonError, DetailedIntegrityError, DetailedValueError) as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
+        except Exception as err:
+            return log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    return wrapper
+
+
+def lambda_wrapper(func):
+    @functools.wraps(func)
+    def thiscovery_lambda_wrapper(*args, **kwargs):
         logger = get_logger()
         start_time = get_start_time()
-        result = func(*args, **kwargs)
+
+        # check if the lambda event dict includes a correlation id; if it does not, add one and pass it to the wrapped lambda
+        # also add a logger to the event dict
+        event = args[0]
+        correlation_id = get_correlation_id(event)
+        event['correlation_id'] = correlation_id
+        event['logger'] = logger
+        updated_args = (event, *args[1:])
+
+        result = func(*updated_args, **kwargs)
         logger.info('Decorated function result and execution time', extra={'decorated func module': func.__module__, 'decorated func name': func.__name__,
                                                                            'result': result, 'func args': args, 'func kwargs': kwargs,
-                                                                           'elapsed_ms': get_elapsed_ms(start_time)})
+                                                                           'elapsed_ms': get_elapsed_ms(start_time), 'correlation_id': correlation_id})
         return result
-    return time_execution_wrapper
+    return thiscovery_lambda_wrapper
 # endregion

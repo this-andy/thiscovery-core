@@ -132,15 +132,15 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
     def test_18_get_user_by_email_api_takes_one_and_only_one_querystring_parameter(self):
-        expected_status = HTTPStatus.INTERNAL_SERVER_ERROR
+        expected_status = HTTPStatus.BAD_REQUEST
         result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters={})
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
-            ('error' in result_json) and
-            ('This endpoint requires one query parameter (email or ext_user_project_id); none were found' in result_json['error'])
+            ('message' in result_json) and
+            ('This endpoint requires one query parameter (email or ext_user_project_id); none were found' in result_json['message'])
         )
 
         query_parameters = {
@@ -153,8 +153,8 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
-            ('error' in result_json) and
-            ('Please query by either email or ext_user_project_id, but not both' in result_json['error'])
+            ('message' in result_json) and
+            ('Please query by either email or ext_user_project_id, but not both' in result_json['message'])
         )
 
     def test_16_get_user_by_uuid_api_not_exists(self):

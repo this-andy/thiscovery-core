@@ -15,13 +15,10 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import boto3
-
-from common.aws_common import BaseClient
-from common.utilities import get_logger, get_aws_namespace
+import common.utilities as utils
 
 
-class Lambda(BaseClient):
+class Lambda(utils.BaseClient):
 
     def __init__(self):
         super().__init__('lambda')
