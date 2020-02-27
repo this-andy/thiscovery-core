@@ -84,7 +84,9 @@ def remove_additional_subnets(template_contents_):
         else:
             raise Exception('This error should be impossible to hit. Check pattern in subnet_resources_p if you see this.')
     for resource in resource_list:
-        del template_as_dict['Resources'][f'{name}{resource}']
+        key = f'{name}{resource}'
+        print(key)
+        del template_as_dict['Resources'][key]
     edited_template = yaml.dump(template_as_dict)
 
     # delete references
