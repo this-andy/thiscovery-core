@@ -73,37 +73,26 @@ def remove_additional_subnets(template_contents_):
     """
     template_as_dict = yaml.load(template_contents_, Loader=yaml.Loader)
 
-    subnet_p = re.compile(
-        r"(VirtualNetwork(?:Public|Private)Subnet(\d+)):"
-    )
-
     # delete resources
-    for name, number in subnet_p.findall(template_contents_):
-        if not number == "1":
-
-            if 'Private' in name:
-                resource_list = ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
-            elif 'Public' in name:
-                resource_list = ['', 'RouteTableAssociation']
-            else:
-                raise Exception('This error should be impossible to hit. Check pattern in subnet_p if you see this.')
-
-            for resource in resource_list:
-                del template_as_dict['Resources'][f'{name}{resource}']
-
+    subnet_resources_p = re.compile(r"(VirtualNetwork(?:Public|Private)Subnet(?:\d{2,}|[2-9])):")
+    resource_list = None
+    for name in subnet_resources_p.findall(template_contents_):
+        if 'Private' in name:
+            resource_list = ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
+        elif 'Public' in name:
+            resource_list = ['', 'RouteTableAssociation']
+        else:
+            raise Exception('This error should be impossible to hit. Check pattern in subnet_resources_p if you see this.')
+    for resource in resource_list:
+        del template_as_dict['Resources'][f'{name}{resource}']
     edited_template = yaml.dump(template_as_dict)
 
     # delete references
-    reference_matches = subnet_p.findall(edited_template)
-    print(f'reference_matches: {reference_matches}')
-    for name, number in subnet_p.findall(edited_template):
-        if not number == "1":
-            ref_p = re.compile(fr"\s+- Ref: {name}")
-            print(f'ref_p: {ref_p}')
-            edited_template = re.sub(ref_p, "", edited_template)
-
+    subnet_references_p = re.compile(r"\s+- Ref: VirtualNetwork(?:Public|Private)Subnet(?:\d{2,}|[2-9])")
+    edited_template = re.sub(subnet_references_p, "", edited_template)
     assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
                                              f"edited_template: {edited_template}"
+
     return edited_template
 
 
