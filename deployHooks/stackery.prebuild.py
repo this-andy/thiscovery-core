@@ -110,7 +110,6 @@ def main():
     """
     base_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')  # thiscovery-core/
     template_file = os.path.join(base_folder, '.stackery', 'template.yaml')
-    template_contents = str()
     with open(template_file) as f:
         template_contents = f.read()
     env_name = extract_environment_name_from_template(template_contents)
