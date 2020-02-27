@@ -75,18 +75,20 @@ def remove_additional_subnets(template_contents_):
 
     # delete resources
     subnet_resources_p = re.compile(r"(VirtualNetwork(?:Public|Private)Subnet(?:\d{2,}|[2-9])):")
-    resource_list = None
-    for name in subnet_resources_p.findall(template_contents_):
-        if 'Private' in name:
+    resources_to_be_deleted = set()
+    for prefix in subnet_resources_p.findall(template_contents_):
+        if 'Private' in prefix:
             resource_list = ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
-        elif 'Public' in name:
+        elif 'Public' in prefix:
             resource_list = ['', 'RouteTableAssociation']
         else:
             raise Exception('This error should be impossible to hit. Check pattern in subnet_resources_p if you see this.')
-    for resource in resource_list:
-        key = f'{name}{resource}'
-        print(key)
-        del template_as_dict['Resources'][key]
+        for resource_name in resource_list:
+            dict_key = f'{prefix}{resource_name}'
+            resources_to_be_deleted.add(dict_key)
+    for resource_key in resources_to_be_deleted:
+        print(resource_key)
+        del template_as_dict['Resources'][resource_key]
     edited_template = yaml.dump(template_as_dict)
 
     # delete references
