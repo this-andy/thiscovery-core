@@ -78,11 +78,18 @@ def remove_additional_subnets(template_contents_):
     resources_to_be_deleted = set()
     for prefix in subnet_resources_p.findall(template_contents_):
         if 'Private' in prefix:
-            resource_list = ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
-        elif 'Public' in prefix:
-            resource_list = ['', 'RouteTableAssociation']
-        else:
-            raise Exception('This error should be impossible to hit. Check pattern in subnet_resources_p if you see this.')
+            resource_list = [
+                # '',
+                'NatGateway',
+                'NatGatewayEIP',
+                'NatGatewayRoute',
+                # 'RouteTable',
+                # 'RouteTableAssociation',
+            ]
+        # elif 'Public' in prefix:
+        #     resource_list = ['', 'RouteTableAssociation']
+        # else:
+        #     raise Exception('This error should be impossible to hit. Check pattern in subnet_resources_p if you see this.')
         for resource_name in resource_list:
             dict_key = f'{prefix}{resource_name}'
             resources_to_be_deleted.add(dict_key)
@@ -91,11 +98,11 @@ def remove_additional_subnets(template_contents_):
         del template_as_dict['Resources'][resource_key]
     edited_template = yaml.dump(template_as_dict)
 
-    # delete references
-    subnet_references_p = re.compile(r"\s+- Ref: VirtualNetwork(?:Public|Private)Subnet(?:\d{2,}|[2-9])")
-    edited_template = re.sub(subnet_references_p, "", edited_template)
-    assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
-                                             f"edited_template: {edited_template}"
+    # # delete references
+    # subnet_references_p = re.compile(r"\s+- Ref: VirtualNetwork(?:Public|Private)Subnet(?:\d{2,}|[2-9])")
+    # edited_template = re.sub(subnet_references_p, "", edited_template)
+    # assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
+    #                                          f"edited_template: {edited_template}"
 
     return edited_template
 
@@ -117,7 +124,7 @@ def main():
         edited_template = remove_additional_subnets(edited_template)
         with open(template_file, 'w') as f:
             f.write(edited_template)
-        print(f"Edited template:\n{edited_template}")
+        # print(f"Edited template:\n{edited_template}")
 
 
 if __name__ == "__main__":
