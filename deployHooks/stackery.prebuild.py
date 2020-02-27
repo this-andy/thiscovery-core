@@ -80,8 +80,17 @@ def remove_additional_subnets(template_contents_):
     # delete resources
     for name, number in subnet_p.findall(template_contents_):
         if not number == "1":
-            for resource in ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']:
+
+            if 'Private' in name:
+                resource_list = ['', 'NatGateway', 'NatGatewayEIP', 'NatGatewayRoute', 'RouteTable', 'RouteTableAssociation']
+            elif 'Public' in name:
+                resource_list = ['', 'RouteTableAssociation']
+            else:
+                raise Exception('This error should be impossible to hit. Check pattern in subnet_p if you see this.')
+
+            for resource in resource_list:
                 del template_as_dict['Resources'][f'{name}{resource}']
+
     edited_template = yaml.dump(template_as_dict)
 
     # delete references
