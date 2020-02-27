@@ -94,6 +94,8 @@ def remove_additional_subnets(template_contents_):
     edited_template = yaml.dump(template_as_dict)
 
     # delete references
+    reference_matches = subnet_p.findall(edited_template)
+    print(f'reference_matches: {reference_matches}')
     for name, number in subnet_p.findall(edited_template):
         if not number == "1":
             ref_p = re.compile(fr"\s+- Ref: {name}")
