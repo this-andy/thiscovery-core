@@ -98,7 +98,7 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
         conn.close()
 
 
-def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
+def execute_query_multiple(base_sql_tuple, params_tuple=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
     """
     Use this method to query the database (e.g. using SELECT). Changes will not be committed to the database, so don't use this method for UPDATE and DELETE
     calls.
@@ -108,6 +108,9 @@ def execute_query_multiple(base_sql_tuple, params_tuple, correlation_id=new_corr
         conn = _get_connection(correlation_id)
     except Exception as ex:
         raise ex
+
+    if params_tuple is None:
+        params_tuple = tuple([None] * len(base_sql_tuple))
 
     results = []
 

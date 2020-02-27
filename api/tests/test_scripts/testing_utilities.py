@@ -19,36 +19,54 @@
 import csv
 import os
 import requests
+import unittest
 import uuid
 from dateutil import parser
-from unittest import TestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
+import common.utilities as utils
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple
-from common.utilities import get_secret, now_with_tz, get_logger, get_country_name, set_running_unit_tests
 
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..')  # thiscovery-core/
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 
-class BaseTestCase(TestCase):
+def tests_running_on_aws():
+    """
+    Checks if tests are calling AWS API endpoints
+    """
+    test_on_aws = os.environ.get('TEST_ON_AWS')
+    if test_on_aws is None:
+        test_on_aws = TEST_ON_AWS
+    elif test_on_aws.lower() == 'false':
+        test_on_aws = False
+    return test_on_aws
+
+
+class BaseTestCase(unittest.TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
-    logger = get_logger()
+    # ssm_client = utils.SsmClient()
+    secrets_client = utils.SecretsManager()
 
     @classmethod
     def setUpClass(cls):
-        set_running_unit_tests(True)
+        utils.set_running_unit_tests(True)
+        # cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
+        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'true'})
+        cls.logger = utils.get_logger()
 
     @classmethod
     def tearDownClass(cls):
-        set_running_unit_tests(False)
+        # cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
+        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'false'})
+        utils.set_running_unit_tests(False)
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
         actual_value = entity_dict[attribute_name]
@@ -59,7 +77,7 @@ class BaseTestCase(TestCase):
     def now_datetime_test_and_remove(self, entity_dict, datetime_attribute_name, tolerance=10):
         datetime_string = entity_dict[datetime_attribute_name]
         del entity_dict[datetime_attribute_name]
-        now = now_with_tz()
+        now = utils.now_with_tz()
         datetime_value = parser.parse(datetime_string)
         difference = abs(now - datetime_value)
         self.assertLess(difference.seconds, tolerance)
@@ -84,14 +102,23 @@ class BaseTestCase(TestCase):
             del entity_dict[key]
 
 
+@unittest.skipIf(not tests_running_on_aws(), "Testing are using local methods and this test only makes sense if calling an AWS API endpoint")
+class AlwaysOnAwsTestCase(BaseTestCase):
+    """
+    Skips tests if tests are running locally
+    """
+    pass
+
+
 class DbTestCase(BaseTestCase):
     delete_test_data = False
     delete_notifications = False
 
     @classmethod
     def setUpClass(cls):
-        set_running_unit_tests(True)
+        super().setUpClass()
         cls.clear_test_data()
+        delete_all_notifications()
         pg_utils.insert_data_from_csv_multiple(
             (os.path.join(TEST_DATA_FOLDER, 'usergroup_data.csv'), 'public.projects_usergroup'),
             (os.path.join(TEST_DATA_FOLDER, 'project_data_PSFU.csv'), 'public.projects_project'),
@@ -110,7 +137,9 @@ class DbTestCase(BaseTestCase):
     def tearDownClass(cls):
         if cls.delete_test_data:
             cls.clear_test_data()
-        set_running_unit_tests(False)
+        if cls.delete_notifications:
+            delete_all_notifications()
+        super().tearDownClass()
 
     @classmethod
     def clear_test_data(cls):
@@ -132,30 +161,10 @@ class DbTestCase(BaseTestCase):
             'public.projects_usergroup',
             'public.projects_userexternalaccount',
         )
-        if cls.delete_notifications:
-            delete_all_notifications()
 
 
 def _aws_request(method, url, params=None, data=None, aws_api_key=None):
-    full_url = AWS_TEST_API + url
-    headers = {'Content-Type': 'application/json'}
-
-    if aws_api_key is None:
-        headers['x-api-key'] = get_secret('aws-connection')['aws-api-key']
-    else:
-        headers['x-api-key'] = aws_api_key
-
-    try:
-        response = requests.request(
-            method=method,
-            url=full_url,
-            params=params,
-            headers=headers,
-            data=data,
-        )
-        return {'statusCode': response.status_code, 'body': response.text}
-    except Exception as err:
-        raise err
+    return utils.aws_request(method, url, AWS_TEST_API, params=params, data=data, aws_api_key=aws_api_key)
 
 
 def aws_get(url, params):
@@ -172,15 +181,9 @@ def aws_patch(url, request_body):
 
 def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, aws_api_key=None,
                   correlation_id=None):
-    logger = get_logger()
+    logger = utils.get_logger()
 
-    test_on_aws = os.environ.get('TEST_ON_AWS')
-    if test_on_aws is None:
-        test_on_aws = TEST_ON_AWS
-    elif test_on_aws.lower() == 'false':
-        test_on_aws = False
-
-    if test_on_aws:
+    if tests_running_on_aws():
         if path_parameters is not None:
             url = aws_url + '/' + path_parameters['id']
         else:
@@ -222,7 +225,7 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
                 "first_name": row[5],
                 "last_name": row[6],
                 "country_code": row[12],
-                "country_name": get_country_name(row[12]),
+                "country_name": utils.get_country_name(row[12]),
                 "avatar_string": f'{row[5][0].upper()}{row[6][0].upper()}',
                 "status": "new"
             }
@@ -231,4 +234,4 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
             user_jsonpatch = [
                 {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
             ]
-            user.patch_user(user_json['id'], user_jsonpatch, now_with_tz(), correlation_id=None)
+            user.patch_user(user_json['id'], user_jsonpatch, utils.now_with_tz(), correlation_id=None)

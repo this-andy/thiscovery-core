@@ -25,6 +25,7 @@ test_modules = [
     'test_progress',
     'test_project',
     'test_project_status_for_user',
+    'test_security',
     'test_user',
     'test_user_external_account',
     'test_user_group',

@@ -15,20 +15,18 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
 import json
 import os
 import time
 from http import HTTPStatus
 
-from common.utilities import ObjectDoesNotExistError, DetailedValueError, get_correlation_id, get_logger, error_as_response_body, get_start_time, \
-        get_elapsed_ms, obfuscate_data
+import common.utilities as utils
 
 
+@utils.lambda_wrapper
 def ping(event, context):
-    start_time = get_start_time()
-    logger = get_logger()
 
+    del event['logger']
     region = ''
     aws = ''
 
@@ -39,12 +37,12 @@ def ping(event, context):
         pass
 
     # Hide potential sensitive data
-    obfuscate_data(event, ('headers', 'x-api-key'))
-    obfuscate_data(event, ('headers', 'X-Forwarded-For'))
-    obfuscate_data(event, ('multiValueHeaders', 'x-api-key'))
-    obfuscate_data(event, ('multiValueHeaders', 'X-Forwarded-For'))
-    obfuscate_data(event, ('requestContext', 'identity'))
-    obfuscate_data(event, ('requestContext', 'accountId'))
+    utils.obfuscate_data(event, ('headers', 'x-api-key'))
+    utils.obfuscate_data(event, ('headers', 'X-Forwarded-For'))
+    utils.obfuscate_data(event, ('multiValueHeaders', 'x-api-key'))
+    utils.obfuscate_data(event, ('multiValueHeaders', 'X-Forwarded-For'))
+    utils.obfuscate_data(event, ('requestContext', 'identity'))
+    utils.obfuscate_data(event, ('requestContext', 'accountId'))
 
     body = {
         "message": "Response from THIS Institute citizen science API",
@@ -58,90 +56,46 @@ def ping(event, context):
         "body": json.dumps(body)
     }
 
-    correlation_id = get_correlation_id(event)
-    logger.info('API call', extra={'correlation_id': correlation_id, 'event': event, 'elapsed_ms': get_elapsed_ms(start_time)})
-
     return response
 
 
+@utils.lambda_wrapper
+@utils.api_error_handler
 def raise_error_api(event, context):
-    start_time = get_start_time()
-    logger = get_logger()
-    correlation_id = None
+    logger = event['logger']
+    correlation_id = event['correlation_id']
 
-    try:
-        params = event['queryStringParameters']
-        error_id = params['error_id']
-        correlation_id = get_correlation_id(event)
-        logger.info('API call', extra={'error_id': error_id, 'correlation_id': correlation_id, 'event': event})
+    params = event['queryStringParameters']
+    error_id = params['error_id']
+    logger.info('API call', extra={'error_id': error_id, 'correlation_id': correlation_id, 'event': event})
 
-        errorjson = {'error_id': error_id, 'correlation_id': str(correlation_id)}
-        msg = 'no error'
+    errorjson = {'error_id': error_id, 'correlation_id': str(correlation_id)}
+    msg = 'no error'
 
-        if error_id == '4xx':
-            msg = 'error triggered for testing purposes'
-            raise ObjectDoesNotExistError(msg, errorjson)
-        elif error_id == '5xx':
-            msg = 'error triggered for testing purposes'
-            raise Exception(msg)
-        elif error_id == 'slow':
-            msg = 'slow response triggered for testing purposes'
-            time.sleep(2)  # this should trigger lambda duration alarm
-        elif error_id == 'timeout':
-            msg = 'timeout response triggered for testing purposes'
-            time.sleep(10)  # this should trigger lambda timeout
+    if error_id == '4xx':
+        msg = 'error triggered for testing purposes'
+        raise utils.ObjectDoesNotExistError(msg, errorjson)
+    elif error_id == '5xx':
+        msg = 'error triggered for testing purposes'
+        raise Exception(msg)
+    elif error_id == 'slow':
+        msg = 'slow response triggered for testing purposes'
+        time.sleep(2)  # this should trigger lambda duration alarm
+    elif error_id == 'timeout':
+        msg = 'timeout response triggered for testing purposes'
+        time.sleep(10)  # this should trigger lambda timeout
 
-        response = {
-            "statusCode": HTTPStatus.OK,
-            "body": json.dumps(msg)
-        }
-
-    except ObjectDoesNotExistError as err:
-        response = {"statusCode": HTTPStatus.NOT_FOUND, "body": err.as_response_body()}
-
-    except DetailedValueError as err:
-        response = {"statusCode": HTTPStatus.BAD_REQUEST, "body": err.as_response_body()}
-
-    except Exception as ex:
-        errorMsg = ex.args[0]
-        logger.error(errorMsg, extra={'correlation_id': correlation_id})
-        response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR, "body": error_as_response_body(errorMsg, correlation_id)}
-
-    logger.info('API response', extra={'response': response, 'correlation_id': correlation_id, 'elapsed_ms': get_elapsed_ms(start_time)})
-    return response
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(msg)
+    }
 
 
-def sqs_send_api(event, context):
-    message_json = json.loads(event['body'])
-    message_text = message_json['text']
-    message_attributes = message_json['attributes']
-
-    sqs_send(message_text, message_attributes)
-
-
-def sqs_send_example():
-    logger = get_logger()
-
-    message_body = (
-            'Information about current NY Times fiction bestseller for '
-            'week of 12/11/2016.'
-        )
-    message_attributes = {
-            'Title': {
-                'DataType': 'String',
-                'StringValue': 'The Whistler'
-            },
-            'Author': {
-                'DataType': 'String',
-                'StringValue': 'John Grisham'
-            },
-            'WeeksOn': {
-                'DataType': 'Number',
-                'StringValue': '6'
-            }
-        }
-    result = sqs_send(message_body, message_attributes)
-
-    logger.info('sqs_send_example', extra={'result': str(result)})
-
-    return result
+def call_raise_error_on_prod_and_staging(event, context):
+    api_base = {
+        utils.PRODUCTION_ENV_NAME: 'https://api.thiscovery.org/',
+        utils.STAGING_ENV_NAME: f'https://{utils.STAGING_ENV_NAME}-api.thiscovery.org/',
+    }
+    env_name = utils.namespace2name(utils.get_aws_namespace())
+    if env_name in [utils.PRODUCTION_ENV_NAME, utils.STAGING_ENV_NAME]:
+        utils.aws_post('v1/raise-error', api_base[env_name], params='error_id=5xx')

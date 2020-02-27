@@ -32,14 +32,10 @@ import common.utilities as utils
 import testing_utilities as test_utils
 
 
-class TestApiEndpoints(test_utils.BaseTestCase):
+class TestApiEndpoints(test_utils.AlwaysOnAwsTestCase):
     blank_api_key = ''
     invalid_api_key = '3c907908-44a7-490a-9661-3866b3732d22'
     logger = utils.get_logger()
-
-    @classmethod
-    def setUpClass(cls):
-        os.environ['TEST_ON_AWS'] = 'true'
 
     def _common_assertion(self, expected_status, request_verb, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None):
         for key in [self.blank_api_key, self.invalid_api_key]:
