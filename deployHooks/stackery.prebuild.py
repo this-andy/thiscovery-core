@@ -96,7 +96,8 @@ def remove_additional_subnets(template_contents_):
     # delete references
     for name, number in subnet_p.findall(edited_template):
         if not number == "1":
-            ref_p = re.compile(fr"\s+- Ref: {name}\n")
+            ref_p = re.compile(fr"\s+- Ref: {name}")
+            print(f'ref_p: {ref_p}')
             edited_template = re.sub(ref_p, "", edited_template)
 
     assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
