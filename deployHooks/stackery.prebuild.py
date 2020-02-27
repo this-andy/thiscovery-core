@@ -100,7 +100,7 @@ def remove_additional_subnets(template_contents_):
             edited_template = re.sub(ref_p, "", edited_template)
 
     assert "Subnet2" not in edited_template, "Failed to strip subnets from template; " \
-                                             f"template_contents_: {template_contents_}"
+                                             f"edited_template: {edited_template}"
     return edited_template
 
 
