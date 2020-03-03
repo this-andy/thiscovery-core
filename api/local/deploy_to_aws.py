@@ -86,8 +86,8 @@ def main(environment):
 
 if __name__ == '__main__':
 
-    # target_environment = 'dev-afs25'
-    target_environment = 'test-afs25'
+    target_environment = 'dev-afs25'
+    # target_environment = 'test-afs25'
 
     main(environment=target_environment)
 

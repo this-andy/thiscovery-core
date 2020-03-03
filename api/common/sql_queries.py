@@ -279,7 +279,6 @@ BASE_USER_SELECT_SQL = '''
         created, 
         modified, 
         email, 
-        email_address_verified,
         title, 
         first_name, 
         last_name, 
@@ -298,7 +297,6 @@ GET_USER_BY_EXT_USER_PROJECT_ID_SQL = '''
         u.created, 
         u.modified, 
         u.email, 
-        u.email_address_verified,
         u.title, 
         u.first_name, 
         u.last_name, 
@@ -320,27 +318,14 @@ CREATE_USER_SQL = '''
         created,
         modified,
         email,
-        email_address_verified,
-        email_verification_token,
-        email_verification_expiry,
         title,
         first_name,
         last_name,
         country_code,
         auth0_id,
         status
-    ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );
+    ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s );
 '''
-
-
-VALIDATE_USER_EMAIL_SQL = """
-    SELECT 
-        email_verification_token, email_verification_expiry
-    FROM 
-        public.projects_user
-    WHERE
-        id = %s
-"""
 # endregion
 
 

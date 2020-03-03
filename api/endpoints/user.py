@@ -308,20 +308,12 @@ def create_user(user_json, correlation_id):
     else:
         title = None
 
-    # set up default values
-    email_address_verified = False
-    email_verification_token = str(uuid.uuid4())
-    email_verification_expiry = str(utils.now_with_tz() + timedelta(hours=24))
-
     existing_user = get_user_by_id(id, correlation_id)
     if len(existing_user) > 0:
         errorjson = {'id': id, 'correlation_id': str(correlation_id)}
         raise utils.DuplicateInsertError('user already exists', errorjson)
 
-
-
-    params = (id, created, created, email, email_address_verified, email_verification_token, email_verification_expiry,
-              title, first_name, last_name, country_code, auth0_id, status)
+    params = (id, created, created, email, title, first_name, last_name, country_code, auth0_id, status)
     execute_non_query(sql_q.CREATE_USER_SQL, params, correlation_id)
 
     new_user = {
@@ -329,7 +321,6 @@ def create_user(user_json, correlation_id):
         'created': created,
         'modified': created,        
         'email': email,
-        'email_address_verified': email_address_verified,
         'title': title,
         'first_name': first_name,
         'last_name': last_name,
@@ -363,7 +354,3 @@ def create_user_api(event, context):
     logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})
     new_user = create_user(user_json, correlation_id)
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
-
-
-def validate_user_email(user_id, email_verification_token_to_check, correlation_id):
-    result = execute_query(sql_q.VALIDATE_USER_EMAIL_SQL, (str(user_id),), correlation_id)
