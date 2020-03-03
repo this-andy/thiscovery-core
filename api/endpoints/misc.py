@@ -99,3 +99,7 @@ def call_raise_error_on_prod_and_staging(event, context):
     env_name = utils.namespace2name(utils.get_aws_namespace())
     if env_name in [utils.PRODUCTION_ENV_NAME, utils.STAGING_ENV_NAME]:
         utils.aws_post('v1/raise-error', api_base[env_name], params='error_id=5xx')
+        message = f'{env_name} is either {utils.PRODUCTION_ENV_NAME} or {utils.STAGING_ENV_NAME}; called raise-error API endpoint'
+    else:
+        message = f'{env_name} is not {utils.PRODUCTION_ENV_NAME} nor {utils.STAGING_ENV_NAME}; exiting without raising an error'
+    return message
