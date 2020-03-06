@@ -27,9 +27,11 @@ import common.qualtrics as qs
 import common.utilities as utils
 
 
-DEFAULT_SURVEY = "SV_9HcwQ4EhfsTlnJr"
+DEFAULT_SURVEY = "SV_9SUp48JfOurEzI1"
 
 logger = utils.get_logger()
+
+warning_counter = 0
 
 env = j2.Environment(
     # loader=j2.PackageLoader('common', 'sql_templates'),
@@ -73,8 +75,8 @@ comment_question = {
 
 indicator_block_template = {
     'Type': 'Standard',
-    'Description': None, #'Block 1',
-    'ID': None, #'BL_50uVt2AAm2dc097',
+    'Description': 'Untitled block',
+    # 'ID': None, #'BL_50uVt2AAm2dc097',
     'BlockElements': [{'Type': 'Question', 'QuestionID': None}, {'Type': 'Question', 'QuestionID': None}]
 }
 
@@ -91,11 +93,9 @@ class IndicatorPhrasingQuestion:
         self.rationale_for_change = rationale_for_change
         self.question_text_template = precise_indicator_phrasing_question_template
         self.question_dict = deepcopy(like_rephrasing_question_dict)
-        self.block_template = deepcopy(indicator_block_template)
 
     def rendered_question_text(self):
-        return "{original_phrasing}{rephrased_indicator}{explanatory_terms}{rationale_for_change}".format(
-            # self.question_text_template.render(
+        return self.question_text_template.render(
             original_phrasing=self.original_phrasing,
             rephrased_indicator=self.rephrased_indicator,
             explanatory_terms=self.explanatory_terms,
@@ -108,11 +108,6 @@ class IndicatorPhrasingQuestion:
         question["DataExportTag"] = self.data_export_tag
         # logger.debug('rendered_question', extra=question)
         return question
-
-    # def rendered_block(self):
-    #     block = self.block_template
-    #     block['BlockElements'][0]['QuestionID'] = self.id
-    #     return block
 
 
 class CsvParser:
@@ -163,46 +158,73 @@ class SurveyUpdateManager:
         """
         self.survey_client = qs.SurveyDefinitionsClient(survey_id)
         self.survey = self.survey_client.get_survey()['result']
-        self.new_questions = questions_dict
+        self.input_questions = questions_dict
 
         self.tag2id_map = dict()
+        self.static_questions = {'Q100': comment_question}
+
         self.questions_to_update = dict()
         self.questions_to_add = dict()
         self.questions_to_delete = dict()
+        self.questions_not_to_touch = dict()
 
-    def _update_tag2id_map(self, questions):
+        self.blocks_to_update = dict()
+        self.blocks_to_add = dict()
+        self.blocks_to_delete = dict()
+        self.blocks_not_to_touch = dict()
+
+    # region block methods
+    def add_blocks(self):
         """
-        We can control the DataExportTag of a question, but not its ID, so we need a mapping between these keys.
-        This function updates the map with values from a dictionary of questions.
-
-        Args:
-            questions (dict): Dictionary of questions indexed by "QuestionID"
+        Qualtrics' "Create block" API method (https://api.qualtrics.com/reference#create-block) does not accept the BlockElements parameter,
+        so this function creates the new block without it and then immediately updates it with the required Elements.
 
         Returns:
-            Updated self.tag2id_map dictionary
 
         """
-        for k, v in questions.items():
-            self.tag2id_map[v["DataExportTag"]] = k
-        return self.tag2id_map
+        responses = dict()
+        for k, v in self.blocks_to_add.items():
+            block_elements = v.pop("BlockElements")
+            create_response = self.survey_client.create_block(data=v)
+            block_id = create_response['result']["BlockID"]
+            v["BlockElements"] = block_elements
+            update_response = self.survey_client.update_block(block_id, data=v)
+            responses[k] = {'create_response': create_response, 'update_response': update_response}
+        return responses
 
+    def update_blocks(self):
+        responses = dict()
+        for k, v in self.blocks_to_update.items():
+            responses[k] = self.survey_client.update_block(v['ID'], data=v)
+        return responses
+
+    def delete_blocks(self):
+        responses = dict()
+        for k, v in self.blocks_to_delete.items():
+            responses[k] = self.survey_client.delete_block(v['ID'])
+        return responses
+    # endregion
+
+    # region question methods
     def add_questions(self):
-        responses = list()
-        for _, q in self.questions_to_add.items():
-            responses.append(self.survey_client.create_question(data=q))
+        # todo: Every time a question is added, it goes into the default block, so we must update that block whenever an update includes a new question
+        responses = dict()
+        for k, q in self.questions_to_add.items():
+            responses[k] = self.survey_client.create_question(data=q)
         return responses
 
     def update_questions(self):
-        responses = list()
-        for _, q in self.questions_to_update.items():
-            responses.append(self.survey_client.update_question(q["QuestionID"], data=q))
+        responses = dict()
+        for k, q in self.questions_to_update.items():
+            responses[k] = self.survey_client.update_question(q["QuestionID"], data=q)
         return responses
 
     def delete_questions(self):
-        responses = list()
-        for _, q in self.questions_to_delete.items():
-            responses.append(self.survey_client.delete_question(q["QuestionID"]))
+        responses = dict()
+        for k, q in self.questions_to_delete.items():
+            responses[k] = self.survey_client.delete_question(q["QuestionID"])
         return responses
+    # endregion
 
     def parse_questions(self, interactive=False):
         """
@@ -218,20 +240,22 @@ class SurveyUpdateManager:
         def question_text_is_identical(q1, q2):
             return q1["QuestionText"] == q2["QuestionText"]
 
-        static_questions = {'Q100': comment_question}
         existing_questions = covert_key_from_id_to_tag(self.survey['Questions'])
-        self.questions_to_delete = {k: v for k, v in existing_questions.items()}  # if k not in static_questions.keys()}  #[v for k, v in existing_questions.items() ]
-        for group in [self.new_questions, static_questions]:
+        self.questions_to_delete = {k: v for k, v in existing_questions.items()}
+        for group in [self.input_questions, self.static_questions]:
             for k, v in group.items():
                 if k not in existing_questions.keys():
                     self.questions_to_add[k] = v
                 else:
-                    del self.questions_to_delete[k]  #self.questions_to_delete.remove(existing_questions[k])
+                    del self.questions_to_delete[k]
+                    v["QuestionID"] = existing_questions[k]["QuestionID"]
                     if not question_text_is_identical(v, existing_questions[k]):
-                        v["QuestionID"] = existing_questions[k]["QuestionID"]
                         self.questions_to_update[k] = v
+                    else:
+                        self.questions_not_to_touch[k] = v
 
-        for verb, question_dict in [('add', self.questions_to_add), ('update', self.questions_to_update), ('delete', self.questions_to_delete)]:
+        for verb, question_dict in [('add', self.questions_to_add), ('update', self.questions_to_update),
+                                    ('delete', self.questions_to_delete), ('leave untouched', self.questions_not_to_touch)]:
             print(f"{len(question_dict.keys())} questions to {verb}:")
             for _, v in question_dict.items():
                 print(f"QuestionID: {v.get('QuestionID')}; DataExportTag: {v['DataExportTag']}; question: {v}\n")
@@ -250,6 +274,85 @@ class SurveyUpdateManager:
         delete_responses = self.delete_questions()
         logger.info('Responses from self.delete_questions', extra={'responses': delete_responses})
 
+        # update added questions with Qualtrics QuestionID
+        for k, v in add_responses.items():
+            question = self.questions_to_add[k]
+            question['QuestionID'] = v['result']['QuestionID']
+
+        return add_responses, update_responses, delete_responses
+
+    def parse_blocks(self):
+        def covert_key_from_block_id_to_question_id(blocks):
+            converted_blocks = dict()
+            for k_, v_ in blocks.items():
+
+                # skip the Trash block
+                if v_["Type"] == "Trash":
+                    logger.debug(f'Skipped Trash block {k_}')
+                    continue
+
+                try:
+                    converted_blocks[v_['BlockElements'][0]['QuestionID']] = {**v_, 'block_id': k_}
+                except KeyError:
+                    logger.warning(f'Block {k_} was not created by this script; it will be ignored', extra={'block definition': v_})
+                    global warning_counter
+                    warning_counter += 1
+            return converted_blocks
+
+        def block_elements_are_identical(b1, b2):
+            return b1["BlockElements"] == b2["BlockElements"]
+
+        existing_blocks = covert_key_from_block_id_to_question_id(self.survey['Blocks'])
+        self.blocks_to_delete = deepcopy(existing_blocks)
+
+        questions_for_blocks = {**self.questions_to_add, **self.questions_to_update, **self.questions_not_to_touch}
+        ids_of_static_questions = list()
+        for k, v in self.static_questions.items():
+            ids_of_static_questions.append(questions_for_blocks[k]['QuestionID'])
+            del questions_for_blocks[k]
+
+        for _, v in questions_for_blocks.items():
+            question_id = v['QuestionID']
+            static_block_elements = [{'Type': 'Question', 'QuestionID': x} for x in ids_of_static_questions]
+            block_elements_dict = {'BlockElements': [{'Type': 'Question', 'QuestionID': question_id}, *static_block_elements]}
+            edited_block = deepcopy(indicator_block_template)
+            edited_block.update({**block_elements_dict, 'Description': question_id})
+            if question_id not in existing_blocks.keys():
+                self.blocks_to_add[question_id] = edited_block
+            else:
+                del self.blocks_to_delete[question_id]
+                edited_block["ID"] = existing_blocks[question_id]["ID"]
+                if not block_elements_are_identical(block_elements_dict, existing_blocks[question_id]):
+                    self.blocks_to_update[question_id] = edited_block
+                else:
+                    self.blocks_not_to_touch[question_id] = edited_block
+
+        for verb, block_dict in [('add', self.blocks_to_add), ('update', self.blocks_to_update), ('delete', self.blocks_to_delete)]:
+            print(f"{len(block_dict.keys())} blocks to {verb}:")
+            for _, v in block_dict.items():
+                print(f"ID: {v.get('ID')}; BlockElements: {v['BlockElements']}; block: {v}\n")
+            print("\n")
+
+        add_responses = self.add_blocks()
+        logger.info('Responses from self.add_blocks', extra={'responses': add_responses})
+        update_responses = self.update_blocks()
+        logger.info('Responses from self.update_blocks', extra={'responses': update_responses})
+        delete_responses = self.delete_blocks()
+        logger.info('Responses from self.delete_blocks', extra={'responses': delete_responses})
+
+        return add_responses, update_responses, delete_responses
+
+    def update_survey(self, interactive=False):
+        """
+        This is the main routine of this class.
+
+        Returns:
+        """
+        parse_questions_results = self.parse_questions(interactive)
+        if parse_questions_results:
+            parse_blocks_results = self.parse_blocks()
+        return parse_questions_results, parse_blocks_results
+
 
 def main(interactive=False):
     """
@@ -261,24 +364,33 @@ def main(interactive=False):
     question_list = csv_parser.parse_into_question_list()
     rendered_questions_dict = {x.data_export_tag: x.rendered_question() for x in question_list}
     logger.debug('rendered_questions_dict', extra=rendered_questions_dict)
-    update_manager = SurveyUpdateManager(rendered_questions_dict, survey_id="SV_9HcwQ4EhfsTlnJr")
-    update_manager.parse_questions(interactive)
+    update_manager = SurveyUpdateManager(rendered_questions_dict)
+    update_successful = True
+    results = update_manager.update_survey(interactive)
+    for entity in results:
+        for verb in entity:
+            if verb:
+                for _, v in verb.items():
+                    try:
+                        if v['meta']['httpStatus'] != '200 - OK':
+                            update_successful = False
+                    except KeyError:  # add_block responses have a different structure
+                        if v['create_response']['meta']['httpStatus'] != '200 - OK':
+                            update_successful = False
+                        if v['update_response']['meta']['httpStatus'] != '200 - OK':
+                            update_successful = False
 
+    warning_message = ""
+    if warning_counter:
+        warning_message = f" ({warning_counter} warnings were issued; see log for details)"
 
-    # for id, question in rendered_questions_by_id.items():
-    #
-    # qid3 = questions['QID3']
-    # edited_q = deepcopy(qid3)
-    #
-    # edited_q["QuestionDescription"] = None
-    #
-    # qs.update_question('QID3', edited_q)
-    # print(qid3)
-
-    # for q in questions:
-    #     print(q.rendered_question())
-    #     print('\n\n')
+    if update_successful:
+        print(f"Survey updated successfully{warning_message}")
+    else:
+        print(f"Survey update failed{warning_message}")
 
 
 if __name__ == "__main__":
-    main()
+    main(
+        interactive=True
+    )

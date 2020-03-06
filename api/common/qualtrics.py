@@ -32,6 +32,7 @@ class BaseClient:
     def __init__(self, api_token=QUALTRICS_API_TOKEN):
         self.base_url = 'https://cambridge.eu.qualtrics.com/API'
         self.api_token = api_token
+        self.logger = utils.get_logger()
 
     def qualtrics_request(self, method, endpoint_url, api_key=None, params=None, data=None):
         if api_key is None:
@@ -43,6 +44,7 @@ class BaseClient:
             "x-api-token": api_key,
         }
 
+        self.logger.debug('Qualtrics API call', extra={'method': method, 'url': endpoint_url, 'params': params, 'json': data})
         response = requests.request(
             method=method,
             url=endpoint_url,
@@ -64,6 +66,7 @@ class SurveyDefinitionsClient(BaseClient):
         super().__init__()
         self.base_endpoint = f"{self.base_url}/v3/survey-definitions/{survey_id}"
         self.questions_endpoint = f"{self.base_endpoint}/questions"
+        self.blocks_endpoint = f"{self.base_endpoint}/blocks"
 
     def get_survey(self):
         return self.qualtrics_request("GET", self.base_endpoint)
@@ -77,4 +80,15 @@ class SurveyDefinitionsClient(BaseClient):
 
     def delete_question(self, question_id):
         endpoint = f"{self.questions_endpoint}/{question_id}"
+        return self.qualtrics_request("DELETE", endpoint)
+    
+    def create_block(self, data):
+        return self.qualtrics_request("POST", self.blocks_endpoint, data=data)
+
+    def update_block(self, block_id, data):
+        endpoint = f"{self.blocks_endpoint}/{block_id}"
+        return self.qualtrics_request("PUT", endpoint, data=data)
+
+    def delete_block(self, block_id):
+        endpoint = f"{self.blocks_endpoint}/{block_id}"
         return self.qualtrics_request("DELETE", endpoint)
