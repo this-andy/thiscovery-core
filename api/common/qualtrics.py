@@ -22,42 +22,59 @@ from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime
 
-import common.dynamodb_utilities as ddb
-from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
+import common.utilities as utils
 
-BASE_URL = 'https://cambridge.eu.qualtrics.com/API/'
-
-
-def qualtrics_request(method, endpoint_url, api_key, base_url=BASE_URL, params=None, data=None):
-    full_url = base_url + endpoint_url
-    headers = {
-        "content-type": "application/json",
-        "Accept": "application/json",
-        "x-api-token": api_key,
-    }
-
-    response = requests.request(
-        method=method,
-        url=full_url,
-        params=params,
-        headers=headers,
-        data=data,
-    )
-
-    if response.ok:
-        return response.json()
-    else:
-        raise DetailedValueError(f'Call to Qualtrics API failed with response: {response.content}')
+from api.local.secrets import QUALTRICS_API_TOKEN
 
 
-def create_survey(survey_name):
-    endpoint = "v3/survey-definitions"
-    data = {
-        "SurveyName": survey_name,
-        "Language": "EN",
-        "ProjectCategory": "CORE",
-    }
+class BaseClient:
+
+    def __init__(self, api_token=QUALTRICS_API_TOKEN):
+        self.base_url = 'https://cambridge.eu.qualtrics.com/API'
+        self.api_token = api_token
+
+    def qualtrics_request(self, method, endpoint_url, api_key=None, params=None, data=None):
+        if api_key is None:
+            api_key = self.api_token
+
+        headers = {
+            "content-type": "application/json",
+            "Accept": "application/json",
+            "x-api-token": api_key,
+        }
+
+        response = requests.request(
+            method=method,
+            url=endpoint_url,
+            params=params,
+            headers=headers,
+            json=data,
+        )
+
+        if response.ok:
+            return response.json()
+        else:
+            print(response.text)
+            raise utils.DetailedValueError('Call to Qualtrics API failed', details={'response.text': response.text})
 
 
-response = requests.post(baseUrl, json=data, headers=headers)
-print(response.text)
+class SurveyDefinitionsClient(BaseClient):
+
+    def __init__(self, survey_id):
+        super().__init__()
+        self.base_endpoint = f"{self.base_url}/v3/survey-definitions/{survey_id}"
+        self.questions_endpoint = f"{self.base_endpoint}/questions"
+
+    def get_survey(self):
+        return self.qualtrics_request("GET", self.base_endpoint)
+
+    def create_question(self, data):
+        return self.qualtrics_request("POST", self.questions_endpoint, data=data)
+
+    def update_question(self, question_id, data):
+        endpoint = f"{self.questions_endpoint}/{question_id}"
+        return self.qualtrics_request("PUT", endpoint, data=data)
+
+    def delete_question(self, question_id):
+        endpoint = f"{self.questions_endpoint}/{question_id}"
+        return self.qualtrics_request("DELETE", endpoint)
