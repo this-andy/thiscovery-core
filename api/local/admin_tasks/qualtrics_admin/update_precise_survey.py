@@ -18,26 +18,21 @@
 
 import csv
 import jinja2 as j2
-import json
-
-from copy import deepcopy, copy
-from typing import NamedTuple
+from copy import deepcopy
 
 import common.qualtrics as qs
 import common.utilities as utils
 
-
 DEFAULT_SURVEY = "SV_9SUp48JfOurEzI1"
-
 logger = utils.get_logger()
-
 warning_counter = 0
 
 env = j2.Environment(
-    # loader=j2.PackageLoader('common', 'sql_templates'),
     loader=j2.FileSystemLoader('.'),
 )
 
+# region question templates
+# region dynamic questions
 like_rephrasing_question_dict = {
     "QuestionText": None,
     "DataExportTag": None,  # "Q1"
@@ -45,18 +40,16 @@ like_rephrasing_question_dict = {
     "Selector": "SAVR",
     "SubSelector": "TX",
     "Configuration": {"QuestionDescriptionOption": "UseText", "Autoscale": {"YScale": {"Name": "yesNo", "Type": "likert", "Reverse": False}}},
-    # "QuestionDescription": None,  # Ok to leave as None. Was: "Rephrased indicator...",
     "Choices": {"1": {"Display": "yes"}, "2": {"Display": "no"}},
     "ChoiceOrder": ["1", "2"],
     "Validation": {"Settings": {"ForceResponse": "OFF", "ForceResponseType": "ON", "Type": "None"}},
     "Language": [],
-    # "NextChoiceId": 3,
-    # "NextAnswerId": 1,
-    # "QuestionID": None,  # "QID1",  Note: question ID cannot be set via the API
+    # "QuestionID": "QID1",  Note: question ID cannot be set via the API
     "DataVisibility": {"Private": False, "Hidden": False},
-    # "QuestionText_Unsafe": None,  # Ok to leave as None. Was: "<strong>Rephrased indicator:..."
 }
+# endregion
 
+# region static questions
 comment_question = {
     'QuestionText': 'Do you have any comments on the rephrased indicator?',
     'DefaultChoices': False,
@@ -67,25 +60,24 @@ comment_question = {
     'QuestionDescription': 'Do you have any comments on the rephrased indicator?',
     'Validation': {'Settings': {'ForceResponse': 'OFF', 'ForceResponseType': 'ON', 'Type': 'None'}},
     'GradingData': [], 'Language': [],
-    # 'NextChoiceId': 4,
-    # 'NextAnswerId': 1,
     'SearchSource': {'AllowFreeResponse': 'false'},
     'QuestionText_Unsafe': 'Do you have any comments on the rephrased indicator?'
 }
+# endregion
+# endregion
 
 indicator_block_template = {
     'Type': 'Standard',
     'Description': 'Untitled block',
-    # 'ID': None, #'BL_50uVt2AAm2dc097',
     'BlockElements': [{'Type': 'Question', 'QuestionID': None}, {'Type': 'Question', 'QuestionID': None}]
 }
-
 
 precise_indicator_phrasing_question_template = env.get_template('precise_indicator_phrasing_question.j2')
 
 
 class IndicatorPhrasingQuestion:
-    def __init__(self, data_export_tag, original_phrasing, rephrased_indicator, explanatory_terms=None, rationale_for_change=None):
+    def __init__(self, data_export_tag, original_phrasing, rephrased_indicator, explanatory_terms=None,
+                 rationale_for_change=None):
         self.data_export_tag = data_export_tag
         self.original_phrasing = original_phrasing
         self.rephrased_indicator = rephrased_indicator
@@ -120,7 +112,6 @@ class CsvParser:
 
         Returns:
             List of IndicatorPhrasingQuestion objects
-
         """
         null_symbols = ['-']
         optional_columns = ['Explanatory terms ', 'Notes on rationale for rephrasing']
@@ -150,17 +141,24 @@ class CsvParser:
 
 
 class SurveyUpdateManager:
-    def __init__(self, questions_dict, survey_id=DEFAULT_SURVEY):
+    def __init__(self, questions_dict, survey_id=None, survey_name=None):
         """
         Args:
             questions_dict: Dictionary of questions indexed by "DataExportTag"
-            survey_id:
+            survey_id: If None, create a new survey
+            survey_name: Name of new survey, if a survey is being created
         """
-        self.survey_client = qs.SurveyDefinitionsClient(survey_id)
+        self.survey_client = qs.SurveyDefinitionsClient(survey_id=survey_id)
+
+        if survey_id is None:
+            if survey_name == "Test survey":
+                from random import randrange
+                survey_name = f"Test survey {randrange(99999)}"
+            self.survey_client.create_survey(survey_name)
+            print(f"Created new survey: {survey_name}")
+
         self.survey = self.survey_client.get_survey()['result']
         self.input_questions = questions_dict
-
-        self.tag2id_map = dict()
         self.static_questions = {'Q100': comment_question}
 
         self.questions_to_update = dict()
@@ -180,7 +178,7 @@ class SurveyUpdateManager:
         so this function creates the new block without it and then immediately updates it with the required Elements.
 
         Returns:
-
+            Dictionary of responses from the create and update phases: {'create_response': x, 'update_response': y}
         """
         responses = dict()
         for k, v in self.blocks_to_add.items():
@@ -207,7 +205,6 @@ class SurveyUpdateManager:
 
     # region question methods
     def add_questions(self):
-        # todo: Every time a question is added, it goes into the default block, so we must update that block whenever an update includes a new question
         responses = dict()
         for k, q in self.questions_to_add.items():
             responses[k] = self.survey_client.create_question(data=q)
@@ -232,7 +229,8 @@ class SurveyUpdateManager:
             interactive: If True, asks for confirmation of changes before applying to survey
 
         Returns:
-
+            Tuple of responses (dict objects) of requests to add, update and delete questions:
+            (add_responses, update_responses, delete_responses)
         """
         def covert_key_from_id_to_tag(questions):
             return {v["DataExportTag"]: v for _, v in questions.items()}
@@ -240,7 +238,10 @@ class SurveyUpdateManager:
         def question_text_is_identical(q1, q2):
             return q1["QuestionText"] == q2["QuestionText"]
 
-        existing_questions = covert_key_from_id_to_tag(self.survey['Questions'])
+        if self.survey['Questions']:
+            existing_questions = covert_key_from_id_to_tag(self.survey['Questions'])
+        else:
+            existing_questions = dict()
         self.questions_to_delete = {k: v for k, v in existing_questions.items()}
         for group in [self.input_questions, self.static_questions]:
             for k, v in group.items():
@@ -302,6 +303,7 @@ class SurveyUpdateManager:
         def block_elements_are_identical(b1, b2):
             return b1["BlockElements"] == b2["BlockElements"]
 
+        self.survey = self.survey_client.get_survey()['result']  # question updates can change the structure of the blocks, so refresh self.survey
         existing_blocks = covert_key_from_block_id_to_question_id(self.survey['Blocks'])
         self.blocks_to_delete = deepcopy(existing_blocks)
 
@@ -347,24 +349,26 @@ class SurveyUpdateManager:
         This is the main routine of this class.
 
         Returns:
+            Tuple of responses from the parse questions and parse blocks phases
         """
         parse_questions_results = self.parse_questions(interactive)
-        if parse_questions_results:
-            parse_blocks_results = self.parse_blocks()
+        parse_blocks_results = self.parse_blocks()
         return parse_questions_results, parse_blocks_results
 
 
-def main(interactive=False):
+def main(survey_id=None, survey_name=None, input_dataset='qualtrics-import-data-v01.csv', interactive=False):
     """
     Args:
+        survey_id: If None, a new survey will be created; otherwise survey matching survey_id will be updated
+        survey_name: If survey_id is None, a new survey will be created using this name.
+        input_dataset: File containing survey questions
         interactive: If True, asks for confirmation of changes before applying to survey
     """
-
-    csv_parser = CsvParser('qualtrics-import-data-v01.csv')
+    csv_parser = CsvParser(input_dataset)
     question_list = csv_parser.parse_into_question_list()
     rendered_questions_dict = {x.data_export_tag: x.rendered_question() for x in question_list}
     logger.debug('rendered_questions_dict', extra=rendered_questions_dict)
-    update_manager = SurveyUpdateManager(rendered_questions_dict)
+    update_manager = SurveyUpdateManager(rendered_questions_dict, survey_id=survey_id, survey_name=survey_name)
     update_successful = True
     results = update_manager.update_survey(interactive)
     for entity in results:
@@ -391,6 +395,14 @@ def main(interactive=False):
 
 
 if __name__ == "__main__":
+    """
+    Pass either survey_id to update an existing survey or survey_name to create a new survey.
+    If survey_name == "Test survey", the survey created will be named "Test survey XXXXX", where
+    XXXXX is a random 5 digit integer. 
+    """
     main(
-        interactive=True
+        # survey_id=DEFAULT_SURVEY,
+        survey_name="Test survey",
+        input_dataset='qualtrics-import-data-v01.csv',
+        interactive=True,
     )

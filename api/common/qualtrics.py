@@ -62,14 +62,34 @@ class BaseClient:
 
 class SurveyDefinitionsClient(BaseClient):
 
-    def __init__(self, survey_id):
+    def __init__(self, survey_id=None):
         super().__init__()
-        self.base_endpoint = f"{self.base_url}/v3/survey-definitions/{survey_id}"
-        self.questions_endpoint = f"{self.base_endpoint}/questions"
-        self.blocks_endpoint = f"{self.base_endpoint}/blocks"
+        self.base_endpoint = f"{self.base_url}/v3/survey-definitions"
+        self.survey_endpoint = f"{self.base_endpoint}/{survey_id}"
+        self.questions_endpoint = f"{self.survey_endpoint}/questions"
+        self.blocks_endpoint = f"{self.survey_endpoint}/blocks"
+
+    def refresh_survey_endpoints(self, survey_id):
+        self.survey_endpoint = f"{self.base_endpoint}/{survey_id}"
+        self.questions_endpoint = f"{self.survey_endpoint}/questions"
+        self.blocks_endpoint = f"{self.survey_endpoint}/blocks"
 
     def get_survey(self):
-        return self.qualtrics_request("GET", self.base_endpoint)
+        return self.qualtrics_request("GET", self.survey_endpoint)
+
+    def create_survey(self, survey_name):
+        data = {
+            "SurveyName": survey_name,
+            "Language": "EN-GB",
+            "ProjectCategory": "CORE"
+        }
+        response = self.qualtrics_request("POST", self.base_endpoint, data=data)
+        if response["meta"]["httpStatus"] == "200 - OK":
+            survey_id = response["result"]["SurveyID"]
+            self.refresh_survey_endpoints(survey_id)
+            return survey_id
+        else:
+            raise utils.DetailedValueError("API call to Qualtrics create survey method failed", details={'response': response})
 
     def create_question(self, data):
         return self.qualtrics_request("POST", self.questions_endpoint, data=data)
