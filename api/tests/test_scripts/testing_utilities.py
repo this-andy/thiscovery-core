@@ -224,8 +224,8 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=HubSpotClient()):
                 "email": row[3],
                 "first_name": row[5],
                 "last_name": row[6],
-                "country_code": row[12],
-                "country_name": utils.get_country_name(row[12]),
+                "country_code": row[9],
+                "country_name": utils.get_country_name(row[9]),
                 "avatar_string": f'{row[5][0].upper()}{row[6][0].upper()}',
                 "status": "new"
             }

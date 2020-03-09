@@ -56,7 +56,6 @@ EXPECTED_USER = {
     "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
     "modified": f"2018-08-17T{tz_hour}:10:56.833885+{tz_offset}",
     "email": "altha@email.co.uk",
-    "email_address_verified": False,
     "title": "Mrs",
     "first_name": "Altha",
     "last_name": "Alcorn",
@@ -217,7 +216,6 @@ class TestUser(test_utils.DbTestCase):
             {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
             {'op': 'replace', 'path': '/last_name', 'value': 'smith'},
             {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'},
-            {'op': 'replace', 'path': '/email_address_verified', 'value': 'true'},
             {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
             {'op': 'replace', 'path': '/status', 'value': 'singing'},
             {'op': 'replace', 'path': '/country_code', 'value': 'GB-SCT'},
@@ -236,7 +234,6 @@ class TestUser(test_utils.DbTestCase):
             "id": user_id,
             "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
             "email": "simon.smith@dancingbear.com",
-            "email_address_verified": True,
             "title": "Sir",
             "first_name": "simon",
             "last_name": "smith",
@@ -286,7 +283,6 @@ class TestUser(test_utils.DbTestCase):
                 {"op": "replace", "path": "/last_name", "value": "Alcorn"},
                 {"op": "replace", "path": "/status", "value": None},
                 {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
-                {"op": "replace", "path": "/email_address_verified", "value": False},
                 {"op": "replace", "path": "/country_code", "value": "GB"},
             ]
             self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
@@ -365,7 +361,6 @@ class TestUser(test_utils.DbTestCase):
             "id": user_id,
             "created": "2018-08-21T11:16:56+01:00",
             "email": user_email,
-            "email_address_verified": False,
             "title": "Mr",
             "first_name": "Steven",
             "last_name": "Walcorn",
@@ -452,15 +447,6 @@ class TestUser(test_utils.DbTestCase):
         auth0_id = result_json['auth0_id']
         del result_json['auth0_id']
 
-        email_address_verified = result_json['email_address_verified']
-        del result_json['email_address_verified']
-
-        # email_verification_token = result_json['email_verification_token']
-        # del result_json['email_verification_token']
-        #
-        # email_verification_expiry = result_json['email_verification_expiry']
-        # del result_json['email_verification_expiry']
-
         self.assertEqual(expected_status, result_status)
         # first check what's left in returned data
         user_json['country_name'] = 'United Kingdom'
@@ -472,8 +458,6 @@ class TestUser(test_utils.DbTestCase):
 
         # now check individual data items
         self.assertIsNone(auth0_id)
-        self.assertFalse(email_address_verified)
-        # self.assertTrue(uuid.UUID(email_verification_token).version == 4)
         #
         # result_datetime = parser.parse(email_verification_expiry)
         # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))

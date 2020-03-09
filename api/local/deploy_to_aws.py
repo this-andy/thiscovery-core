@@ -75,6 +75,8 @@ def deploy(environment, branch=None):
                                                  "before logging in. Please run `stackery login` first.":
             stackery_login()
             stackery_deployment(environment, branch)
+        else:
+            raise err
 
 
 def main(environment):
@@ -86,8 +88,9 @@ def main(environment):
 
 if __name__ == '__main__':
 
-    # target_environment = 'dev-afs25'
     target_environment = 'test-afs25'
+    # target_environment = 'dev-afs25'
+    # target_environment = 'staging'
 
     main(environment=target_environment)
 
