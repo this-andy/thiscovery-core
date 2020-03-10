@@ -49,11 +49,12 @@ like_rephrasing_question_dict = {
 }
 # endregion
 
-# region static questions
+# region repetitive questions
+COMMENT_QUESTION_POSTFIX = "COM"
 comment_question = {
     'QuestionText': 'Do you have any comments on the rephrased indicator?',
     'DefaultChoices': False,
-    'DataExportTag': 'Q100',
+    'DataExportTag': None,
     'QuestionType': 'TE',
     'Selector': 'ML',
     'Configuration': {'QuestionDescriptionOption': 'UseText', 'InputWidth': 658, 'InputHeight': 208},
@@ -159,7 +160,12 @@ class SurveyUpdateManager:
 
         self.survey = self.survey_client.get_survey()['result']
         self.input_questions = questions_dict
-        self.static_questions = {'Q100': comment_question}
+
+        self.comment_box_questions = dict()
+        for k, v in self.input_questions.items():
+            com_q = deepcopy(comment_question)
+            com_q.update({'DataExportTag': f"{k}{COMMENT_QUESTION_POSTFIX}"})
+            self.comment_box_questions[f"{k}{COMMENT_QUESTION_POSTFIX}"] = com_q
 
         self.questions_to_update = dict()
         self.questions_to_add = dict()
@@ -170,6 +176,9 @@ class SurveyUpdateManager:
         self.blocks_to_add = dict()
         self.blocks_to_delete = dict()
         self.blocks_not_to_touch = dict()
+
+        self.question_ids = list()
+        self.thrash_block_id = None
 
     # region block methods
     def add_blocks(self):
@@ -243,7 +252,7 @@ class SurveyUpdateManager:
         else:
             existing_questions = dict()
         self.questions_to_delete = {k: v for k, v in existing_questions.items()}
-        for group in [self.input_questions, self.static_questions]:
+        for group in [self.input_questions, self.comment_box_questions]:
             for k, v in group.items():
                 if k not in existing_questions.keys():
                     self.questions_to_add[k] = v
@@ -283,17 +292,21 @@ class SurveyUpdateManager:
         return add_responses, update_responses, delete_responses
 
     def parse_blocks(self):
-        def covert_key_from_block_id_to_question_id(blocks):
+        def covert_key_from_block_id_to_question_id(blocks, survey_update_manager):
             converted_blocks = dict()
             for k_, v_ in blocks.items():
 
                 # skip the Trash block
                 if v_["Type"] == "Trash":
                     logger.debug(f'Skipped Trash block {k_}')
+                    survey_update_manager.thrash_block_id = k_
                     continue
 
                 try:
-                    converted_blocks[v_['BlockElements'][0]['QuestionID']] = {**v_, 'block_id': k_}
+                    converted_blocks[
+                        # v_['BlockElements'][0]['QuestionID']
+                        v_['Description']  # description also holds the QuestionID and works for empty blocks (that had all their questions deleted)
+                    ] = {**v_, 'block_id': k_}
                 except KeyError:
                     logger.warning(f'Block {k_} was not created by this script; it will be ignored', extra={'block definition': v_})
                     global warning_counter
@@ -304,19 +317,21 @@ class SurveyUpdateManager:
             return b1["BlockElements"] == b2["BlockElements"]
 
         self.survey = self.survey_client.get_survey()['result']  # question updates can change the structure of the blocks, so refresh self.survey
-        existing_blocks = covert_key_from_block_id_to_question_id(self.survey['Blocks'])
+        existing_blocks = covert_key_from_block_id_to_question_id(self.survey['Blocks'], self)
         self.blocks_to_delete = deepcopy(existing_blocks)
 
-        questions_for_blocks = {**self.questions_to_add, **self.questions_to_update, **self.questions_not_to_touch}
-        ids_of_static_questions = list()
-        for k, v in self.static_questions.items():
-            ids_of_static_questions.append(questions_for_blocks[k]['QuestionID'])
-            del questions_for_blocks[k]
+        main_questions_for_blocks = {**self.questions_to_add, **self.questions_to_update, **self.questions_not_to_touch}
+        self.question_ids = [v['QuestionID'] for _, v in main_questions_for_blocks.items()]
 
-        for _, v in questions_for_blocks.items():
+        for k, v in self.comment_box_questions.items():
+            del main_questions_for_blocks[k]
+
+        for k, v in main_questions_for_blocks.items():
             question_id = v['QuestionID']
-            static_block_elements = [{'Type': 'Question', 'QuestionID': x} for x in ids_of_static_questions]
-            block_elements_dict = {'BlockElements': [{'Type': 'Question', 'QuestionID': question_id}, *static_block_elements]}
+            block_elements_dict = {'BlockElements': [
+                {'Type': 'Question', 'QuestionID': question_id},
+                {'Type': 'Question', 'QuestionID': self.comment_box_questions[f"{k}{COMMENT_QUESTION_POSTFIX}"]['QuestionID']}
+            ]}
             edited_block = deepcopy(indicator_block_template)
             edited_block.update({**block_elements_dict, 'Description': question_id})
             if question_id not in existing_blocks.keys():
@@ -344,6 +359,18 @@ class SurveyUpdateManager:
 
         return add_responses, update_responses, delete_responses
 
+    def remove_questions_managed_by_this_script_from_thrash_block(self):
+        self.survey = self.survey_client.get_survey()['result']  # refresh self.survey
+        thrash_block = self.survey['Blocks'][self.thrash_block_id]
+        try:
+            edited_block_elements = [x for x in thrash_block['BlockElements'] if x['QuestionID'] not in self.question_ids]
+        except KeyError as err:
+            print(f"thrash_block: {thrash_block}")
+            raise err
+
+        thrash_block.update({'BlockElements': edited_block_elements})
+        return self.survey_client.update_block(self.thrash_block_id, data=thrash_block)
+
     def update_survey(self, interactive=False):
         """
         This is the main routine of this class.
@@ -353,7 +380,8 @@ class SurveyUpdateManager:
         """
         parse_questions_results = self.parse_questions(interactive)
         parse_blocks_results = self.parse_blocks()
-        return parse_questions_results, parse_blocks_results
+        cleanup_result = ({"cleanup_result": self.remove_questions_managed_by_this_script_from_thrash_block()},)
+        return parse_questions_results, parse_blocks_results, cleanup_result
 
 
 def main(survey_id=None, survey_name=None, input_dataset='qualtrics-import-data-v01.csv', interactive=False):
@@ -404,5 +432,5 @@ if __name__ == "__main__":
         # survey_id=DEFAULT_SURVEY,
         survey_name="Test survey",
         input_dataset='qualtrics-import-data-v01.csv',
-        interactive=True,
+        # interactive=True,
     )
