@@ -38,7 +38,7 @@ def process_notifications(event, context):
     logger = get_logger()
     notifications = get_notifications(NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
 
-    logger.info('process_notifications', extra = {'count': str(len(notifications))})
+    logger.info('process_notifications', extra={'count': str(len(notifications))})
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
     signup_notifications = []
@@ -54,8 +54,9 @@ def process_notifications(event, context):
             # add to list for later processing
             login_notifications.append(notification)
         else:
-            # todo details
-            raise Exception
+            error_message = f'Processing of {notification_type} notifications not implemented yet'
+            logger.error(error_message)
+            raise NotImplementedError(error_message)
 
     for signup_notification in signup_notifications:
         process_task_signup(signup_notification)
