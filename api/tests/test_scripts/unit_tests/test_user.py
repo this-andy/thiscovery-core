@@ -17,28 +17,21 @@
 #
 
 import json
-import uuid
 from http import HTTPStatus
-from dateutil import parser
-from time import sleep
 
 import api.endpoints.notification_process as np
 import api.endpoints.user as u
-import common.pg_utilities as pg_utils
 import testing_utilities as test_utils
 
 from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
-from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from testing_utilities import test_get, test_post, test_patch
 from common.dev_config import TIMEZONE_IS_BST
 from common.entity_update import EntityUpdate
 from common.hubspot import HubSpotClient
-from common.notifications import delete_all_notifications, get_notifications, NotificationStatus, \
+from common.notifications import get_notifications, NotificationStatus, \
     NotificationAttributes
-from common.utilities import new_correlation_id, now_with_tz, set_running_unit_tests
+from common.utilities import new_correlation_id
 
-
-TEST_SQL_FOLDER = '../test_sql/'
-TEST_DATA_FOLDER = '../test_data/'
 TIME_TOLERANCE_SECONDS = 15
 
 ENTITY_BASE_URL = 'v1/user'
@@ -90,14 +83,6 @@ class TestUser(test_utils.DbTestCase):
         # test results returned from api call
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
-
-        # check that login notification exists
-        # notifications = get_notifications('type', ['user-login'])
-        # notification = notifications[0]  # should be only one
-        # self.assertEqual('user-login', notification['type'])
-        # self.assertEqual(expected_body['email'], notification['label'])
-        # self.assertEqual(expected_body['id'], notification['details']['user_id'])
-        # self.assertEqual(expected_body['email'], notification['details']['email'])
 
     def test_02_get_user_by_ext_user_project_id_api_exists(self):
         """
