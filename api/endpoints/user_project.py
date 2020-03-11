@@ -68,10 +68,6 @@ def list_user_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     params = event['queryStringParameters']
     user_id = params['user_id']  # all public id are uuids
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
@@ -168,10 +164,6 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
 def create_user_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     up_json = json.loads(event['body'])
     logger.info('API call', extra={'up_json': up_json, 'correlation_id': correlation_id, 'event': event})

@@ -85,10 +85,6 @@ def list_user_tasks_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     params = event['queryStringParameters']
     user_id = params['user_id']
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
@@ -202,10 +198,6 @@ def create_user_task(ut_json, correlation_id):
 def create_user_task_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     ut_json = json.loads(event['body'])
     logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})

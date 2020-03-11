@@ -122,10 +122,6 @@ def create_user_external_account_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     uea_json = json.loads(event['body'])
     logger.info('API call', extra={'uea_json': uea_json, 'correlation_id': correlation_id, 'event': event})
     new_user_external_account = create_user_external_account(uea_json, correlation_id)
