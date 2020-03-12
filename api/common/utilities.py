@@ -628,8 +628,9 @@ countries = load_countries()
 # region decorators
 def api_error_handler(func):
     """
-    Error handler decorator for thiscovery API endpoints. Use with lambda_wrapper as the outer decorator. E.g.:
+    Error handler decorator for thiscovery API endpoints. Use with lambda_wrapper and api_wrapper as the outer decorators. E.g.:
         @lambda_wrapper
+        @api_wrapper
         @api_error_handler
         def decorated_function():
     """
@@ -646,6 +647,27 @@ def api_error_handler(func):
             return log_exception_and_return_edited_api_response(err, HTTPStatus.BAD_REQUEST, logger, correlation_id)
         except Exception as err:
             return log_exception_and_return_edited_api_response(err, HTTPStatus.INTERNAL_SERVER_ERROR, logger, correlation_id)
+    return wrapper
+
+
+def api_wrapper(func):
+    """
+    Wrapper for thiscovery API endpoints. Use with lambda_wrapper as the outer decorator. E.g.:
+        @lambda_wrapper
+        @api_wrapper
+        def decorated_function():
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        event = args[0]
+        logger = event['logger']
+        # add correlation_id to headers
+        logger.info('event before adding correlation_id', extra={'event': event})
+        event['headers']['correlation_id'] = event['correlation_id']
+        logger.info('event after adding correlation_id', extra={'event': event})
+        updated_args = (event, *args[1:])
+        result = func(*updated_args, **kwargs)
+        return result
     return wrapper
 
 

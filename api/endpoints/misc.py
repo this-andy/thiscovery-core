@@ -24,6 +24,7 @@ import common.utilities as utils
 
 
 @utils.lambda_wrapper
+@utils.api_wrapper
 def ping(event, context):
 
     del event['logger']
