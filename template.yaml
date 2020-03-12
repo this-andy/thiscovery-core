@@ -1219,7 +1219,7 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
-        - arn:aws:iam::595383251813:policy/change-retention-policy
+        - CloudWatchLogsFullAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
       VpcConfig:
