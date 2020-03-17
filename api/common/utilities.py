@@ -239,10 +239,13 @@ DEFAULT_SESSION = None
 
 def setup_default_session(profile_name):
     """
-    Set up a default boto3 session using profile_name
+    Set up a default boto3 session, which sets profile_name and region_name if running locally
     """
     global DEFAULT_SESSION
-    DEFAULT_SESSION = boto3.Session(profile_name=profile_name, region_name=DEFAULT_AWS_REGION)
+    if running_on_aws():
+        DEFAULT_SESSION = boto3.Session()
+    else:
+        DEFAULT_SESSION = boto3.Session(profile_name=profile_name, region_name=DEFAULT_AWS_REGION)
 
 
 def _get_default_session(profile_name):
