@@ -43,6 +43,27 @@ def namespace2name(namespace):
     return namespace[1:-1]
 
 
+def namespace2profile(namespace):
+    """
+    Maps namespaces in dev_config.py to profiles in ~/.aws/credentials
+    """
+    THISCOVERY_PROD_PROFILE = "595383251813_AdministratorAccess"
+    THISCOVERY_STAGING_PROFILE = "756495104356_AdministratorAccess"
+    THISCOVERY_AFS25_PROFILE = "266657513168_AdministratorAccess"
+    THISCOVERY_AMP205_PROFILE = "513939673472_AdministratorAccess"
+
+    namespace2profile_map = {
+        '/prod/': THISCOVERY_PROD_PROFILE,
+        '/staging/': THISCOVERY_STAGING_PROFILE,
+        '/dev-afs25/': THISCOVERY_AFS25_PROFILE,
+        '/test-afs25/': THISCOVERY_AFS25_PROFILE,
+        '/dev-amp205/': THISCOVERY_AMP205_PROFILE,
+        '/test-amp205/': THISCOVERY_AMP205_PROFILE,
+    }
+
+    return namespace2profile_map.get(namespace)
+
+
 PRODUCTION_ENV_NAME = 'prod'
 STAGING_ENV_NAME = 'staging'
 
@@ -211,10 +232,45 @@ def validate_utc_datetime(s):
 # endregion
 
 
-# region boto3 clients
+# region boto3
+# The default Boto3 session; autoloaded when needed.
+DEFAULT_SESSION = None
+
+
+def setup_default_session(profile_name):
+    """
+    Set up a default boto3 session using profile_name
+    """
+    global DEFAULT_SESSION
+    DEFAULT_SESSION = boto3.Session(profile_name=profile_name, region_name=DEFAULT_AWS_REGION)
+
+
+def _get_default_session(profile_name):
+    """
+    Get the default session, creating one if needed.
+    """
+    if DEFAULT_SESSION is None:
+        setup_default_session(profile_name)
+    return DEFAULT_SESSION
+
+
 class BaseClient:
-    def __init__(self, service_name, obtain_logger=True):
-        self.client = boto3.client(service_name, region_name=DEFAULT_AWS_REGION)
+    def __init__(self, service_name, profile_name=None, client_type='low-level'):
+        """
+        Args:
+            service_name (str): AWS service name (e.g. dynamodb, lambda, etc)
+            profile_name (str): Profile in ~/.aws/credentials
+            client_type (str): 'low-level' to create a boto3 low-level service client; or 'resource' to create a boto3 resource service client.
+        """
+        if profile_name is None:
+            profile_name = namespace2profile(get_aws_namespace())
+        session = _get_default_session(profile_name)
+        if client_type == 'low-level':
+            self.client = session.client(service_name)
+        elif client_type == 'resource':
+            self.client = session.resource(service_name)
+        else:
+            raise NotImplementedError(f"client_type can only be 'low-level' or 'resource', not {client_type}")
         self.logger = get_logger()
         self.aws_namespace = None
 
@@ -286,6 +342,14 @@ class SecretsManager(BaseClient):
         return self.client.update_secret(
             SecretId=secret_id,
             SecretString=value,
+        )
+
+    def get_secret_value(self, secret_id):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/secretsmanager.html#SecretsManager.Client.get_secret_value
+        """
+        return self.client.get_secret_value(
+            SecretId=secret_id,
         )
 
     def create_or_update_secret(self, name, value, prefix=None):
@@ -508,23 +572,13 @@ def get_secret(secret_name, namespace_override=None):
     if namespace is not None:
         secret_name = namespace + secret_name
 
-    region = get_aws_region()
-    endpoint_url = "https://secretsmanager." + region + ".amazonaws.com"
-
     logger.info('get_aws_secret: ' + secret_name)
 
-    session = boto3.session.Session()
-    # logger.info('get_aws_secret:session created')
-    client = session.client(
-        service_name='secretsmanager',
-        region_name=region,
-        endpoint_url=endpoint_url
-    )
-
     secret = None
+    client = SecretsManager()
 
     try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        get_secret_value_response = client.get_secret_value(secret_name)
         # logger.info('get_aws_secret:secret retrieved')
     except ClientError as e:
         if e.response['Error']['Code'] == 'ResourceNotFoundException':
@@ -556,43 +610,7 @@ def get_secret(secret_name, namespace_override=None):
 # endregion
 
 
-# region System parameter methods
-
-    ssm = boto3.client('ssm', get_aws_region())
-
-    response = ssm.get_parameters(
-        Names=['/dev/feature-flags']
-    )
-    for parameter in response['Parameters']:
-        print (parameter['Value'])
-
-# endregion
-
-
-# region System parameter methods
-
-# def load_system_params():
-#     ssm = boto3.client('ssm', get_aws_region())
-#
-#     flags_list = ssm.get_parameters(Names=[get_aws_namespace() + 'feature-flags'])
-#
-#     params = json.loads(flags_list['Parameters'][0]['Value'])
-#
-#     return params
-
-
-def feature_flag(name: str) -> bool:
-    # return name in system_parameters and system_parameters[name]
-    return False
-
-
-# system_parameters = load_system_params()
-
-# endregion
-
-
 # region Country code/name processing
-
 def append_country_name_to_list(entity_list):
     for entity in entity_list:
         append_country_name(entity)
