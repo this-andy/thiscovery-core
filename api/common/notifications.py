@@ -17,8 +17,9 @@
 #
 
 from enum import Enum
-from common.dynamodb_utilities import scan, update_item, delete_all, put_item
-from common.utilities import DetailedValueError, get_logger
+
+import common.dynamodb_utilities as ddb_utils
+import common.utilities as utils
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'
@@ -46,12 +47,14 @@ class NotificationAttributes(Enum):
 
 
 def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
-    notifications = scan(NOTIFICATION_TABLE_NAME, filter_attr_name, filter_attr_values, correlation_id)
+    ddb = ddb_utils.Dynamodb()
+    notifications = ddb.scan(NOTIFICATION_TABLE_NAME, filter_attr_name, filter_attr_values, correlation_id)
     return notifications
 
 
 def delete_all_notifications():
-    delete_all(NOTIFICATION_TABLE_NAME)
+    ddb = ddb_utils.Dynamodb()
+    ddb.delete_all(NOTIFICATION_TABLE_NAME)
 
 
 def create_notification(label: str):
@@ -63,7 +66,8 @@ def create_notification(label: str):
 
 
 def save_notification(key, task_type, task_signup, notification_item, correlation_id):
-    put_item(NOTIFICATION_TABLE_NAME, key, task_type, task_signup, notification_item, False, correlation_id)
+    ddb = ddb_utils.Dynamodb()
+    ddb.put_item(NOTIFICATION_TABLE_NAME, key, task_type, task_signup, notification_item, False, correlation_id)
 
 
 def get_fail_count(notification):
@@ -82,11 +86,12 @@ def mark_notification_processed(notification, correlation_id):
     notification_updates = {
         NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value
     }
-    return update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+    ddb = ddb_utils.Dynamodb()
+    return ddb.update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
 
 def mark_notification_failure(notification, error_message, correlation_id):
-    logger = get_logger()
+    logger = utils.get_logger()
     logger.error('Error processing notification', extra={'error_message': error_message, 'notification': notification, 'correlation_id': correlation_id})
 
     def update_notification_item(status_, fail_count_, error_message_=error_message):
@@ -95,7 +100,8 @@ def mark_notification_failure(notification, error_message, correlation_id):
             NotificationAttributes.FAIL_COUNT.value: fail_count_,
             NotificationAttributes.ERROR_MESSAGE.value: error_message_
         }
-        update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+        ddb = ddb_utils.Dynamodb()
+        ddb.update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
     notification_id = notification['id']
     fail_count = get_fail_count(notification) + 1
@@ -104,7 +110,7 @@ def mark_notification_failure(notification, error_message, correlation_id):
         status = NotificationStatus.DLQ.value
         update_notification_item(status, fail_count)
         errorjson = {'fail_count': fail_count, **notification}
-        raise DetailedValueError(f'Notification processing failed', errorjson)
+        raise utils.DetailedValueError(f'Notification processing failed', errorjson)
     else:
         status = NotificationStatus.RETRYING.value
         update_notification_item(status, fail_count)

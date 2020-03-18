@@ -22,7 +22,7 @@ from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime, timezone
 
-import common.dynamodb_utilities as ddb
+import common.dynamodb_utilities as ddb_utils
 from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -43,6 +43,7 @@ class HubSpotClient:
 
     def __init__(self, correlation_id=None):
         self.correlation_id = correlation_id
+        self.ddb = ddb_utils.Dynamodb()
         self.tokens = self.get_token_from_database()
 
         if not self.tokens:
@@ -58,10 +59,9 @@ class HubSpotClient:
     # region token management
     def get_token_from_database(self):
         try:
-            return ddb.get_item('tokens', 'hubspot', self.correlation_id)['details']
+            return self.ddb.get_item('tokens', 'hubspot', self.correlation_id)['details']
         except:
-            logger = get_logger()
-            logger.warning('could not retrieve hubspot token from dynamodb')
+            self.logger.warning('could not retrieve hubspot token from dynamodb')
             return None
 
     def get_hubspot_connection_secret(self):
@@ -139,6 +139,7 @@ class HubSpotClient:
 
     @staticmethod
     def save_token(new_token, correlation_id):
+        ddb = ddb_utils.Dynamodb()
         ddb.put_item('tokens', 'hubspot', 'oAuth_token', new_token, {}, True, correlation_id)
     # endregion
 
@@ -292,6 +293,7 @@ class HubSpotClient:
     @staticmethod
     def get_timeline_event_type_id(name: str, correlation_id):
         table_id = get_aws_namespace() + name
+        ddb = ddb_utils.Dynamodb()
         item = ddb.get_item('lookups', table_id, correlation_id)
         return item['details']['hubspot_id']
 
