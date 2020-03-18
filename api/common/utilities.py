@@ -47,18 +47,19 @@ def namespace2profile(namespace):
     """
     Maps namespaces in dev_config.py to profiles in ~/.aws/credentials
     """
-    from api.local.secrets import THISCOVERY_PROD_PROFILE, THISCOVERY_STAGING_PROFILE, THISCOVERY_AFS25_PROFILE, THISCOVERY_AMP205_PROFILE
+    if not running_on_aws():
+        from api.local.secrets import THISCOVERY_PROD_PROFILE, THISCOVERY_STAGING_PROFILE, THISCOVERY_AFS25_PROFILE, THISCOVERY_AMP205_PROFILE
 
-    namespace2profile_map = {
-        '/prod/': THISCOVERY_PROD_PROFILE,
-        '/staging/': THISCOVERY_STAGING_PROFILE,
-        '/dev-afs25/': THISCOVERY_AFS25_PROFILE,
-        '/test-afs25/': THISCOVERY_AFS25_PROFILE,
-        '/dev-amp205/': THISCOVERY_AMP205_PROFILE,
-        '/test-amp205/': THISCOVERY_AMP205_PROFILE,
-    }
+        namespace2profile_map = {
+            '/prod/': THISCOVERY_PROD_PROFILE,
+            '/staging/': THISCOVERY_STAGING_PROFILE,
+            '/dev-afs25/': THISCOVERY_AFS25_PROFILE,
+            '/test-afs25/': THISCOVERY_AFS25_PROFILE,
+            '/dev-amp205/': THISCOVERY_AMP205_PROFILE,
+            '/test-amp205/': THISCOVERY_AMP205_PROFILE,
+        }
 
-    return namespace2profile_map.get(namespace)
+        return namespace2profile_map.get(namespace)
 
 
 PRODUCTION_ENV_NAME = 'prod'
@@ -257,7 +258,7 @@ class BaseClient:
             profile_name (str): Profile in ~/.aws/credentials
             client_type (str): 'low-level' to create a boto3 low-level service client; or 'resource' to create a boto3 resource service client.
         """
-        if profile_name is None:
+        if (profile_name is None) and not running_on_aws():
             profile_name = namespace2profile(get_aws_namespace())
         session = _get_default_session(profile_name)
         if client_type == 'low-level':
