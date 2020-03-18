@@ -16,12 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from unittest import TestCase
-
 import testing_utilities as test_utils
 
-from common.pg_utilities import insert_data_from_csv, truncate_table
-from common.utilities import set_running_unit_tests, DetailedValueError
+from common.utilities import DetailedValueError
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -126,7 +123,7 @@ class TestUserGroup(test_utils.DbTestCase):
 
 
     def test_08_user_group_create_from_json_name_missing(self):
-        from api.endpoints.user_group import UserGroup, re
+        from api.endpoints.user_group import re
         ug_json = {'short_name': 'ug_no_name'}
 
         with self.assertRaises(DetailedValueError):

@@ -19,7 +19,7 @@
 import json
 from common.entity_base import EntityBase
 from common.utilities import DetailedValueError
-from api.tests.test_scripts.testing_utilities import BaseTestCase
+from testing_utilities import BaseTestCase
 
 
 class TestClass(EntityBase):

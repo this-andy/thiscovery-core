@@ -20,8 +20,7 @@ import json
 from http import HTTPStatus
 
 import testing_utilities as test_utils
-from common.pg_utilities import insert_data_from_csv, truncate_table
-from common.utilities import set_running_unit_tests, DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
+from common.utilities import DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

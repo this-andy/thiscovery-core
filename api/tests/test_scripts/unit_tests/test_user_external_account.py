@@ -17,15 +17,10 @@
 #
 
 import json
-import uuid
 from http import HTTPStatus
-from dateutil import parser
-from unittest import TestCase
 
 import testing_utilities as test_utils
-from api.common.pg_utilities import insert_data_from_csv, truncate_table
-from api.common.utilities import now_with_tz, set_running_unit_tests
-from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from testing_utilities import test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
