@@ -17,13 +17,23 @@
 #
 import psycopg2
 
-from api.common.pg_utilities import run_sql_script_file, execute_non_query
+import common.utilities as utils
+from common.pg_utilities import run_sql_script_file, execute_non_query
 
 
 VIEW_SQL_FOLDER = './'
+ENVIRONMENT_NAME = utils.get_environment_name()
+
+
+def emph(string):
+    return f'\033[92m\033[1m{string}\033[0m'
 
 
 def create_all_views():
+    def execute_sql_script(script_file, view_name):
+        run_sql_script_file(VIEW_SQL_FOLDER + script_file, None)
+        print(f'Successfully created or updated database view {emph(view_name)} on environment {emph(ENVIRONMENT_NAME)}')
+
     files_and_views = [
         ('view_project_group_users_create.sql', 'project_group_users'),
         ('view_project_testgroup_users_create.sql', 'project_testgroup_users'),
@@ -34,11 +44,11 @@ def create_all_views():
 
     for file, view in files_and_views:
         try:
-            run_sql_script_file(VIEW_SQL_FOLDER + file, None)
+            execute_sql_script(file, view)
         except psycopg2.errors.InvalidTableDefinition:  # added this here because CREATE OR REPLACE cannot rename columns (https://dba.stackexchange.com/a/589)
             sql = f'DROP VIEW IF EXISTS public.{view};'
             execute_non_query(sql, None, None)
-            run_sql_script_file(VIEW_SQL_FOLDER + file, None)
+            execute_sql_script(file, view)
 
 
 if __name__ == "__main__":
