@@ -201,6 +201,8 @@ class TestNotifications(test_utils.DbTestCase):
         posting_result, marking_result = np.process_user_login(notification)
         self.assertEqual(HTTPStatus.UNAUTHORIZED, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
+        notification = get_notifications()[0]
+        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
 
     def test_07_fail_post_login_invalid_data(self):
         """
