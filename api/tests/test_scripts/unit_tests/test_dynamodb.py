@@ -16,10 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from dateutil import parser
-
 import testing_utilities as test_utils
-from common.utilities import set_running_unit_tests, DetailedValueError, now_with_tz
+from common.utilities import DetailedValueError
 from common.dynamodb_utilities import delete_all, get_table, scan, put_item, get_item, delete_item, update_item
 
 TEST_TABLE_NAME = 'testdata'

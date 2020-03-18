@@ -17,13 +17,11 @@
 #
 
 import json
-import re
 from http import HTTPStatus
 
 import api.endpoints.project as p
 import testing_utilities as test_utils
-from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
-
+from testing_utilities import test_get
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
