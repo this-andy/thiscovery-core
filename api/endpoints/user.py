@@ -101,10 +101,6 @@ def get_user_by_id_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     user_id = event['pathParameters']['id']
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
 
@@ -145,10 +141,6 @@ def get_user_by_email_api(event, context):
     """
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     parameters = event['queryStringParameters']
 
@@ -227,10 +219,6 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 def patch_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     # get info supplied to api call
     user_id = event['pathParameters']['id']
@@ -345,10 +333,6 @@ def create_user(user_json, correlation_id):
 def create_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     user_json = json.loads(event['body'])
     logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})

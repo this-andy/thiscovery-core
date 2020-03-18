@@ -118,10 +118,6 @@ def create_user_group_membership_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     try:
         ugm_json = json.loads(event['body'])
         logger.info('API call', extra={'ugm_json': ugm_json, 'correlation_id': correlation_id, 'event': event})
