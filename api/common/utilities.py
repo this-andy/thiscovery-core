@@ -47,10 +47,7 @@ def namespace2profile(namespace):
     """
     Maps namespaces in dev_config.py to profiles in ~/.aws/credentials
     """
-    THISCOVERY_PROD_PROFILE = "595383251813_AdministratorAccess"
-    THISCOVERY_STAGING_PROFILE = "756495104356_AdministratorAccess"
-    THISCOVERY_AFS25_PROFILE = "266657513168_AdministratorAccess"
-    THISCOVERY_AMP205_PROFILE = "513939673472_AdministratorAccess"
+    from api.local.secrets import THISCOVERY_PROD_PROFILE, THISCOVERY_STAGING_PROFILE, THISCOVERY_AFS25_PROFILE, THISCOVERY_AMP205_PROFILE
 
     namespace2profile_map = {
         '/prod/': THISCOVERY_PROD_PROFILE,
