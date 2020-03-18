@@ -145,10 +145,8 @@ def process_user_login(notification):
         hs_client = HubSpotClient()
         posting_result = hs_client.post_user_login_to_crm(login_details, correlation_id)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
-        posting_result
         if posting_result == http.HTTPStatus.NO_CONTENT:
             marking_result = mark_notification_processed(notification, correlation_id)
-            return posting_result, marking_result
         elif posting_result == http.HTTPStatus.BAD_REQUEST:
             raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
                                            details={'posting_result': posting_result, 'correlation_id': correlation_id})
@@ -164,10 +162,11 @@ def process_user_login(notification):
         else:
             raise utils.DetailedValueError('Received an error from the HubSpot API',
                                            details={'posting_result': posting_result, 'correlation_id': correlation_id})
-
     except Exception as ex:
         error_message = str(ex)
-        mark_notification_failure(notification, error_message, correlation_id)
+        marking_result = mark_notification_failure(notification, error_message, correlation_id)
+    finally:
+        return posting_result, marking_result
 # endregion
 
 

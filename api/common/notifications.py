@@ -101,7 +101,7 @@ def mark_notification_failure(notification, error_message, correlation_id):
             NotificationAttributes.ERROR_MESSAGE.value: error_message_
         }
         ddb = ddb_utils.Dynamodb()
-        ddb.update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
+        return ddb.update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
     notification_id = notification['id']
     fail_count = get_fail_count(notification) + 1
@@ -113,4 +113,4 @@ def mark_notification_failure(notification, error_message, correlation_id):
         raise utils.DetailedValueError(f'Notification processing failed', errorjson)
     else:
         status = NotificationStatus.RETRYING.value
-        update_notification_item(status, fail_count)
+        return update_notification_item(status, fail_count)

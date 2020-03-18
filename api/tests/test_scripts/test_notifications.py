@@ -99,9 +99,9 @@ class TestNotifications(test_utils.DbTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        hs_client = HubSpotClient()
+        cls.hs_client = HubSpotClient()
         user_data_csv = os.path.join(TEST_DATA_FOLDER, 'user_data_PSFU.csv')
-        test_utils.post_sample_users_to_crm(user_data_csv, hs_client)
+        test_utils.post_sample_users_to_crm(user_data_csv, cls.hs_client)
 
     def setUp(self):
         """
@@ -188,6 +188,18 @@ class TestNotifications(test_utils.DbTestCase):
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_user_login(notification)
         self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
+
+    def test_09_process_login_with_expired_token(self):
+        """
+        Tests notification_process.process_user_login with an expired HubSpot token
+        """
+        expired_token = self.hs_client.get_expired_token_from_database()
+        self.hs_client.save_token(expired_token, correlation_id=None)
+        create_login_notification(TEST_USER_02_JSON)
+        notification = get_notifications()[0]
+        posting_result, marking_result = np.process_user_login(notification)
+        self.assertEqual(HTTPStatus.UNAUTHORIZED, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
 
     def test_07_fail_post_login_invalid_data(self):

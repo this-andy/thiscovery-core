@@ -57,12 +57,18 @@ class HubSpotClient:
         self.logger = get_logger()
 
     # region token management
-    def get_token_from_database(self):
+    def get_token_from_database(self, item_name='hubspot'):
         try:
-            return self.ddb.get_item('tokens', 'hubspot', self.correlation_id)['details']
+            return self.ddb.get_item('tokens', item_name, self.correlation_id)['details']
         except:
-            self.logger.warning('could not retrieve hubspot token from dynamodb')
+            self.logger.warning(f'could not retrieve hubspot token from dynamodb item {item_name}')
             return None
+
+    def get_expired_token_from_database(self):
+        """
+        An expired token is useful only for testing.
+        """
+        return self.get_token_from_database(item_name='hubspot-expired')
 
     def get_hubspot_connection_secret(self):
         """
