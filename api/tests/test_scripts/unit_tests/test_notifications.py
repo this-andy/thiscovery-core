@@ -17,7 +17,6 @@
 #
 import os
 
-from dateutil import parser
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
@@ -27,12 +26,10 @@ from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
 from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
-from common.utilities import now_with_tz, get_country_name, DetailedValueError
+from common.utilities import get_country_name, DetailedValueError
 
 
 TIME_TOLERANCE_SECONDS = 10
-
-TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
 
 # region test users
 TEST_USER_01_JSON = {
@@ -100,7 +97,7 @@ class TestNotifications(test_utils.DbTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.hs_client = HubSpotClient()
-        user_data_csv = os.path.join(TEST_DATA_FOLDER, 'user_data_PSFU.csv')
+        user_data_csv = os.path.join(test_utils.TEST_DATA_FOLDER, 'user_data_PSFU.csv')
         test_utils.post_sample_users_to_crm(user_data_csv, cls.hs_client)
 
     def setUp(self):

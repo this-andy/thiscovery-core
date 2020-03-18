@@ -39,10 +39,6 @@ def list_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     logger.info('API call', extra={'correlation_id': correlation_id, 'event': event})
     return {
         "statusCode": HTTPStatus.OK,
@@ -80,10 +76,6 @@ def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
 def get_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     project_id = event['pathParameters']['id']
     logger.info('API call', extra={'project_id': project_id, 'correlation_id': correlation_id, 'event': event})
@@ -165,10 +157,6 @@ def get_project_status_for_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
-
     params = event['queryStringParameters']
     user_id = params['user_id']  # all public id are uuids
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
@@ -188,10 +176,6 @@ def get_project_status_for_external_user_api(event, context):
     """
     logger = event['logger']
     correlation_id = event['correlation_id']
-
-    if utils.triggered_by_heartbeat(event):
-        logger.info('API call (heartbeat)', extra={'event': event})
-        return
 
     params = event['queryStringParameters']
     user_id = params['user_id']

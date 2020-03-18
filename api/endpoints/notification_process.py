@@ -54,8 +54,9 @@ def process_notifications(event, context):
             # add to list for later processing
             login_notifications.append(notification)
         else:
-            # todo details
-            raise Exception
+            error_message = f'Processing of {notification_type} notifications not implemented yet'
+            logger.error(error_message)
+            raise NotImplementedError(error_message)
 
     for signup_notification in signup_notifications:
         process_task_signup(signup_notification)

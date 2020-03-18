@@ -17,27 +17,19 @@
 #
 
 import json
-import uuid
-from dateutil import parser
 from http import HTTPStatus
-from time import sleep
-from unittest import TestCase
 
 import api.endpoints.notification_process as np
 
-
 import testing_utilities as test_utils
-from api.common.dev_config import TIMEZONE_IS_BST, UNIT_TEST_NAMESPACE
+from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
-from api.common.notifications import delete_all_notifications, get_notifications, NotificationStatus, NotificationType, \
+from api.common.notifications import get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
-from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
-from api.common.utilities import now_with_tz, set_running_unit_tests
 from api.endpoints.user import create_user_api
 from api.endpoints.user_task import list_user_tasks_api, create_user_task_api
 from api.endpoints.user_project import list_user_projects_api
-from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
-
+from testing_utilities import test_get, test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

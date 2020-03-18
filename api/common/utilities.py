@@ -180,11 +180,6 @@ def get_elapsed_ms(start_time):
     return elapsed_ms
 
 
-def triggered_by_heartbeat(event):
-    # return ('detail-type' in event and event['detail-type'] == 'Scheduled Event')
-    return (event is not None and 'heartbeat' in event)
-
-
 def obfuscate_data(input, item_key_path):
     try:
         key = item_key_path[0]

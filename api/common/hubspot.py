@@ -20,7 +20,7 @@ import json
 import requests
 from urllib.error import HTTPError
 from http import HTTPStatus
-from datetime import datetime
+from datetime import datetime, timezone
 
 import common.dynamodb_utilities as ddb_utils
 from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
@@ -472,9 +472,8 @@ def hubspot_timestamp(datetime_string: str):
     return datetime_timestamp
 
 
-def hubspot_timestamp_to_datetime(hubspot_timestamp: int):
-    # TODO: Evaluate if we are likely to need this function. It is not currently used anywhere.
-    timestamp = hubspot_timestamp/1000
-    dt = datetime.fromtimestamp(timestamp)
+def hubspot_timestamp_to_datetime(hubspot_timestamp):
+    timestamp = int(hubspot_timestamp)/1000
+    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
     return dt
 # endregion
