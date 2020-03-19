@@ -79,7 +79,7 @@ class HubSpotClient:
 
     def create_expired_token_item(self):
         """
-        Creates an hubspot-expired item in Dynamodb with the value of existing token (hubspot). Notice that the expired token might still be valie on
+        Creates an hubspot-expired item in Dynamodb with the value of existing token (hubspot). Notice that the expired token might still be valid on
         creation.
 
         Returns:
