@@ -17,12 +17,10 @@
 #
 
 import json
-import os
 from http import HTTPStatus
 from unittest import TestCase
 
-from api.tests.test_scripts.testing_utilities import test_get, tests_running_on_aws
-from api.common.dev_config import TEST_ON_AWS
+from testing_utilities import test_get, tests_running_on_aws
 from api.common.utilities import set_running_unit_tests
 
 

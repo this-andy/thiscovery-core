@@ -16,16 +16,10 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import json
-from http import HTTPStatus
-
 import api.endpoints.progress_process as prog_proc
 import api.endpoints.project as p
 import api.endpoints.user_task as ut
-import common.pg_utilities as pg_utils
 import testing_utilities as test_utils
-
-from api.common.utilities import set_running_unit_tests
 
 TEST_DATA_FOLDER = '../test_data/'
 

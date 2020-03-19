@@ -18,14 +18,11 @@
 
 import json
 from http import HTTPStatus
-from unittest import TestCase
 
 import testing_utilities as test_utils
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api, get_project_status_for_external_user_api
-from api.common.pg_utilities import insert_data_from_csv_multiple, truncate_table_multiple
-from api.common.utilities import set_running_unit_tests
-from api.tests.test_scripts.testing_utilities import test_get, test_post, test_patch
+from testing_utilities import test_get
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
