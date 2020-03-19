@@ -5,6 +5,7 @@ import subprocess
 import sys
 import requests
 
+import api.common.utilities as utils
 from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
 
 
@@ -23,8 +24,9 @@ def slack_message(environment, branch, message=None):
 
 
 def stackery_deployment(environment, branch):
+    profile = utils.namespace2profile(utils.name2namespace(environment))
     try:
-        subprocess.run(['stackery', 'deploy', '--stack-name=thiscovery-core', '--aws-profile=default',
+        subprocess.run(['stackery', 'deploy', '--stack-name=thiscovery-core', f'--aws-profile={profile}',
                         f'--env-name={environment}', f'--git-ref={branch}'], check=True,
                        stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as err:
@@ -81,7 +83,7 @@ def deploy(environment, branch=None):
 
 def main(environment):
     target_branch = get_git_branch()
-    deployment_confirmation(target_environment, target_branch)
+    deployment_confirmation(environment, target_branch)
     deploy(environment, target_branch)
     slack_message(environment, target_branch)
 
