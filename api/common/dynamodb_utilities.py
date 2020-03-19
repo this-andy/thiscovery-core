@@ -16,12 +16,10 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
 import common.utilities as utils
-from common.utilities import get_aws_region, get_environment_name, get_logger, DetailedValueError, now_with_tz, new_correlation_id
 
 
 STACK_NAME = 'thiscovery-core'
@@ -36,15 +34,28 @@ class Dynamodb(utils.BaseClient):
         return self.client.Table('-'.join([STACK_NAME, self.aws_namespace, table_name]))
 
     def put_item(self, table_name: str, key, item_type: str, item_details, item: dict, update_allowed=False, correlation_id=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Table.put_item
+        Args:
+            table_name:
+            key:
+            item_type:
+            item_details:
+            item:
+            update_allowed:
+            correlation_id:
+
+        Returns:
+        """
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
         try:
             table = self.get_table(table_name)
 
             item['id'] = str(key)
             item['type'] = item_type
             item['details'] = item_details
-            now = str(now_with_tz())
+            now = str(utils.now_with_tz())
             item['created'] = now
             item['modified'] = now
 
@@ -56,16 +67,16 @@ class Dynamodb(utils.BaseClient):
         except ClientError as ex:
             error_code = ex.response['Error']['Code']
             errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(key), 'correlation_id': correlation_id}
-            raise DetailedValueError('Dynamodb raised an error', errorjson)
+            raise utils.DetailedValueError('Dynamodb raised an error', errorjson)
 
     def update_item(self, table_name: str, key: str, name_value_pairs: dict, correlation_id=None):
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
 
         table = self.get_table(table_name)
         key_json = {'id': key}
         update_expr = 'SET #modified = :m '
-        values_expr = {':m': str(now_with_tz())}
+        values_expr = {':m': str(utils.now_with_tz())}
         attr_names_expr = {'#modified': 'modified'}  # not strictly necessary, but allows easy addition of names later
         param_count = 1
         for name,  value in name_value_pairs.items():
@@ -97,7 +108,7 @@ class Dynamodb(utils.BaseClient):
 
     def scan(self, table_name: str, filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
         table = self.get_table(table_name)
 
         # accept string but make it into a list for later processing
@@ -121,7 +132,7 @@ class Dynamodb(utils.BaseClient):
 
     def get_item(self, table_name: str, key: str, correlation_id=None):
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
         table = self.get_table(table_name)
         key_json = {'id': key}
         self.logger.info('dynamodb get', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
@@ -134,7 +145,7 @@ class Dynamodb(utils.BaseClient):
 
     def delete_item(self, table_name: str, key: str, correlation_id=None):
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
         table = self.get_table(table_name)
         key_json = {'id': key}
         self.logger.info('dynamodb delete', extra={'table_name': table_name, 'key': key, 'correlation_id': correlation_id})
@@ -142,7 +153,7 @@ class Dynamodb(utils.BaseClient):
 
     def delete_all(self, table_name: str, correlation_id=None):
         if correlation_id is None:
-            correlation_id = new_correlation_id()
+            correlation_id = utils.new_correlation_id()
         table = self.get_table(table_name)
         items = self.scan(table_name)
         for item in items:
