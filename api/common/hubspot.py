@@ -23,6 +23,7 @@ from http import HTTPStatus
 from datetime import datetime, timezone
 
 import common.dynamodb_utilities as ddb_utils
+import common.utilities as utils
 from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -40,6 +41,10 @@ TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
 
 class HubSpotClient:
+    tokens_table_name = 'tokens'
+    token_item_id = 'hubspot'
+    expired_token_item_id = 'hubspot-expired'
+    token_item_type = 'oAuth_token'
 
     def __init__(self, correlation_id=None):
         self.correlation_id = correlation_id
@@ -57,12 +62,46 @@ class HubSpotClient:
         self.logger = get_logger()
 
     # region token management
-    def get_token_from_database(self):
+    def get_token_from_database(self, item_name=None):
+        if item_name is None:
+            item_name = self.token_item_id
+
         try:
-            return self.ddb.get_item('tokens', 'hubspot', self.correlation_id)['details']
+            return self.ddb.get_item(self.tokens_table_name, item_name, self.correlation_id)['details']
         except:
-            self.logger.warning('could not retrieve hubspot token from dynamodb')
+            self.logger.warning(f'could not retrieve hubspot token from dynamodb item {item_name}')
             return None
+
+    def _put_token_in_ddb(self, token, item_name=None):
+        if item_name is None:
+            item_name = self.token_item_id
+        return self.ddb.put_item(self.tokens_table_name, item_name, self.token_item_type, token, dict(), correlation_id=self.correlation_id)
+
+    def create_expired_token_item(self):
+        """
+        Creates an hubspot-expired item in Dynamodb with the value of existing token (hubspot). Notice that the expired token might still be valid on
+        creation.
+
+        Returns:
+
+        """
+        token = self.get_token_from_database()
+        if not token:
+            raise utils.ObjectDoesNotExistError('Hubspot token not found', details={'correlation_id': self.correlation_id})
+        response = self._put_token_in_ddb(token, item_name=self.expired_token_item_id)
+        # todo: add response check here; for now log its value
+        self.logger.debug('put_item response', extra={'response': response, 'correlation_id': self.correlation_id})
+        return token
+
+    def get_expired_token_from_database(self):
+        """
+        An expired token is useful only for testing.
+        """
+        expired_token = self.get_token_from_database(item_name=self.expired_token_item_id)
+        if expired_token is None:
+            self.logger.warning('Could not find an expired token; creating one now so returned token might still be valid')
+            expired_token = self.create_expired_token_item()
+        return expired_token
 
     def get_hubspot_connection_secret(self):
         """

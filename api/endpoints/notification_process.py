@@ -139,18 +139,35 @@ def process_task_signup(notification):
 def process_user_login(notification):
     logger = get_logger()
     correlation_id = new_correlation_id()
-
+    logger.info('Processing user login notification', extra={'notification': notification, 'correlation_id': correlation_id})
     try:
         # get basic data out of notification
         login_details = notification['details']
         hs_client = HubSpotClient()
         posting_result = hs_client.post_user_login_to_crm(login_details, correlation_id)
-        marking_result = mark_notification_processed(notification, correlation_id)
-        return posting_result, marking_result
-
+        logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
+        if posting_result == http.HTTPStatus.NO_CONTENT:
+            marking_result = mark_notification_processed(notification, correlation_id)
+        elif posting_result == http.HTTPStatus.BAD_REQUEST:
+            raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
+                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
+        elif posting_result == http.HTTPStatus.UNAUTHORIZED:
+            raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
+                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
+        elif posting_result == http.HTTPStatus.NOT_FOUND:
+            raise utils.DetailedValueError('Received a NOT FOUND (401) response from the HubSpot API',
+                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
+        elif posting_result == http.HTTPStatus.INTERNAL_SERVER_ERROR:
+            raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
+                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
+        else:
+            raise utils.DetailedValueError('Received an error from the HubSpot API',
+                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
     except Exception as ex:
         error_message = str(ex)
-        mark_notification_failure(notification, error_message, correlation_id)
+        marking_result = mark_notification_failure(notification, error_message, correlation_id)
+    finally:
+        return posting_result, marking_result
 # endregion
 
 
