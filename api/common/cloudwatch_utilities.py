@@ -75,7 +75,9 @@ class CloudWatch(utils.BaseClient):
         alarm_actions_default = list()
         if ('thiscovery-core-prod' in kwargs['AlarmName']) or ('thiscovery-core-staging' in kwargs['AlarmName']):
             actions_enabled_default = True
-            alarm_actions_default = ['arn:aws:sns:eu-west-1:595383251813:AWS-Alerts']
+            from api.local.secrets import ACCOUNT_MAP
+            account_number = ACCOUNT_MAP[utils.get_environment_name()]
+            alarm_actions_default = [f'arn:aws:sns:eu-west-1:{account_number}:AWS-Alerts']
 
         # if parameters below not in kwargs, set default
         kwargs['Threshold'] = kwargs.get('Threshold', 1.5)
