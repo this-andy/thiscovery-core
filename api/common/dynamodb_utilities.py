@@ -70,27 +70,40 @@ class Dynamodb(utils.BaseClient):
             raise utils.DetailedValueError('Dynamodb raised an error', errorjson)
 
     def update_item(self, table_name: str, key: str, name_value_pairs: dict, correlation_id=None):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Table.update_item
+
+        Args:
+            table_name:
+            key:
+            name_value_pairs:
+            correlation_id:
+
+        Returns:
+
+        Notes:
+            US 2951 proposes adding support for partial map updates to this function.
+        """
         if correlation_id is None:
             correlation_id = utils.new_correlation_id()
 
         table = self.get_table(table_name)
         key_json = {'id': key}
         update_expr = 'SET #modified = :m '
-        values_expr = {':m': str(utils.now_with_tz())}
+        values_expr = {
+            ':m': name_value_pairs.pop(
+                'modified', str(utils.now_with_tz())
+            )
+        }
         attr_names_expr = {'#modified': 'modified'}  # not strictly necessary, but allows easy addition of names later
         param_count = 1
         for name,  value in name_value_pairs.items():
             param_name = ':p' + str(param_count)
-            map_name = None
             if name == 'status':   # todo generalise this to other reserved words, and ensure it only catches whole words
-                if '.' in name:
-                    map_name = name.split('.')[0]
                 attr_name = '#a' + str(param_count)
                 attr_names_expr[attr_name] = 'status'
             else:
                 attr_name = name
-            if map_name is not None:
-                attr_name = map_name + '.' + attr_name
             update_expr += ', ' + attr_name + ' = ' + param_name
 
             values_expr[param_name] = value

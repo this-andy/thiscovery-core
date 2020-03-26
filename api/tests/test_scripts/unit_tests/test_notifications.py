@@ -256,8 +256,13 @@ class TestNotifications(test_utils.DbTestCase):
         notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
         self.ddb_client.update_item(
-            notific.NOTIFICATION_TABLE_NAME, notification['id'],
-            {'modified': eight_days_ago.isoformat(), NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value})
-        deleted_notifications = np.clear_notification_queue()
+            table_name=notific.NOTIFICATION_TABLE_NAME,
+            key=notification['id'],
+            name_value_pairs={
+                'modified': eight_days_ago.isoformat(),
+                NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value,
+            }
+        )
+        deleted_notifications = np.clear_notification_queue(dict(), None)
         self.assertEqual(1, len(deleted_notifications))
         self.assertEqual(notification['id'], deleted_notifications[0]['id'])
