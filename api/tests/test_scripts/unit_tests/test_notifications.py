@@ -111,6 +111,31 @@ class TestNotifications(test_utils.DbTestCase):
         """
         delete_all_notifications()
 
+    def clear_notification_queue_setup(self, modified_datetime):
+        """
+        Creates a registration notification in ddb and updates its status to processed and modified field to modified_datetime
+
+        Args:
+            modified_datetime (datetime): The "modified" field of the created notification will be set to this value
+
+        Returns:
+            Tuple: (Id of created notification, list of notificatioins deleted by clear_notification_queue)
+        """
+        create_registration_notification()
+        notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
+        self.ddb_client.update_item(
+            table_name=notific.NOTIFICATION_TABLE_NAME,
+            key=notification['id'],
+            name_value_pairs={
+                'modified': modified_datetime.isoformat(),
+                NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value,
+            }
+        )
+        return (
+            notification['id'],
+            np.clear_notification_queue(dict(), None)
+        )
+
     def test_01_post_registration(self):
         """
         Tests the notification process associated with a new registration
@@ -251,18 +276,14 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(3, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
 
-    def test_09_clear_notification_queue(self):
-        create_registration_notification()
-        notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
+    def test_09_clear_notification_queue_deletes_old_notification(self):
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
-        self.ddb_client.update_item(
-            table_name=notific.NOTIFICATION_TABLE_NAME,
-            key=notification['id'],
-            name_value_pairs={
-                'modified': eight_days_ago.isoformat(),
-                NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value,
-            }
-        )
-        deleted_notifications = np.clear_notification_queue(dict(), None)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(modified_datetime=eight_days_ago)
         self.assertEqual(1, len(deleted_notifications))
-        self.assertEqual(notification['id'], deleted_notifications[0]['id'])
+        self.assertEqual(notification_id, deleted_notifications[0]['id'])
+
+    def test_10_clear_notification_queue_leaves_recent_notification_untouched(self):
+        six_days_ago = utils.now_with_tz() - timedelta(days=6)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(modified_datetime=six_days_ago)
+        self.assertTrue(notification_id)
+        self.assertEqual(0, len(deleted_notifications))
