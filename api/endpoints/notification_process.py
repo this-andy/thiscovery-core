@@ -140,6 +140,8 @@ def process_user_login(notification):
     logger = get_logger()
     correlation_id = new_correlation_id()
     logger.info('Processing user login notification', extra={'notification': notification, 'correlation_id': correlation_id})
+    posting_result = None
+    marking_result = None
     try:
         # get basic data out of notification
         login_details = notification['details']
@@ -155,7 +157,7 @@ def process_user_login(notification):
             raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
                                            details={'posting_result': posting_result, 'correlation_id': correlation_id})
         elif posting_result == http.HTTPStatus.NOT_FOUND:
-            raise utils.DetailedValueError('Received a NOT FOUND (401) response from the HubSpot API',
+            raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
                                            details={'posting_result': posting_result, 'correlation_id': correlation_id})
         elif posting_result == http.HTTPStatus.INTERNAL_SERVER_ERROR:
             raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
