@@ -23,8 +23,8 @@ ALARM_PREFIX_LAMBDA_DURATION = 'LambdaDuration'
 
 class CloudWatch(utils.BaseClient):
 
-    def __init__(self):
-        super().__init__('cloudwatch')
+    def __init__(self, profile_name=None):
+        super().__init__('cloudwatch', profile_name=profile_name)
 
     def get_alarms(self, prefix=None):
         """
@@ -33,14 +33,29 @@ class CloudWatch(utils.BaseClient):
         if prefix is None:
             prefix = f"thiscovery-core-{super().get_namespace()}"
         try:
+            kwargs = dict()
+            if prefix:
+                kwargs['AlarmNamePrefix'] = prefix
             self.logger.info('Getting cloudwatch alarms', extra={'prefix': prefix})
-            response = self.client.describe_alarms(
-                AlarmNamePrefix=prefix,
-            )
+            response = self.client.describe_alarms(**kwargs)
             assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.describe_alarms failed with response: {response}'
             return response['MetricAlarms']
         except Exception as err:
             raise err
+
+    def put_metric_alarm(self, **kwargs):
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cloudwatch.html#CloudWatch.Client.put_metric_alarm
+
+        Args:
+            **kwargs: Parameters that will be passed to boto3 put_metric_alarm method; MUST contain AlarmName
+
+        Returns:
+            Status code returned by the boto3 client call
+        """
+        response = self.client.put_metric_alarm(**kwargs)
+        assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_metric_alarm failed with response: {response}'
+        return response['ResponseMetadata']['HTTPStatusCode']
 
     def get_lambda_duration_alarms(self):
         return self.get_alarms(prefix=f"thiscovery-core-{super().get_namespace()}-{ALARM_PREFIX_LAMBDA_DURATION}")
@@ -60,40 +75,30 @@ class CloudWatch(utils.BaseClient):
         alarm_actions_default = list()
         if ('thiscovery-core-prod' in kwargs['AlarmName']) or ('thiscovery-core-staging' in kwargs['AlarmName']):
             actions_enabled_default = True
-            alarm_actions_default = ['arn:aws:sns:eu-west-1:595383251813:AWS-Alerts']
+            from api.local.secrets import ACCOUNT_MAP
+            account_number = ACCOUNT_MAP[utils.get_environment_name()]
+            alarm_actions_default = [f'arn:aws:sns:eu-west-1:{account_number}:AWS-Alerts']
 
         # if parameters below not in kwargs, set default
         kwargs['Threshold'] = kwargs.get('Threshold', 1.5)
         kwargs['ActionsEnabled'] = kwargs.get('ActionsEnabled', actions_enabled_default)
         kwargs['AlarmActions'] = kwargs.get('AlarmActions', alarm_actions_default)
 
-        try:
-            response = self.client.put_metric_alarm(
-                AlarmName=kwargs['AlarmName'],
-                Dimensions=[{
-                    'Name': 'FunctionName',
-                    'Value': function_name,
-                }],
-                ComparisonOperator='GreaterThanThreshold',
-                EvaluationPeriods=1,
-                MetricName='Duration',
-                Namespace='AWS/Lambda',
-                Period=300,
-                Statistic='Maximum',
-                Threshold=kwargs['Threshold'],
-                TreatMissingData='notBreaching',
-                Unit='Seconds',
-                ActionsEnabled=kwargs['ActionsEnabled'],
-                AlarmActions=kwargs['AlarmActions'],
-            )
-
-            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, f'call to boto3.client.put_metric_alarm failed with response: {response}'
-            return response['ResponseMetadata']['HTTPStatusCode']
-        except Exception as err:
-            raise err
-
-    # def create_lambda_duration_alarm(self, environment):
-    #     pass
+        return self.put_metric_alarm(
+            Dimensions=[{
+                'Name': 'FunctionName',
+                'Value': function_name,
+            }],
+            ComparisonOperator='GreaterThanThreshold',
+            EvaluationPeriods=1,
+            MetricName='Duration',
+            Namespace='AWS/Lambda',
+            Period=300,
+            Statistic='Maximum',
+            TreatMissingData='notBreaching',
+            Unit='Seconds',
+            **kwargs,
+        )
 
 
 class CloudWatchLogs(utils.BaseClient):
