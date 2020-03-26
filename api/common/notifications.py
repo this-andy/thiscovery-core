@@ -91,8 +91,6 @@ def mark_notification_processed(notification, correlation_id):
 
 
 def mark_notification_failure(notification, error_message, correlation_id):
-    logger = utils.get_logger()
-    logger.error('Error processing notification', extra={'error_message': error_message, 'notification': notification, 'correlation_id': correlation_id})
 
     def update_notification_item(status_, fail_count_, error_message_=error_message):
         notification_updates = {
@@ -103,10 +101,14 @@ def mark_notification_failure(notification, error_message, correlation_id):
         ddb = ddb_utils.Dynamodb()
         return ddb.update_item(NOTIFICATION_TABLE_NAME, notification_id, notification_updates, correlation_id)
 
+    logger = utils.get_logger()
+    logger.debug(f'Error processing notification', extra={'error_message': error_message, 'notification': notification, 'correlation_id': correlation_id})
     notification_id = notification['id']
     fail_count = get_fail_count(notification) + 1
     set_fail_count(notification, fail_count)
     if fail_count > MAX_RETRIES:
+        logger.error(f'Failed to process notification after {MAX_RETRIES} attempts', extra={'error_message': error_message, 'notification': notification,
+                                                                                            'correlation_id': correlation_id})
         status = NotificationStatus.DLQ.value
         update_notification_item(status, fail_count)
         errorjson = {'fail_count': fail_count, **notification}
