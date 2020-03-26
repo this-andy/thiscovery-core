@@ -17,11 +17,15 @@
 #
 import os
 
+from datetime import timedelta
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
+import common.notifications as notific
+import common.utilities as utils
 import testing_utilities as test_utils
 
+from common.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
@@ -96,6 +100,7 @@ class TestNotifications(test_utils.DbTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.ddb_client = Dynamodb()
         cls.hs_client = HubSpotClient()
         user_data_csv = os.path.join(test_utils.TEST_DATA_FOLDER, 'user_data_PSFU.csv')
         test_utils.post_sample_users_to_crm(user_data_csv, cls.hs_client)
@@ -245,3 +250,14 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual(3, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
+
+    def test_09_clear_notification_queue(self):
+        create_registration_notification()
+        notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
+        eight_days_ago = utils.now_with_tz() - timedelta(days=8)
+        self.ddb_client.update_item(
+            notific.NOTIFICATION_TABLE_NAME, notification['id'],
+            {'modified': eight_days_ago.isoformat(), NotificationAttributes.STATUS.value: NotificationStatus.PROCESSED.value})
+        deleted_notifications = np.clear_notification_queue()
+        self.assertEqual(1, len(deleted_notifications))
+        self.assertEqual(notification['id'], deleted_notifications[0]['id'])
