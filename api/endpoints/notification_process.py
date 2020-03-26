@@ -22,9 +22,9 @@ import json
 from datetime import datetime, timedelta
 from dateutil import parser, tz
 
-import common.dynamodb_utilities as ddb_utils
 import common.notifications as c_notif
 import common.utilities as utils
+from common.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
 from common.pg_utilities import execute_query
@@ -180,8 +180,9 @@ def clear_notification_queue(event, context):
     processed_notifications = get_notifications('processing_status', ['processed'])
     old_proc_notifications = [x for x in processed_notifications if parser.isoparse(x['modified']) < seven_days_ago]
     deleted_notifications = list()
+    ddb_client = Dynamodb()
     for n in old_proc_notifications:
-        response = ddb_utils.delete_item(c_notif.NOTIFICATION_TABLE_NAME, n['id'], correlation_id=correlation_id)
+        response = ddb_client.delete_item(c_notif.NOTIFICATION_TABLE_NAME, n['id'], correlation_id=correlation_id)
         if response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK:
             deleted_notifications.append(n)
         else:
@@ -191,22 +192,3 @@ def clear_notification_queue(event, context):
             raise Exception(f'Failed to delete notification {n}; received response: {response}')
     return deleted_notifications
 # endregion
-
-
-def dateformattest(event, context):
-    logger = get_logger()
-    logger.info('dateformattest', extra=event)
-    try:
-        test_json = json.loads(event['body'])
-        logger.info('body:', extra=test_json)
-        date_string = test_json['date']
-        date_string = date_string[:19]   # strip timezone and milliseconds
-        format_string = test_json['format']
-        logger.info('dateformattest', extra={'date_string': date_string, 'format_string': format_string})
-        datetime_obj = datetime.strptime(date_string, format_string)
-        created_timestamp = int(datetime_obj.timestamp() * 1000)
-
-        response = {"statusCode": 200, "body": json.dumps({"created_timestamp": str(created_timestamp)})}
-        return response
-    except:
-        logger.error(sys.exc_info()[0])
