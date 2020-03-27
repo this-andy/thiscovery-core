@@ -17,11 +17,15 @@
 #
 import os
 
+from datetime import timedelta
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
+import common.notifications as notific
+import common.utilities as utils
 import testing_utilities as test_utils
 
+from common.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
@@ -96,6 +100,7 @@ class TestNotifications(test_utils.DbTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.ddb_client = Dynamodb()
         cls.hs_client = HubSpotClient()
         user_data_csv = os.path.join(test_utils.TEST_DATA_FOLDER, 'user_data_PSFU.csv')
         test_utils.post_sample_users_to_crm(user_data_csv, cls.hs_client)
@@ -105,6 +110,32 @@ class TestNotifications(test_utils.DbTestCase):
         Deletes all notifications before each test is run to ensure tests are independent
         """
         delete_all_notifications()
+
+    def clear_notification_queue_setup(self, target_status, modified_datetime):
+        """
+        Creates a registration notification in ddb and updates its status to target_status and modified field to modified_datetime
+
+        Args:
+            target_status (str): The "status" field of the created notification will be set to this value
+            modified_datetime (datetime): The "modified" field of the created notification will be set to this value
+
+        Returns:
+            Tuple: (Id of created notification, list of notificatioins deleted by clear_notification_queue)
+        """
+        create_registration_notification()
+        notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
+        self.ddb_client.update_item(
+            table_name=notific.NOTIFICATION_TABLE_NAME,
+            key=notification['id'],
+            name_value_pairs={
+                'modified': modified_datetime.isoformat(),
+                NotificationAttributes.STATUS.value: target_status,
+            }
+        )
+        return (
+            notification['id'],
+            np.clear_notification_queue(dict(), None)
+        )
 
     def test_01_post_registration(self):
         """
@@ -245,3 +276,30 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(NotificationStatus.DLQ.value, notification[NotificationAttributes.STATUS.value])
         self.assertEqual(3, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
+
+    def test_09_clear_notification_queue_deletes_old_notification(self):
+        eight_days_ago = utils.now_with_tz() - timedelta(days=8)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            target_status=NotificationStatus.PROCESSED.value,
+            modified_datetime=eight_days_ago,
+        )
+        self.assertEqual(1, len(deleted_notifications))
+        self.assertEqual(notification_id, deleted_notifications[0]['id'])
+
+    def test_10_clear_notification_queue_leaves_recent_notification_untouched(self):
+        six_days_ago = utils.now_with_tz() - timedelta(days=6)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            target_status=NotificationStatus.PROCESSED.value,
+            modified_datetime=six_days_ago,
+        )
+        self.assertTrue(notification_id)
+        self.assertEqual(0, len(deleted_notifications))
+
+    def test_11_clear_notification_queue_leaves_dlq_notifications_untouched(self):
+        eight_days_ago = utils.now_with_tz() - timedelta(days=8)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            target_status=NotificationStatus.DLQ.value,
+            modified_datetime=eight_days_ago,
+        )
+        self.assertTrue(notification_id)
+        self.assertEqual(0, len(deleted_notifications))
