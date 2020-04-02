@@ -16,7 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 """
-Creates and exports to S3 a snapshot of the staging RDS database
+Creates and exports to S3 a snapshot of the staging RDS database.
+
+WARNING: At the time of writing, it is not possible to import data back into RDS (restore the db) from snapshots created by this script
 """
 from datetime import datetime
 from time import sleep
