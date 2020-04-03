@@ -458,7 +458,8 @@ UPDATE_USER_TASK_PROGRESS_INFO_SQL = '''
     WHERE id = (%s);
 '''
 
-LIST_USER_TASKS_SQL_BASE = '''
+
+LIST_USER_TASKS_SQL = '''
     SELECT 
         up.user_id,
         ut.user_project_id,
@@ -470,22 +471,20 @@ LIST_USER_TASKS_SQL_BASE = '''
         ut.modified,               
         ut.status,
         ut.consented,
-        ut.progress_info         
+        ut.ext_user_task_id,
+        es.short_name as task_provider_name,
+        ut.progress_info,
+        pt.base_url,
+        pt.external_task_id
     FROM 
         public.projects_usertask ut
         inner join public.projects_projecttask pt on pt.id = ut.project_task_id
+        inner join public.projects_externalsystem es on pt.external_system_id = es.id
         inner join public.projects_userproject up on up.id = ut.user_project_id
-'''
-
-LIST_USER_TASKS_BY_USER_SQL = f'''{LIST_USER_TASKS_SQL_BASE}
     WHERE up.user_id = %s
     ORDER BY ut.created
 '''
 
-LIST_USER_TASKS_BY_PROJECT_TASK_SQL = f'''{LIST_USER_TASKS_SQL_BASE}
-    WHERE ut.project_task_id = %s
-    ORDER BY ut.created
-'''
 
 CHECK_IF_USER_TASK_EXISTS_SQL = '''
 SELECT 

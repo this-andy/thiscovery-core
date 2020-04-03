@@ -59,9 +59,7 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     Returns user_task related to user_id and project_task_id or None
     """
     result = [t for t in list_user_tasks_by_user(user_id, correlation_id) if t['project_task_id'] == project_task_id]
-    if result:
-        return result[0]
-    return None
+    return result
 
 
 def list_user_tasks_by_user(user_id, correlation_id=None):
@@ -77,23 +75,22 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
-    return execute_query(sql_q.LIST_USER_TASKS_BY_USER_SQL, (str(user_id),), correlation_id)
+    result = execute_query(sql_q.LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
 
+    # add url field to each user_task in result
+    edited_result = list()
+    for ut in result:
+        user_id = ut['user_id']
+        external_task_id = ut['external_task_id']
+        url = ut['base_url'] + utils.create_url_params(user_id, ut['user_task_id'], external_task_id) + utils.non_prod_env_url_param()
+        ut['url'] = url
+        del ut['base_url']
+        del ut['external_task_id']
+        edited_result.append(ut)
 
-def list_user_tasks_by_project_task(project_task_id, correlation_id=None):
-
-    try:
-        project_task_id = utils.validate_uuid(project_task_id)
-    except utils.DetailedValueError:
-        raise
-
-    # check that project_task exists
-    result = get_project_task(project_task_id, correlation_id)
-    if len(result) == 0:
-        errorjson = {'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
-        raise utils.ObjectDoesNotExistError('project task does not exist', errorjson)
-
-    return execute_query(sql_q.LIST_USER_TASKS_BY_PROJECT_TASK_SQL, (str(project_task_id),), correlation_id)
+    # from pprint import pprint
+    # pprint(edited_result)
+    return edited_result
 
 
 @utils.lambda_wrapper
@@ -103,26 +100,20 @@ def list_user_tasks_api(event, context):
     correlation_id = event['correlation_id']
 
     parameters = event['queryStringParameters']
+    user_id = parameters.get('user_id')
 
-    if not parameters:  # e.g. parameters is None or an empty dict
+    if not user_id:  # e.g. parameters is None or an empty dict
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('This endpoint requires one query parameter (user_id or project_task_id); none were found', errorjson)
-    else:
-        user_id = parameters.get('user_id')
-        project_task_id = parameters.get('project_task_id')
+        raise utils.DetailedValueError('This endpoint requires parameter user_id', errorjson)
 
-    if user_id and project_task_id:
-        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('Please query by either user_id or project_task_id, but not both', errorjson)
-    elif user_id:
+    project_task_id = parameters.get('project_task_id')
+
+    if project_task_id:
+        logger.info('API call', extra={'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': correlation_id, 'event': event})
+        result = filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id)
+    else:
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         result = list_user_tasks_by_user(user_id, correlation_id)
-    elif project_task_id:
-        logger.info('API call', extra={'project_task_id': project_task_id, 'correlation_id': correlation_id, 'event': event})
-        result = list_user_tasks_by_project_task(project_task_id, correlation_id)
-    else:
-        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('Query parameters invalid', errorjson)
 
     return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
 
