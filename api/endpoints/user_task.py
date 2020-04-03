@@ -19,9 +19,10 @@ import uuid
 import json
 from http import HTTPStatus
 
+import common.sql_queries as sql_q
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
-from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, LIST_USER_TASKS_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
+from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
     CREATE_USER_TASK_SQL
 from user import get_user_by_id
 from project import get_project_task
@@ -57,13 +58,13 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     """
     Returns user_task related to user_id and project_task_id or None
     """
-    result = [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    result = [t for t in list_user_tasks_by_user(user_id, correlation_id) if t['project_task_id'] == project_task_id]
     if result:
         return result[0]
     return None
 
 
-def list_user_tasks(user_id, correlation_id):
+def list_user_tasks_by_user(user_id, correlation_id=None):
 
     try:
         user_id = utils.validate_uuid(user_id)
@@ -76,7 +77,23 @@ def list_user_tasks(user_id, correlation_id):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
-    return execute_query(LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
+    return execute_query(sql_q.LIST_USER_TASKS_BY_USER_SQL, (str(user_id),), correlation_id)
+
+
+def list_user_tasks_by_project_task(project_task_id, correlation_id=None):
+
+    try:
+        project_task_id = utils.validate_uuid(project_task_id)
+    except utils.DetailedValueError:
+        raise
+
+    # check that project_task exists
+    result = get_project_task(project_task_id, correlation_id)
+    if len(result) == 0:
+        errorjson = {'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('project task does not exist', errorjson)
+
+    return execute_query(sql_q.LIST_USER_TASKS_BY_PROJECT_TASK_SQL, (str(project_task_id),), correlation_id)
 
 
 @utils.lambda_wrapper
@@ -85,14 +102,29 @@ def list_user_tasks_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    params = event['queryStringParameters']
-    user_id = params['user_id']
-    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
+    parameters = event['queryStringParameters']
 
-    return {
-        "statusCode": HTTPStatus.OK,
-        "body": json.dumps(list_user_tasks(user_id, correlation_id))
-    }
+    if not parameters:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires one query parameter (user_id or project_task_id); none were found', errorjson)
+    else:
+        user_id = parameters.get('user_id')
+        project_task_id = parameters.get('project_task_id')
+
+    if user_id and project_task_id:
+        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('Please query by either user_id or project_task_id, but not both', errorjson)
+    elif user_id:
+        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+        result = list_user_tasks_by_user(user_id, correlation_id)
+    elif project_task_id:
+        logger.info('API call', extra={'project_task_id': project_task_id, 'correlation_id': correlation_id, 'event': event})
+        result = list_user_tasks_by_project_task(project_task_id, correlation_id)
+    else:
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('Query parameters invalid', errorjson)
+
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
 
 
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):

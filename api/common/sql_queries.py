@@ -458,7 +458,7 @@ UPDATE_USER_TASK_PROGRESS_INFO_SQL = '''
     WHERE id = (%s);
 '''
 
-LIST_USER_TASKS_SQL = '''
+LIST_USER_TASKS_SQL_BASE = '''
     SELECT 
         up.user_id,
         ut.user_project_id,
@@ -475,10 +475,17 @@ LIST_USER_TASKS_SQL = '''
         public.projects_usertask ut
         inner join public.projects_projecttask pt on pt.id = ut.project_task_id
         inner join public.projects_userproject up on up.id = ut.user_project_id
+'''
+
+LIST_USER_TASKS_BY_USER_SQL = f'''{LIST_USER_TASKS_SQL_BASE}
     WHERE up.user_id = %s
     ORDER BY ut.created
 '''
 
+LIST_USER_TASKS_BY_PROJECT_TASK_SQL = f'''{LIST_USER_TASKS_SQL_BASE}
+    WHERE ut.project_task_id = %s
+    ORDER BY ut.created
+'''
 
 CHECK_IF_USER_TASK_EXISTS_SQL = '''
 SELECT 
