@@ -19,9 +19,10 @@ import uuid
 import json
 from http import HTTPStatus
 
+import common.sql_queries as sql_q
 import common.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
-from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, LIST_USER_TASKS_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
+from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
     CREATE_USER_TASK_SQL
 from user import get_user_by_id
 from project import get_project_task
@@ -57,13 +58,11 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     """
     Returns user_task related to user_id and project_task_id or None
     """
-    result = [t for t in list_user_tasks(user_id, correlation_id) if t['project_task_id'] == project_task_id]
-    if result:
-        return result[0]
-    return None
+    result = [t for t in list_user_tasks_by_user(user_id, correlation_id) if t['project_task_id'] == project_task_id]
+    return result
 
 
-def list_user_tasks(user_id, correlation_id):
+def list_user_tasks_by_user(user_id, correlation_id=None):
 
     try:
         user_id = utils.validate_uuid(user_id)
@@ -76,7 +75,22 @@ def list_user_tasks(user_id, correlation_id):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
-    return execute_query(LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
+    result = execute_query(sql_q.LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
+
+    # add url field to each user_task in result
+    edited_result = list()
+    for ut in result:
+        user_id = ut['user_id']
+        external_task_id = ut['external_task_id']
+        url = ut['base_url'] + utils.create_url_params(user_id, ut['user_task_id'], external_task_id) + utils.non_prod_env_url_param()
+        ut['url'] = url
+        del ut['base_url']
+        del ut['external_task_id']
+        edited_result.append(ut)
+
+    # from pprint import pprint
+    # pprint(edited_result)
+    return edited_result
 
 
 @utils.lambda_wrapper
@@ -85,14 +99,23 @@ def list_user_tasks_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
 
-    params = event['queryStringParameters']
-    user_id = params['user_id']
-    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id})
+    parameters = event['queryStringParameters']
+    user_id = parameters.get('user_id')
 
-    return {
-        "statusCode": HTTPStatus.OK,
-        "body": json.dumps(list_user_tasks(user_id, correlation_id))
-    }
+    if not user_id:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires parameter user_id', errorjson)
+
+    project_task_id = parameters.get('project_task_id')
+
+    if project_task_id:
+        logger.info('API call', extra={'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': correlation_id, 'event': event})
+        result = filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id)
+    else:
+        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+        result = list_user_tasks_by_user(user_id, correlation_id)
+
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
 
 
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):
