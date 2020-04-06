@@ -51,6 +51,10 @@ USER_TASK_01_EXPECTED_BODY = {
         "status": "active",
         "consented": f"2018-11-06T12:48:40+00:00",
         "progress_info": None,
+        "ext_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
+        "task_provider_name": "Qualtrics",
+        "url": f"https://www.qualtrics.com?user_id=851f7b34-f76c-49de-a382-7e4089b744e2&user_task_id=615ff0e6-0b41-4870-b9db-527345d1d9e5"
+               f"&external_task_id=ext-3a&env={TEST_ENV}",
 }
 
 USER_TASK_02_EXPECTED_BODY = {
@@ -65,14 +69,19 @@ USER_TASK_02_EXPECTED_BODY = {
         "status": "complete",
         "consented": f"2018-11-06T13:02:02+00:00",
         "progress_info": None,
+        "ext_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
+        "task_provider_name": "Cochrane",
+        "url": f"http://crowd.cochrane.org/index.html?user_id=851f7b34-f76c-49de-a382-7e4089b744e2&user_task_id=3c7978a8-c618-4e39-9ca9-7073faafeb56"
+               f"&external_task_id=ext-5a&env={TEST_ENV}",
 }
 # endregion
 
 
 class TestUserTask(test_utils.DbTestCase):
     delete_notifications = True
+    maxDiff = None
 
-    def test_1_list_user_tasks_api_ok(self):
+    def test_01_list_user_tasks_api_ok(self):
         expected_status = HTTPStatus.OK
         expected_body = [USER_TASK_01_EXPECTED_BODY, USER_TASK_02_EXPECTED_BODY]
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2'}
@@ -84,9 +93,33 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         for actual, expected in zip(result_json, expected_body):
             self.assertDictEqual(expected, actual)
-        # self.assertDictEqual(expected_body[1], result_json[1])
 
-    def test_2_list_user_tasks_api_user_not_exists(self):
+    def test_02_list_user_tasks_api_ok_with_project_task_id(self):
+        expected_status = HTTPStatus.OK
+        expected_body = [USER_TASK_02_EXPECTED_BODY]
+        querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a'}
+
+        result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        for actual, expected in zip(result_json, expected_body):
+            self.assertDictEqual(expected, actual)
+
+    def test_03_list_user_tasks_api_project_task_not_exists(self):
+        expected_status = HTTPStatus.OK
+        expected_body = list()
+        querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'project_task_id': 'aa5092b1-b098-42d7-8c62-21493dfe37f3'}
+
+        result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual(expected_body, result_json)
+
+    def test_04_list_user_tasks_api_user_not_exists(self):
         expected_status = HTTPStatus.NOT_FOUND
 
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e3'}
@@ -102,7 +135,7 @@ class TestUserTask(test_utils.DbTestCase):
             ('does not exist' in result_json['message'])
         )
 
-    def test_3_list_user_tasks_api_no_results(self):
+    def test_05_list_user_tasks_api_no_results(self):
         expected_status = HTTPStatus.OK
         expected_body = []
 
@@ -115,7 +148,7 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertEqual(expected_body, result_json)
 
-    def test_4_create_user_task_api_ok_and_duplicate(self):
+    def test_06_create_user_task_api_ok_and_duplicate(self):
         expected_status = HTTPStatus.CREATED
         user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
         user_email = 'sw@email.co.uk'
@@ -215,7 +248,7 @@ class TestUserTask(test_utils.DbTestCase):
             ('already exists' in result_json['message'])
         )
 
-    def test_5_create_user_task_api_with_defaults(self):
+    def test_07_create_user_task_api_with_defaults(self):
         expected_status = HTTPStatus.CREATED
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
@@ -258,7 +291,7 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertEqual('active', status)
         self.assertEqual('ddf0750a-758e-47de-aef3-055d0af41d3d', user_project_id)
 
-    def test_6_create_user_task_api_invalid_status(self):
+    def test_08_create_user_task_api_invalid_status(self):
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
@@ -279,7 +312,7 @@ class TestUserTask(test_utils.DbTestCase):
             ('invalid user_task status' in result_json['message'])
         )
 
-    def test_7_create_user_task_api_task_not_exists(self):
+    def test_09_create_user_task_api_task_not_exists(self):
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
@@ -300,7 +333,7 @@ class TestUserTask(test_utils.DbTestCase):
             ('project_task' in result_json['message'])
         )
 
-    def test_8_create_user_task_api_task_missing_params(self):
+    def test_10_create_user_task_api_task_missing_params(self):
         expected_status = HTTPStatus.BAD_REQUEST
         ut_json = {
             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
