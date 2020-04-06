@@ -103,6 +103,13 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                                                        target_function=get_project_status_for_external_user_api,
                                                        base_url='v2/project-user-status')
 
+    def test_project_status_invalid_user_id(self):
+        user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebd'
+        querystring_parameters = {'user_id': user_id}
+        result = test_get(get_project_status_for_user_api, f'v1/{ENTITY_BASE_URL}', None, querystring_parameters, None)
+        expected_status = HTTPStatus.BAD_REQUEST
+        self.assertEqual(expected_status, result['statusCode'])
+
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
         expected_results = {}

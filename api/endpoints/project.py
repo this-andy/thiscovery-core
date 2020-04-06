@@ -158,7 +158,7 @@ def get_project_status_for_user_api(event, context):
     correlation_id = event['correlation_id']
 
     params = event['queryStringParameters']
-    user_id = params['user_id']  # all public id are uuids
+    user_id = utils.validate_uuid(params['user_id'])
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
     if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
         raise ValueError('Deliberate error raised to test error handling')
@@ -178,7 +178,7 @@ def get_project_status_for_external_user_api(event, context):
     correlation_id = event['correlation_id']
 
     params = event['queryStringParameters']
-    user_id = params['user_id']
+    user_id = utils.validate_uuid(params['user_id'])
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
     return {
         "statusCode": HTTPStatus.OK,
