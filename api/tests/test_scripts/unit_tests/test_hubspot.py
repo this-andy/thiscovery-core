@@ -196,6 +196,8 @@ class TestHubspotClient(TestCase):
             delete_result = self.hs_client.delete_timeline_event_type_property(tle_type_id=tle_type_id, property_id=r_json['id'])
             self.assertEqual(HTTPStatus.NO_CONTENT, delete_result)
         self.assertEqual(0, len(self.hs_client.get_timeline_event_type_properties(tle_type_id)))
+        # cleanup
+        self.hs_client.delete_timeline_event_type(tle_type_id)
 
     def test_tle_03_create_tle(self):
         user_json = TEST_USER_01
