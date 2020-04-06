@@ -47,6 +47,7 @@ class HubSpotClient:
     token_item_type = 'oAuth_token'
 
     def __init__(self, correlation_id=None):
+        self.logger = get_logger()
         self.correlation_id = correlation_id
         self.ddb = ddb_utils.Dynamodb()
         self.tokens = self.get_token_from_database()
@@ -59,7 +60,6 @@ class HubSpotClient:
 
         self.connection_secret = None
         self.app_id = None
-        self.logger = get_logger()
 
     # region token management
     def get_token_from_database(self, item_name=None):
@@ -177,7 +177,7 @@ class HubSpotClient:
         return self.get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
 
     @staticmethod
-    def save_token(new_token, correlation_id):
+    def save_token(new_token, correlation_id=None):
         ddb = ddb_utils.Dynamodb()
         ddb.put_item('tokens', 'hubspot', 'oAuth_token', new_token, {}, True, correlation_id)
     # endregion
@@ -283,13 +283,13 @@ class HubSpotClient:
         }
         return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
 
-    def developer_get(self, url: str, correlation_id):
+    def developer_get(self, url: str, correlation_id=None):
         return self.hubspot_dev_request('GET', url, correlation_id=correlation_id)
 
-    def developer_post(self, url: str, data: dict, correlation_id):
+    def developer_post(self, url: str, data: dict, correlation_id=None):
         return self.hubspot_dev_request('POST', url, data=data, correlation_id=correlation_id)
 
-    def developer_delete(self, url: str, correlation_id):
+    def developer_delete(self, url: str, correlation_id=None):
         return self.hubspot_dev_request('DELETE', url, correlation_id=correlation_id)
     # endregion
 
@@ -329,6 +329,15 @@ class HubSpotClient:
     # endregion
 
     #region Timeline event types
+    def list_timeline_event_types(self):
+        """
+        https://developers.hubspot.com/docs/methods/timeline/get-event-types
+        """
+        self.set_app_id()
+        url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types'
+        return self.developer_get(url)
+
+
     @staticmethod
     def get_timeline_event_type_id(name: str, correlation_id):
         table_id = get_aws_namespace() + name
