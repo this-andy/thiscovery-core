@@ -115,6 +115,10 @@ def list_user_tasks_api(event, context):
         logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
         result = list_user_tasks_by_user(user_id, correlation_id)
 
+    # todo: this was added here as a way of quickly fixing an issue with the thiscovery frontend; review what to do for the longer term
+    if len(result) == 1:
+        result = result[0]
+
     return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
 
 
