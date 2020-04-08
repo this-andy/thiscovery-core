@@ -96,7 +96,8 @@ class TestUserTask(test_utils.DbTestCase):
 
     def test_02_list_user_tasks_api_ok_with_project_task_id(self):
         expected_status = HTTPStatus.OK
-        expected_body = [USER_TASK_02_EXPECTED_BODY]
+        # expected_body = [USER_TASK_02_EXPECTED_BODY]
+        expected_body = USER_TASK_02_EXPECTED_BODY
         querystring_parameters = {'user_id': '851f7b34-f76c-49de-a382-7e4089b744e2', 'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a'}
 
         result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
@@ -104,8 +105,9 @@ class TestUserTask(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
 
         self.assertEqual(expected_status, result_status)
-        for actual, expected in zip(result_json, expected_body):
-            self.assertDictEqual(expected, actual)
+        self.assertDictEqual(expected_body, result_json)
+        # for actual, expected in zip(result_json, expected_body):
+        #     self.assertDictEqual(expected, actual)
 
     def test_03_list_user_tasks_api_project_task_not_exists(self):
         expected_status = HTTPStatus.OK
