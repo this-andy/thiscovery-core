@@ -6,6 +6,7 @@ import sys
 import requests
 
 import api.common.utilities as utils
+from api.common.dev_config import SECRETS_NAMESPACE
 from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
 
 
@@ -90,9 +91,5 @@ def main(environment):
 
 if __name__ == '__main__':
 
-    # target_environment = 'test-afs25'
-    # target_environment = 'dev-afs25'
-    target_environment = 'staging'
-
-    main(environment=target_environment)
+    main(environment=utils.namespace2name(SECRETS_NAMESPACE))
 

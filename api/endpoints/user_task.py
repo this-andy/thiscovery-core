@@ -230,3 +230,34 @@ def create_user_task_api(event, context):
     logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
     new_user_task = create_user_task(ut_json, correlation_id)
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
+
+
+@utils.lambda_wrapper
+@utils.api_error_handler
+def user_task_completed_api(event, context):
+    """
+    Third party systems (eg Qualtrics) use this endpoint to inform Thiscovery that a user has completed a task.
+    Suggest PUT user_task_completed/<user_task_uuid>
+
+    Required outcomes:
+    user_task.status = completed
+    user_task.modified = now
+
+    Note that the standard way to do this would be create a json patch entity and implement full patch functionality in
+    user_task as in other patchable entities.  We do not have time to develop and test that right now, so please omit this.
+    We can come back to it.
+
+    Also, this is fundamentally the wrong approach to be taking to this problem.  We need to be posting events to Thiscovery.
+    So this code will be completely superseded in the medium term.
+
+    Args:
+        event:
+        context:
+
+    Returns:
+
+    """
+    logger = event['logger']
+    correlation_id = event['correlation_id']
+
+
