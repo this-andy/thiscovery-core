@@ -458,6 +458,14 @@ UPDATE_USER_TASK_PROGRESS_INFO_SQL = '''
     WHERE id = (%s);
 '''
 
+UPDATE_USER_TASK_STATUS = '''
+    UPDATE 
+        public.projects_usertask
+    SET 
+        status = (%s),
+        modified = (%s)
+    WHERE id = (%s);
+'''
 
 LIST_USER_TASKS_SQL = '''
     SELECT 
