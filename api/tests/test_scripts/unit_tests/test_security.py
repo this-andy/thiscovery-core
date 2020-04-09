@@ -170,6 +170,12 @@ class TestUserTaskApiEndpoints(TestApiEndpoints):
         })
         self.check_api_is_restricted('POST', ut.create_user_task_api, self.ENTITY_BASE_URL, request_body=body)
 
+    def test_17_set_user_task_completed_api_requires_valid_key(self):
+        querystring_parameters = {
+            "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
+        }
+        self.check_api_is_restricted('PUT', ut.set_user_task_completed_api, "/v1/user-task-completed", querystring_parameters=querystring_parameters)
+
 
 class TestUserExternalAccountApiEndpoints(TestApiEndpoints):
     ENTITY_BASE_URL = 'v1/userexternalaccount'
