@@ -174,7 +174,7 @@ class TestUserTaskApiEndpoints(TestApiEndpoints):
         querystring_parameters = {
             "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
         }
-        self.check_api_is_restricted('PUT', ut.set_user_task_completed_api, "/v1/user-task-completed", querystring_parameters=querystring_parameters)
+        self.check_api_is_restricted('PUT', ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
 
 
 class TestUserExternalAccountApiEndpoints(TestApiEndpoints):
