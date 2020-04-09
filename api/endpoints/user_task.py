@@ -49,7 +49,7 @@ def validate_status(s):
         raise utils.DetailedValueError('invalid user_task status', errorjson)
 
 
-def get_user_task(ut_id, correlation_id):
+def get_user_task(ut_id, correlation_id=None):
     result = execute_query(GET_USER_TASK_SQL, (str(ut_id),), correlation_id)
     return result
 
@@ -230,3 +230,54 @@ def create_user_task_api(event, context):
     logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
     new_user_task = create_user_task(ut_json, correlation_id)
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
+
+
+def set_user_task_completed(ut_id, correlation_id=None):
+
+    utils.validate_uuid(ut_id)
+    # check that user_task exists
+    result = get_user_task(ut_id, correlation_id)
+    if len(result) == 0:
+        errorjson = {'user_task_id': ut_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
+
+    updated_rows_count = execute_non_query(
+        sql_q.UPDATE_USER_TASK_STATUS,
+        (
+            'complete',
+            str(utils.now_with_tz()),
+            str(ut_id),
+        ),
+        correlation_id
+    )
+
+    assert updated_rows_count == 1, f"Failed to update status of user task {ut_id}; updated_rows_count: {updated_rows_count}"
+
+
+@utils.lambda_wrapper
+@utils.api_error_handler
+def set_user_task_completed_api(event, context):
+    """
+    Third party systems (eg Qualtrics) use this endpoint to inform Thiscovery that a user has completed a task.
+
+    Note that the standard way to do this would be create a json patch entity and implement full patch functionality in
+    user_task as in other patchable entities.  We do not have time to develop and test that right now, so please omit this.
+    We can come back to it.
+
+    Also, this is fundamentally the wrong approach to be taking to this problem.  We need to be posting events to Thiscovery.
+    So this code will be completely superseded in the medium term.
+    """
+    logger = event['logger']
+    correlation_id = event['correlation_id']
+
+    parameters = event['queryStringParameters']
+    user_task_id = parameters.get('user_task_id')
+
+    if not user_task_id:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires parameter user_task_id', errorjson)
+
+    logger.info('API call', extra={'user_task_id': user_task_id, 'correlation_id': correlation_id, 'event': event})
+    set_user_task_completed(user_task_id, correlation_id)
+
+    return {"statusCode": HTTPStatus.NO_CONTENT}

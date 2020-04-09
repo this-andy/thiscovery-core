@@ -20,8 +20,9 @@ import json
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
-
+import api.endpoints.user_task as ut
 import testing_utilities as test_utils
+
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import get_notifications, NotificationStatus, NotificationType, \
@@ -356,3 +357,34 @@ class TestUserTask(test_utils.DbTestCase):
             ('message' in result_json) and
             ('mandatory data missing' in result_json['message'])
         )
+
+    def test_11_set_user_task_status_to_complete_ok(self):
+        expected_status = HTTPStatus.NO_CONTENT
+        querystring_parameters = {
+            "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        updated_ut = ut.get_user_task(querystring_parameters['user_task_id'])[0]
+        self.assertEqual('complete', updated_ut['status'])
+        self.now_datetime_test_and_remove(updated_ut, 'modified')
+
+    def test_12_set_user_task_status_to_complete_ut_non_existent(self):
+        expected_status = HTTPStatus.NOT_FOUND
+        querystring_parameters = {
+            "user_task_id": "144b1536-ce5c-4def-bd30-05a361976a90"
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+    def test_13_set_user_task_status_to_complete_ut_id_not_passed(self):
+        expected_status = HTTPStatus.BAD_REQUEST
+        querystring_parameters = {
+            "invalid_parameter": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
