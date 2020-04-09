@@ -49,7 +49,7 @@ def validate_status(s):
         raise utils.DetailedValueError('invalid user_task status', errorjson)
 
 
-def get_user_task(ut_id, correlation_id):
+def get_user_task(ut_id, correlation_id=None):
     result = execute_query(GET_USER_TASK_SQL, (str(ut_id),), correlation_id)
     return result
 

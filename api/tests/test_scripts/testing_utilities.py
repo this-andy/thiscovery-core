@@ -214,6 +214,11 @@ def test_patch(local_method, aws_url, path_parameters=None, request_body=None, c
     return _test_request('PATCH', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
+def test_put(local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, correlation_id=None):
+    return _test_request('PUT', local_method, aws_url, path_parameters=path_parameters,
+                         querystring_parameters=querystring_parameters, request_body=request_body, correlation_id=correlation_id)
+
+
 def post_sample_users_to_crm(user_test_data_csv, hs_client=None):
     if hs_client is None:
         hs_client = HubSpotClient()
