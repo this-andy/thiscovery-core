@@ -50,3 +50,4 @@ api/local/secrets.py
 /deploy_to_aws.py
 /setup-sample-data.py
 /credentials
+/api/local/scratchpad.py
