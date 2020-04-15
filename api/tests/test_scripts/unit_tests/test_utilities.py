@@ -24,6 +24,10 @@ import testing_utilities as test_utils
 from api.common.utilities import set_running_unit_tests
 
 
+class TestOther(test_utils.BaseTestCase):
+    pass
+
+
 class TestCreateAnonymousUrlParams(test_utils.BaseTestCase):
     def test_correct_output(self):
         expected_result = '?ext_user_project_id=a0c2668e-60ae-45fc-95e6-50270c0fb6a8&ext_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f'
