@@ -550,8 +550,8 @@ def create_url_params(user_id, user_task_id, external_task_id):
     return params
 
 
-def non_prod_env_url_param():
-    if get_environment_name() == 'prod':
+def non_prod_env_url_param(target_env='prod'):
+    if get_environment_name() == target_env:
         return ''
     else:
         return '&env=' + get_environment_name()
