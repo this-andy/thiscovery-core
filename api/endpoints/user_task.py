@@ -80,9 +80,13 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     # add url field to each user_task in result
     edited_result = list()
     for ut in result:
-        user_id = ut['user_id']
-        external_task_id = ut['external_task_id']
-        url = ut['base_url'] + utils.create_url_params(user_id, ut['user_task_id'], external_task_id) + utils.non_prod_env_url_param()
+        base_url = ut['base_url']
+        if base_url is not None:
+            user_id = ut['user_id']
+            external_task_id = ut['external_task_id']
+            url = ut['base_url'] + utils.create_url_params(user_id, ut['user_task_id'], external_task_id) + utils.non_prod_env_url_param()
+        else:
+            url = None
         ut['url'] = url
         del ut['base_url']
         del ut['external_task_id']
