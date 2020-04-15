@@ -170,6 +170,36 @@ PROJECT_04_JSON = """
                 "external_task_id": "ext-5c",
                 "base_url": "https://www.qualtrics.com",
                 "status": "active"
+            },
+            {
+                "id": "0f1af14b-4f1c-4a4b-9d5a-2f991576823b",
+                "description": "PSFU-05-D",
+                "created": "2020-01-05T13:57:28.162673+00:00",
+                "modified": "2020-01-05T13:57:28.162704+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-5d",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "65569d17-dbdb-4f6c-85e3-6a7e3735deeb",
+                "description": "PSFU-05-E",
+                "created": "2020-01-06T14:57:28.162673+00:00",
+                "modified": "2020-01-06T14:57:28.162704+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-5e",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
             }
         ]
     }
@@ -214,6 +244,36 @@ PROJECT_05_JSON = """
                 "external_task_id": "ext-6b",
                 "base_url": "https://www.qualtrics.com",
                 "status": "active"
+            },
+            {
+                "id": "5565a1f4-dca6-4ca2-8f60-2820b5ba949b",
+                "description": "PSFU-06-C",
+                "created": "2019-11-05T13:58:41.564792+00:00",
+                "modified": "2019-11-05T13:58:41.564816+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-6c",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "4664f880-da31-4c81-a8b5-09a47f96a289",
+                "description": "PSFU-06-D",
+                "created": "2019-11-06T13:58:41.564792+00:00",
+                "modified": "2019-11-06T13:58:41.564816+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-6d",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
             }
         ]
     }
