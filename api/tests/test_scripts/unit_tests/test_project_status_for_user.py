@@ -42,6 +42,7 @@ PSFU_IDS = [
     "2d03957f-ca35-4f6d-8ec6-1b05ee7d279c",
 ]
 
+
 class ProjectTaskTestResult:
 
     def __init__(self, task_is_visible, user_is_signedup, signup_available, user_task_status, task_provider_name, url):
@@ -69,12 +70,12 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
 
         self.assertEqual(expected_status, result_status)
 
-        # keep only results for rows in original PSFU dataset
+        # keep only results for project rows in original PSFU dataset
         result_json = [x for x in result_json if x['id'] in PSFU_IDS]
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):
-            # print(user_id, expected_project_is_visible, project_result['project_is_visible'])
+            # print(querystring_parameters, expected_project_is_visible, project_result['project_is_visible'])
             self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
             for (task) in project_result['tasks']:
                 task_desc = task['description']
@@ -118,6 +119,14 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id +
                         f'&user_task_id=ceb30e82-de0f-4009-940d-778dace69ec9&external_task_id=ext-5a&env={TEST_ENV}')
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-05-E'] = ProjectTaskTestResult(
+            task_is_visible=False,
+            user_is_signedup=False,
+            signup_available=False,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id +
                         f'&user_task_id=f5a0830f-136a-4661-b428-d6b334948d88&external_task_id=ext-7a&env={TEST_ENV}')
