@@ -152,7 +152,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
     def test_user_b_project_status(self):
         user_id = '851f7b34-f76c-49de-a382-7e4089b744e2'  # bernie@email.addr
         expected_results = {}
-        expected_results['project_visibility'] = [False, True, True, True, False, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
+        expected_results['project_visibility'] = [False, True, True, True, True, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id +
                         f'&user_task_id=615ff0e6-0b41-4870-b9db-527345d1d9e5&external_task_id=ext-3a&env={TEST_ENV}')

@@ -113,7 +113,7 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
             project['project_is_visible'] = \
                 (
                     # testing/active project visible to test group
-                    (project['status'] == 'testing') and
+                    (project['status'] in ['testing', 'active']) and
                     (project_testgroup_users_dict.get(project_id) is not None)
                 ) or (
                     # active/complete project visible to user group or, if public, to anyone
