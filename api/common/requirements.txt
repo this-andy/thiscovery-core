@@ -8,3 +8,4 @@ jsons
 python-json-logger
 requests
 urllib3
+validators
