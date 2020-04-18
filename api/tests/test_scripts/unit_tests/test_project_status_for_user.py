@@ -239,11 +239,9 @@ class TestGetProjectStatusForUserFunction(test_utils.DbTestCase):
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
         result_json = json.loads(result['body'])
-        from pprint import pprint
-        pprint(result_json)
         expected_task_results = {
             '4ee70544-6797-4e21-8cec-5653c8d5b234': {
-                'url': 'www.specific-user-task.co.uk',
+                'url': f'www.specific-user-task.co.uk&env={TEST_ENV}',
             }
         }
         for project in result_json:

@@ -285,7 +285,7 @@ PROJECT_08_JSON = """
         "created": "2018-08-17T12:10:56.084487+00:00",
         "modified": "2018-08-17T12:10:56.119612+00:00",
         "visibility": "public",
-        "status": "complete",
+        "status": "active",
         "tasks": [
             {
                 "id": "c92c8289-3590-4a85-b699-98bc8171ccde",
@@ -313,7 +313,7 @@ PROJECT_08_JSON = """
                 "signup_status": "open",
                 "visibility": "public",
                 "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
-                "external_task_id": "ext-6a",
+                "external_task_id": "5678",
                 "base_url": "https://www.qualtrics.com",
                 "status": "active"
             }

@@ -188,14 +188,15 @@ def create_user_task(ut_json, correlation_id):
     project_task = get_project_task(project_task_id, correlation_id)
     try:
         pt_ = project_task[0]
-        project_id = pt_['project_id']
-        base_url = pt_['base_url']
-        task_provider_name = pt_['task_provider_name']
-        external_task_id = pt_['external_task_id']
-        user_specific_url = pt_['user_specific_url']
-    except:
+    except IndexError:
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise utils.DetailedIntegrityError('project_task does not exist', errorjson)
+
+    project_id = pt_['project_id']
+    base_url = pt_['base_url']
+    task_provider_name = pt_['task_provider_name']
+    external_task_id = pt_['external_task_id']
+    user_specific_url = pt_['user_specific_url']
 
     # create_user_external_account_if_not_exists(user_id, project_task['external_system_id'], correlation_id)
 
