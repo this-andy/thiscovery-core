@@ -128,12 +128,12 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                 task_id = task['id']
                 task['task_is_visible'] = \
                     (
-                        # task in testing phase visible to test group regardless of visibility of project
-                        (task['status'] == 'testing') and
-                        (projecttask_testgroup_users_dict.get(task_id) is not None)
-                    ) or (
-                        project['project_is_visible'] and \
+                        project['project_is_visible'] and
                         (
+                            # task in testing phase visible to test group regardless of visibility of project
+                            (task['status'] == 'testing') and
+                            (projecttask_testgroup_users_dict.get(task_id) is not None)
+                        ) or (
                             # active/complete task visible to user group or, if public, to anyone
                             (task['status'] in ['active', 'complete']) and
                             (
