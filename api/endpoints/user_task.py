@@ -140,7 +140,7 @@ def create_user_task(ut_json, correlation_id):
     Inserts new UserTask row in thiscovery db
 
     Args:
-        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, user_task_url
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, user_task_url, first_name
         correlation_id:
 
     Returns:
@@ -219,7 +219,7 @@ def create_user_task(ut_json, correlation_id):
     if user_specific_url:
         raw_url = user_task_url
     else:
-        raw_url = base_url + utils.create_url_params(user_id, id, external_task_id)
+        raw_url = base_url + utils.create_url_params(user_id, user_first_name, id, external_task_id)
 
     url = "{}{}".format(
         raw_url,
