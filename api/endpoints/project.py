@@ -132,16 +132,13 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                         task['user_task_status'] = projects_usertasks_dict[task_id]['status']
                 # only give url if user has signedup (inc if completed)
                 if task['task_is_visible'] and task['user_is_signedup']:
+                    user_task_id = projects_usertasks_dict[task_id]['id']
+                    external_task_id = task['external_task_id']
+                    ext_user_project_id = projects_usertasks_dict[task_id]['ext_user_project_id']
+                    ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
                     if task['user_specific_url']:
-                        task['url'] = "{}{}".format(
-                            projects_usertasks_dict[task_id]['user_task_url'],
-                            utils.non_prod_env_url_param()
-                        )
-                    elif task['url'] is not None:
-                        user_task_id = projects_usertasks_dict[task_id]['id']
-                        external_task_id = task['external_task_id']
-                        ext_user_project_id = projects_usertasks_dict[task_id]['ext_user_project_id']
-                        ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
+                        task['url'] = projects_usertasks_dict[task_id]['user_task_url']
+                    if task['url'] is not None:
                         if anonymise_url:
                             task['url'] += utils.create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
                         else:
@@ -149,7 +146,6 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                         task['url'] += utils.non_prod_env_url_param()
                 else:
                     task['url'] = None
-                    # task['task_provider_name'] = None
     except Exception as ex:
         raise ex
 

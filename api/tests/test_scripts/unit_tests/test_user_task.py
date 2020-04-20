@@ -388,3 +388,68 @@ class TestUserTask(test_utils.DbTestCase):
         result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
+
+    def test_14_create_user_task_api_ok_with_specific_url(self):
+        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
+        ut_json = {
+            'user_id': user_id,
+            'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',  # user_specific_url = True
+            'consented': '2018-07-19 16:16:56.087895+01',
+            'user_task_url': 'http://www.specific-user-task-url.com',
+        }
+
+        expected_status = HTTPStatus.CREATED
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        result_json = json.loads(result['body'])
+        url = result_json['url']
+        ut_id = result_json['id']
+        self.assertEqual(f'http://www.specific-user-task-url.com'
+                         f'?user_id={user_id}&user_task_id={ut_id}'
+                         f'&external_task_id=5678&env={TEST_ENV}', url)
+
+    def test_15_create_user_task_api_ok_specific_url_ignored(self):
+        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
+        ut_json = {
+            'user_id': user_id,
+            'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',  # user_specific_url = False
+            'consented': '2018-07-19 16:16:56.087895+01',
+            'user_task_url': 'http://www.specific-user-task-url.com',
+        }
+
+        expected_status = HTTPStatus.CREATED
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        result_json = json.loads(result['body'])
+        url = result_json['url']
+        ut_id = result_json['id']
+        self.assertEqual(f'http://crowd.cochrane.org/index.html'
+                         f'?user_id={user_id}&user_task_id={ut_id}'
+                         f'&external_task_id=ext-5a&env={TEST_ENV}', url)
+
+    def test_16_create_user_task_api_invalid_specific_url(self):
+        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
+        ut_json = {
+            'user_id': user_id,
+            'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',  # user_specific_url = False
+            'consented': '2018-07-19 16:16:56.087895+01',
+            'user_task_url': 'www.invalid-specific-user-task-url.com',
+        }
+
+        expected_status = HTTPStatus.BAD_REQUEST
+        body = json.dumps(ut_json)
+
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        result_json = json.loads(result['body'])
+        self.assertEqual('invalid url', result_json['message'])

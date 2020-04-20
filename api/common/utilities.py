@@ -26,6 +26,7 @@ import re
 import requests
 import sys
 import uuid
+import validators
 
 from botocore.exceptions import ClientError
 from dateutil import parser, tz
@@ -222,6 +223,22 @@ def validate_utc_datetime(s):
     except ValueError:
         errorjson = {'datetime': s}
         raise DetailedValueError('invalid utc format datetime', errorjson)
+
+
+def validate_url(s):
+    if validators.url(s):
+        return s
+    else:
+        errorjson = {'url': s}
+        raise DetailedValueError('invalid url', errorjson)
+
+
+def validate_boolean(s):
+    if s in ['true', 'True', 'false', 'False', '0', '1']:
+        return s
+    else:
+        errorjson = {'boolean': s}
+        raise DetailedValueError('invalid boolean', errorjson)
 # endregion
 
 
