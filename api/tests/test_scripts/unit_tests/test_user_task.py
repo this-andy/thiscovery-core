@@ -17,6 +17,7 @@
 #
 
 import json
+import unittest
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
@@ -406,6 +407,7 @@ class TestUserTask(test_utils.DbTestCase):
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_14_create_user_task_api_ok_with_specific_url(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
@@ -433,6 +435,7 @@ class TestUserTask(test_utils.DbTestCase):
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_15_create_user_task_api_ok_specific_url_ignored(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
@@ -460,6 +463,7 @@ class TestUserTask(test_utils.DbTestCase):
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_16_create_user_task_api_invalid_specific_url(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {

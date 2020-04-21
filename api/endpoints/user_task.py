@@ -230,6 +230,8 @@ def create_user_task(ut_json, correlation_id):
             return utils.ObjectDoesNotExistError('User does not exist', errorjson)
         first_name = user['first_name']
 
+    user_task_url = None  # todo: fetch user_task_url from Dynamodb if project task specifies this
+
     execute_non_query(
         CREATE_USER_TASK_SQL,
         (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
