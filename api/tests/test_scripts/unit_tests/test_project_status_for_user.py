@@ -42,6 +42,7 @@ PSFU_IDS = [
     "2d03957f-ca35-4f6d-8ec6-1b05ee7d279c",
 ]
 
+
 class ProjectTaskTestResult:
 
     def __init__(self, task_is_visible, user_is_signedup, signup_available, user_task_status, task_provider_name, url):
@@ -224,3 +225,59 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                         f'&user_task_id=ef012f6a-f4b6-4dff-b243-f929f9d9fabb&external_task_id=ext-7a&env={TEST_ENV}')
         expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, False, False, None, 'Cochrane', None)
         self.check_project_status_for_single_user(user_id, expected_results)
+
+
+class TestGetProjectStatusForUserFunction(test_utils.DbTestCase):
+    user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'
+
+    def test_user_specific_task_url_ok(self):
+        result = test_get(
+            get_project_status_for_user_api,
+            f'v1/{ENTITY_BASE_URL}',
+            querystring_parameters={'user_id': self.user_id}
+        )
+        expected_status = HTTPStatus.OK
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+        result_json = json.loads(result['body'])
+        expected_task_results = {
+            '4ee70544-6797-4e21-8cec-5653c8d5b234': {
+                'url': f'www.specific-user-task.co.uk'
+                       f'?user_id={self.user_id}'
+                       f'&user_task_id=9d56be0d-ffa5-4c75-b65f-9a31972f38c2'
+                       f'&external_task_id=5678'
+                       f'&env={TEST_ENV}',
+            }
+        }
+        for project in result_json:
+            for task in project['tasks']:
+                expected_fields = expected_task_results.get(task['id'])
+                if expected_fields:
+                    for k, v in expected_fields.items():
+                        self.assertEqual(v, task[k])
+
+    def test_user_specific_task_url_anonymous(self):
+        result = test_get(
+            get_project_status_for_external_user_api,
+            f'v2/{ENTITY_BASE_URL}',
+            querystring_parameters={'user_id': self.user_id}
+        )
+        expected_status = HTTPStatus.OK
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+        result_json = json.loads(result['body'])
+        expected_task_results = {
+            '4ee70544-6797-4e21-8cec-5653c8d5b234': {
+                'url': f'www.specific-user-task.co.uk'
+                       f'?ext_user_project_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
+                       f'&ext_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
+                       f'&external_task_id=5678'
+                       f'&env={TEST_ENV}',
+            }
+        }
+        for project in result_json:
+            for task in project['tasks']:
+                expected_fields = expected_task_results.get(task['id'])
+                if expected_fields:
+                    for k, v in expected_fields.items():
+                        self.assertEqual(v, task[k])

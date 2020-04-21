@@ -15,8 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import uuid
 import json
+import uuid
 from http import HTTPStatus
 
 import common.sql_queries as sql_q
@@ -38,7 +38,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_task_id, created, status = None, None, None
+ext_user_task_id, created, status, user_task_url = None, None, None, None
 
 
 def validate_status(s):
@@ -62,6 +62,18 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     return result
 
 
+def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, correlation_id=None):
+    if pt_user_specific_url:
+        base_url = ut_url
+
+    if base_url:
+        return "{}{}{}".format(
+            base_url,
+            utils.create_url_params(user_id, ut_id, pt_external_task_id),
+            utils.non_prod_env_url_param()
+        )
+
+
 def list_user_tasks_by_user(user_id, correlation_id=None):
 
     try:
@@ -80,20 +92,14 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     # add url field to each user_task in result
     edited_result = list()
     for ut in result:
-        base_url = ut['base_url']
-        if base_url is not None:
-            user_id = ut['user_id']
-            external_task_id = ut['external_task_id']
-            url = ut['base_url'] + utils.create_url_params(user_id, ut['user_task_id'], external_task_id) + utils.non_prod_env_url_param()
-        else:
-            url = None
-        ut['url'] = url
+        ut['url'] = calculate_url(ut['base_url'], ut['user_specific_url'], ut['user_task_url'],
+                                  ut['user_id'], ut['user_task_id'], ut['external_task_id'], correlation_id)
         del ut['base_url']
         del ut['external_task_id']
+        del ut['user_specific_url']
+        del ut['user_task_url']
         edited_result.append(ut)
 
-    # from pprint import pprint
-    # pprint(edited_result)
     return edited_result
 
 
@@ -181,13 +187,16 @@ def create_user_task(ut_json, correlation_id):
     # get corresponding project_task...
     project_task = get_project_task(project_task_id, correlation_id)
     try:
-        project_id = project_task[0]['project_id']
-        base_url = project_task[0]['base_url']
-        task_provider_name = project_task[0]['task_provider_name']
-        external_task_id = project_task[0]['external_task_id']
-    except:
+        pt_ = project_task[0]
+    except IndexError:
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise utils.DetailedIntegrityError('project_task does not exist', errorjson)
+
+    project_id = pt_['project_id']
+    base_url = pt_['base_url']
+    task_provider_name = pt_['task_provider_name']
+    external_task_id = pt_['external_task_id']
+    user_specific_url = pt_['user_specific_url']
 
     # create_user_external_account_if_not_exists(user_id, project_task['external_system_id'], correlation_id)
 
@@ -201,9 +210,13 @@ def create_user_task(ut_json, correlation_id):
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise utils.DuplicateInsertError('user_task already exists', errorjson)
 
-    execute_non_query(CREATE_USER_TASK_SQL, (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id), correlation_id)
+    execute_non_query(
+        CREATE_USER_TASK_SQL,
+        (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
+        correlation_id
+    )
 
-    url = base_url + utils.create_url_params(user_id, id, external_task_id) + utils.non_prod_env_url_param()
+    url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, correlation_id=correlation_id)
 
     new_user_task = {
         'id': id,
@@ -237,7 +250,6 @@ def create_user_task_api(event, context):
 
 
 def set_user_task_completed(ut_id, correlation_id=None):
-
     utils.validate_uuid(ut_id)
     # check that user_task exists
     result = get_user_task(ut_id, correlation_id)
