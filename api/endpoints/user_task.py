@@ -38,7 +38,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_task_id, created, status, user_task_url = None, None, None, None
+ext_user_task_id, created, status, user_task_url, first_name = None, None, None, None, None
 
 
 def validate_status(s):
@@ -62,14 +62,14 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     return result
 
 
-def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, correlation_id=None):
+def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, correlation_id=None):
     if pt_user_specific_url:
         base_url = ut_url
 
     if base_url:
         return "{}{}{}".format(
             base_url,
-            utils.create_url_params(user_id, ut_id, pt_external_task_id),
+            utils.create_url_params(user_id, user_first_name, ut_id, pt_external_task_id),
             utils.non_prod_env_url_param()
         )
 
@@ -82,8 +82,9 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
         raise
 
     # check that user exists
-    result = get_user_by_id(user_id, correlation_id)
-    if len(result) == 0:
+    try:
+        user_result = get_user_by_id(user_id, correlation_id)[0]
+    except IndexError:
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
@@ -92,8 +93,16 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     # add url field to each user_task in result
     edited_result = list()
     for ut in result:
-        ut['url'] = calculate_url(ut['base_url'], ut['user_specific_url'], ut['user_task_url'],
-                                  ut['user_id'], ut['user_task_id'], ut['external_task_id'], correlation_id)
+        ut['url'] = calculate_url(
+            ut['base_url'],
+            ut['user_specific_url'],
+            ut['user_task_url'],
+            ut['user_id'],
+            ut['user_task_id'],
+            ut['external_task_id'],
+            user_result['first_name'],
+            correlation_id
+        )
         del ut['base_url']
         del ut['external_task_id']
         del ut['user_specific_url']
@@ -163,7 +172,8 @@ def create_user_task(ut_json, correlation_id):
         ('ext_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
         ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
-        ('user_task_url', None, utils.validate_url)
+        ('user_task_url', None, utils.validate_url),
+        ('first_name', None, utils.null_validator),
     ]
     for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
         if variable_name in ut_json:
@@ -211,13 +221,23 @@ def create_user_task(ut_json, correlation_id):
         errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
         raise utils.DuplicateInsertError('user_task already exists', errorjson)
 
+    # get user first name if not received from calling process
+    global first_name
+    if first_name is None:
+        try:
+            user = get_user_by_id(user_id, correlation_id=correlation_id)[0]
+        except IndexError:
+            errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+            return utils.ObjectDoesNotExistError('User does not exist', errorjson)
+        first_name = user['first_name']
+
     execute_non_query(
         CREATE_USER_TASK_SQL,
         (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
         correlation_id
     )
 
-    url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, correlation_id=correlation_id)
+    url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, first_name, correlation_id=correlation_id)
 
     new_user_task = {
         'id': id,

@@ -194,6 +194,13 @@ def obfuscate_data(input, item_key_path):
 
 
 # region Validation methods
+def null_validator(s):
+    """
+    A validator that doesn't do anything. For use for optional parameters of create_user_task that do not require validation
+    """
+    return s
+
+
 def validate_int(s):
     try:
         int(s)
