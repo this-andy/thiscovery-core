@@ -38,7 +38,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_task_id, created, status, user_task_url, first_name = None, None, None, None, None
+ext_user_task_id, created, status, first_name = None, None, None, None
 
 
 def validate_status(s):
@@ -150,7 +150,7 @@ def create_user_task(ut_json, correlation_id):
     Inserts new UserTask row in thiscovery db
 
     Args:
-        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, user_task_url, first_name
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, first_name
         correlation_id:
 
     Returns:
@@ -172,7 +172,6 @@ def create_user_task(ut_json, correlation_id):
         ('ext_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
         ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
-        ('user_task_url', None, utils.validate_url),
         ('first_name', None, utils.null_validator),
     ]
     for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
