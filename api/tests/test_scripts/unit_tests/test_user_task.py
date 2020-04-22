@@ -17,6 +17,7 @@
 #
 
 import json
+import unittest
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
@@ -54,8 +55,12 @@ USER_TASK_01_EXPECTED_BODY = {
         "progress_info": None,
         "ext_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
         "task_provider_name": "Qualtrics",
-        "url": f"https://www.qualtrics.com?user_id=851f7b34-f76c-49de-a382-7e4089b744e2&user_task_id=615ff0e6-0b41-4870-b9db-527345d1d9e5"
-               f"&external_task_id=ext-3a&env={TEST_ENV}",
+        "url": f"https://www.qualtrics.com"
+               f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
+               f"&first_name=Bernard"
+               f"&user_task_id=615ff0e6-0b41-4870-b9db-527345d1d9e5"
+               f"&external_task_id=ext-3a"
+               f"&env={TEST_ENV}",
 }
 
 USER_TASK_02_EXPECTED_BODY = {
@@ -72,8 +77,12 @@ USER_TASK_02_EXPECTED_BODY = {
         "progress_info": None,
         "ext_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
         "task_provider_name": "Cochrane",
-        "url": f"http://crowd.cochrane.org/index.html?user_id=851f7b34-f76c-49de-a382-7e4089b744e2&user_task_id=3c7978a8-c618-4e39-9ca9-7073faafeb56"
-               f"&external_task_id=ext-5a&env={TEST_ENV}",
+        "url": f"http://crowd.cochrane.org/index.html"
+               f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
+               f"&first_name=Bernard"
+               f"&user_task_id=3c7978a8-c618-4e39-9ca9-7073faafeb56"
+               f"&external_task_id=ext-5a"
+               f"&env={TEST_ENV}",
 }
 # endregion
 
@@ -206,8 +215,13 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertDictEqual(expected_body, result_json)
 
         self.assertEqual('Cochrane', task_provider_name)
-        self.assertEqual(f'http://crowd.cochrane.org/index.html?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=ext-5a&env={TEST_ENV}', url)
+        expected_url = f'http://crowd.cochrane.org/index.html' \
+                       f'?user_id={user_id}' \
+                       f'&first_name={user_json["first_name"]}' \
+                       f'&user_task_id={ut_id}' \
+                       f'&external_task_id=ext-5a' \
+                       f'&env={TEST_ENV}'
+        self.assertEqual(expected_url, url)
 
         # check that notification message exists
         notifications = get_notifications('type', [NotificationType.TASK_SIGNUP.value])
@@ -288,8 +302,12 @@ class TestUserTask(test_utils.DbTestCase):
 
         # now check individual data items
         self.assertEqual('Qualtrics', task_provider_name)
-        self.assertEqual(f'https://www.qualtrics.com?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=ext-6b&env={TEST_ENV}', url)
+        expected_url = f'https://www.qualtrics.com' \
+                       f'?user_id={user_id}' \
+                       f'&first_name=Clive' \
+                       f'&user_task_id={ut_id}' \
+                       f'&external_task_id=ext-6b&env={TEST_ENV}'
+        self.assertEqual(expected_url, url)
 
         self.assertEqual('active', status)
         self.assertEqual('ddf0750a-758e-47de-aef3-055d0af41d3d', user_project_id)
@@ -389,6 +407,7 @@ class TestUserTask(test_utils.DbTestCase):
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_14_create_user_task_api_ok_with_specific_url(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
@@ -408,10 +427,15 @@ class TestUserTask(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         url = result_json['url']
         ut_id = result_json['id']
-        self.assertEqual(f'http://www.specific-user-task-url.com'
-                         f'?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=5678&env={TEST_ENV}', url)
+        expected_url = f'http://www.specific-user-task-url.com' \
+                       f'?user_id={user_id}' \
+                       f'&first_name=Clive' \
+                       f'&user_task_id={ut_id}' \
+                       f'&external_task_id=5678' \
+                       f'&env={TEST_ENV}'
+        self.assertEqual(expected_url, url)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_15_create_user_task_api_ok_specific_url_ignored(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
@@ -431,10 +455,15 @@ class TestUserTask(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         url = result_json['url']
         ut_id = result_json['id']
-        self.assertEqual(f'http://crowd.cochrane.org/index.html'
-                         f'?user_id={user_id}&user_task_id={ut_id}'
-                         f'&external_task_id=ext-5a&env={TEST_ENV}', url)
+        expected_url = f'http://crowd.cochrane.org/index.html' \
+                       f'?user_id={user_id}' \
+                       f'&first_name=Clive' \
+                       f'&user_task_id={ut_id}' \
+                       f'&external_task_id=ext-5a' \
+                       f'&env={TEST_ENV}'
+        self.assertEqual(expected_url, url)
 
+    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
     def test_16_create_user_task_api_invalid_specific_url(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {

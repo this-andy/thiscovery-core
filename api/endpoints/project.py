@@ -96,14 +96,17 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
     str_user_id = (str(user_id),)
     results = execute_query_multiple(
         (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
-         sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4']),
-        (str_user_id, str_user_id, str_user_id, str_user_id, str_user_id), correlation_id)
+         sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4'], sql_q.get_project_status_for_user_sql['sql5']),
+        (str_user_id,)*6,
+        correlation_id
+    )
 
     project_group_users_dict = dict_from_dataset(results[0], 'project_id')
     project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
     projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
     projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
     projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
+    user_first_name = results[5][0]['first_name']
 
     # now add calculated attributes to returned json...
     try:
@@ -142,7 +145,7 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                         if anonymise_url:
                             task['url'] += utils.create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
                         else:
-                            task['url'] += utils.create_url_params(user_id, user_task_id, external_task_id)
+                            task['url'] += utils.create_url_params(user_id, user_first_name, user_task_id, external_task_id)
                         task['url'] += utils.non_prod_env_url_param()
                 else:
                     task['url'] = None

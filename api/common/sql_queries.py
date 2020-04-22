@@ -270,6 +270,12 @@ get_project_status_for_user_sql = {
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
     """,
+
+    'sql5': """
+        SELECT first_name
+        FROM public.projects_user
+        WHERE id = %s
+    """,
 }
 # endregion
 
