@@ -24,6 +24,7 @@ import api.endpoints.notification_process as np
 import api.endpoints.user_task as ut
 import testing_utilities as test_utils
 
+from api.common.dynamodb_utilities import Dynamodb
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import get_notifications, NotificationStatus, NotificationType, \
@@ -407,14 +408,47 @@ class TestUserTask(test_utils.DbTestCase):
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
-    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
+
+class TestUserTaskSpecificUrl(test_utils.DbTestCase):
+    delete_notifications = True
+    maxDiff = None
+    ddb = Dynamodb()
+    base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB"
+    # base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB?Q_DL=3eVFs4Y9PkNlUoq_25&Q_CHL=gl"
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.add_test_specific_urls_to_ddb()
+
+    @classmethod
+    def add_test_specific_urls_to_ddb(cls):
+        project_task_id = '4ee70544-6797-4e21-8cec-5653c8d5b234'  # user_specific_url = True
+        user_ids = [
+            "8518c7ed-1df4-45e9-8dc4-d49b57ae0663",
+        ]
+        for user_id in user_ids:
+            cls.ddb.put_item(
+                table_name="UserSpecificUrls",
+                key=f"{project_task_id}_{user_id}",
+                item_type='user_specific_url',
+                item_details=None,
+                item={
+                    'user_id': user_id,
+                    'project_task_id': project_task_id,
+                    'user_specific_url': cls.base_user_specific_url,
+                    'details_provenance': 'unittest suite',
+                    'status': 'new',
+                },
+                update_allowed=True,
+            )
+
     def test_14_create_user_task_api_ok_with_specific_url(self):
         user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
         ut_json = {
             'user_id': user_id,
-            'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',  # user_specific_url = True
+            'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
             'consented': '2018-07-19 16:16:56.087895+01',
-            'user_task_url': 'http://www.specific-user-task-url.com',
         }
 
         expected_status = HTTPStatus.CREATED
@@ -427,58 +461,10 @@ class TestUserTask(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         url = result_json['url']
         ut_id = result_json['id']
-        expected_url = f'http://www.specific-user-task-url.com' \
+        expected_url = f'{self.base_user_specific_url}' \
                        f'?user_id={user_id}' \
                        f'&first_name=Clive' \
                        f'&user_task_id={ut_id}' \
                        f'&external_task_id=5678' \
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
-
-    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
-    def test_15_create_user_task_api_ok_specific_url_ignored(self):
-        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
-        ut_json = {
-            'user_id': user_id,
-            'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',  # user_specific_url = False
-            'consented': '2018-07-19 16:16:56.087895+01',
-            'user_task_url': 'http://www.specific-user-task-url.com',
-        }
-
-        expected_status = HTTPStatus.CREATED
-        body = json.dumps(ut_json)
-
-        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
-        result_status = result['statusCode']
-        self.assertEqual(expected_status, result_status)
-
-        result_json = json.loads(result['body'])
-        url = result_json['url']
-        ut_id = result_json['id']
-        expected_url = f'http://crowd.cochrane.org/index.html' \
-                       f'?user_id={user_id}' \
-                       f'&first_name=Clive' \
-                       f'&user_task_id={ut_id}' \
-                       f'&external_task_id=ext-5a' \
-                       f'&env={TEST_ENV}'
-        self.assertEqual(expected_url, url)
-
-    @unittest.skip("functionality to pass user_task_url in API call was removed; skipping test for now rather than deleting it just in case")
-    def test_16_create_user_task_api_invalid_specific_url(self):
-        user_id = "8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
-        ut_json = {
-            'user_id': user_id,
-            'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',  # user_specific_url = False
-            'consented': '2018-07-19 16:16:56.087895+01',
-            'user_task_url': 'www.invalid-specific-user-task-url.com',
-        }
-
-        expected_status = HTTPStatus.BAD_REQUEST
-        body = json.dumps(ut_json)
-
-        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
-        result_status = result['statusCode']
-        self.assertEqual(expected_status, result_status)
-
-        result_json = json.loads(result['body'])
-        self.assertEqual('invalid url', result_json['message'])
