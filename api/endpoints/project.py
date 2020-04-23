@@ -145,7 +145,7 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
                         if anonymise_url:
                             task['url'] += utils.create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_task_id)
                         else:
-                            task['url'] += utils.create_url_params(user_id, user_first_name, user_task_id, external_task_id)
+                            task['url'] += f"?{utils.create_url_params(user_id, user_first_name, user_task_id, external_task_id)}"
                         task['url'] += utils.non_prod_env_url_param()
                 else:
                     task['url'] = None

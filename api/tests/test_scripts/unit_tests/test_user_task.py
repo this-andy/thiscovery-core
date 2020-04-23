@@ -413,8 +413,7 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
     delete_notifications = True
     maxDiff = None
     ddb = Dynamodb()
-    base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB"
-    # base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB?Q_DL=3eVFs4Y9PkNlUoq_25&Q_CHL=gl"
+    base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB?Q_DL=3eVFs4Y9PkNlUoq_25&Q_CHL=gl"
 
     @classmethod
     def setUpClass(cls):
@@ -462,7 +461,7 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
         url = result_json['url']
         ut_id = result_json['id']
         expected_url = f'{self.base_user_specific_url}' \
-                       f'?user_id={user_id}' \
+                       f'&user_id={user_id}' \
                        f'&first_name=Clive' \
                        f'&user_task_id={ut_id}' \
                        f'&external_task_id=5678' \

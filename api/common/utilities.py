@@ -568,7 +568,7 @@ def create_anonymous_url_params(ext_user_project_id, ext_user_task_id, external_
 
 
 def create_url_params(user_id, user_first_name, user_task_id, external_task_id=None):
-    params = f'?user_id={user_id}&first_name={user_first_name}&user_task_id={user_task_id}'
+    params = f'user_id={user_id}&first_name={user_first_name}&user_task_id={user_task_id}'
     if external_task_id is not None:
         params += '&external_task_id=' + str(external_task_id)
     return params
