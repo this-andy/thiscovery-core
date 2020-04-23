@@ -31,9 +31,11 @@ class Dynamodb(utils.BaseClient):
         super().get_namespace()
 
     def get_table(self, table_name):
-        return self.client.Table('-'.join([STACK_NAME, self.aws_namespace, table_name]))
+        table_full_name = '-'.join([STACK_NAME, self.aws_namespace, table_name])
+        self.logger.debug('Table full name', extra={'table_full_name': table_full_name})
+        return self.client.Table(table_full_name)
 
-    def put_item(self, table_name: str, key, item_type: str, item_details, item: dict, update_allowed=False, correlation_id=None):
+    def put_item(self, table_name: str, key, item_type: str, item_details, item=dict(), update_allowed=False, correlation_id=None):
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Table.put_item
         Args:
