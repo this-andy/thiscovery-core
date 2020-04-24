@@ -1,3 +1,25 @@
+#
+#   Thiscovery API - THIS Institute’s citizen science platform
+#   Copyright (C) 2019 THIS Institute
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU Affero General Public License as
+#   published by the Free Software Foundation, either version 3 of the
+#   License, or (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU Affero General Public License for more details.
+#
+#   A copy of the GNU Affero General Public License is available in the
+#   docs folder of this project.  It is also available www.gnu.org/licenses/
+#
+"""
+This script reads user-specific user task urls (and additional data) from an input csv file
+and stores the values in a UserSpecificUrls Dynamodb table.
+"""
+
 import csv
 import http
 import os
@@ -26,10 +48,9 @@ class ImportManager:
             title="Please select input file",
             filetypes=(("csv files", "*.csv"), ("all files", "*.*"))
         )
-        # root.destroy()
         return project_task_id, filename
 
-    def check_one_row_per_user_and_users_exist(self):
+    def validate_input_file(self):
         """
         Checks that input csv file has only one row per user and that users exist in thiscovery db
         """
@@ -47,9 +68,6 @@ class ImportManager:
                     else:
                         raise ValueError(f'User {user_id} could not be found')
                         # pass
-
-    def validate_input_file(self):
-        self.check_one_row_per_user_and_users_exist()
 
     def check_project_task_exists(self):
         if not p.get_project_task(self.project_task_id):
@@ -82,6 +100,7 @@ class ImportManager:
                         'project_task_id': self.project_task_id,
                         'user_specific_url': user_specific_url,
                         'details_provenance': os.path.basename(self.input_filename),
+                        'status': 'new',
                     },
                 )
                 assert response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK, f"DynamoDb raised an error. Here is the response: {response}"

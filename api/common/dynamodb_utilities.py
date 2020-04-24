@@ -71,7 +71,7 @@ class Dynamodb(utils.BaseClient):
             errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(key), 'correlation_id': correlation_id}
             raise utils.DetailedValueError('Dynamodb raised an error', errorjson)
 
-    def update_item(self, table_name: str, key: str, name_value_pairs: dict, correlation_id=None):
+    def update_item(self, table_name: str, key: str, name_value_pairs: dict, correlation_id=None, **kwargs):
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Table.update_item
 
@@ -80,8 +80,10 @@ class Dynamodb(utils.BaseClient):
             key:
             name_value_pairs:
             correlation_id:
+            **kwargs: use ReturnValues to get the item attributes as they appear before or after the update
 
         Returns:
+            Only response metadata such as status code, unless the parameter ReturnValues is specified in **kwargs
 
         Notes:
             US 2951 proposes adding support for partial map updates to this function.
@@ -119,6 +121,7 @@ class Dynamodb(utils.BaseClient):
             UpdateExpression=update_expr,
             ExpressionAttributeValues=values_expr,
             ExpressionAttributeNames=attr_names_expr,
+            **kwargs,
         )
 
     def scan(self, table_name: str, filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
