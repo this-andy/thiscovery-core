@@ -169,7 +169,7 @@ def create_user_task(ut_json, correlation_id):
     except utils.DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
-    except KeyError as err:
+    except (KeyError, TypeError) as err:
         errorjson = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
         raise utils.DetailedValueError('mandatory data missing', errorjson) from err
 
@@ -289,7 +289,6 @@ def create_user_task(ut_json, correlation_id):
 def create_user_task_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
-
     ut_json = json.loads(event['body'])
     logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
     new_user_task = create_user_task(ut_json, correlation_id)
