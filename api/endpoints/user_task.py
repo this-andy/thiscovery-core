@@ -68,13 +68,9 @@ def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_ext
         base_url = ut_url
 
     if base_url:
-        if "?" in base_url:
-            base_url += "&"
-        else:
-            base_url += "?"
         return "{}{}{}".format(
             base_url,
-            utils.create_url_params(user_id, user_first_name, ut_id, pt_external_task_id),
+            utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id),
             utils.non_prod_env_url_param()
         )
 
