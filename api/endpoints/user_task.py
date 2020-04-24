@@ -21,6 +21,7 @@ from http import HTTPStatus
 
 import common.sql_queries as sql_q
 import common.utilities as utils
+from common.dynamodb_utilities import Dynamodb
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
     CREATE_USER_TASK_SQL
@@ -69,7 +70,7 @@ def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_ext
     if base_url:
         return "{}{}{}".format(
             base_url,
-            utils.create_url_params(user_id, user_first_name, ut_id, pt_external_task_id),
+            utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id),
             utils.non_prod_env_url_param()
         )
 
@@ -154,6 +155,7 @@ def create_user_task(ut_json, correlation_id):
         correlation_id:
 
     Returns:
+        Dictionary representation of new user task
     """
     # extract mandatory data from json
     try:
@@ -230,13 +232,32 @@ def create_user_task(ut_json, correlation_id):
             return utils.ObjectDoesNotExistError('User does not exist', errorjson)
         first_name = user['first_name']
 
-    user_task_url = None  # todo: fetch user_task_url from Dynamodb if project task specifies this
+    # fetch user_task_url from Dynamodb if project task specifies this
+    user_task_url = None
+    if user_specific_url:
+        ddb = Dynamodb()
+        user_specific_url_table = "UserSpecificUrls"
+        item_key = f"{project_task_id}_{user_id}"
+        item = ddb.get_item(
+            table_name=user_specific_url_table,
+            key=item_key,
+            correlation_id=correlation_id,
+        )
+        user_task_url = item['user_specific_url']
 
-    execute_non_query(
+    row_count = execute_non_query(
         CREATE_USER_TASK_SQL,
         (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
         correlation_id
     )
+
+    if user_specific_url and row_count:
+        ddb.update_item(
+            table_name=user_specific_url_table,
+            key=item_key,
+            name_value_pairs={'status': 'processed'},
+            correlation_id=correlation_id,
+        )
 
     url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, first_name, correlation_id=correlation_id)
 
