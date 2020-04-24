@@ -24,7 +24,7 @@ class DbViewsTestCase(test_utils.DbTestCase):
         'group_name': 'testers',
         'users': ["bernie@email.co.uk", "clive@email.co.uk", "delia@email.co.uk"],
         'projects': ["PSFU-01-pub-plan", "PSFU-03-pub-tst-grp", "PSFU-04-prv-tst-grp", "PSFU-05-pub-act", "PSFU-06-prv-act"],
-        'tasks': ["PSFU-03-A", "PSFU-04-A"],
+        'tasks': ["PSFU-03-A", "PSFU-04-A", "PSFU-05-D", "PSFU-05-E", "PSFU-06-C", "PSFU-06-D"],
     }
     group_1 = {
         'group_name': 'G1',

@@ -71,16 +71,17 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
 
         self.assertEqual(expected_status, result_status)
 
-        # keep only results for rows in original PSFU dataset
+        # keep only results for project rows in original PSFU dataset
         result_json = [x for x in result_json if x['id'] in PSFU_IDS]
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):
-            # print(user_id, expected_project_is_visible, project_result['project_is_visible'])
+            # print(project_result['short_name'])
+            # print(querystring_parameters, expected_project_is_visible, project_result['project_is_visible'])
             self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
             for (task) in project_result['tasks']:
                 task_desc = task['description']
-                # print(task)
+                # print(task_desc)
                 expected_task_result = expected_results.get(task_desc)
                 if expected_task_result is None:
                     self.assertFalse(task['task_is_visible'])
@@ -116,7 +117,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
         first_name = 'Altha'
         expected_results = {}
-        expected_results['project_visibility'] = [False, False, False, True, False, True, False]
+        expected_results['project_visibility'] = [False, False, False, True, False, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-05-A'] = ProjectTaskTestResult(
             task_is_visible=True,
             user_is_signedup=True,
@@ -157,7 +158,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         ext_user_project_id_one = '1a03cb39-b669-44bb-a69e-98e6a521d758'  # altha@email.addr; project: 5907275b-6d75-4ec0-ada8-5854b44fb955
         ext_user_project_id_two = '2c8bba57-58a9-4ac7-98e8-beb34f0692c1'  # altha@email.addr; project: 183c23a1-76a7-46c3-8277-501f0740939d
         expected_results = dict()
-        expected_results['project_visibility'] = [False, False, False, True, False, True, False]
+        expected_results['project_visibility'] = [False, False, False, True, False, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane',
                         f'http://crowd.cochrane.org/index.html?ext_user_project_id={ext_user_project_id_one}'
                         f'&ext_user_task_id=f7894c6b-0391-4061-8f97-89b674cb61e3&external_task_id=ext-5a&env={TEST_ENV}')
@@ -172,7 +173,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         user_id = '851f7b34-f76c-49de-a382-7e4089b744e2'  # bernie@email.addr
         first_name = 'Bernard'
         expected_results = {}
-        expected_results['project_visibility'] = [False, True, True, True, False, True, False]
+        expected_results['project_visibility'] = [False, True, True, True, True, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=615ff0e6-0b41-4870-b9db-527345d1d9e5&external_task_id=ext-3a&env={TEST_ENV}')
@@ -181,6 +182,38 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=3c7978a8-c618-4e39-9ca9-7073faafeb56&external_task_id=ext-5a&env={TEST_ENV}')
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-05-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-05-E'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-06-C'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-06-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         self.check_project_status_for_single_user(user_id, expected_results)
 
@@ -188,7 +221,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         user_id = '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'  # clive@email.addr
         first_name = 'Clive'
         expected_results = {}
-        expected_results['project_visibility'] = [False, True, True, True, True, True, True]
+        expected_results['project_visibility'] = [False, True, True, True, True, True, True]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=dad64b2c-8315-4ec4-9824-5e2fdffc11e5&external_task_id=ext-3a&env={TEST_ENV}')
@@ -200,9 +233,41 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=8bb74086-657e-4276-bad2-6285c6ede0fd&external_task_id=ext-5b&env={TEST_ENV}')
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-05-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-05-E'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane',
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=d4a47805-fbec-4e43-938c-94af7214326d&external_task_id=ext-6a&env={TEST_ENV}')
+        expected_results['PSFU-06-C'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-06-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         # expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
                         'https://www.qualtrics.com?user_id=' + user_id + f'&first_name={first_name}' +
@@ -213,7 +278,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         user_id = '35224bd5-f8a8-41f6-8502-f96e12d6ddde'  # delia@email.addr
         first_name = 'Delia'
         expected_results = {}
-        expected_results['project_visibility'] = [False, True, True, True, True, True, True]
+        expected_results['project_visibility'] = [False, True, True, True, True, True, True]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-03-A'] = ProjectTaskTestResult(True, False, True, None, 'Qualtrics', None)
         expected_results['PSFU-04-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
@@ -221,12 +286,44 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', None)
         expected_results['PSFU-05-B'] = ProjectTaskTestResult(True, False, True, None, 'Qualtrics', None)
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
+        expected_results['PSFU-05-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-05-E'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane',
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=ade342a2-a1ec-49fb-ab0f-2f81357cbced&external_task_id=ext-6a&env={TEST_ENV}')
         expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=010d3058-d329-448a-b155-4e574e9e2e57&external_task_id=ext-6b&env={TEST_ENV}')
+        expected_results['PSFU-06-C'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
+        expected_results['PSFU-06-D'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=False,
+            signup_available=True,
+            user_task_status=None,
+            task_provider_name='Qualtrics',
+            url=None
+        )
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         expected_results['PSFU-08-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Cochrane',
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id + f'&first_name={first_name}' +
@@ -237,7 +334,7 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         user_id = '1cbe9aad-b29f-46b5-920e-b4c496d42515'  # eddie@email.addr
         first_name = 'Eddie'
         expected_results = {}
-        expected_results['project_visibility'] = [False, False, False, True, True, True, True]
+        expected_results['project_visibility'] = [False, False, False, True, True, True, True]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', None)
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics',

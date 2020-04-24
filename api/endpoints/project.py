@@ -112,18 +112,39 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
     try:
         for project in project_list:
             project_id = project['id']
+
             project['project_is_visible'] = \
-                ((project['status'] == 'testing') and (project_testgroup_users_dict.get(project_id) is not None)) \
-                or ((project['status'] != 'testing') and
-                    ((project['visibility'] == 'public') or
-                    (project_group_users_dict.get(project_id) is not None)))
+                (
+                    # testing/active project visible to test group
+                    (project['status'] in ['testing', 'active']) and
+                    (project_testgroup_users_dict.get(project_id) is not None)
+                ) or (
+                    # active/complete project visible to user group or, if public, to anyone
+                    (project['status'] in ['active', 'complete']) and
+                    (
+                        (project['visibility'] == 'public') or
+                        (project_group_users_dict.get(project_id) is not None)
+                    )
+                )
+
             for task in project['tasks']:
                 task_id = task['id']
                 task['task_is_visible'] = \
-                    project['project_is_visible'] and (
-                        (task['visibility'] == 'public')
-                        or ((task['status'] == 'testing') and (projecttask_testgroup_users_dict.get(task_id) is not None))
-                        or ((task['status'] != 'testing') and (projecttask_group_users_dict.get(task_id) is not None)))
+                    (
+                        project['project_is_visible'] and
+                        (
+                            # task in testing phase visible to test group
+                            (task['status'] == 'testing') and
+                            (projecttask_testgroup_users_dict.get(task_id) is not None)
+                        ) or (
+                            # active/complete task visible to user group or, if public, to anyone
+                            (task['status'] in ['active', 'complete']) and
+                            (
+                                (projecttask_group_users_dict.get(task_id) is not None) or
+                                (task['visibility'] == 'public')
+                            )
+                        )
+                    )
                 task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
                 task['signup_available'] = \
                     (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
