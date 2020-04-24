@@ -900,6 +900,8 @@ Resources:
             TableName: !Ref tokens
         - DynamoDBCrudPolicy:
             TableName: !Ref notifications
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserSpecificUrls
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -917,6 +919,8 @@ Resources:
           TABLE_ARN: !GetAtt tokens.Arn
           TABLE_NAME_2: !Ref notifications
           TABLE_ARN_2: !GetAtt notifications.Arn
+          TABLE_NAME_3: !Ref UserSpecificUrls
+          TABLE_ARN_3: !GetAtt UserSpecificUrls.Arn
       Events:
         CoreAPIPOSTv1usertask:
           Type: Api
