@@ -412,12 +412,12 @@ class TestUserTask(test_utils.DbTestCase):
 class TestUserTaskSpecificUrl(test_utils.DbTestCase):
     delete_notifications = True
     maxDiff = None
-    ddb = Dynamodb()
     base_user_specific_url = "https://test.user.specific.url.com/jfe/form/SV_25DkdHUUWqrSrSB?Q_DL=3eVFs4Y9PkNlUoq_25&Q_CHL=gl"
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.ddb = Dynamodb()
         cls.add_test_specific_urls_to_ddb()
 
     @classmethod

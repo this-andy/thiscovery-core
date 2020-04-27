@@ -21,14 +21,15 @@ from unittest import TestCase
 import common.utilities as utils
 import testing_utilities as test_utils
 
-from api.common.dev_config import SECRETS_NAMESPACE
+from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.common.utilities import set_running_unit_tests
 
 
 class TestOther(test_utils.BaseTestCase):
     def test_non_prod_env_url_param(self):
-        expected_result = str()
-        result = utils.non_prod_env_url_param(target_env=utils.namespace2name(SECRETS_NAMESPACE))
+        test_env = utils.namespace2name(UNIT_TEST_NAMESPACE)
+        expected_result = f"&env={test_env}"
+        result = utils.non_prod_env_url_param()
         self.assertEqual(expected_result, result)
 
 
