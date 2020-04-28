@@ -49,7 +49,11 @@ def put_test_items(integer):
 
 
 class TestDynamoDB(test_utils.BaseTestCase):
-    ddb = ddb_utils.Dynamodb()
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ddb = ddb_utils.Dynamodb()
 
     def setUp(self):
         self.ddb.delete_all(TEST_TABLE_NAME)

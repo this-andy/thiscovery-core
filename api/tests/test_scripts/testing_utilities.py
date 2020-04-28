@@ -52,13 +52,13 @@ class BaseTestCase(unittest.TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
-    # ssm_client = utils.SsmClient()
-    secrets_client = utils.SecretsManager()
+    secrets_client = None
 
     @classmethod
     def setUpClass(cls):
         utils.set_running_unit_tests(True)
-        # cls.ssm_client.put_parameter('running-tests', 'true', prefix='/thiscovery/')
+        if cls.secrets_client is None:  # initialise a new secrets_client only if another class instance has not done so yet
+            cls.secrets_client = utils.SecretsManager()
         cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'true'})
         cls.logger = utils.get_logger()
 
