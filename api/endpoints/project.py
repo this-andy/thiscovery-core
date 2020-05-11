@@ -106,7 +106,11 @@ def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
     projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
     projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
     projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
-    user_first_name = results[5][0]['first_name']
+    try:
+        user_first_name = results[5][0]['first_name']
+    except IndexError:
+        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError(f'User {user_id} could not be found', errorjson)
 
     # now add calculated attributes to returned json...
     try:
