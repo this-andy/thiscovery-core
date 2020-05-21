@@ -97,6 +97,7 @@ def process_user_registration(notification):
 
 
 def get_task_signup_data_for_crm(user_task_id, correlation_id):
+    # todo: rename this function; it returns general data about user task, not only data relevant to signup
     extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),), correlation_id)
     if len(extra_data) == 1:
         return extra_data[0]
@@ -128,6 +129,37 @@ def process_task_signup(notification):
         else:
             hs_client = HubSpotClient()
             posting_result = hs_client.post_task_signup_to_crm(signup_details, correlation_id)
+            marking_result = mark_notification_processed(notification, correlation_id)
+            return posting_result, marking_result
+
+    except Exception as ex:
+        error_message = str(ex)
+        mark_notification_failure(notification, error_message, correlation_id)
+
+
+def process_task_completion(notification):
+    logger = get_logger()
+    correlation_id = new_correlation_id()
+
+    try:
+        # get basic data out of notification
+        completion_details = notification['details']
+        user_task_id = completion_details['id']
+
+        # get additional data that hubspot needs from database
+        extra_data = get_task_signup_data_for_crm(user_task_id, correlation_id)
+
+        # put it all together for dispatch to HubSpot
+        completion_details.update(extra_data)
+        completion_details['completion_event_type'] = 'Completion'
+
+        # check here that we have a hubspot id
+        if completion_details['crm_id'] is None:
+            errorjson = {'user_task_id': user_task_id, 'correlation_id': str(correlation_id)}
+            raise DetailedValueError('user does not have crm_id', errorjson)
+        else:
+            hs_client = HubSpotClient()
+            posting_result = hs_client.post_task_completion_to_crm(completion_details, correlation_id)
             marking_result = mark_notification_processed(notification, correlation_id)
             return posting_result, marking_result
 

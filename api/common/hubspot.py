@@ -38,6 +38,7 @@ BASE_URL = 'https://api.hubapi.com'
 CONTACTS_ENDPOINT = '/contacts/v1'
 INTEGRATIONS_ENDPOINT = '/integrations/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
+TASK_COMPLETION_TLE_TYPE_NAME = 'task-completion'
 
 
 class HubSpotClient:
@@ -487,6 +488,24 @@ class HubSpotClient:
             'task_type_name': signup_details['task_type_name'],
             'signup_event_type': signup_details['signup_event_type'],
             'timestamp': hubspot_timestamp(signup_details['created'])
+        }
+
+        return self.create_or_update_timeline_event(tle_details, correlation_id)
+
+    def post_task_completion_to_crm(self, completion_details, correlation_id):
+        tle_type_id = self.get_timeline_event_type_id(TASK_COMPLETION_TLE_TYPE_NAME, correlation_id)
+        tle_details = {
+            'id': completion_details['id'],
+            'objectId': completion_details['crm_id'],
+            'eventTypeId': tle_type_id,
+            'project_id': completion_details['project_id'],
+            'project_name': completion_details['project_name'],
+            'task_id': completion_details['task_id'],
+            'task_name': completion_details['task_name'],
+            'task_type_id': completion_details['task_type_id'],
+            'task_type_name': completion_details['task_type_name'],
+            'signup_event_type': completion_details['signup_event_type'],
+            'timestamp': hubspot_timestamp(completion_details['created'])
         }
 
         return self.create_or_update_timeline_event(tle_details, correlation_id)

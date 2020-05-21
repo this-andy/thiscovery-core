@@ -19,6 +19,7 @@ import json
 import uuid
 from http import HTTPStatus
 
+import common.notification_send as ns
 import common.sql_queries as sql_q
 import common.utilities as utils
 from common.dynamodb_utilities import Dynamodb
@@ -310,6 +311,19 @@ def set_user_task_completed(ut_id, correlation_id=None):
     )
 
     assert updated_rows_count == 1, f"Failed to update status of user task {ut_id}; updated_rows_count: {updated_rows_count}"
+
+    task_completion = {
+        'id': ut_id,
+        'created': result['created'],
+        'modified': result['modified'],
+        'user_id': result['user_id'],
+        'user_project_id': result['user_project_id'],
+        'project_task_id': result['project_task_id'],
+        'status': result['status'],
+        'consented': result['consented'],
+    }
+
+    ns.notify_task_completion(task_completion, correlation_id)
 
 
 @utils.lambda_wrapper

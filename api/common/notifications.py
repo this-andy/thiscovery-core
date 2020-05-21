@@ -28,6 +28,7 @@ MAX_RETRIES = 2
 
 class NotificationType(Enum):
     USER_REGISTRATION = 'user-registration'
+    TASK_COMPLETION = 'task-completion'
     TASK_SIGNUP = 'task-signup'
     USER_LOGIN = 'user-login'
 
