@@ -243,7 +243,11 @@ def create_user_task(ut_json, correlation_id):
             key=item_key,
             correlation_id=correlation_id,
         )
-        user_task_url = item['user_specific_url']
+        try:
+            user_task_url = item['user_specific_url']
+        except TypeError:
+            errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+            raise utils.ObjectDoesNotExistError('User specific url not found', errorjson)
 
     row_count = execute_non_query(
         CREATE_USER_TASK_SQL,
