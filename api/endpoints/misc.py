@@ -103,3 +103,11 @@ def call_raise_error_on_prod_and_staging(event, context):
     else:
         message = f'{env_name} is not {utils.PRODUCTION_ENV_NAME} nor {utils.STAGING_ENV_NAME}; exiting without raising an error'
     return message
+
+
+def log_request_body_api(event, context):
+    logger = event['logger']
+
+    params = event['queryStringParameters']
+    body = event['body']
+    logger.info('API call', extra={'event': event})
