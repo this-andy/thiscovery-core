@@ -105,9 +105,14 @@ def call_raise_error_on_prod_and_staging(event, context):
     return message
 
 
-def log_request_body_api(event, context):
+@utils.lambda_wrapper
+@utils.api_error_handler
+def log_request_api(event, context):
     logger = event['logger']
 
-    params = event['queryStringParameters']
-    body = event['body']
+    # params = event['queryStringParameters']
+    # body = event['body']
     logger.info('API call', extra={'event': event})
+    return {
+        "statusCode": HTTPStatus.OK,
+    }
