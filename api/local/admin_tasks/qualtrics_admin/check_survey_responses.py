@@ -31,6 +31,8 @@ import api.common.pg_utilities as pg_utils
 import api.common.sql_queries as sql_q
 import api.common.utilities as utils
 
+from api.common.dev_config import SECRETS_NAMESPACE
+
 
 class DataCheckManager:
 
@@ -128,5 +130,11 @@ class DataCheckManager:
 
 
 if __name__ == '__main__':
+    if SECRETS_NAMESPACE != '/prod/':
+        continue_prompt = input(f"SECRETS_NAMESPACE is {SECRETS_NAMESPACE} instead of /prod/ so this will probably fail. "
+                                f"Are you sure you want to continue? (y/n)")
+        if continue_prompt not in ['Y', 'y']:
+            import sys
+            sys.exit()
     manager = DataCheckManager()
     manager.main()
