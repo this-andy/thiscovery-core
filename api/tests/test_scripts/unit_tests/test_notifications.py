@@ -193,7 +193,18 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
 
-    def test_05_post_login(self):
+    def test_05_process_signup_with_expired_token(self):
+        expired_token = self.hs_client.get_expired_token_from_database()
+        self.hs_client.save_token(expired_token, correlation_id=None)
+        create_task_signup_notification()
+        notification = get_notifications()[0]
+        posting_result, marking_result = np.process_task_signup(notification)
+        self.assertIsNone(posting_result)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
+        notification = get_notifications()[0]
+        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+
+    def test_06_post_login(self):
         """
         Tests processing of user login notifications
         """
@@ -208,7 +219,7 @@ class TestNotifications(test_utils.DbTestCase):
         for i in user_json.keys():
             self.assertEqual(user_json[i], notification['details'][i])
 
-    def test_06_process_login(self):
+    def test_07_process_login(self):
         """
         Tests notification_process.process_user_login
         """
@@ -218,7 +229,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
 
-    def test_09_process_login_with_expired_token(self):
+    def test_08_process_login_with_expired_token(self):
         """
         Tests notification_process.process_user_login with an expired HubSpot token
         """
@@ -227,19 +238,19 @@ class TestNotifications(test_utils.DbTestCase):
         create_login_notification(TEST_USER_02_JSON)
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_user_login(notification)
-        self.assertEqual(HTTPStatus.UNAUTHORIZED, posting_result)
+        self.assertIsNone(posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
         notification = get_notifications()[0]
         self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
 
-    def test_07_fail_post_login_invalid_data(self):
+    def test_09_fail_post_login_invalid_data(self):
         """
         Ensures notification_send.notify_user_login fails if notification body does not include login_datetime
         """
         with self.assertRaises(AssertionError):
             create_login_notification()
 
-    def test_08_fail_processing(self):
+    def test_10_fail_processing(self):
         """
         Tests function notifications.mark_notification_failure
         """
@@ -277,7 +288,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(3, notification[NotificationAttributes.FAIL_COUNT.value])
         self.assertEqual(test_error_message, notification[NotificationAttributes.ERROR_MESSAGE.value])
 
-    def test_09_clear_notification_queue_deletes_old_notification(self):
+    def test_11_clear_notification_queue_deletes_old_notification(self):
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
             target_status=NotificationStatus.PROCESSED.value,
@@ -286,7 +297,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(1, len(deleted_notifications))
         self.assertEqual(notification_id, deleted_notifications[0]['id'])
 
-    def test_10_clear_notification_queue_leaves_recent_notification_untouched(self):
+    def test_12_clear_notification_queue_leaves_recent_notification_untouched(self):
         six_days_ago = utils.now_with_tz() - timedelta(days=6)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
             target_status=NotificationStatus.PROCESSED.value,
@@ -295,7 +306,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertTrue(notification_id)
         self.assertEqual(0, len(deleted_notifications))
 
-    def test_11_clear_notification_queue_leaves_dlq_notifications_untouched(self):
+    def test_13_clear_notification_queue_leaves_dlq_notifications_untouched(self):
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
             target_status=NotificationStatus.DLQ.value,

@@ -50,19 +50,19 @@ def hubspot_api_error_handler(func):
             return status_code
         elif status_code == http.HTTPStatus.BAD_REQUEST:
             raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
-                                           details={'result': status_code, 'correlation_id': correlation_id})
+                                           details={'result': status_code})
         elif status_code == http.HTTPStatus.UNAUTHORIZED:
             raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
-                                           details={'result': status_code, 'correlation_id': correlation_id})
+                                           details={'result': status_code})
         elif status_code == http.HTTPStatus.NOT_FOUND:
             raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
-                                           details={'result': status_code, 'correlation_id': correlation_id})
+                                           details={'result': status_code})
         elif status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR:
             raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
-                                           details={'result': status_code, 'correlation_id': correlation_id})
+                                           details={'result': status_code})
         else:
             raise utils.DetailedValueError('Received an error from the HubSpot API',
-                                           details={'result': status_code, 'correlation_id': correlation_id})
+                                           details={'result': status_code})
     return wrapper
 # endregion
 
@@ -337,6 +337,7 @@ class HubSpotClient:
     def get_contact_property(contact, property_name):
         return contact['properties'][property_name]['value']
 
+    @hubspot_api_error_handler
     def update_contact_core(self, url, property_changes, correlation_id):
         data = {"properties": property_changes}
         r = self.post(url, data, correlation_id)
