@@ -133,21 +133,6 @@ def process_task_signup(notification):
             logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
             if posting_result == http.HTTPStatus.NO_CONTENT:
                 marking_result = mark_notification_processed(notification, correlation_id)
-            elif posting_result == http.HTTPStatus.BAD_REQUEST:
-                raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
-                                               details={'posting_result': posting_result, 'correlation_id': correlation_id})
-            elif posting_result == http.HTTPStatus.UNAUTHORIZED:
-                raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
-                                               details={'posting_result': posting_result, 'correlation_id': correlation_id})
-            elif posting_result == http.HTTPStatus.NOT_FOUND:
-                raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
-                                               details={'posting_result': posting_result, 'correlation_id': correlation_id})
-            elif posting_result == http.HTTPStatus.INTERNAL_SERVER_ERROR:
-                raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
-                                               details={'posting_result': posting_result, 'correlation_id': correlation_id})
-            else:
-                raise utils.DetailedValueError('Received an error from the HubSpot API',
-                                               details={'posting_result': posting_result, 'correlation_id': correlation_id})
     except Exception as ex:
         error_message = str(ex)
         marking_result = mark_notification_failure(notification, error_message, correlation_id)
@@ -169,21 +154,6 @@ def process_user_login(notification):
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
         if posting_result == http.HTTPStatus.NO_CONTENT:
             marking_result = mark_notification_processed(notification, correlation_id)
-        elif posting_result == http.HTTPStatus.BAD_REQUEST:
-            raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
-                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
-        elif posting_result == http.HTTPStatus.UNAUTHORIZED:
-            raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
-                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
-        elif posting_result == http.HTTPStatus.NOT_FOUND:
-            raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
-                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
-        elif posting_result == http.HTTPStatus.INTERNAL_SERVER_ERROR:
-            raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
-                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
-        else:
-            raise utils.DetailedValueError('Received an error from the HubSpot API',
-                                           details={'posting_result': posting_result, 'correlation_id': correlation_id})
     except Exception as ex:
         error_message = str(ex)
         marking_result = mark_notification_failure(notification, error_message, correlation_id)

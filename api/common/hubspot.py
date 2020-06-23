@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import http
 import json
 import requests
 from urllib.error import HTTPError
@@ -424,8 +424,25 @@ class HubSpotClient:
     def create_or_update_timeline_event(self, event_data: dict, correlation_id):
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event'
-        result = self.put(url, event_data, correlation_id)
-        return result.status_code
+        response = self.put(url, event_data, correlation_id)
+        result = response.status_code
+        if result == http.HTTPStatus.NO_CONTENT:
+            return result
+        elif result == http.HTTPStatus.BAD_REQUEST:
+            raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
+                                           details={'result': result, 'correlation_id': correlation_id})
+        elif result == http.HTTPStatus.UNAUTHORIZED:
+            raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
+                                           details={'result': result, 'correlation_id': correlation_id})
+        elif result == http.HTTPStatus.NOT_FOUND:
+            raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
+                                           details={'result': result, 'correlation_id': correlation_id})
+        elif result == http.HTTPStatus.INTERNAL_SERVER_ERROR:
+            raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
+                                           details={'result': result, 'correlation_id': correlation_id})
+        else:
+            raise utils.DetailedValueError('Received an error from the HubSpot API',
+                                           details={'result': result, 'correlation_id': correlation_id})
     # endregion
 
     # region thiscovery functionality
