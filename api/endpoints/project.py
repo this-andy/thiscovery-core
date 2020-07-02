@@ -99,8 +99,8 @@ class ProjectStatusForUser:
         results = execute_query_multiple(
             (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
              sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4'], sql_q.get_project_status_for_user_sql['sql5']),
-            (self.user_id,) * 6,
-            self.correlation_id
+            ((user_id,),) * 6,
+            correlation_id
         )
         self.project_group_users_dict = dict_from_dataset(results[0], 'project_id')
         self.project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
@@ -110,8 +110,8 @@ class ProjectStatusForUser:
         try:
             self.user_first_name = results[5][0]['first_name']
         except IndexError:
-            errorjson = {'user_id': self.user_id, 'correlation_id': str(self.correlation_id)}
-            raise utils.ObjectDoesNotExistError(f"User {self.user_id} could not be found", errorjson)
+            errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+            raise utils.ObjectDoesNotExistError(f"User {user_id} could not be found", errorjson)
 
     def calculate_project_visibility(self, project):
         project_id = project['id']
@@ -210,8 +210,8 @@ class ProjectStatusForUser:
         return self.project_list
 
 
-def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
-    project_status_for_user = ProjectStatusForUser(user_id, correlation_id, anonymise_url)
+def get_project_status_for_user(user_id, correlation_id):
+    project_status_for_user = ProjectStatusForUser(user_id, correlation_id)
     return project_status_for_user.main()
 
 

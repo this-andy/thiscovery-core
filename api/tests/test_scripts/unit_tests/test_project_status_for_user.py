@@ -22,7 +22,7 @@ from http import HTTPStatus
 import api.endpoints.user as u
 import testing_utilities as test_utils
 from api.common.dev_config import UNIT_TEST_NAMESPACE
-from api.endpoints.project import get_project_status_for_user_api, get_project_status_for_external_user_api
+from api.endpoints.project import get_project_status_for_user_api  #, get_project_status_for_external_user_api
 from testing_utilities import test_get
 
 TEST_SQL_FOLDER = '../test_sql/'
@@ -101,10 +101,10 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
     def check_project_status_for_single_user(self, user_id, expected_results):
         self.check_project_status_for_single_user_base('user_id', user_id, expected_results)
 
-    def check_project_status_for_single_external_user(self, user_id, expected_results):
-        self.check_project_status_for_single_user_base('user_id', user_id, expected_results,
-                                                       target_function=get_project_status_for_external_user_api,
-                                                       base_url='v2/project-user-status')
+    # def check_project_status_for_single_external_user(self, user_id, expected_results):
+    #     self.check_project_status_for_single_user_base('user_id', user_id, expected_results,
+    #                                                    target_function=get_project_status_for_external_user_api,
+    #                                                    base_url='v2/project-user-status')
 
     def test_project_status_invalid_user_id(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebd'
@@ -385,28 +385,28 @@ class TestGetProjectStatusForUserFunction(test_utils.DbTestCase):
                     for k, v in expected_fields.items():
                         self.assertEqual(v, task[k])
 
-    def test_user_specific_task_url_anonymous(self):
-        result = test_get(
-            get_project_status_for_external_user_api,
-            f'v2/{ENTITY_BASE_URL}',
-            querystring_parameters={'user_id': self.user_id}
-        )
-        expected_status = HTTPStatus.OK
-        result_status = result['statusCode']
-        self.assertEqual(expected_status, result_status)
-        result_json = json.loads(result['body'])
-        expected_task_results = {
-            '4ee70544-6797-4e21-8cec-5653c8d5b234': {
-                'url': f'www.specific-user-task.co.uk'
-                       f'?anon_project_specific_user_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
-                       f'&anon_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
-                       f'&external_task_id=5678'
-                       f'&env={TEST_ENV}',
-            }
-        }
-        for project in result_json:
-            for task in project['tasks']:
-                expected_fields = expected_task_results.get(task['id'])
-                if expected_fields:
-                    for k, v in expected_fields.items():
-                        self.assertEqual(v, task[k])
+    # def test_user_specific_task_url_anonymous(self):
+    #     result = test_get(
+    #         get_project_status_for_external_user_api,
+    #         f'v2/{ENTITY_BASE_URL}',
+    #         querystring_parameters={'user_id': self.user_id}
+    #     )
+    #     expected_status = HTTPStatus.OK
+    #     result_status = result['statusCode']
+    #     self.assertEqual(expected_status, result_status)
+    #     result_json = json.loads(result['body'])
+    #     expected_task_results = {
+    #         '4ee70544-6797-4e21-8cec-5653c8d5b234': {
+    #             'url': f'www.specific-user-task.co.uk'
+    #                    f'?anon_project_specific_user_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
+    #                    f'&anon_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
+    #                    f'&external_task_id=5678'
+    #                    f'&env={TEST_ENV}',
+    #         }
+    #     }
+    #     for project in result_json:
+    #         for task in project['tasks']:
+    #             expected_fields = expected_task_results.get(task['id'])
+    #             if expected_fields:
+    #                 for k, v in expected_fields.items():
+    #                     self.assertEqual(v, task[k])
