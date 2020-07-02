@@ -39,7 +39,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_task_id, created, status, first_name = None, None, None, None
+anon_user_task_id, created, status, first_name = None, None, None, None
 
 
 def validate_status(s):
@@ -171,7 +171,7 @@ def create_user_task(ut_json, correlation_id):
 
     # now process optional json data
     optional_fields_name_default_and_validator = [
-        ('ext_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
+        ('anon_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
         ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
         ('first_name', None, utils.null_validator),
@@ -251,7 +251,7 @@ def create_user_task(ut_json, correlation_id):
 
     row_count = execute_non_query(
         CREATE_USER_TASK_SQL,
-        (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
+        (id, created, created, user_project_id, project_task_id, status, consented, anon_user_task_id, user_task_url),
         correlation_id
     )
 
@@ -276,7 +276,7 @@ def create_user_task(ut_json, correlation_id):
         'url': url,
         'status': status,
         'consented': consented,
-        'ext_user_task_id': ext_user_task_id,
+        'anon_user_task_id': anon_user_task_id,
     }
 
     notify_new_task_signup(new_user_task, correlation_id)

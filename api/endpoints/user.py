@@ -68,14 +68,14 @@ def append_calculated_properties(user):
     return user
 
 
-def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
+def get_user_by_anon_project_specific_user_id(anon_project_specific_user_id, correlation_id=None):
     try:
-        ext_user_project_id = utils.validate_uuid(ext_user_project_id)
+        anon_project_specific_user_id = utils.validate_uuid(anon_project_specific_user_id)
     except utils.DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
 
-    user_json = execute_query(sql_q.GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(ext_user_project_id),), correlation_id)
+    user_json = execute_query(sql_q.GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(anon_project_specific_user_id),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -159,7 +159,7 @@ def get_user_by_email_api(event, context):
         result = get_user_by_email(user_email, correlation_id)
     elif ext_user_project_id:
         logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
-        result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
+        result = get_user_by_anon_project_specific_user_id(ext_user_project_id, correlation_id)
     else:
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
         raise utils.DetailedValueError('Query parameters invalid', errorjson)

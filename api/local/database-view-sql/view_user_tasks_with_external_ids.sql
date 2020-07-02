@@ -30,7 +30,7 @@ CREATE OR REPLACE VIEW public.user_tasks_with_external_ids AS
         ut.ext_user_task_id,
         ut.created as usre_task_created,
         up.id AS user_project_id,
-        up.ext_user_project_id,
+        up.anon_project_specific_user_id,
         pt.id AS project_task_id,
         pt.description AS project_task_description,
         p.id AS project_id,

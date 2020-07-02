@@ -317,7 +317,7 @@ GET_USER_BY_EXT_USER_PROJECT_ID_SQL = '''
         public.projects_user as u
         JOIN public.projects_userproject as up on up.user_id = u.id
     WHERE
-        up.ext_user_project_id = (%s)
+        up.anon_project_specific_user_id = (%s)
 '''
 
 
@@ -437,7 +437,7 @@ CREATE_USER_PROJECT_SQL = '''
         user_id,
         project_id,
         status,
-        ext_user_project_id
+        anon_project_specific_user_id
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s );
 '''
 # endregion
@@ -524,7 +524,7 @@ CREATE_USER_TASK_SQL = '''
         project_task_id,
         status,
         consented,
-        ext_user_task_id,
+        anon_user_task_id,
         user_task_url
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s );
 '''
