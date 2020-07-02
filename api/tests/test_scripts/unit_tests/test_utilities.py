@@ -46,7 +46,7 @@ class TestCreateAnonymousUrlParams(test_utils.BaseTestCase):
                           '&first_name=Egg' \
                           '&anon_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f' \
                           '&external_task_id=spam_eggs'
-        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'Egg' 'e142fdf0-dea3-4513-9226-a1134037f57f',
+        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'Egg', 'e142fdf0-dea3-4513-9226-a1134037f57f',
                                                    'spam_eggs')
         self.assertEqual(expected_result, result)
 
