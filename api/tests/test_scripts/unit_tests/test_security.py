@@ -143,7 +143,7 @@ class TestUserProjectApiEndpoints(TestApiEndpoints):
         body = json.dumps({
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "5907275b-6d75-4ec0-ada8-5854b44fb955",
-            'ext_user_project_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
+            'anon_project_specific_user_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
             'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'

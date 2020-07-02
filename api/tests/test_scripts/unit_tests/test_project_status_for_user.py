@@ -149,23 +149,26 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
 
     def test_external_user_a_project_status(self):
         """
-        Same as test_user_a_project_status, but returned url is different: uses ext_user_project_id rather than user_id. Notice that because
-        ext_user_project_id is project-specific, two different identifiers are used
+        Same as test_user_a_project_status, but returned url is different: uses anon_project_specific_user_id rather than user_id. Notice that because
+        anon_project_specific_user_id is project-specific, two different identifiers are used
         (one associated with project 5907275b-6d75-4ec0-ada8-5854b44fb955 (FSFU-05-A) and another with project
         183c23a1-76a7-46c3-8277-501f0740939d (FSFU-07-A)
         """
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
-        ext_user_project_id_one = '1a03cb39-b669-44bb-a69e-98e6a521d758'  # altha@email.addr; project: 5907275b-6d75-4ec0-ada8-5854b44fb955
-        ext_user_project_id_two = '2c8bba57-58a9-4ac7-98e8-beb34f0692c1'  # altha@email.addr; project: 183c23a1-76a7-46c3-8277-501f0740939d
+        anon_project_specific_user_id_one = '1a03cb39-b669-44bb-a69e-98e6a521d758'  # altha@email.addr; project: 5907275b-6d75-4ec0-ada8-5854b44fb955
+        anon_project_specific_user_id_two = '2c8bba57-58a9-4ac7-98e8-beb34f0692c1'  # altha@email.addr; project: 183c23a1-76a7-46c3-8277-501f0740939d
         expected_results = dict()
         expected_results['project_visibility'] = [False, False, False, True, False, True, False]  # visibilities of projects 2-8; project 1 filtered out by API
-        expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane',
-                        f'http://crowd.cochrane.org/index.html?ext_user_project_id={ext_user_project_id_one}'
-                        f'&ext_user_task_id=f7894c6b-0391-4061-8f97-89b674cb61e3&external_task_id=ext-5a&env={TEST_ENV}')
+        expected_results['PSFU-05-A'] = ProjectTaskTestResult(
+            True, True, False, 'active', 'Cochrane',
+            f'http://crowd.cochrane.org/index.html?anon_project_specific_user_id={anon_project_specific_user_id_one}'
+            f'&anon_user_task_id=f7894c6b-0391-4061-8f97-89b674cb61e3&external_task_id=ext-5a&env={TEST_ENV}'
+        )
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(
             task_is_visible=True, user_is_signedup=True, signup_available=False, user_task_status='complete', task_provider_name='Qualtrics',
-            url=f'https://www.qualtrics.com?ext_user_project_id={ext_user_project_id_two}&ext_user_task_id=e18f7ecb-1f0f-4acb-bacc-274ac01feb76'
+            url=f'https://www.qualtrics.com?anon_project_specific_user_id={anon_project_specific_user_id_two}'
+                f'&anon_user_task_id=e18f7ecb-1f0f-4acb-bacc-274ac01feb76'
                 f'&external_task_id=ext-7a&env={TEST_ENV}')
         self.check_project_status_for_single_external_user(user_id, expected_results)
 
@@ -395,8 +398,8 @@ class TestGetProjectStatusForUserFunction(test_utils.DbTestCase):
         expected_task_results = {
             '4ee70544-6797-4e21-8cec-5653c8d5b234': {
                 'url': f'www.specific-user-task.co.uk'
-                       f'?ext_user_project_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
-                       f'&ext_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
+                       f'?anon_project_specific_user_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
+                       f'&anon_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
                        f'&external_task_id=5678'
                        f'&env={TEST_ENV}',
             }

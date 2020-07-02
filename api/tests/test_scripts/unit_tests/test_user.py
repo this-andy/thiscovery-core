@@ -84,12 +84,12 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
-    def test_02_get_user_by_ext_user_project_id_api_exists(self):
+    def test_02_get_user_by_anon_project_specific_user_id_api_exists(self):
         """
         Tests:
-            - we can retrieve an user by querying by ext_user_project_id
+            - we can retrieve an user by querying by anon_project_specific_user_id
         """
-        query_parameters = {'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"}
+        query_parameters = {'anon_project_specific_user_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"}
 
         expected_status = HTTPStatus.OK
 
@@ -101,8 +101,8 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
-    def test_17_get_user_by_ext_user_project_id_api_not_exists(self):
-        query_parameters = {'ext_user_project_id': "7da7a740-f6b0-4177-809b-5e2852605ff2"}
+    def test_17_get_user_by_anon_project_specific_user_id_api_not_exists(self):
+        query_parameters = {'anon_project_specific_user_id': "7da7a740-f6b0-4177-809b-5e2852605ff2"}
 
         expected_status = HTTPStatus.NOT_FOUND
 
@@ -124,11 +124,11 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
             ('message' in result_json) and
-            ('This endpoint requires one query parameter (email or ext_user_project_id); none were found' in result_json['message'])
+            ('This endpoint requires one query parameter (email or anon_project_specific_user_id); none were found' in result_json['message'])
         )
 
         query_parameters = {
-            'ext_user_project_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1",
+            'anon_project_specific_user_id': "2c8bba57-58a9-4ac7-98e8-beb34f0692c1",
             'email': 'altha@email.co.uk',
         }
         result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=query_parameters)
@@ -138,7 +138,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
             ('message' in result_json) and
-            ('Please query by either email or ext_user_project_id, but not both' in result_json['message'])
+            ('Please query by either email or anon_project_specific_user_id, but not both' in result_json['message'])
         )
 
     def test_16_get_user_by_uuid_api_not_exists(self):

@@ -153,7 +153,7 @@ class TestUserProject(test_utils.DbTestCase):
 
         # now remove from returned object those that weren't in input json and test separately
         self.new_uuid_test_and_remove(result_json)
-        self.uuid_test_and_remove(result_json, 'ext_user_project_id')
+        self.uuid_test_and_remove(result_json, 'anon_project_specific_user_id')
         self.now_datetime_test_and_remove(result_json, 'created')
         self.now_datetime_test_and_remove(result_json, 'modified')
         self.value_test_and_remove(result_json, 'status', expected_value='active')

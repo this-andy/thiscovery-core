@@ -300,7 +300,7 @@ BASE_USER_SELECT_SQL = '''
     '''
 
 
-GET_USER_BY_EXT_USER_PROJECT_ID_SQL = '''
+GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = '''
     SELECT 
         u.id, 
         u.created, 
