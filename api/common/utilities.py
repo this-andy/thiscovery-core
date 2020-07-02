@@ -558,23 +558,21 @@ def get_environment_name():
 
 
 # this belongs in user_task class as a property - moved here to avoid circular includes
-def create_anonymous_url_params(base_url, anon_project_specific_user_id, anon_user_task_id, external_task_id):
+def create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name, anon_user_task_id, external_task_id):
     assert anon_project_specific_user_id, 'anon_project_specific_user_id is null'
     assert anon_user_task_id, 'anon_user_task_id is null'
+    params = f'?anon_project_specific_user_id={anon_project_specific_user_id}&first_name={user_first_name}&anon_user_task_id={anon_user_task_id}'
     if "?" in base_url:
-        params = f'&anon_project_specific_user_id={anon_project_specific_user_id}&anon_user_task_id={anon_user_task_id}'
-    else:
-        params = f'?anon_project_specific_user_id={anon_project_specific_user_id}&anon_user_task_id={anon_user_task_id}'
+        params = f'&{params[1:]}'
     if external_task_id is not None:
         params += f'&external_task_id={external_task_id}'
     return params
 
 
 def create_url_params(base_url, user_id, user_first_name, user_task_id, external_task_id=None):
+    params = f'?user_id={user_id}&first_name={user_first_name}&user_task_id={user_task_id}'
     if "?" in base_url:
-        params = f'&user_id={user_id}&first_name={user_first_name}&user_task_id={user_task_id}'
-    else:
-        params = f'?user_id={user_id}&first_name={user_first_name}&user_task_id={user_task_id}'
+        params = f'&{params[1:]}'
     if external_task_id is not None:
         params += f'&external_task_id={str(external_task_id)}'
     return params
