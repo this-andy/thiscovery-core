@@ -91,10 +91,9 @@ def get_project_api(event, context):
 
 class ProjectStatusForUser:
 
-    def __init__(self, user_id, correlation_id, anonymise_url=False):
+    def __init__(self, user_id, correlation_id):
         self.user_id = user_id
         self.correlation_id = correlation_id
-        self.anonymise_url = anonymise_url
         self.project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
         results = execute_query_multiple(
@@ -150,7 +149,8 @@ class ProjectStatusForUser:
             )
         return task_visibility
 
-    def calculate_task_signup(self, task):
+    @staticmethod
+    def calculate_task_signup(task):
         signup_available = \
             (
                 task['task_is_visible'] and
@@ -169,13 +169,13 @@ class ProjectStatusForUser:
         if task['task_is_visible'] and task['user_is_signedup']:
             user_task_id = self.projects_usertasks_dict[task_id]['id']
             external_task_id = task['external_task_id']
-            ext_user_project_id = self.projects_usertasks_dict[task_id]['ext_user_project_id']
-            ext_user_task_id = self.projects_usertasks_dict[task_id]['ext_user_task_id']
+            anon_project_specific_user_id = self.projects_usertasks_dict[task_id]['anon_project_specific_user_id']
+            anon_user_task_id = self.projects_usertasks_dict[task_id]['anon_user_task_id']
             if task['user_specific_url']:
                 task['url'] = self.projects_usertasks_dict[task_id]['user_task_url']
             if task['url'] is not None:
-                if self.anonymise_url:
-                    task['url'] += utils.create_anonymous_url_params(task['url'], ext_user_project_id, ext_user_task_id, external_task_id)
+                if task['anonymise_url']:
+                    task['url'] += utils.create_anonymous_url_params(task['url'], anon_project_specific_user_id, anon_user_task_id, external_task_id)
                 else:
                     task['url'] += utils.create_url_params(task['url'], self.user_id, self.user_first_name, user_task_id, external_task_id)
                 task['url'] += utils.non_prod_env_url_param()
@@ -228,22 +228,4 @@ def get_project_status_for_user_api(event, context):
     return {
         "statusCode": HTTPStatus.OK,
         "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
-    }
-
-
-@utils.lambda_wrapper
-@utils.api_error_handler
-def get_project_status_for_external_user_api(event, context):
-    """
-    Lambda handler linked to API endpoint /v2/project-user-status
-    """
-    logger = event['logger']
-    correlation_id = event['correlation_id']
-
-    params = event['queryStringParameters']
-    user_id = utils.validate_uuid(params['user_id'])
-    logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
-    return {
-        "statusCode": HTTPStatus.OK,
-        "body": json.dumps(get_project_status_for_user(user_id, correlation_id, anonymise_url=True))
     }
