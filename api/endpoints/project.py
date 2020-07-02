@@ -89,95 +89,129 @@ def get_project_api(event, context):
         raise utils.ObjectDoesNotExistError('project is planned or does not exist', errorjson)
 
 
-def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
+class ProjectStatusForUser:
 
-    project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
+    def __init__(self, user_id, correlation_id, anonymise_url=False):
+        self.user_id = user_id
+        self.correlation_id = correlation_id
+        self.anonymise_url = anonymise_url
+        self.project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
-    str_user_id = (str(user_id),)
-    results = execute_query_multiple(
-        (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
-         sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4'], sql_q.get_project_status_for_user_sql['sql5']),
-        (str_user_id,)*6,
-        correlation_id
-    )
+        results = execute_query_multiple(
+            (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
+             sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4'], sql_q.get_project_status_for_user_sql['sql5']),
+            (self.user_id,) * 6,
+            self.correlation_id
+        )
+        self.project_group_users_dict = dict_from_dataset(results[0], 'project_id')
+        self.project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
+        self.projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
+        self.projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
+        self.projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
+        try:
+            self.user_first_name = results[5][0]['first_name']
+        except IndexError:
+            errorjson = {'user_id': self.user_id, 'correlation_id': str(self.correlation_id)}
+            raise utils.ObjectDoesNotExistError(f"User {self.user_id} could not be found", errorjson)
 
-    project_group_users_dict = dict_from_dataset(results[0], 'project_id')
-    project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
-    projecttask_group_users_dict = dict_from_dataset(results[2], 'project_task_id')
-    projecttask_testgroup_users_dict = dict_from_dataset(results[3], 'project_task_id')
-    projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
-    try:
-        user_first_name = results[5][0]['first_name']
-    except IndexError:
-        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
-        raise utils.ObjectDoesNotExistError(f"User {user_id} could not be found", errorjson)
-
-    # now add calculated attributes to returned json...
-    try:
-        for project in project_list:
-            project_id = project['id']
-
-            project['project_is_visible'] = \
+    def calculate_project_visibility(self, project):
+        project_id = project['id']
+        project_visibility = \
+            (
+                # testing/active project visible to test group
+                (project['status'] in ['testing', 'active']) and
+                (self.project_testgroup_users_dict.get(project_id) is not None)
+            ) or (
+                # active/complete project visible to user group or, if public, to anyone
+                (project['status'] in ['active', 'complete']) and
                 (
-                    # testing/active project visible to test group
-                    (project['status'] in ['testing', 'active']) and
-                    (project_testgroup_users_dict.get(project_id) is not None)
+                    (project['visibility'] == 'public') or
+                    (self.project_group_users_dict.get(project_id) is not None)
+                )
+            )
+        return project_visibility
+
+    def calculate_task_visibility(self, project, task, task_id):
+        task_visibility = \
+            (
+                project['project_is_visible'] and
+                (
+                    # task in testing phase visible to test group
+                    (task['status'] == 'testing') and
+                    (self.projecttask_testgroup_users_dict.get(task_id) is not None)
                 ) or (
-                    # active/complete project visible to user group or, if public, to anyone
-                    (project['status'] in ['active', 'complete']) and
+                    # active/complete task visible to user group or, if public, to anyone
+                    (task['status'] in ['active', 'complete']) and
                     (
-                        (project['visibility'] == 'public') or
-                        (project_group_users_dict.get(project_id) is not None)
+                        (self.projecttask_group_users_dict.get(task_id) is not None) or
+                        (task['visibility'] == 'public')
                     )
                 )
+            )
+        return task_visibility
 
-            for task in project['tasks']:
-                task_id = task['id']
-                task['task_is_visible'] = \
-                    (
-                        project['project_is_visible'] and
-                        (
-                            # task in testing phase visible to test group
-                            (task['status'] == 'testing') and
-                            (projecttask_testgroup_users_dict.get(task_id) is not None)
-                        ) or (
-                            # active/complete task visible to user group or, if public, to anyone
-                            (task['status'] in ['active', 'complete']) and
-                            (
-                                (projecttask_group_users_dict.get(task_id) is not None) or
-                                (task['visibility'] == 'public')
-                            )
-                        )
-                    )
-                task['user_is_signedup'] = projects_usertasks_dict.get(task_id) is not None
-                task['signup_available'] = \
-                    (task['task_is_visible'] and (task['status'] == 'active') and not task['user_is_signedup'] and (task['signup_status'] == 'open')) \
-                    or (task['task_is_visible'] and (task['status'] == 'testing') and not task['user_is_signedup'])
-                if task['user_is_signedup']:
-                    if task['status'] == 'complete':
-                        task['user_task_status'] = 'complete'
-                    else:
-                        task['user_task_status'] = projects_usertasks_dict[task_id]['status']
-                # only give url if user has signedup (inc if completed)
-                if task['task_is_visible'] and task['user_is_signedup']:
-                    user_task_id = projects_usertasks_dict[task_id]['id']
-                    external_task_id = task['external_task_id']
-                    ext_user_project_id = projects_usertasks_dict[task_id]['ext_user_project_id']
-                    ext_user_task_id = projects_usertasks_dict[task_id]['ext_user_task_id']
-                    if task['user_specific_url']:
-                        task['url'] = projects_usertasks_dict[task_id]['user_task_url']
-                    if task['url'] is not None:
-                        if anonymise_url:
-                            task['url'] += utils.create_anonymous_url_params(task['url'], ext_user_project_id, ext_user_task_id, external_task_id)
-                        else:
-                            task['url'] += utils.create_url_params(task['url'], user_id, user_first_name, user_task_id, external_task_id)
-                        task['url'] += utils.non_prod_env_url_param()
+    def calculate_task_signup(self, task):
+        signup_available = \
+            (
+                task['task_is_visible'] and
+                (task['status'] == 'active') and not
+                task['user_is_signedup'] and
+                (task['signup_status'] == 'open')
+            ) or (
+                task['task_is_visible'] and
+                (task['status'] == 'testing') and not
+                task['user_is_signedup']
+            )
+        return signup_available
+
+    def calculate_task_url(self, task, task_id):
+        # only give url if user has signedup (inc if completed)
+        if task['task_is_visible'] and task['user_is_signedup']:
+            user_task_id = self.projects_usertasks_dict[task_id]['id']
+            external_task_id = task['external_task_id']
+            ext_user_project_id = self.projects_usertasks_dict[task_id]['ext_user_project_id']
+            ext_user_task_id = self.projects_usertasks_dict[task_id]['ext_user_task_id']
+            if task['user_specific_url']:
+                task['url'] = self.projects_usertasks_dict[task_id]['user_task_url']
+            if task['url'] is not None:
+                if self.anonymise_url:
+                    task['url'] += utils.create_anonymous_url_params(task['url'], ext_user_project_id, ext_user_task_id, external_task_id)
                 else:
-                    task['url'] = None
-    except Exception as ex:
-        raise ex
+                    task['url'] += utils.create_url_params(task['url'], self.user_id, self.user_first_name, user_task_id, external_task_id)
+                task['url'] += utils.non_prod_env_url_param()
+        else:
+            task['url'] = None
+        return task['url']
 
-    return project_list
+    def main(self):
+        """
+        Update get_project_status_for_user to parameterise URL depending upon value of anonymise_url (rather than existing function parameter)
+        """
+        # now add calculated attributes to returned json...
+        try:
+            for project in self.project_list:
+                project['project_is_visible'] = self.calculate_project_visibility(project)
+                for task in project['tasks']:
+                    task_id = task['id']
+                    task['task_is_visible'] = self.calculate_task_visibility(project, task, task_id)
+                    task['user_is_signedup'] = self.projects_usertasks_dict.get(task_id) is not None
+                    task['signup_available'] = self.calculate_task_signup(task)
+                    if task['user_is_signedup']:
+                        if task['status'] == 'complete':
+                            task['user_task_status'] = 'complete'
+                        else:
+                            task['user_task_status'] = self.projects_usertasks_dict[task_id]['status']
+                    task['url'] = self.calculate_task_url(task, task_id)
+
+        except Exception as ex:
+            raise ex
+
+        return self.project_list
+
+
+def get_project_status_for_user(user_id, correlation_id, anonymise_url=False):
+    project_status_for_user = ProjectStatusForUser(user_id, correlation_id, anonymise_url)
+    return project_status_for_user.main()
 
 
 @utils.lambda_wrapper
@@ -187,7 +221,7 @@ def get_project_status_for_user_api(event, context):
     correlation_id = event['correlation_id']
 
     params = event['queryStringParameters']
-    user_id = utils.validate_uuid(params['user_id'])
+    user_id = str(utils.validate_uuid(params['user_id']))
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
     if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
         raise ValueError('Deliberate error raised to test error handling')

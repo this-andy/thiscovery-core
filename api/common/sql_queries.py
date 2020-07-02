@@ -224,7 +224,8 @@ PROJECT_USER_SELECT_SQL = '''
                         FALSE as user_is_signedup,
                         FALSE as signup_available,
                         null as user_task_status,
-                        user_specific_url
+                        user_specific_url,
+                        anonymise_url
                     from public.projects_projecttask task
                     join public.projects_externalsystem es on task.external_system_id = es.id
                     where task.project_id = project.id
