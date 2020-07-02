@@ -488,7 +488,7 @@ LIST_USER_TASKS_SQL = '''
         ut.modified,               
         ut.status,
         ut.consented,
-        ut.ext_user_task_id,
+        ut.anon_user_task_id,
         es.short_name as task_provider_name,
         ut.progress_info,
         pt.base_url,

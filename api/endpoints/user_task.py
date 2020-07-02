@@ -151,7 +151,7 @@ def create_user_task(ut_json, correlation_id):
     Inserts new UserTask row in thiscovery db
 
     Args:
-        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, first_name
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, anon_user_task_id, first_name
         correlation_id:
 
     Returns:

@@ -54,7 +54,7 @@ USER_TASK_01_EXPECTED_BODY = {
         "status": "active",
         "consented": f"2018-11-06T12:48:40+00:00",
         "progress_info": None,
-        "ext_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
+        "anon_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
         "task_provider_name": "Qualtrics",
         "url": f"https://www.qualtrics.com"
                f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
@@ -76,7 +76,7 @@ USER_TASK_02_EXPECTED_BODY = {
         "status": "complete",
         "consented": f"2018-11-06T13:02:02+00:00",
         "progress_info": None,
-        "ext_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
+        "anon_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
         "task_provider_name": "Cochrane",
         "url": f"http://crowd.cochrane.org/index.html"
                f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
@@ -188,7 +188,7 @@ class TestUserTask(test_utils.DbTestCase):
         ut_json = {
             'user_id': user_id,
             'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',
-            'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
+            'anon_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': ut_id,
@@ -282,7 +282,7 @@ class TestUserTask(test_utils.DbTestCase):
 
         # now remove from returned object those that weren't in input json and test separately
         ut_id = self.new_uuid_test_and_remove(result_json)
-        self.uuid_test_and_remove(result_json, 'ext_user_task_id')
+        self.uuid_test_and_remove(result_json, 'anon_user_task_id')
         self.now_datetime_test_and_remove(result_json, 'created')
         self.now_datetime_test_and_remove(result_json, 'modified')
 

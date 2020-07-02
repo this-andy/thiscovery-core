@@ -162,7 +162,7 @@ class TestUserTaskApiEndpoints(TestApiEndpoints):
         body = json.dumps({
             'user_id': '48e30e54-b4fc-4303-963f-2943dda2b139',
             'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',
-            'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
+            'anon_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
