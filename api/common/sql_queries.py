@@ -184,7 +184,8 @@ GET_PROJECT_TASK_SQL = '''
         progress_info,
         progress_info_modified,
         es.short_name as task_provider_name,
-        user_specific_url
+        user_specific_url,
+        anonymise_url
     FROM public.projects_projecttask pt
     JOIN projects_externalsystem es on pt.external_system_id = es.id
     WHERE pt.id = %s

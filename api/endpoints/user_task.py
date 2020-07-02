@@ -63,14 +63,20 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     return result
 
 
-def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, correlation_id=None):
+def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, pt_anonymise_url,
+                  anon_project_specific_user_id, anon_user_task_id_local, correlation_id=None):
     if pt_user_specific_url:
         base_url = ut_url
 
     if base_url:
+        if pt_anonymise_url:
+            params = utils.create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name,
+                                                       anon_user_task_id_local, pt_external_task_id)
+        else:
+            params = utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id)
         return "{}{}{}".format(
             base_url,
-            utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id),
+            params,
             utils.non_prod_env_url_param()
         )
 
@@ -209,11 +215,13 @@ def create_user_task(ut_json, correlation_id):
     task_provider_name = pt_['task_provider_name']
     external_task_id = pt_['external_task_id']
     user_specific_url = pt_['user_specific_url']
+    anonymise_url = pt_['anonymise_url']
 
     # create_user_external_account_if_not_exists(user_id, project_task['external_system_id'], correlation_id)
 
     user_project = create_user_project_if_not_exists(user_id, project_id, correlation_id)
     user_project_id = user_project['id']
+    anon_project_specific_user_id = user_project['anon_project_specific_user_id']
 
     # check external account does not already exist
     existing = check_if_user_task_exists(user_id, project_task_id, correlation_id)
@@ -263,7 +271,19 @@ def create_user_task(ut_json, correlation_id):
             correlation_id=correlation_id,
         )
 
-    url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, first_name, correlation_id=correlation_id)
+    url = calculate_url(
+        base_url=base_url,
+        pt_user_specific_url=user_specific_url,
+        ut_url=user_task_url,
+        user_id=user_id,
+        ut_id=id,
+        pt_external_task_id=external_task_id,
+        user_first_name=first_name,
+        pt_anonymise_url=anonymise_url,
+        anon_project_specific_user_id=anon_project_specific_user_id,
+        anon_user_task_id_local=anon_user_task_id,
+        correlation_id=correlation_id
+    )
 
     new_user_task = {
         'id': id,
