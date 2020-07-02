@@ -221,6 +221,7 @@ class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
     public_endpoints = [
         ('/v1/ping', 'get'),
         ('/v1/raise-error', 'post'),
+        ('/v1/log-request', 'post'),
     ]
 
     @classmethod
