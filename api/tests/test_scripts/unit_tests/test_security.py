@@ -105,7 +105,6 @@ class TestProjectApiEndpoints(TestApiEndpoints):
         querystring_parameters = {'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
         version_mapping = {
             'v1': p.get_project_status_for_user_api,
-            'v2': p.get_project_status_for_external_user_api,
         }
         for api_version, handler_function in version_mapping.items():
             self.check_api_is_restricted('GET', handler_function, f'{api_version}/project-user-status', querystring_parameters=querystring_parameters)
