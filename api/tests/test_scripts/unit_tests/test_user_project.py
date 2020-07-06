@@ -222,12 +222,13 @@ class TestUserProject(test_utils.DbTestCase):
         )
 
     def test_09_create_user_projects_api_if_not_exists(self):
+        # todo: this test depends on test_04_create_user_projects_api_ok_and_duplicate; move to a different test class to setup/tear down independently
         user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
         project_id = "5907275b-6d75-4ec0-ada8-5854b44fb955"
         result = create_user_project_if_not_exists(user_id, project_id, None)
 
-        # should return id of user_project created in test 4
-        self.assertEqual(1, len(result))
+        # should return id and anon_project_specific_user_id of user_project created in test 4
+        self.assertEqual(['id', 'anon_project_specific_user_id'], list(result.keys()))
         self.assertEqual('9620089b-e9a4-46fd-bb78-091c8449d777', result['id'])
 
     def test_10_create_user_projects_api_missing_params(self):
