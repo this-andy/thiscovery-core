@@ -185,9 +185,6 @@ class ProjectStatusForUser:
         return task['url']
 
     def main(self):
-        """
-        Update get_project_status_for_user to parameterise URL depending upon value of anonymise_url (rather than existing function parameter)
-        """
         # now add calculated attributes to returned json...
         try:
             for project in self.project_list:
