@@ -108,12 +108,17 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
             ut['user_task_id'],
             ut['external_task_id'],
             user_result['first_name'],
-            correlation_id
+            ut['anonymise_url'],
+            ut['anon_project_specific_user_id'],
+            ut['anon_user_task_id'],
+            correlation_id,
         )
         del ut['base_url']
         del ut['external_task_id']
         del ut['user_specific_url']
         del ut['user_task_url']
+        del ut['anon_project_specific_user_id']
+        del ut['anonymise_url']
         edited_result.append(ut)
 
     return edited_result
@@ -227,7 +232,8 @@ def create_user_task(ut_json, correlation_id):
     existing = check_if_user_task_exists(user_id, project_task_id, correlation_id)
     # if int(existing[0][0]) > 0:
     if len(existing) > 0:
-        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'existing_user_task': existing[0][0],
+                     'correlation_id': str(correlation_id)}
         raise utils.DuplicateInsertError('user_task already exists', errorjson)
 
     # get user first name if not received from calling process

@@ -423,7 +423,8 @@ LIST_USER_PROJECTS_SQL = '''
 
 GET_EXISTING_USER_PROJECT_ID_SQL = """
 SELECT 
-    id
+    id,
+    anon_project_specific_user_id
 FROM public.projects_userproject
 WHERE 
     project_id = %s
@@ -495,7 +496,9 @@ LIST_USER_TASKS_SQL = '''
         pt.base_url,
         pt.external_task_id,
         pt.user_specific_url,
-        ut.user_task_url
+        ut.user_task_url,
+        pt.anonymise_url,
+        up.anon_project_specific_user_id
     FROM 
         public.projects_usertask ut
         inner join public.projects_projecttask pt on pt.id = ut.project_task_id

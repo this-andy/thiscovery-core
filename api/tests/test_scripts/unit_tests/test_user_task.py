@@ -196,6 +196,7 @@ class TestUserTask(test_utils.DbTestCase):
         }
         body = json.dumps(ut_json)
 
+        self.logger.debug('Creating user task for the first time')
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -255,6 +256,7 @@ class TestUserTask(test_utils.DbTestCase):
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
 
+        self.logger.debug('Attempting to create user task for the second time')
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
