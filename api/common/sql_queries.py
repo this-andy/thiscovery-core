@@ -184,7 +184,8 @@ GET_PROJECT_TASK_SQL = '''
         progress_info,
         progress_info_modified,
         es.short_name as task_provider_name,
-        user_specific_url
+        user_specific_url,
+        anonymise_url
     FROM public.projects_projecttask pt
     JOIN projects_externalsystem es on pt.external_system_id = es.id
     WHERE pt.id = %s
@@ -224,7 +225,8 @@ PROJECT_USER_SELECT_SQL = '''
                         FALSE as user_is_signedup,
                         FALSE as signup_available,
                         null as user_task_status,
-                        user_specific_url
+                        user_specific_url,
+                        anonymise_url
                     from public.projects_projecttask task
                     join public.projects_externalsystem es on task.external_system_id = es.id
                     where task.project_id = project.id
@@ -265,7 +267,7 @@ get_project_status_for_user_sql = {
     """,
 
     'sql4': """
-        SELECT project_task_id, ut.id, ut.status, ext_user_project_id, ext_user_task_id, user_task_url
+        SELECT project_task_id, ut.id, ut.status, anon_project_specific_user_id, anon_user_task_id, user_task_url
         FROM public.projects_usertask ut
         JOIN public.projects_userproject up ON ut.user_project_id = up.id
         WHERE up.user_id = %s
@@ -299,7 +301,7 @@ BASE_USER_SELECT_SQL = '''
     '''
 
 
-GET_USER_BY_EXT_USER_PROJECT_ID_SQL = '''
+GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = '''
     SELECT 
         u.id, 
         u.created, 
@@ -316,7 +318,7 @@ GET_USER_BY_EXT_USER_PROJECT_ID_SQL = '''
         public.projects_user as u
         JOIN public.projects_userproject as up on up.user_id = u.id
     WHERE
-        up.ext_user_project_id = (%s)
+        up.anon_project_specific_user_id = (%s)
 '''
 
 
@@ -421,7 +423,8 @@ LIST_USER_PROJECTS_SQL = '''
 
 GET_EXISTING_USER_PROJECT_ID_SQL = """
 SELECT 
-    id
+    id,
+    anon_project_specific_user_id
 FROM public.projects_userproject
 WHERE 
     project_id = %s
@@ -436,13 +439,21 @@ CREATE_USER_PROJECT_SQL = '''
         user_id,
         project_id,
         status,
-        ext_user_project_id
+        anon_project_specific_user_id
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s );
 '''
 # endregion
 
 
 # region user_task
+ANON_USER_TASK_ID_2_ID_SQL = '''
+    SELECT 
+        ut.id              
+    FROM 
+        public.projects_usertask ut
+    WHERE ut.anon_user_task_id = %s
+'''
+
 GET_USER_TASK_SQL = '''
     SELECT 
         ut.id,
@@ -487,13 +498,15 @@ LIST_USER_TASKS_SQL = '''
         ut.modified,               
         ut.status,
         ut.consented,
-        ut.ext_user_task_id,
+        ut.anon_user_task_id,
         es.short_name as task_provider_name,
         ut.progress_info,
         pt.base_url,
         pt.external_task_id,
         pt.user_specific_url,
-        ut.user_task_url
+        ut.user_task_url,
+        pt.anonymise_url,
+        up.anon_project_specific_user_id
     FROM 
         public.projects_usertask ut
         inner join public.projects_projecttask pt on pt.id = ut.project_task_id
@@ -523,7 +536,7 @@ CREATE_USER_TASK_SQL = '''
         project_task_id,
         status,
         consented,
-        ext_user_task_id,
+        anon_user_task_id,
         user_task_url
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s );
 '''

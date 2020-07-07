@@ -39,7 +39,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_task_id, created, status, first_name = None, None, None, None
+anon_user_task_id, created, status, first_name = None, None, None, None
 
 
 def validate_status(s):
@@ -63,14 +63,20 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     return result
 
 
-def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, correlation_id=None):
+def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, pt_anonymise_url,
+                  anon_project_specific_user_id, anon_user_task_id_local, correlation_id=None):
     if pt_user_specific_url:
         base_url = ut_url
 
     if base_url:
+        if pt_anonymise_url:
+            params = utils.create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name,
+                                                       anon_user_task_id_local, pt_external_task_id)
+        else:
+            params = utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id)
         return "{}{}{}".format(
             base_url,
-            utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id),
+            params,
             utils.non_prod_env_url_param()
         )
 
@@ -102,12 +108,17 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
             ut['user_task_id'],
             ut['external_task_id'],
             user_result['first_name'],
-            correlation_id
+            ut['anonymise_url'],
+            ut['anon_project_specific_user_id'],
+            ut['anon_user_task_id'],
+            correlation_id,
         )
         del ut['base_url']
         del ut['external_task_id']
         del ut['user_specific_url']
         del ut['user_task_url']
+        del ut['anon_project_specific_user_id']
+        del ut['anonymise_url']
         edited_result.append(ut)
 
     return edited_result
@@ -151,7 +162,7 @@ def create_user_task(ut_json, correlation_id):
     Inserts new UserTask row in thiscovery db
 
     Args:
-        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, ext_user_task_id, first_name
+        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, anon_user_task_id, first_name
         correlation_id:
 
     Returns:
@@ -171,7 +182,7 @@ def create_user_task(ut_json, correlation_id):
 
     # now process optional json data
     optional_fields_name_default_and_validator = [
-        ('ext_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
+        ('anon_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
         ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
         ('first_name', None, utils.null_validator),
@@ -209,17 +220,20 @@ def create_user_task(ut_json, correlation_id):
     task_provider_name = pt_['task_provider_name']
     external_task_id = pt_['external_task_id']
     user_specific_url = pt_['user_specific_url']
+    anonymise_url = pt_['anonymise_url']
 
     # create_user_external_account_if_not_exists(user_id, project_task['external_system_id'], correlation_id)
 
     user_project = create_user_project_if_not_exists(user_id, project_id, correlation_id)
     user_project_id = user_project['id']
+    anon_project_specific_user_id = user_project['anon_project_specific_user_id']
 
     # check external account does not already exist
     existing = check_if_user_task_exists(user_id, project_task_id, correlation_id)
     # if int(existing[0][0]) > 0:
     if len(existing) > 0:
-        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'existing_user_task': existing[0][0],
+                     'correlation_id': str(correlation_id)}
         raise utils.DuplicateInsertError('user_task already exists', errorjson)
 
     # get user first name if not received from calling process
@@ -251,7 +265,7 @@ def create_user_task(ut_json, correlation_id):
 
     row_count = execute_non_query(
         CREATE_USER_TASK_SQL,
-        (id, created, created, user_project_id, project_task_id, status, consented, ext_user_task_id, user_task_url),
+        (id, created, created, user_project_id, project_task_id, status, consented, anon_user_task_id, user_task_url),
         correlation_id
     )
 
@@ -263,7 +277,19 @@ def create_user_task(ut_json, correlation_id):
             correlation_id=correlation_id,
         )
 
-    url = calculate_url(base_url, user_specific_url, user_task_url, user_id, id, external_task_id, first_name, correlation_id=correlation_id)
+    url = calculate_url(
+        base_url=base_url,
+        pt_user_specific_url=user_specific_url,
+        ut_url=user_task_url,
+        user_id=user_id,
+        ut_id=id,
+        pt_external_task_id=external_task_id,
+        user_first_name=first_name,
+        pt_anonymise_url=anonymise_url,
+        anon_project_specific_user_id=anon_project_specific_user_id,
+        anon_user_task_id_local=anon_user_task_id,
+        correlation_id=correlation_id
+    )
 
     new_user_task = {
         'id': id,
@@ -276,7 +302,7 @@ def create_user_task(ut_json, correlation_id):
         'url': url,
         'status': status,
         'consented': consented,
-        'ext_user_task_id': ext_user_task_id,
+        'anon_user_task_id': anon_user_task_id,
     }
 
     notify_new_task_signup(new_user_task, correlation_id)
@@ -293,6 +319,18 @@ def create_user_task_api(event, context):
     logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
     new_user_task = create_user_task(ut_json, correlation_id)
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
+
+
+def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
+    try:
+        return execute_query(
+            sql_q.ANON_USER_TASK_ID_2_ID_SQL,
+            [anon_ut_id],
+            correlation_id,
+        )[0]['id']
+    except IndexError:
+        errorjson = {'anon_ut_id': anon_ut_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
 
 
 def set_user_task_completed(ut_id, correlation_id=None):
@@ -334,12 +372,19 @@ def set_user_task_completed_api(event, context):
 
     parameters = event['queryStringParameters']
     user_task_id = parameters.get('user_task_id')
+    anon_user_task_id = parameters.get('anon_user_task_id')
 
-    if not user_task_id:  # e.g. parameters is None or an empty dict
+    if user_task_id and anon_user_task_id:
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('This endpoint requires parameter user_task_id', errorjson)
+        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id, not both', errorjson)
+    elif user_task_id:
+        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+    elif anon_user_task_id:
+        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+        user_task_id = anon_user_task_id_2_user_task_id(anon_user_task_id, correlation_id)
+    else:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id; none were given', errorjson)
 
-    logger.info('API call', extra={'user_task_id': user_task_id, 'correlation_id': correlation_id, 'event': event})
     set_user_task_completed(user_task_id, correlation_id)
-
     return {"statusCode": HTTPStatus.NO_CONTENT}

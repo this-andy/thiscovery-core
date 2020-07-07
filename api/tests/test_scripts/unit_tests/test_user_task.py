@@ -54,7 +54,7 @@ USER_TASK_01_EXPECTED_BODY = {
         "status": "active",
         "consented": f"2018-11-06T12:48:40+00:00",
         "progress_info": None,
-        "ext_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
+        "anon_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
         "task_provider_name": "Qualtrics",
         "url": f"https://www.qualtrics.com"
                f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
@@ -76,7 +76,7 @@ USER_TASK_02_EXPECTED_BODY = {
         "status": "complete",
         "consented": f"2018-11-06T13:02:02+00:00",
         "progress_info": None,
-        "ext_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
+        "anon_user_task_id": "935eb145-9f20-47b0-9efa-2d73ebb3fd6a",
         "task_provider_name": "Cochrane",
         "url": f"http://crowd.cochrane.org/index.html"
                f"?user_id=851f7b34-f76c-49de-a382-7e4089b744e2"
@@ -188,7 +188,7 @@ class TestUserTask(test_utils.DbTestCase):
         ut_json = {
             'user_id': user_id,
             'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',
-            'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
+            'anon_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': ut_id,
@@ -196,6 +196,7 @@ class TestUserTask(test_utils.DbTestCase):
         }
         body = json.dumps(ut_json)
 
+        self.logger.debug('Creating user task for the first time')
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -255,6 +256,7 @@ class TestUserTask(test_utils.DbTestCase):
         # now check we can't insert same record again...
         expected_status = HTTPStatus.CONFLICT
 
+        self.logger.debug('Attempting to create user task for the second time')
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
@@ -282,7 +284,7 @@ class TestUserTask(test_utils.DbTestCase):
 
         # now remove from returned object those that weren't in input json and test separately
         ut_id = self.new_uuid_test_and_remove(result_json)
-        self.uuid_test_and_remove(result_json, 'ext_user_task_id')
+        anon_user_task_id = self.uuid_test_and_remove(result_json, 'anon_user_task_id')
         self.now_datetime_test_and_remove(result_json, 'created')
         self.now_datetime_test_and_remove(result_json, 'modified')
 
@@ -304,9 +306,9 @@ class TestUserTask(test_utils.DbTestCase):
         # now check individual data items
         self.assertEqual('Qualtrics', task_provider_name)
         expected_url = f'https://www.qualtrics.com' \
-                       f'?user_id={user_id}' \
+                       f'?anon_project_specific_user_id=7e6e4bca-4f0b-4f71-8660-790c1baf3b11' \
                        f'&first_name=Clive' \
-                       f'&user_task_id={ut_id}' \
+                       f'&anon_user_task_id={anon_user_task_id}' \
                        f'&external_task_id=ext-6b&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
 
@@ -403,6 +405,38 @@ class TestUserTask(test_utils.DbTestCase):
         expected_status = HTTPStatus.BAD_REQUEST
         querystring_parameters = {
             "invalid_parameter": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+    def test_14_set_user_task_status_to_complete_anon_ut_id_ok(self):
+        expected_status = HTTPStatus.NO_CONTENT
+        querystring_parameters = {
+            "anon_user_task_id": "00a461f3-7a28-4ed3-940c-c977f55654e3"  # ut_id dad64b2c-8315-4ec4-9824-5e2fdffc11e5
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+        updated_ut = ut.get_user_task('dad64b2c-8315-4ec4-9824-5e2fdffc11e5')[0]
+        self.assertEqual('complete', updated_ut['status'])
+        self.now_datetime_test_and_remove(updated_ut, 'modified')
+
+    def test_15_set_user_task_status_to_complete_anon_ut_non_existent(self):
+        expected_status = HTTPStatus.NOT_FOUND
+        querystring_parameters = {
+            "anon_user_task_id": "144b1536-ce5c-4def-bd30-05a361976a90"
+        }
+        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        self.assertEqual(expected_status, result_status)
+
+    def test_16_set_user_task_status_to_complete_fail_both_ids_passed(self):
+        expected_status = HTTPStatus.BAD_REQUEST
+        querystring_parameters = {
+            "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5",
+            "anon_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
         }
         result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
