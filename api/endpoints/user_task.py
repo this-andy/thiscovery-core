@@ -321,6 +321,15 @@ def create_user_task_api(event, context):
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
 
 
+def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
+    return execute_query(
+        sql_q.ANON_USER_TASK_ID_2_ID_SQL,
+        [anon_ut_id],
+        correlation_id,
+        return_json=False
+    )
+
+
 def set_user_task_completed(ut_id, correlation_id=None):
     utils.validate_uuid(ut_id)
     # check that user_task exists
@@ -360,12 +369,19 @@ def set_user_task_completed_api(event, context):
 
     parameters = event['queryStringParameters']
     user_task_id = parameters.get('user_task_id')
+    anon_user_task_id = parameters.get('anon_user_task_id')
 
-    if not user_task_id:  # e.g. parameters is None or an empty dict
+    if user_task_id and anon_user_task_id:
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('This endpoint requires parameter user_task_id', errorjson)
+        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id, not both', errorjson)
+    elif user_task_id:
+        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+    elif anon_user_task_id:
+        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+        user_task_id = anon_user_task_id_2_user_task_id(anon_user_task_id, correlation_id)
+    else:  # e.g. parameters is None or an empty dict
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id; none were given', errorjson)
 
-    logger.info('API call', extra={'user_task_id': user_task_id, 'correlation_id': correlation_id, 'event': event})
     set_user_task_completed(user_task_id, correlation_id)
-
     return {"statusCode": HTTPStatus.NO_CONTENT}

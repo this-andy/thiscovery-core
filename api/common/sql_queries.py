@@ -446,6 +446,14 @@ CREATE_USER_PROJECT_SQL = '''
 
 
 # region user_task
+ANON_USER_TASK_ID_2_ID_SQL = '''
+    SELECT 
+        ut.id              
+    FROM 
+        public.projects_usertask ut
+    WHERE ut.anon_user_task_id = %s
+'''
+
 GET_USER_TASK_SQL = '''
     SELECT 
         ut.id,
