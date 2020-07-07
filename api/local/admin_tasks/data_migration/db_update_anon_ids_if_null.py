@@ -18,20 +18,33 @@
 import common.pg_utilities as pg_utils
 
 
+UPDATE_EXT_USER_PROJECT_ID_IF_NULL = '''
+    UPDATE public.projects_userproject
+    SET ext_user_project_id = user_id
+    WHERE ext_user_project_id IS NULL;
+'''
+
+UPDATE_EXT_USER_TASK_ID_IF_NULL = '''
+    UPDATE public.projects_usertask
+    SET ext_user_task_id = id
+    WHERE ext_user_task_id IS NULL;
+'''
+
 UPDATE_ANON_PROJECT_SPECIFIC_USER_ID_IF_NULL = '''
     UPDATE public.projects_userproject
-    SET anon_project_specific_user_id = user_id
+    SET anon_project_specific_user_id = ext_user_project_id
     WHERE anon_project_specific_user_id IS NULL;
 '''
 
 UPDATE_ANON_USER_TASK_ID_IF_NULL = '''
     UPDATE public.projects_usertask
-    SET anon_user_task_id = id
+    SET anon_user_task_id = ext_user_task_id
     WHERE anon_user_task_id IS NULL;
 '''
 
 
 def main():
+    pg_utils.execute_non_query_multiple([UPDATE_EXT_USER_PROJECT_ID_IF_NULL, UPDATE_EXT_USER_TASK_ID_IF_NULL], [None, None])
     pg_utils.execute_non_query_multiple([UPDATE_ANON_PROJECT_SPECIFIC_USER_ID_IF_NULL, UPDATE_ANON_USER_TASK_ID_IF_NULL], [None, None])
 
 
