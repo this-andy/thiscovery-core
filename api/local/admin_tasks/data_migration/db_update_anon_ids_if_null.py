@@ -44,8 +44,24 @@ UPDATE_ANON_USER_TASK_ID_IF_NULL = '''
 
 
 def main():
-    pg_utils.execute_non_query_multiple([UPDATE_EXT_USER_PROJECT_ID_IF_NULL, UPDATE_EXT_USER_TASK_ID_IF_NULL], [None, None])
-    pg_utils.execute_non_query_multiple([UPDATE_ANON_PROJECT_SPECIFIC_USER_ID_IF_NULL, UPDATE_ANON_USER_TASK_ID_IF_NULL], [None, None])
+    pg_utils.execute_non_query_multiple(
+        [
+            UPDATE_EXT_USER_PROJECT_ID_IF_NULL,
+            # UPDATE_EXT_USER_TASK_ID_IF_NULL
+        ], [
+            None,
+            # None
+        ]
+    )
+    pg_utils.execute_non_query_multiple(
+        [
+            UPDATE_ANON_PROJECT_SPECIFIC_USER_ID_IF_NULL,
+            # UPDATE_ANON_USER_TASK_ID_IF_NULL
+        ], [
+            None,
+            # None
+        ]
+    )
 
 
 if __name__ == "__main__":
