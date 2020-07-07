@@ -322,12 +322,15 @@ def create_user_task_api(event, context):
 
 
 def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
-    return execute_query(
-        sql_q.ANON_USER_TASK_ID_2_ID_SQL,
-        [anon_ut_id],
-        correlation_id,
-        return_json=False
-    )
+    try:
+        return execute_query(
+            sql_q.ANON_USER_TASK_ID_2_ID_SQL,
+            [anon_ut_id],
+            correlation_id,
+        )[0]['id']
+    except IndexError:
+        errorjson = {'anon_ut_id': anon_ut_id, 'correlation_id': str(correlation_id)}
+        raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
 
 
 def set_user_task_completed(ut_id, correlation_id=None):

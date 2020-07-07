@@ -308,9 +308,18 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         expected_results['PSFU-06-A'] = ProjectTaskTestResult(True, True, False, 'active', 'Cochrane',
                         'http://crowd.cochrane.org/index.html?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=ade342a2-a1ec-49fb-ab0f-2f81357cbced&external_task_id=ext-6a&env={TEST_ENV}')
-        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
-                        'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
-                        f'&user_task_id=010d3058-d329-448a-b155-4e574e9e2e57&external_task_id=ext-6b&env={TEST_ENV}')
+        expected_results['PSFU-06-B'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=True,
+            signup_available=False,
+            user_task_status='complete',
+            task_provider_name='Qualtrics',
+            url=f'https://www.qualtrics.com'
+                f'?anon_project_specific_user_id=922d2b14-554f-42b5-bd20-d024b5ac7214'
+                f'&first_name={first_name}'
+                f'&anon_user_task_id=993aaecf-3d6f-414f-bd44-d4c8390057c8'
+                f'&external_task_id=ext-6b'
+                f'&env={TEST_ENV}')
         expected_results['PSFU-06-C'] = ProjectTaskTestResult(
             task_is_visible=True,
             user_is_signedup=False,
@@ -340,9 +349,18 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         expected_results['project_visibility'] = [False, False, False, True, True, True, True]  # visibilities of projects 2-8; project 1 filtered out by API
         expected_results['PSFU-05-A'] = ProjectTaskTestResult(True, False, True, None, 'Cochrane', None)
         expected_results['PSFU-05-C'] = ProjectTaskTestResult(True, False, False, None, 'Qualtrics', None)
-        expected_results['PSFU-06-B'] = ProjectTaskTestResult(True, True, False, 'active', 'Qualtrics',
-                        'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
-                        f'&user_task_id=183a6c83-1328-4aea-8c24-6d587b1ded27&external_task_id=ext-6b&env={TEST_ENV}')
+        expected_results['PSFU-06-B'] = ProjectTaskTestResult(
+            task_is_visible=True,
+            user_is_signedup=True,
+            signup_available=False,
+            user_task_status='active',
+            task_provider_name='Qualtrics',
+            url=f'https://www.qualtrics.com'
+                f'?anon_project_specific_user_id=a7a8e630-cb7e-4421-a9b2-b8bad0298267'
+                f'&first_name={first_name}'
+                f'&anon_user_task_id=4a7a29e8-2869-469f-a922-5e9ff5af4583'
+                f'&external_task_id=ext-6b'
+                f'&env={TEST_ENV}')
         expected_results['PSFU-07-A'] = ProjectTaskTestResult(True, True, False, 'complete', 'Qualtrics',
                         'https://www.qualtrics.com?user_id='+ user_id + f'&first_name={first_name}' +
                         f'&user_task_id=ef012f6a-f4b6-4dff-b243-f929f9d9fabb&external_task_id=ext-7a&env={TEST_ENV}')
