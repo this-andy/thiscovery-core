@@ -224,6 +224,11 @@ def patch_user_api(event, context):
     user_id = event['pathParameters']['id']
     user_jsonpatch = JsonPatch.from_string(event['body'])
 
+    # convert email to lowercase
+    for p in user_jsonpatch:
+        if p['path'] == '/email':
+            p['value'] = p['value'].lower()
+
     logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
 
     modified_time = utils.now_with_tz()
@@ -255,7 +260,7 @@ def create_user(user_json, correlation_id):
 
     # extract mandatory data from json
     try:
-        email = user_json['email']
+        email = user_json['email'].lower()
         first_name = user_json['first_name']
         last_name = user_json['last_name']
         status = validate_status(user_json['status'])
