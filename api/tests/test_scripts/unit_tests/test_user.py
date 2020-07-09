@@ -505,6 +505,29 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
 
+    def test_15_create_user_email_case_conversion(self):
+        expected_status = HTTPStatus.CREATED
+        user_id = 'bb918e21-5f8f-4472-94da-34064d941f2d'
+        user_email = 'HerculePoirot@email.co.uk'
+        user_json = {
+            "id": user_id,
+            "created": "2020-06-21T11:20:56+01:00",
+            "email": user_email,
+            "title": "Mr",
+            "first_name": "Hercule",
+            "last_name": "Poirot",
+            "auth0_id": "1234abcd",
+            "country_code": "BE",
+            "crm_id": None,
+            "status": "new"}
+        body = json.dumps(user_json)
+
+        result = test_post(create_user_api, ENTITY_BASE_URL, request_body=body)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        self.assertEqual(expected_status, result_status)
+        self.assertEqual(user_email.lower(), result_json['email'])
+
     # def test_16_timezone(self):
     #     from api.common.pg_utilities import execute_query
     #     sql = 'Select NOW()'
