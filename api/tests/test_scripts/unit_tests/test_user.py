@@ -180,6 +180,18 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
+    def test_16_get_user_email_is_case_insensitive(self):
+        querystring_parameters = {'email': 'Altha@email.co.uk'}
+
+        expected_status = HTTPStatus.OK
+
+        result = test_get(get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters=querystring_parameters)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(EXPECTED_USER, result_json)
+
     def test_05_get_user_email_not_exists(self):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         expected_status = HTTPStatus.NOT_FOUND
