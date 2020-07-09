@@ -155,6 +155,7 @@ def get_user_by_email_api(event, context):
         errorjson = {'user_email': user_email, 'anon_project_specific_user_id': anon_project_specific_user_id, 'correlation_id': str(correlation_id)}
         raise utils.DetailedValueError('Please query by either email or anon_project_specific_user_id, but not both', errorjson)
     elif user_email:
+        user_email = user_email.lower()
         logger.info('API call', extra={'user_email': user_email, 'correlation_id': correlation_id, 'event': event})
         result = get_user_by_email(user_email, correlation_id)
     elif anon_project_specific_user_id:
