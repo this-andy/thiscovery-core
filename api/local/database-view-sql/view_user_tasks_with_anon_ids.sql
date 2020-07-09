@@ -22,6 +22,7 @@
  */
 CREATE OR REPLACE VIEW public.user_tasks_with_anon_ids AS
     SELECT
+        ut.anon_user_task_id as id,  /* this is here to satisfy a django admin interface requirement */
         ut.anon_user_task_id,
         up.anon_project_specific_user_id,
         u.id AS user_id,
