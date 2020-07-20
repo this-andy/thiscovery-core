@@ -36,8 +36,9 @@ from api.common.dev_config import SECRETS_NAMESPACE
 
 class DataCheckManager:
 
-    def __init__(self, user_id_column='user_id'):
+    def __init__(self, user_id_column='user_id', anon_project_specific_user_id_column='anon_project_specific_user_id'):
         self.user_id_column = user_id_column
+        self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
         self.project_task_id, self.input_filename = self.prompt_user_for_input_data()
         self.user_group_ids = list()
         self.test_group_ids = list()
@@ -80,7 +81,16 @@ class DataCheckManager:
         with open(self.input_filename) as csv_f:
             reader = csv.DictReader(csv_f)
             for row in reader:
-                user_id = row[self.user_id_column]
+                user_id = row.get(self.user_id_column)
+
+                if user_id is None:
+                    anon_project_specific_user_id = row.get(self.anon_project_specific_user_id_column)
+                    try:
+                        utils.validate_uuid(anon_project_specific_user_id)
+                    except utils.DetailedValueError:
+                        self.logger.warning(f'anon_project_specific_user_id "{anon_project_specific_user_id}" not valid; row skipped')
+                        continue
+                    user_id = pg_utils.execute_query(sql_q.GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL, [str(anon_project_specific_user_id)])[0]['id']
 
                 try:
                     utils.validate_uuid(user_id)
