@@ -35,24 +35,30 @@ class TestOther(test_utils.BaseTestCase):
 
 class TestCreateAnonymousUrlParams(test_utils.BaseTestCase):
     def test_correct_output(self):
-        expected_result = '?ext_user_project_id=a0c2668e-60ae-45fc-95e6-50270c0fb6a8&ext_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f'
-        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'e142fdf0-dea3-4513-9226-a1134037f57f',
+        expected_result = '?anon_project_specific_user_id=a0c2668e-60ae-45fc-95e6-50270c0fb6a8' \
+                          '&first_name=Egg' \
+                          '&anon_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f'
+        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'Egg', 'e142fdf0-dea3-4513-9226-a1134037f57f',
                                                    external_task_id=None)
         self.assertEqual(expected_result, result)
 
-        expected_result = '?ext_user_project_id=a0c2668e-60ae-45fc-95e6-50270c0fb6a8&ext_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f' \
+        expected_result = '?anon_project_specific_user_id=a0c2668e-60ae-45fc-95e6-50270c0fb6a8' \
+                          '&first_name=Egg' \
+                          '&anon_user_task_id=e142fdf0-dea3-4513-9226-a1134037f57f' \
                           '&external_task_id=spam_eggs'
-        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'e142fdf0-dea3-4513-9226-a1134037f57f', 'spam_eggs')
+        result = utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'Egg', 'e142fdf0-dea3-4513-9226-a1134037f57f',
+                                                   'spam_eggs')
         self.assertEqual(expected_result, result)
 
     def test_invalid_input_params_raises_error(self):
         with self.assertRaises(AssertionError) as err:
-            utils.create_anonymous_url_params('www.eggs.com', None, 'e142fdf0-dea3-4513-9226-a1134037f57f', 'ext_task_id')
-        self.assertEqual('ext_user_project_id is null', err.exception.args[0])
+            utils.create_anonymous_url_params('www.eggs.com', None, 'Egg', 'e142fdf0-dea3-4513-9226-a1134037f57f', 'ext_task_id')
+        self.assertEqual('anon_project_specific_user_id is null', err.exception.args[0])
 
         with self.assertRaises(AssertionError) as err:
-            utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', None, 'ext_task_id')
-        self.assertEqual('ext_user_task_id is null', err.exception.args[0])
+            utils.create_anonymous_url_params('www.eggs.com', 'a0c2668e-60ae-45fc-95e6-50270c0fb6a8', 'Egg', None, 'ext_task_id')
+        self.assertEqual('anon_user_task_id is null', err.exception.args[0])
+
 
 class TestValidateInt(TestCase):
 

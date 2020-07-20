@@ -105,7 +105,7 @@ class TestUserProject(test_utils.DbTestCase):
         up_json = {
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "5907275b-6d75-4ec0-ada8-5854b44fb955",
-            'ext_user_project_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
+            'anon_project_specific_user_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
             'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
@@ -153,7 +153,7 @@ class TestUserProject(test_utils.DbTestCase):
 
         # now remove from returned object those that weren't in input json and test separately
         self.new_uuid_test_and_remove(result_json)
-        self.uuid_test_and_remove(result_json, 'ext_user_project_id')
+        self.uuid_test_and_remove(result_json, 'anon_project_specific_user_id')
         self.now_datetime_test_and_remove(result_json, 'created')
         self.now_datetime_test_and_remove(result_json, 'modified')
         self.value_test_and_remove(result_json, 'status', expected_value='active')
@@ -222,12 +222,13 @@ class TestUserProject(test_utils.DbTestCase):
         )
 
     def test_09_create_user_projects_api_if_not_exists(self):
+        # todo: this test depends on test_04_create_user_projects_api_ok_and_duplicate; move to a different test class to setup/tear down independently
         user_id = "35224bd5-f8a8-41f6-8502-f96e12d6ddde"
         project_id = "5907275b-6d75-4ec0-ada8-5854b44fb955"
         result = create_user_project_if_not_exists(user_id, project_id, None)
 
-        # should return id of user_project created in test 4
-        self.assertEqual(1, len(result))
+        # should return id and anon_project_specific_user_id of user_project created in test 4
+        self.assertEqual(['id', 'anon_project_specific_user_id'], list(result.keys()))
         self.assertEqual('9620089b-e9a4-46fd-bb78-091c8449d777', result['id'])
 
     def test_10_create_user_projects_api_missing_params(self):

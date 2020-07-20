@@ -77,7 +77,7 @@ class MyTestCase(test_utils.DbTestCase):
             actual_pt_progress_modified = pt['progress_info_modified']
             self.assertEqual(expected_pt_progress_modified, actual_pt_progress_modified)
 
-        # check user task progress was updated (tip: db view user_tasks_with_external_ids is the best source for the info below)
+        # check user task progress was updated (tip: db view user_tasks_with_anon_ids is the best source for the info below)
         user_tasks_lookup = {
             'ext-6a-35224bd5-f8a8-41f6-8502-f96e12d6ddde': {
                 'ut_id': 'ade342a2-a1ec-49fb-ab0f-2f81357cbced',

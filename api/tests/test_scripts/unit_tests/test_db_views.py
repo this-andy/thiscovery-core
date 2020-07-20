@@ -70,8 +70,8 @@ class DbViewsTestCase(test_utils.DbTestCase):
                             unexpected_rows.remove(r)
         self.assertFalse(unexpected_rows)
 
-    def test_01_user_tasks_with_external_ids_length_matches_usertask_table(self):
-        view_sql = "SELECT * FROM public.user_tasks_with_external_ids"
+    def test_01_user_tasks_with_anon_ids_length_matches_usertask_table(self):
+        view_sql = "SELECT * FROM public.user_tasks_with_anon_ids"
         table_sql = "SELECT * FROM public.projects_usertask"
         view_result, table_result = pg_utils.execute_query_multiple((view_sql, table_sql))
         self.assertEqual(len(view_result), len(table_result))
