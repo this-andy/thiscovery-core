@@ -482,6 +482,7 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
             'user_id': user_id,
             'project_task_id': '4ee70544-6797-4e21-8cec-5653c8d5b234',
             'consented': '2018-07-19 16:16:56.087895+01',
+            'anon_user_task_id': '6fc8cf2d-78d2-4c51-be16-e41e4235fcc9',
         }
 
         expected_status = HTTPStatus.CREATED
@@ -493,11 +494,10 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
 
         result_json = json.loads(result['body'])
         url = result_json['url']
-        ut_id = result_json['id']
         expected_url = f'{self.base_user_specific_url}' \
-                       f'&user_id={user_id}' \
+                       f'&anon_project_specific_user_id=87b8f9a8-2400-4259-a8d9-a2f0b16d9ea1' \
                        f'&first_name=Clive' \
-                       f'&user_task_id={ut_id}' \
+                       f'&anon_user_task_id=6fc8cf2d-78d2-4c51-be16-e41e4235fcc9' \
                        f'&external_task_id=5678' \
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)

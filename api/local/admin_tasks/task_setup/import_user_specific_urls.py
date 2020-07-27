@@ -34,8 +34,8 @@ from api.common.dynamodb_utilities import Dynamodb
 
 class ImportManager:
 
-    def __init__(self, user_id_column='External Data Reference'):
-        self.user_id_column = user_id_column
+    def __init__(self, anon_project_specific_user_id_column='External Data Reference'):
+        self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
         self.ddb = Dynamodb()
         self.project_task_id, self.input_filename = self.prompt_user_for_input_data()
 
@@ -54,19 +54,19 @@ class ImportManager:
         """
         Checks that input csv file has only one row per user and that users exist in thiscovery db
         """
-        user_ids_in_file = list()
+        anon_ids_in_file = list()
         with open(self.input_filename) as csv_f:
             reader = csv.DictReader(csv_f)
             for row in reader:
-                user_id = row[self.user_id_column]
-                if user_id in user_ids_in_file:
-                    raise ValueError(f'Input csv file has more than one row for user {user_id}')
+                anon_id = row[self.anon_project_specific_user_id_column]
+                if anon_id in anon_ids_in_file:
+                    raise ValueError(f'Input csv file has more than one row for user {anon_id}')
                     # pass
                 else:
-                    if u.get_user_by_id(user_id):
-                        user_ids_in_file.append(user_id)
+                    if u.get_user_by_anon_project_specific_user_id(anon_id):
+                        anon_ids_in_file.append(anon_id)
                     else:
-                        raise ValueError(f'User {user_id} could not be found')
+                        raise ValueError(f'User {anon_id} could not be found')
                         # pass
 
     def check_project_task_exists(self):
@@ -86,7 +86,8 @@ class ImportManager:
         with open(self.input_filename) as csv_f:
             reader = csv.DictReader(csv_f)
             for row in reader:
-                user_id = row[self.user_id_column]
+                anon_id = row[self.anon_project_specific_user_id_column]
+                user_id = u.get_user_by_anon_project_specific_user_id(anon_id)['id']
                 user_specific_url = row['Link']
                 key = f"{self.project_task_id}_{user_id}"
                 details = self.nullify_empty_attributes(row)
@@ -97,6 +98,7 @@ class ImportManager:
                     item_details=details,
                     item={
                         'user_id': user_id,
+                        'anon_project_specific_user_id': anon_id,
                         'project_task_id': self.project_task_id,
                         'user_specific_url': user_specific_url,
                         'details_provenance': os.path.basename(self.input_filename),
