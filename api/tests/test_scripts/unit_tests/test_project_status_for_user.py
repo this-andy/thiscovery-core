@@ -113,6 +113,13 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
         expected_status = HTTPStatus.BAD_REQUEST
         self.assertEqual(expected_status, result['statusCode'])
 
+    def test_project_status_nonexistent_user(self):
+        user_id = '35224bd5-f8a8-41f6-8502-f96e12d6dddf'
+        querystring_parameters = {'user_id': user_id}
+        result = test_get(get_project_status_for_user_api, f'v1/{ENTITY_BASE_URL}', None, querystring_parameters, None)
+        expected_status = HTTPStatus.NOT_FOUND
+        self.assertEqual(expected_status, result['statusCode'])
+
     def test_user_a_project_status(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'  # altha@email.addr
         first_name = 'Altha'
