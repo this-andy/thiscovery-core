@@ -571,3 +571,22 @@ GET_ENTITY_UPDATES_FOR_ENTITY_SQL = '''
     ORDER BY created
 '''
 # endregion
+
+
+# region project task user groups
+TEST_GROUP_USERS_FOR_PROJECT_TASK = '''
+    SELECT u.id AS user_id
+    FROM projects_projecttask pt
+        JOIN projects_usergroup ug ON ug.id = pt.testing_group_id
+        JOIN projects_usergroupmembership ugm ON ug.id = ugm.user_group_id
+        JOIN projects_user u ON ugm.user_id = u.id
+    WHERE pt.id = %s
+'''
+
+
+USER_GROUP_FOR_PROJECT_TASK = '''
+    SELECT user_id
+    FROM public.projecttask_group_users
+    WHERE project_task_id = %s
+'''
+# endregion
