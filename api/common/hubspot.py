@@ -15,7 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import functools
+import http
 import json
 import requests
 from urllib.error import HTTPError
@@ -38,6 +39,32 @@ BASE_URL = 'https://api.hubapi.com'
 CONTACTS_ENDPOINT = '/contacts/v1'
 INTEGRATIONS_ENDPOINT = '/integrations/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
+
+
+# region decorators
+def hubspot_api_error_handler(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        status_code = func(*args, **kwargs)
+        if status_code == http.HTTPStatus.NO_CONTENT:
+            return status_code
+        elif status_code == http.HTTPStatus.BAD_REQUEST:
+            raise utils.DetailedValueError('Received a BAD REQUEST (400) response from the HubSpot API',
+                                           details={'result': status_code})
+        elif status_code == http.HTTPStatus.UNAUTHORIZED:
+            raise utils.DetailedValueError('Received a UNAUTHORIZED (401) response from the HubSpot API',
+                                           details={'result': status_code})
+        elif status_code == http.HTTPStatus.NOT_FOUND:
+            raise utils.DetailedValueError('Received a NOT FOUND (404) response from the HubSpot API',
+                                           details={'result': status_code})
+        elif status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR:
+            raise utils.DetailedValueError('Received a INTERNAL SERVER ERROR (500) response from the HubSpot API',
+                                           details={'result': status_code})
+        else:
+            raise utils.DetailedValueError('Received an error from the HubSpot API',
+                                           details={'result': status_code})
+    return wrapper
+# endregion
 
 
 class HubSpotClient:
@@ -310,6 +337,7 @@ class HubSpotClient:
     def get_contact_property(contact, property_name):
         return contact['properties'][property_name]['value']
 
+    @hubspot_api_error_handler
     def update_contact_core(self, url, property_changes, correlation_id):
         data = {"properties": property_changes}
         r = self.post(url, data, correlation_id)
@@ -421,6 +449,7 @@ class HubSpotClient:
         result = self.get(url, correlation_id)
         return result
 
+    @hubspot_api_error_handler
     def create_or_update_timeline_event(self, event_data: dict, correlation_id):
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event'

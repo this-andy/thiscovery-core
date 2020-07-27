@@ -35,7 +35,7 @@ STATUS_CHOICES = (
 DEFAULT_STATUS = 'active'
 
 # this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-ext_user_project_id, created, status = None, None, None
+anon_project_specific_user_id, created, status = None, None, None
 
 
 def validate_status(s):
@@ -86,7 +86,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
     Inserts new UserProject row in thiscovery db
 
     Args:
-        up_json: must contain user_id and project_id; may optionally include id, created, status, ext_user_project_id
+        up_json: must contain user_id and project_id; may optionally include id, created, status, anon_project_specific_user_id
         correlation_id:
         do_nothing_if_exists:
 
@@ -105,7 +105,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
 
     # now process optional json data
     optional_fields_name_default_and_validator = [
-        ('ext_user_project_id', str(uuid.uuid4()), utils.validate_uuid),
+        ('anon_project_specific_user_id', str(uuid.uuid4()), utils.validate_uuid),
         ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
         ('status', DEFAULT_STATUS, validate_status),
     ]
@@ -144,7 +144,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
-    execute_non_query(CREATE_USER_PROJECT_SQL, (id, created, created, user_id, project_id, status, ext_user_project_id), correlation_id)
+    execute_non_query(CREATE_USER_PROJECT_SQL, (id, created, created, user_id, project_id, status, anon_project_specific_user_id), correlation_id)
 
     new_user_project = {
         'id': id,
@@ -153,7 +153,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
         'user_id': user_id,
         'project_id': project_id,
         'status': status,
-        'ext_user_project_id': ext_user_project_id,
+        'anon_project_specific_user_id': anon_project_specific_user_id,
     }
 
     return new_user_project

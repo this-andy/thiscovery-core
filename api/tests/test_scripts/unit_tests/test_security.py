@@ -105,7 +105,6 @@ class TestProjectApiEndpoints(TestApiEndpoints):
         querystring_parameters = {'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'}
         version_mapping = {
             'v1': p.get_project_status_for_user_api,
-            'v2': p.get_project_status_for_external_user_api,
         }
         for api_version, handler_function in version_mapping.items():
             self.check_api_is_restricted('GET', handler_function, f'{api_version}/project-user-status', querystring_parameters=querystring_parameters)
@@ -143,7 +142,7 @@ class TestUserProjectApiEndpoints(TestApiEndpoints):
         body = json.dumps({
             'user_id': "35224bd5-f8a8-41f6-8502-f96e12d6ddde",
             'project_id': "5907275b-6d75-4ec0-ada8-5854b44fb955",
-            'ext_user_project_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
+            'anon_project_specific_user_id': 'b75c864b-a002-466c-989f-16f63d5a6b18',
             'status': 'active',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
             'created': '2018-06-13 14:15:16.171819+00'
@@ -162,7 +161,7 @@ class TestUserTaskApiEndpoints(TestApiEndpoints):
         body = json.dumps({
             'user_id': '48e30e54-b4fc-4303-963f-2943dda2b139',
             'project_task_id': '6cf2f34e-e73f-40b1-99a1-d06c1f24381a',
-            'ext_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
+            'anon_user_task_id': '78a1ccd7-dee5-49b2-ad5c-8bf4afb3cf93',
             'status': 'active',
             'consented': '2018-06-12 16:16:56.087895+01',
             'id': '9620089b-e9a4-46fd-bb78-091c8449d777',
@@ -221,6 +220,7 @@ class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
     public_endpoints = [
         ('/v1/ping', 'get'),
         ('/v1/raise-error', 'post'),
+        ('/v1/log-request', 'post'),
     ]
 
     @classmethod

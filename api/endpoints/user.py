@@ -68,14 +68,14 @@ def append_calculated_properties(user):
     return user
 
 
-def get_user_by_ext_user_project_id(ext_user_project_id, correlation_id=None):
+def get_user_by_anon_project_specific_user_id(anon_project_specific_user_id, correlation_id=None):
     try:
-        ext_user_project_id = utils.validate_uuid(ext_user_project_id)
+        anon_project_specific_user_id = utils.validate_uuid(anon_project_specific_user_id)
     except utils.DetailedValueError as err:
         err.add_correlation_id(correlation_id)
         raise err
 
-    user_json = execute_query(sql_q.GET_USER_BY_EXT_USER_PROJECT_ID_SQL, (str(ext_user_project_id),), correlation_id)
+    user_json = execute_query(sql_q.GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL, (str(anon_project_specific_user_id),), correlation_id)
 
     return append_calculated_properties_to_list(user_json)
 
@@ -131,10 +131,10 @@ def get_user_by_email(user_email, correlation_id):
 @utils.api_error_handler
 def get_user_by_email_api(event, context):
     """
-    Handler for Lambda function supporting the /v1/user API endpoint. Supports retrieval of user info by email or ext_user_project_id
+    Handler for Lambda function supporting the /v1/user API endpoint. Supports retrieval of user info by email or anon_project_specific_user_id
 
     Args:
-        event (dict): event['queryStringParameters'] may contain either an 'email' or 'ext_user_project_id' parameter, but not both.
+        event (dict): event['queryStringParameters'] may contain either an 'email' or 'anon_project_specific_user_id' parameter, but not both.
         context:
 
     Returns:
@@ -146,20 +146,21 @@ def get_user_by_email_api(event, context):
 
     if not parameters:  # e.g. parameters is None or an empty dict
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('This endpoint requires one query parameter (email or ext_user_project_id); none were found', errorjson)
+        raise utils.DetailedValueError('This endpoint requires one query parameter (email or anon_project_specific_user_id); none were found', errorjson)
     else:
         user_email = parameters.get('email')
-        ext_user_project_id = parameters.get('ext_user_project_id')
+        anon_project_specific_user_id = parameters.get('anon_project_specific_user_id')
 
-    if user_email and ext_user_project_id:
-        errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
-        raise utils.DetailedValueError('Please query by either email or ext_user_project_id, but not both', errorjson)
+    if user_email and anon_project_specific_user_id:
+        errorjson = {'user_email': user_email, 'anon_project_specific_user_id': anon_project_specific_user_id, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('Please query by either email or anon_project_specific_user_id, but not both', errorjson)
     elif user_email:
+        user_email = user_email.lower()
         logger.info('API call', extra={'user_email': user_email, 'correlation_id': correlation_id, 'event': event})
         result = get_user_by_email(user_email, correlation_id)
-    elif ext_user_project_id:
-        logger.info('API call', extra={'ext_user_project_id': ext_user_project_id, 'correlation_id': correlation_id, 'event': event})
-        result = get_user_by_ext_user_project_id(ext_user_project_id, correlation_id)
+    elif anon_project_specific_user_id:
+        logger.info('API call', extra={'anon_project_specific_user_id': anon_project_specific_user_id, 'correlation_id': correlation_id, 'event': event})
+        result = get_user_by_anon_project_specific_user_id(anon_project_specific_user_id, correlation_id)
     else:
         errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
         raise utils.DetailedValueError('Query parameters invalid', errorjson)
@@ -167,7 +168,7 @@ def get_user_by_email_api(event, context):
     if len(result) > 0:
         return {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
     else:
-        errorjson = {'user_email': user_email, 'ext_user_project_id': ext_user_project_id, 'correlation_id': str(correlation_id)}
+        errorjson = {'user_email': user_email, 'anon_project_specific_user_id': anon_project_specific_user_id, 'correlation_id': str(correlation_id)}
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
 
@@ -224,6 +225,11 @@ def patch_user_api(event, context):
     user_id = event['pathParameters']['id']
     user_jsonpatch = JsonPatch.from_string(event['body'])
 
+    # convert email to lowercase
+    for p in user_jsonpatch:
+        if p['path'] == '/email':
+            p['value'] = p['value'].lower()
+
     logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
 
     modified_time = utils.now_with_tz()
@@ -255,7 +261,7 @@ def create_user(user_json, correlation_id):
 
     # extract mandatory data from json
     try:
-        email = user_json['email']
+        email = user_json['email'].lower()
         first_name = user_json['first_name']
         last_name = user_json['last_name']
         status = validate_status(user_json['status'])
