@@ -279,6 +279,13 @@ get_project_status_for_user_sql = {
         WHERE id = %s
     """,
 }
+
+
+GET_PROJECT_BY_PROJECT_TASK_ID_SQL = '''
+    SELECT project_id 
+    FROM public.projects_projecttask
+    WHERE id = %s;
+'''
 # endregion
 
 
