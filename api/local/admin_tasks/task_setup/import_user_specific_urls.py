@@ -87,7 +87,9 @@ class ImportManager:
             reader = csv.DictReader(csv_f)
             for row in reader:
                 anon_id = row[self.anon_project_specific_user_id_column]
-                user_id = u.get_user_by_anon_project_specific_user_id(anon_id)['id']
+                users = u.get_user_by_anon_project_specific_user_id(anon_id)
+                user = users[0]
+                user_id = user['id']
                 user_specific_url = row['Link']
                 key = f"{self.project_task_id}_{user_id}"
                 details = self.nullify_empty_attributes(row)
