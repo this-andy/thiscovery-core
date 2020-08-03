@@ -381,6 +381,18 @@ SELECT
 FROM 
     public.projects_usergroup
 '''
+
+
+CREATE_USER_GROUP_SQL = '''
+    INSERT INTO public.projects_usergroup (
+        id, 
+        created, 
+        modified, 
+        name, 
+        short_name, 
+        url_code
+    ) VALUES ( %s, %s, %s, %s, %s, %s );
+'''
 # endregion
 
 

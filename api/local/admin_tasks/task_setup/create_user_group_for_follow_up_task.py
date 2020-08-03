@@ -34,7 +34,7 @@ class ImportManager:
 
     def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id'):
         self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
-        self.project_task_id, self.input_filename = self.prompt_user_for_input_data()
+        self.input_filename = self.prompt_user_for_input_data()
         self.logger = utils.get_logger()
         self.user_ids = list()
         self.user_group_id = None
@@ -64,11 +64,12 @@ class ImportManager:
                     raise ValueError(f'Input csv file has more than one row for user {anon_id}')
                     # pass
                 else:
-                    user_id = u.get_user_by_anon_project_specific_user_id(anon_id)['id']
+                    user_id = u.get_user_by_anon_project_specific_user_id(anon_id)[0]['id']
                     self.user_ids.append(user_id)
                     anon_ids_in_file.append(anon_id)
 
     def create_user_group(self):
+        print(f'Found {len(self.user_ids)} users in input file. User ids are: {self.user_ids}')
         group_name = input('Please enter the new user group name:')
         group_short_name = input('Please enter the new user group short name:')
         group_code = input('Please enter the new user group url code:')
@@ -79,14 +80,21 @@ class ImportManager:
         }
         ug = UserGroup.from_json(ug_json, None)
         self.user_group_id = ug.to_dict()['id']
+        ug.create()
+        print(f'Created new user group with id {self.user_group_id}')
 
     def populate_user_group(self):
+        ugm_list = list()
         for user_id in self.user_ids:
             ugm_json = {
                 'user_id': user_id,
                 'user_group_id': self.user_group_id,
             }
-            UserGroupMembership.from_json(ugm_json, None)
+            ugm = UserGroupMembership.from_json(ugm_json, None)
+            ugm.insert_to_db()
+            ugm_id = ugm.to_dict()['id']
+            ugm_list.append(ugm_id)
+        print(f'Added {len(ugm_list)} members to user group {self.user_group_id}')
 
     def main(self):
         self.prompt_user_for_input_data()

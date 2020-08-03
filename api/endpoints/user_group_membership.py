@@ -108,7 +108,7 @@ class UserGroupMembership(EntityBase):
 
         # if no errors nothing to do, nothing to return, let things carry on...
 
-    def insert_to_db(self, correlation_id):
+    def insert_to_db(self, correlation_id=None):
         # todo ref integrity check
         execute_non_query(INSERT_USER_GROUP_MEMBERSHIP_SQL, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
 
