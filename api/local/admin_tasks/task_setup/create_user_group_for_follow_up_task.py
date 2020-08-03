@@ -68,20 +68,24 @@ class ImportManager:
                     self.user_ids.append(user_id)
                     anon_ids_in_file.append(anon_id)
 
-    def create_user_group(self):
+    def get_or_create_user_group(self):
         print(f'Found {len(self.user_ids)} users in input file. User ids are: {self.user_ids}')
-        group_name = input('Please enter the new user group name:')
-        group_short_name = input('Please enter the new user group short name:')
-        group_code = input('Please enter the new user group url code:')
-        ug_json = {
-            'name': group_name,
-            'short_name': group_short_name,
-            'url_code': group_code,
-        }
-        ug = UserGroup.from_json(ug_json, None)
-        self.user_group_id = ug.to_dict()['id']
-        ug.create()
-        print(f'Created new user group with id {self.user_group_id}')
+        ug_id = input('Please enter the id of the user group you would like to populate (or leave blank to create a new group):')
+        if ug_id:
+            self.user_group_id = ug_id
+        else:
+            group_name = input('Please enter the new user group name:')
+            group_short_name = input('Please enter the new user group short name:')
+            group_code = input('Please enter the new user group url code:')
+            ug_json = {
+                'name': group_name,
+                'short_name': group_short_name,
+                'url_code': group_code,
+            }
+            ug = UserGroup.from_json(ug_json, None)
+            self.user_group_id = ug.to_dict()['id']
+            ug.create()
+            print(f'Created new user group with id {self.user_group_id}')
 
     def populate_user_group(self):
         ugm_list = list()
@@ -99,7 +103,7 @@ class ImportManager:
     def main(self):
         self.prompt_user_for_input_data()
         self.validate_input_file_and_get_user_ids()
-        self.create_user_group()
+        self.get_or_create_user_group()
         self.populate_user_group()
 
 
