@@ -92,8 +92,8 @@ class ImportManager:
             for i, row in enumerate(rows):
                 print(f'Populating Dynamodb with row {i+1} of {len(rows)}')
                 anon_id = row[self.anon_project_specific_user_id_column]
-                user = u.get_user_by_anon_project_specific_user_id(anon_id)[0]
-                self.logger.debug('User info', extra={'user': user})
+                users = u.get_user_by_anon_project_specific_user_id(anon_id)
+                user = users[0]
                 user_id = user['id']
                 user_specific_url = row['Link']
                 key = f"{self.project_task_id}_{user_id}"
