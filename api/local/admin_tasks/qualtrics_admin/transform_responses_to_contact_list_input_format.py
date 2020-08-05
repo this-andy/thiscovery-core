@@ -15,17 +15,9 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import csv
-import http
 import os
 import pandas as pd
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 
-import api.endpoints.project as p
-import api.endpoints.user as u
-import api.common.utilities as utils
-from api.common.dynamodb_utilities import Dynamodb
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
 
 
