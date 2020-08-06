@@ -43,15 +43,18 @@ import api.common.utilities as utils
 
 class ProcessManager:
 
-    def __init__(self):
-        self.project_task_id = input("Please enter the project task id:")
+    def __init__(self, project_task_id=None):
+        if project_task_id is None:
+            self.project_task_id = input("Please enter the project task id:")
+        else:
+            self.project_task_id = project_task_id
         self.check_project_task_exists()
         self.project_id = pg_utils.execute_query(sq.GET_PROJECT_BY_PROJECT_TASK_ID_SQL, [self.project_task_id], return_json=False)[0][0]
         self.anon_project_specific_user_ids = list()
 
     def check_project_task_exists(self):
         if not p.get_project_task(self.project_task_id):
-            raise utils.ObjectDoesNotExistError(f'Project task {self.project_task_id} could not be found')
+            raise utils.ObjectDoesNotExistError(f'Project task {self.project_task_id} could not be found', details={})
 
     def get_anon_project_specific_user_ids(self):
         users_in_test_group = [x['user_id'] for x in pg_utils.execute_query(sq.TEST_GROUP_USERS_FOR_PROJECT_TASK, [self.project_task_id])]
@@ -61,6 +64,7 @@ class ProcessManager:
             user_project = up.create_user_project_if_not_exists(user_id, self.project_id)
             self.anon_project_specific_user_ids.append(user_project['anon_project_specific_user_id'])
             counter += 1
+        return self.anon_project_specific_user_ids
 
     def output_anon_project_specific_user_ids(self):
         with open(f'{self.project_task_id}__test_group__anon_project_specific_user_ids.csv', 'w') as csvfile:
