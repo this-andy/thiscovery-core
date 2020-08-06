@@ -33,29 +33,49 @@ from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
 
 class ImportManager(CsvImporter):
 
-    def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id'):
+    def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
         self.user_group_id = None
-        super().__init__(anon_project_specific_user_id_column)
+        super().__init__(anon_project_specific_user_id_column, csvfile_path=csvfile_path)
         super().validate_input_file_and_get_user_ids()
 
-    def get_or_create_user_group(self):
+    def set_or_create_user_group(self, ug_id=None, ug_json=None, interactive_mode=True):
+        """
+
+        Args:
+            ug_id:
+            ug_json (dict): must be provided if interactive_mode is False; overwritten if interactive_mode is True
+            interactive_mode:
+
+        Returns:
+
+        """
         print(f'Found {len(self.user_ids)} users in input file. User ids are: {self.user_ids}')
-        ug_id = input('Please enter the id of the user group you would like to populate (or leave blank to create a new group):')
-        if ug_id:
+
+        if ug_id is not None:
             self.user_group_id = ug_id
+            return self.user_group_id
+
         else:
-            group_name = input('Please enter the new user group name:')
-            group_short_name = input('Please enter the new user group short name:')
-            group_code = input('Please enter the new user group url code:')
-            ug_json = {
-                'name': group_name,
-                'short_name': group_short_name,
-                'url_code': group_code,
-            }
+            if interactive_mode:
+                ug_id = input('Please enter the id of the user group you would like to populate (or leave blank to create a new group):')
+                if ug_id:
+                    self.user_group_id = ug_id
+                    return self.user_group_id
+                else:
+                    group_name = input('Please enter the new user group name:')
+                    group_short_name = input('Please enter the new user group short name:')
+                    group_code = input('Please enter the new user group url code:')
+                    ug_json = {
+                        'name': group_name,
+                        'short_name': group_short_name,
+                        'url_code': group_code,
+                    }
+
             ug = UserGroup.from_json(ug_json, None)
             self.user_group_id = ug.to_dict()['id']
             ug.create()
             print(f'Created new user group with id {self.user_group_id}')
+            return self.user_group_id
 
     def populate_user_group(self):
         ugm_list = list()
@@ -71,7 +91,7 @@ class ImportManager(CsvImporter):
         print(f'Added {len(ugm_list)} members to user group {self.user_group_id}')
 
     def main(self):
-        self.get_or_create_user_group()
+        self.set_or_create_user_group()
         self.populate_user_group()
 
 

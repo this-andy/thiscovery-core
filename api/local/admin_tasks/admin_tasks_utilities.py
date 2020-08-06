@@ -26,21 +26,23 @@ import api.endpoints.user as u
 
 class CsvImporter:
 
-    def __init__(self, anon_project_specific_user_id_column):
+    def __init__(self, anon_project_specific_user_id_column, csvfile_path=None):
         self.logger = utils.get_logger()
         self.user_ids = list()
         self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
 
-        root = Tk()
-        root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
-        root.update()
-        self.input_filename = askopenfilename(
-            initialdir=os.path.expanduser('~'),
-            title="Please select input file",
-            filetypes=(("csv files", "*.csv"), ("all files", "*.*"))
-        )
-        root.update()
-        root.destroy()
+        self.input_filename = csvfile_path
+        if csvfile_path is None:
+            root = Tk()
+            root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
+            root.update()
+            self.input_filename = askopenfilename(
+                initialdir=os.path.expanduser('~'),
+                title="Please select input file",
+                filetypes=(("csv files", "*.csv"), ("all files", "*.*"))
+            )
+            root.update()
+            root.destroy()
 
     def validate_input_file_and_get_user_ids(self):
         """
@@ -53,6 +55,14 @@ class CsvImporter:
             for i, row in enumerate(rows):
                 print(f'Validating input file row {i+1} of {len(rows)}')
                 anon_id = row[self.anon_project_specific_user_id_column]
+
+                if not anon_id:
+                    self.logger.warning('Missing value in anon_project_specific_user_id column; skipped row', extra={'row': row})
+                    continue
+                elif anon_id == 'anon_project_specific_user_id':
+                    self.logger.warning('Skipped row of putative Qualtrics labels', extra={'row': row})
+                    continue
+
                 if anon_id in anon_ids_in_file:
                     raise ValueError(f'Input csv file has more than one row for user {anon_id}')
                 else:

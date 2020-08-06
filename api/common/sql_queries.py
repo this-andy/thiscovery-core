@@ -415,6 +415,12 @@ SQL_USER_GROUP_MEMBERSHIP = """
     WHERE user_id = %s and user_group_id = %s
 """
 
+SQL_USER_IDS_IN_USER_GROUP = """
+    SELECT user_id
+    FROM public.projects_usergroupmembership
+    WHERE user_group_id = %s
+"""
+
 INSERT_USER_GROUP_MEMBERSHIP_SQL = '''
     INSERT INTO public.projects_usergroupmembership (
         id,

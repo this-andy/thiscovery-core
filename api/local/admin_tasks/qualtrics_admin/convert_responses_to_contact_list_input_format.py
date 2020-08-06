@@ -21,13 +21,13 @@ import pandas as pd
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
 
 
-class ProcessManager(CsvImporter):
+class ResponsesToContactListConverter(CsvImporter):
 
-    def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id'):
+    def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
         self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
-        super().__init__(anon_project_specific_user_id_column)
+        super().__init__(anon_project_specific_user_id_column, csvfile_path)
 
-    def transform(self):
+    def transform(self, output_file=None):
         df = pd.read_csv(self.input_filename)
 
         # Delete redundant row (column labels) from Qualtrics results
@@ -63,9 +63,14 @@ class ProcessManager(CsvImporter):
             'ExternalReference': 'ExternalDataReference',
         })
 
-        df.to_csv(f'Contact_data_based_on_{os.path.basename(self.input_filename).replace("_", "-")}', index=False)
+        if output_file:
+            df.to_csv(output_file, index=False)
+        else:
+            df.to_csv(f'Contact_data_based_on_{os.path.basename(self.input_filename).replace("_", "-")}', index=False)
+
+        return df.to_dict(orient='list')
 
 
 if __name__ == '__main__':
-    manager = ProcessManager()
+    manager = ResponsesToContactListConverter()
     manager.transform()
