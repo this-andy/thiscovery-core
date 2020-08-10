@@ -15,12 +15,11 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import datetime
 import json
 import requests
 from urllib.error import HTTPError
 from http import HTTPStatus
-from datetime import datetime
 
 import common.utilities as utils
 
@@ -111,4 +110,49 @@ class SurveyDefinitionsClient(BaseClient):
 
     def delete_block(self, block_id):
         endpoint = f"{self.blocks_endpoint}/{block_id}"
+        return self.qualtrics_request("DELETE", endpoint)
+
+
+class DistributionsClient(BaseClient):
+    def __init__(self):
+        super().__init__()
+        self.base_endpoint = f"{self.base_url}/v3/distributions"
+
+    def _create_distribution(self, data):
+        """
+        https://api.qualtrics.com/api-reference/reference/distributions.json/paths/~1distributions/post
+        """
+        return self.qualtrics_request("POST", self.base_endpoint, data=data)
+
+    def create_individual_links(self, survey_id, contact_list_id, **kwargs):
+        now = datetime.datetime.now()
+        now_str = now.strftime("%Y-%m-%d--%H:%M:%S")
+        expiration = now + datetime.timedelta(days=90)
+        expiration_str = expiration.strftime("%Y-%m-%d %H:%M:%S")
+        data = {
+            "surveyId": survey_id,
+            "linkType": "Individual",
+            "description": f"distribution_{survey_id}_{now_str}",
+            "action": "CreateDistribution",
+            "expirationDate": expiration_str,
+            "mailingListId": contact_list_id,
+        }
+        data.update(**kwargs)
+        return self._create_distribution(data=data)
+
+    def list_distribution_links(self, distribution_id, survey_id):
+        """
+        https://api.qualtrics.com/api-reference/reference/distributions.json/paths/~1distributions~1%7BdistributionId%7D~1links/get
+        """
+        endpoint = f'{self.base_endpoint}/{distribution_id}/links'
+        params = {
+            'surveyId': survey_id,
+        }
+        return self.qualtrics_request("GET", endpoint, params=params)
+
+    def delete_distribution(self, distribution_id):
+        """
+        https://api.qualtrics.com/api-reference/reference/distributions.json/paths/~1distributions~1%7BdistributionId%7D/delete
+        """
+        endpoint = f'{self.base_endpoint}/{distribution_id}'
         return self.qualtrics_request("DELETE", endpoint)
