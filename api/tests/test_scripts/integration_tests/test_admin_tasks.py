@@ -98,6 +98,6 @@ class TestAdminTasks(test_utils.BaseTestCase):
             'anon_project_specific_user_id'
         ]
         converter = ResponsesToContactListConverter(csvfile_path=os.path.join(test_utils.TEST_DATA_FOLDER, 'qualtrics_responses.csv'))
-        result = converter.transform()
+        result = converter.transform(output_temp_file=True)
         self.assertEqual(expected_columns, list(result.keys()))
         self.assertEqual(expected_ids, result['ExternalDataReference'])

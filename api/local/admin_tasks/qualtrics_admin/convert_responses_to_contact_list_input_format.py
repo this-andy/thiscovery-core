@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 import os
+import tempfile
 import pandas as pd
 
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
@@ -27,7 +28,7 @@ class ResponsesToContactListConverter(CsvImporter):
         self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
         super().__init__(anon_project_specific_user_id_column, csvfile_path)
 
-    def transform(self, output_file=None):
+    def transform(self, output_temp_file=False):
         df = pd.read_csv(self.input_filename)
 
         # Delete redundant row (column labels) from Qualtrics results
@@ -63,8 +64,9 @@ class ResponsesToContactListConverter(CsvImporter):
             'ExternalReference': 'ExternalDataReference',
         })
 
-        if output_file:
-            df.to_csv(output_file, index=False)
+        if output_temp_file:
+            temp_f = tempfile.NamedTemporaryFile()
+            df.to_csv(temp_f.name, index=False)
         else:
             df.to_csv(f'Contact_data_based_on_{os.path.basename(self.input_filename).replace("_", "-")}', index=False)
 
