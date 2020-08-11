@@ -227,7 +227,7 @@ def patch_user_api(event, context):
 
     # convert email to lowercase
     for p in user_jsonpatch:
-        if p['path'] == '/email':
+        if p.get('path') == '/email':
             p['value'] = p['value'].lower()
 
     logger.info('API call', extra={'user_id': user_id, 'user_jsonpatch': user_jsonpatch, 'correlation_id': correlation_id, 'event': event})
