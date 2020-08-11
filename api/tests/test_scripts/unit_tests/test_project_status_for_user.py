@@ -396,9 +396,9 @@ class TestGetProjectStatusForUserFunction(test_utils.DbTestCase):
         expected_task_results = {
             '4ee70544-6797-4e21-8cec-5653c8d5b234': {
                 'url': f'www.specific-user-task.co.uk'
-                       f'?user_id={self.user_id}'
+                       f'?anon_project_specific_user_id=e132c198-06d3-4200-a6c0-cc3bc7991828'
                        f'&first_name={self.user["first_name"]}'
-                       f'&user_task_id=9d56be0d-ffa5-4c75-b65f-9a31972f38c2'
+                       f'&anon_user_task_id=47e98896-33b4-4401-b667-da95db9122a2'
                        f'&external_task_id=5678'
                        f'&env={TEST_ENV}',
             }

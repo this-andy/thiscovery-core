@@ -90,11 +90,16 @@ class ImportManager(CsvImporter):
             ugm_list.append(ugm_id)
         print(f'Added {len(ugm_list)} members to user group {self.user_group_id}')
 
+    def output_user_ids_str(self):
+        u_ids = ';\n'.join(self.user_ids)
+        return f'User_ids for users in user group {self.user_group_id}:\n\n{u_ids}'
+
     def main(self):
         self.set_or_create_user_group()
         self.populate_user_group()
+        return self.output_user_ids_str()
 
 
 if __name__ == '__main__':
     manager = ImportManager()
-    manager.main()
+    print(manager.main())

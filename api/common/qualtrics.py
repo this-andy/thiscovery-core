@@ -126,7 +126,7 @@ class DistributionsClient(BaseClient):
 
     def create_individual_links(self, survey_id, contact_list_id, **kwargs):
         now = datetime.datetime.now()
-        now_str = now.strftime("%Y-%m-%d--%H:%M:%S")
+        now_str = now.strftime("%Y-%m-%d_%H:%M:%S")
         expiration = now + datetime.timedelta(days=90)
         expiration_str = expiration.strftime("%Y-%m-%d %H:%M:%S")
         data = {

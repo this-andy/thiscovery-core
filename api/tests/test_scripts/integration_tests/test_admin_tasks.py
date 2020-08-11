@@ -73,6 +73,15 @@ class TestAdminTasksDbAccess(test_utils.DbTestCase):
         user_ids_in_group = pg_utils.execute_query(sql_q.SQL_USER_IDS_IN_USER_GROUP, [paramedics_user_group_id], jsonize_sql=False)
         self.assertEqual(16, len(create_user_group.user_ids))
         self.assertCountEqual(create_user_group.user_ids, user_ids_in_group)
+        # check output message
+        message = create_user_group.output_user_ids_str()
+        expected_message = "User_ids for users in user group 06533020-333c-4046-a1c9-40031e160a23:\n\nd1070e81-557e-40eb-a7ba-b951ddb7ebdc;\n" \
+                           "851f7b34-f76c-49de-a382-7e4089b744e2;\n851f7b34-f76c-49de-a382-7e4089b744e2;\n8518c7ed-1df4-45e9-8dc4-d49b57ae0663;\n" \
+                           "8518c7ed-1df4-45e9-8dc4-d49b57ae0663;\n35224bd5-f8a8-41f6-8502-f96e12d6ddde;\n8518c7ed-1df4-45e9-8dc4-d49b57ae0663;\n" \
+                           "35224bd5-f8a8-41f6-8502-f96e12d6ddde;\n1cbe9aad-b29f-46b5-920e-b4c496d42515;\nd1070e81-557e-40eb-a7ba-b951ddb7ebdc;\n" \
+                           "8518c7ed-1df4-45e9-8dc4-d49b57ae0663;\n35224bd5-f8a8-41f6-8502-f96e12d6ddde;\n8518c7ed-1df4-45e9-8dc4-d49b57ae0663;\n" \
+                           "1cbe9aad-b29f-46b5-920e-b4c496d42515;\n35224bd5-f8a8-41f6-8502-f96e12d6ddde;\n8518c7ed-1df4-45e9-8dc4-d49b57ae0663"
+        self.assertEqual(expected_message, message)
 
     def test_05_generate_distribution_links_for_contact_list(self):
         self.clear_user_specific_urls()
