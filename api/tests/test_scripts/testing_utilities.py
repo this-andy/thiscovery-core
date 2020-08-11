@@ -26,6 +26,7 @@ from dateutil import parser
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
 import common.utilities as utils
+from common.dynamodb_utilities import Dynamodb
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
@@ -67,6 +68,10 @@ class BaseTestCase(unittest.TestCase):
         # cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
         cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'false'})
         utils.set_running_unit_tests(False)
+
+    def clear_user_specific_urls(self):
+        self.ddb_client = Dynamodb()
+        self.ddb_client.delete_all('UserSpecificUrls')
 
     def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
         actual_value = entity_dict[attribute_name]

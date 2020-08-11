@@ -16,12 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-import uuid
-import json
-from http import HTTPStatus
-
+import common.pg_utilities as pg_utils
+import common.sql_queries as sql_q
 from common.pg_utilities import execute_query
-from common.sql_queries import USER_GROUP_BASE_SELECT_SQL
 from common.utilities import validate_uuid, DetailedValueError
 from common.entity_base import EntityBase
 
@@ -77,7 +74,7 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE id = %s"
 
-        ug_json = execute_query(USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
+        ug_json = execute_query(sql_q.USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(user_group_id),), correlation_id)
         if len(ug_json) > 0:
             ug_json = ug_json[0]
             return cls.from_json(ug_json, correlation_id)
@@ -89,7 +86,7 @@ class UserGroup(EntityBase):
 
         sql_where_clause = " WHERE url_code = %s"
 
-        ug_json = execute_query(USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
+        ug_json = execute_query(sql_q.USER_GROUP_BASE_SELECT_SQL + sql_where_clause, (str(url_code),), correlation_id)
 
         if len(ug_json) > 0:
             ug_json = ug_json[0]
@@ -97,7 +94,21 @@ class UserGroup(EntityBase):
         else:
             return None
 
-    # @classmethod
+    def create(self, correlation_id=None):
+        return pg_utils.execute_non_query(
+            sql_q.CREATE_USER_GROUP_SQL,
+            params=[
+                self.id,
+                self.created,
+                self.modified,
+                self.name,
+                self.short_name,
+                self.url_code,
+            ],
+            correlation_id=correlation_id
+        )
+
+
 def re(cls):
     error_json = {'parameter': 'err.args[0]', 'correlation_id': str('correlation_id')}
     raise DetailedValueError('just testing', error_json)

@@ -279,6 +279,13 @@ get_project_status_for_user_sql = {
         WHERE id = %s
     """,
 }
+
+
+GET_PROJECT_BY_PROJECT_TASK_ID_SQL = '''
+    SELECT project_id 
+    FROM public.projects_projecttask
+    WHERE id = %s;
+'''
 # endregion
 
 
@@ -374,6 +381,18 @@ SELECT
 FROM 
     public.projects_usergroup
 '''
+
+
+CREATE_USER_GROUP_SQL = '''
+    INSERT INTO public.projects_usergroup (
+        id, 
+        created, 
+        modified, 
+        name, 
+        short_name, 
+        url_code
+    ) VALUES ( %s, %s, %s, %s, %s, %s );
+'''
 # endregion
 
 
@@ -394,6 +413,12 @@ SQL_USER_GROUP_MEMBERSHIP = """
     SELECT id
     FROM public.projects_usergroupmembership
     WHERE user_id = %s and user_group_id = %s
+"""
+
+SQL_USER_IDS_IN_USER_GROUP = """
+    SELECT user_id
+    FROM public.projects_usergroupmembership
+    WHERE user_group_id = %s
 """
 
 INSERT_USER_GROUP_MEMBERSHIP_SQL = '''
@@ -539,6 +564,11 @@ CREATE_USER_TASK_SQL = '''
         anon_user_task_id,
         user_task_url
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s );
+'''
+
+DELETE_USER_TASKS_FOR_PROJECT_TASK_SQL = '''
+    DELETE FROM public.projects_usertask
+    WHERE project_task_id = %s
 '''
 # endregion
 

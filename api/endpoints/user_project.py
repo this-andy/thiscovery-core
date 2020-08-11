@@ -171,7 +171,7 @@ def create_user_project_api(event, context):
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_project)}
 
 
-def create_user_project_if_not_exists(user_id, project_id, correlation_id):
+def create_user_project_if_not_exists(user_id, project_id, correlation_id=None):
     up_json = {
         'user_id': user_id,
         'project_id': project_id,

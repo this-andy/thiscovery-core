@@ -501,3 +501,8 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
                        f'&external_task_id=5678' \
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
+
+    def test_15_clear_user_tasks_for_project_task_id_ok(self):
+        project_task_id = "f60d5204-57c1-437f-a085-1943ad9d174f"
+        deleted_row_count = ut.clear_user_tasks_for_project_task_id(project_task_id)
+        self.assertEqual(2, deleted_row_count)
