@@ -124,6 +124,13 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     return edited_result
 
 
+def clear_user_tasks_for_project_task_id(project_task_id):
+    return execute_non_query(
+        sql=sql_q.DELETE_USER_TASKS_FOR_PROJECT_TASK_SQL,
+        params=(project_task_id,),
+    )
+
+
 @utils.lambda_wrapper
 @utils.api_error_handler
 def list_user_tasks_api(event, context):

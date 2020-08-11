@@ -41,11 +41,13 @@ class ImportManager(CsvImporter):
         self.project_task_id = input("Please enter the project task id:")
         super().__init__()
 
-    def check_project_task_exists(self):
-        if not p.get_project_task(self.project_task_id):
-            raise utils.ObjectDoesNotExistError(f'Project task {self.project_task_id} could not be found')
+    @staticmethod
+    def check_project_task_exists(project_task_id):
+        if not p.get_project_task(project_task_id):
+            raise utils.ObjectDoesNotExistError(f'Project task {project_task_id} could not be found')
 
-    def nullify_empty_attributes(self, row):
+    @staticmethod
+    def nullify_empty_attributes(row):
         """
         This is required because ddb does not accept empty strings as attribute values
         """
@@ -54,38 +56,50 @@ class ImportManager(CsvImporter):
                 row[k] = None
         return row
 
+    @staticmethod
+    def import_row(row_dict, anon_project_specific_user_id_column, link_column, project_task_id, provenance, dynamodb_client):
+        anon_id = row_dict[anon_project_specific_user_id_column]
+        users = u.get_user_by_anon_project_specific_user_id(anon_id)
+        user = users[0]
+        user_id = user['id']
+        user_specific_url = row_dict[link_column]
+        key = f"{project_task_id}_{user_id}"
+        details = ImportManager.nullify_empty_attributes(row_dict)
+        response = dynamodb_client.put_item(
+            table_name='UserSpecificUrls',
+            key=key,
+            item_type='user_specific_url',
+            item_details=details,
+            item={
+                'user_id': user_id,
+                'anon_project_specific_user_id': anon_id,
+                'project_task_id': project_task_id,
+                'user_specific_url': user_specific_url,
+                'details_provenance': provenance,
+                'status': 'new',
+            },
+            update_allowed=True,
+        )
+        assert response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK, f"DynamoDb raised an error. Here is the response: {response}"
+        return response
+
     def populate_ddb(self):
         with open(self.input_filename) as csv_f:
             reader = csv.DictReader(csv_f)
             rows = list(reader)
             for i, row in enumerate(rows):
                 print(f'Populating Dynamodb with row {i+1} of {len(rows)}')
-                anon_id = row[self.anon_project_specific_user_id_column]
-                users = u.get_user_by_anon_project_specific_user_id(anon_id)
-                user = users[0]
-                user_id = user['id']
-                user_specific_url = row['Link']
-                key = f"{self.project_task_id}_{user_id}"
-                details = self.nullify_empty_attributes(row)
-                response = self.ddb.put_item(
-                    table_name='UserSpecificUrls',
-                    key=key,
-                    item_type='user_specific_url',
-                    item_details=details,
-                    item={
-                        'user_id': user_id,
-                        'anon_project_specific_user_id': anon_id,
-                        'project_task_id': self.project_task_id,
-                        'user_specific_url': user_specific_url,
-                        'details_provenance': os.path.basename(self.input_filename),
-                        'status': 'new',
-                    },
-                    update_allowed=True,
+                self.import_row(
+                    row_dict=row,
+                    anon_project_specific_user_id_column=self.anon_project_specific_user_id_column,
+                    link_column='Link',
+                    project_task_id=self.project_task_id,
+                    provenance=os.path.basename(self.input_filename),
+                    dynamodb_client=self.ddb,
                 )
-                assert response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK, f"DynamoDb raised an error. Here is the response: {response}"
 
     def main(self):
-        self.check_project_task_exists()
+        self.check_project_task_exists(self.project_task_id)
         super().validate_input_file_and_get_user_ids()
         self.populate_ddb()
 

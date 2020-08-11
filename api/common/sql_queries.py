@@ -565,6 +565,11 @@ CREATE_USER_TASK_SQL = '''
         user_task_url
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s );
 '''
+
+DELETE_USER_TASKS_FOR_PROJECT_TASK_SQL = '''
+    DELETE FROM public.projects_usertask
+    WHERE project_task_id = %s
+'''
 # endregion
 
 

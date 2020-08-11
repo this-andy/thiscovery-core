@@ -17,12 +17,10 @@
 #
 
 import unittest
-from http import HTTPStatus
-from pprint import pprint
 
 import api.common.qualtrics as qualtrics
 from api.common.dev_config import QUALTRICS_TEST_OBJECTS
-from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
+from api.common.utilities import set_running_unit_tests
 
 
 class TestDistributionsClient(unittest.TestCase):
@@ -42,10 +40,11 @@ class TestDistributionsClient(unittest.TestCase):
         set_running_unit_tests(False)
 
     def test_dist_01_create_retrieve_and_delete_individual_links_ok(self):
+        # create
         r = self.dist_client.create_individual_links(survey_id=self.test_survey_id, contact_list_id=self.test_contact_list_id)
         self.assertEqual('200 - OK', r['meta']['httpStatus'])
 
-
+        # retrieve
         distribution_id = r['result']['id']
         # self.created_distributions.append(distribution_id)
         r = self.dist_client.list_distribution_links(distribution_id, self.test_survey_id)
@@ -72,4 +71,6 @@ class TestDistributionsClient(unittest.TestCase):
         ]
         self.assertCountEqual(expected_ids, anon_ids)
 
-
+        # delete
+        r = self.dist_client.delete_distribution(distribution_id)
+        self.assertEqual('200 - OK', r['meta']['httpStatus'])

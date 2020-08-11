@@ -16,14 +16,17 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 import os
-import tempfile
+from pprint import pprint
 
 import api.common.pg_utilities as pg_utils
 import api.common.sql_queries as sql_q
 import api.common.utilities as utils
 import testing_utilities as test_utils
 
+from api.common.dynamodb_utilities import Dynamodb
+from api.common.dev_config import QUALTRICS_TEST_OBJECTS
 from api.local.admin_tasks.qualtrics_admin.convert_responses_to_contact_list_input_format import ResponsesToContactListConverter
+from api.local.admin_tasks.qualtrics_admin.republish_survey_with_user_specific_links import DistributionLinksGenerator
 from api.local.admin_tasks.task_setup.output_anon_project_specific_user_ids_for_test_group import ProcessManager as OutputAnonIds
 from api.local.admin_tasks.task_setup.create_user_group_for_follow_up_task import ImportManager as CreateUserGroup
 
@@ -70,6 +73,26 @@ class TestAdminTasksDbAccess(test_utils.DbTestCase):
         user_ids_in_group = pg_utils.execute_query(sql_q.SQL_USER_IDS_IN_USER_GROUP, [paramedics_user_group_id], jsonize_sql=False)
         self.assertEqual(16, len(create_user_group.user_ids))
         self.assertCountEqual(create_user_group.user_ids, user_ids_in_group)
+
+    def test_05_generate_distribution_links_for_contact_list(self):
+        self.clear_user_specific_urls()
+        project_task_id = '4ee70544-6797-4e21-8cec-5653c8d5b234'
+        generator = DistributionLinksGenerator(
+            survey_id=QUALTRICS_TEST_OBJECTS['unittest-survey-1']['id'],
+            contact_list_id=QUALTRICS_TEST_OBJECTS['unittest-contact-list-1']['id'],
+            project_task_id=project_task_id,
+        )
+        generator.generate_links_and_upload_to_dynamodb()
+        expected_ddb_keys = [
+            f"{project_task_id}_d1070e81-557e-40eb-a7ba-b951ddb7ebdc",
+            f"{project_task_id}_851f7b34-f76c-49de-a382-7e4089b744e2",
+            f"{project_task_id}_8518c7ed-1df4-45e9-8dc4-d49b57ae0663",
+            f"{project_task_id}_35224bd5-f8a8-41f6-8502-f96e12d6ddde",
+            f"{project_task_id}_1cbe9aad-b29f-46b5-920e-b4c496d42515",
+        ]
+        rows = self.ddb_client.scan('UserSpecificUrls')
+        keys = [x['id'] for x in rows]
+        self.assertCountEqual(expected_ddb_keys, keys)
 
 
 class TestAdminTasks(test_utils.BaseTestCase):
