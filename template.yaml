@@ -1491,6 +1491,18 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+  HubspotEmailTemplates:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
 Parameters:
   StackTagName:
     Type: String
