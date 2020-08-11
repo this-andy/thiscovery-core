@@ -40,7 +40,6 @@ CONTACTS_ENDPOINT = '/contacts/v1'
 INTEGRATIONS_ENDPOINT = '/integrations/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
 
-
 # region decorators
 def hubspot_api_error_handler(func):
     @functools.wraps(func)
@@ -530,6 +529,34 @@ class HubSpotClient:
         ]
         return self.update_contact_by_email(user_email, changes, correlation_id)
     # endregion
+
+
+class SingleSendClient(HubSpotClient):
+
+    def send_email(self, template_id, message, **kwargs):
+        """
+        https://legacydocs.hubspot.com/docs/methods/email/transactional_email/single-send-overview
+
+        Args:
+            template_id: Id of the rendering template to use
+            message: JSON object containing anything that you want to override. At the minimum, the to field must be present.
+            **kwargs: see documentation for list of optional params
+
+        Returns:
+
+        """
+        data = {
+            'emailId': template_id,
+            'message': message,
+        }
+        data.update(**kwargs)
+        return self.post(
+            url='/email/public/v1/singleEmail/send',
+            data=data
+        )
+
+    def template_name_to_id(self):
+        pass
 
 
 # region hubspot timestamp methods
