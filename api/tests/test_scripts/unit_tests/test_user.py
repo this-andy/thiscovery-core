@@ -101,7 +101,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
-    def test_17_get_user_by_anon_project_specific_user_id_api_not_exists(self):
+    def test_03_get_user_by_anon_project_specific_user_id_api_not_exists(self):
         query_parameters = {'anon_project_specific_user_id': "7da7a740-f6b0-4177-809b-5e2852605ff2"}
 
         expected_status = HTTPStatus.NOT_FOUND
@@ -115,7 +115,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-    def test_18_get_user_by_email_api_takes_one_and_only_one_querystring_parameter(self):
+    def test_04_get_user_by_email_api_takes_one_and_only_one_querystring_parameter(self):
         expected_status = HTTPStatus.BAD_REQUEST
         result = test_get(u.get_user_by_email_api, ENTITY_BASE_URL, querystring_parameters={})
         result_status = result['statusCode']
@@ -141,7 +141,7 @@ class TestUser(test_utils.DbTestCase):
             ('Please query by either email or anon_project_specific_user_id, but not both' in result_json['message'])
         )
 
-    def test_16_get_user_by_uuid_api_not_exists(self):
+    def test_05_get_user_by_uuid_api_not_exists(self):
         path_parameters = {'id': "23e38ff4-1483-408a-ad58-d08cb5a34038"}
 
         expected_status = HTTPStatus.NOT_FOUND
@@ -154,7 +154,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-    def test_03_get_user_by_uuid_api_bad_uuid(self):
+    def test_06_get_user_by_uuid_api_bad_uuid(self):
         path_parameters = {'id': "b4308c90-f8cc-49f2-b40b-16e7c4aebb6Z"}
 
         expected_status = HTTPStatus.BAD_REQUEST
@@ -168,7 +168,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('uuid' in result_json)
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
-    def test_04_get_user_email_exists(self):
+    def test_07_get_user_email_exists(self):
         querystring_parameters = {'email': 'altha@email.co.uk'}
 
         expected_status = HTTPStatus.OK
@@ -180,7 +180,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
-    def test_16_get_user_email_is_case_insensitive(self):
+    def test_08_get_user_email_is_case_insensitive(self):
         querystring_parameters = {'email': 'Altha@email.co.uk'}
 
         expected_status = HTTPStatus.OK
@@ -192,7 +192,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertDictEqual(EXPECTED_USER, result_json)
 
-    def test_05_get_user_email_not_exists(self):
+    def test_09_get_user_email_not_exists(self):
         querystring_parameters = {'email': 'not.andy@thisinstitute.cam.ac.uk'}
         expected_status = HTTPStatus.NOT_FOUND
 
@@ -204,7 +204,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-    def test_06_patch_user_api_ok(self):
+    def test_10_patch_user_api_ok(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
 
         expected_status = HTTPStatus.NO_CONTENT
@@ -291,7 +291,7 @@ class TestUser(test_utils.DbTestCase):
             }
             self.assertDictEqual(expected_body, last_entity_update)
 
-    def test_07_patch_user_api_user_not_exists(self):
+    def test_11_patch_user_api_user_not_exists(self):
         expected_status = HTTPStatus.NOT_FOUND
         user_jsonpatch = [
             {'op': 'replace', 'path': '/title', 'value': 'Sir'},
@@ -308,7 +308,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-    def test_08_patch_user_api_bad_attribute(self):
+    def test_12_patch_user_api_bad_attribute(self):
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'replace', 'path': '/non-existent-attribute', 'value': 'simon'}]
         body = json.dumps(user_jsonpatch)
@@ -322,7 +322,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
-    def test_09_patch_user_api_bad_operation(self):
+    def test_13_patch_user_api_bad_operation(self):
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'op': 'non-existent-operation', 'path': '/first_name', 'value': 'simon'}]
         body = json.dumps(user_jsonpatch)
@@ -336,7 +336,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'] == 'invalid jsonpatch')
 
-    def test_10_patch_user_api_bad_jsonpatch(self):
+    def test_14_patch_user_api_bad_jsonpatch(self):
         expected_status = HTTPStatus.BAD_REQUEST
         user_jsonpatch = [{'this': 'is', 'not': '/a', 'valid': 'jsonpatch'}]
         body = json.dumps(user_jsonpatch)
@@ -350,7 +350,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and result_json['message'].endswith('invalid jsonpatch'))
 
-    def test_11_create_user_api_ok_and_duplicate(self):
+    def test_15_create_user_api_ok_and_duplicate(self):
         expected_status = HTTPStatus.CREATED
         user_id = '48e30e54-b4fc-4303-963f-2943dda2b139'
         user_email = 'sw@email.co.uk'
@@ -422,7 +422,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'already exists' in result_json['message'])
 
-    def test_12_create_user_api_with_defaults(self):
+    def test_16_create_user_api_with_defaults(self):
         expected_status = HTTPStatus.CREATED
         user_json = {
             "email": "hh@email.co.uk",
@@ -460,7 +460,7 @@ class TestUser(test_utils.DbTestCase):
         # difference = abs(result_datetime - now_with_tz() - timedelta(hours=24))
         # self.assertLess(difference.seconds, TIME_TOLERANCE_SECONDS)
 
-    def test_13_create_user_api_bad_uuid(self):
+    def test_17_create_user_api_bad_uuid(self):
         expected_status = HTTPStatus.BAD_REQUEST
         user_json = {
             "id": "48e30e54-b4fc-4303-963f-2943dda2b13m",
@@ -483,7 +483,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('uuid' in result_json)
         self.assertTrue('message' in result_json and 'uuid' in result_json['message'])
 
-    def test_14_user_email_unique_constraint(self):
+    def test_18_user_email_unique_constraint(self):
         """
         Tests unique constraint on email field in user database table
         """
@@ -517,7 +517,7 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_message, result_json['message'])
         self.assertEqual(expected_error, result_json['error'])
 
-    def test_15_create_user_email_case_conversion(self):
+    def test_19_create_user_email_case_conversion(self):
         expected_status = HTTPStatus.CREATED
         user_id = 'bb918e21-5f8f-4472-94da-34064d941f2d'
         user_email = 'HerculePoirot@email.co.uk'
@@ -539,9 +539,3 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
         self.assertEqual(user_email.lower(), result_json['email'])
-
-    # def test_16_timezone(self):
-    #     from api.common.pg_utilities import execute_query
-    #     sql = 'Select NOW()'
-    #     result =  execute_query(sql, None, 'abc')
-    #     return result
