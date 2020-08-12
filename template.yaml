@@ -1503,6 +1503,7 @@ Resources:
           KeyType: HASH
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-HubspotEmailTemplates
 Parameters:
   StackTagName:
     Type: String

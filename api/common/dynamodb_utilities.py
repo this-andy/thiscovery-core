@@ -26,8 +26,8 @@ STACK_NAME = 'thiscovery-core'
 
 
 class Dynamodb(utils.BaseClient):
-    def __init__(self):
-        super().__init__('dynamodb', client_type='resource')
+    def __init__(self, correlation_id=None):
+        super().__init__('dynamodb', client_type='resource', correlation_id=correlation_id)
         super().get_namespace()
 
     def get_table(self, table_name):

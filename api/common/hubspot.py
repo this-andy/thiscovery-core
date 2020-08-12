@@ -555,9 +555,6 @@ class SingleSendClient(HubSpotClient):
             data=data
         )
 
-    def template_name_to_id(self):
-        pass
-
 
 # region hubspot timestamp methods
 def hubspot_timestamp(datetime_string: str):
