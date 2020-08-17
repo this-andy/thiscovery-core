@@ -539,7 +539,7 @@ class SingleSendClient(HubSpotClient):
 
         Args:
             template_id: Id of the rendering template to use
-            message: JSON object containing anything that you want to override. At the minimum, the to field must be present.
+            message (dict): object containing anything that you want to override. At the minimum, the to field must be present.
             **kwargs: see documentation for list of optional params
 
         Returns:
@@ -547,7 +547,10 @@ class SingleSendClient(HubSpotClient):
         """
         data = {
             'emailId': template_id,
-            'message': message,
+            'message': {
+                "from": "Sender Name <sender@hubspot.com>",
+                **message
+            },
         }
         data.update(**kwargs)
         return self.post(
