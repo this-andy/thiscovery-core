@@ -71,6 +71,9 @@ class HubSpotClient:
     token_item_id = 'hubspot'
     expired_token_item_id = 'hubspot-expired'
     token_item_type = 'oAuth_token'
+    app_id_secret_name = 'app-id'
+    client_id_secret_name = 'client-id'
+    client_secret_name = 'client-secret'
 
     def __init__(self, correlation_id=None):
         self.logger = get_logger()
@@ -98,11 +101,6 @@ class HubSpotClient:
             self.logger.warning(f'could not retrieve hubspot token from dynamodb item {item_name}')
             return None
 
-    def _put_token_in_ddb(self, token, item_name=None):
-        if item_name is None:
-            item_name = self.token_item_id
-        return self.ddb.put_item(self.tokens_table_name, item_name, self.token_item_type, token, dict(), correlation_id=self.correlation_id)
-
     def create_expired_token_item(self):
         """
         Creates an hubspot-expired item in Dynamodb with the value of existing token (hubspot). Notice that the expired token might still be valid on
@@ -114,7 +112,7 @@ class HubSpotClient:
         token = self.get_token_from_database()
         if not token:
             raise utils.ObjectDoesNotExistError('Hubspot token not found', details={'correlation_id': self.correlation_id})
-        response = self._put_token_in_ddb(token, item_name=self.expired_token_item_id)
+        response = self.save_token(token, item_name=self.expired_token_item_id)
         # todo: add response check here; for now log its value
         self.logger.debug('put_item response', extra={'response': response, 'correlation_id': self.correlation_id})
         return token
@@ -138,7 +136,7 @@ class HubSpotClient:
         """
         if self.connection_secret is None:
             self.connection_secret = get_secret('hubspot-connection')
-            self.app_id = self.connection_secret['app-id']
+            self.app_id = self.connection_secret[self.app_id_secret_name]
         return self.connection_secret
 
     def get_new_token_from_hubspot(self, refresh_token='self value', code=None, redirect_url=None, correlation_id=None):
@@ -163,9 +161,9 @@ class HubSpotClient:
             correlation_id = self.correlation_id
 
         hubspot_connection = self.get_hubspot_connection_secret()
-        client_id = hubspot_connection['client-id']
-        client_secret = hubspot_connection['client-secret']
-        self.app_id = hubspot_connection['app-id']
+        client_id = hubspot_connection[self.client_id_secret_name]
+        client_secret = hubspot_connection[self.client_secret_name]
+        self.app_id = hubspot_connection[self.app_id_secret_name]
 
         formData = {
             "client_id": client_id,
@@ -184,6 +182,7 @@ class HubSpotClient:
 
         res = requests.post('https://api.hubapi.com/oauth/v1/token', data=formData)
         self.tokens = res.json()
+        self.logger.debug('Hubspot response', extra={'response': self.tokens})
         self.access_token = self.tokens['access_token']
         self.refresh_token = self.tokens['refresh_token']
 
@@ -202,10 +201,11 @@ class HubSpotClient:
         redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
         return self.get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
 
-    @staticmethod
-    def save_token(new_token, correlation_id=None):
-        ddb = ddb_utils.Dynamodb()
-        ddb.put_item('tokens', 'hubspot', 'oAuth_token', new_token, {}, True, correlation_id)
+    def save_token(self, new_token, item_name=None):
+        if item_name is None:
+            item_name = self.token_item_id
+        return self.ddb.put_item(self.tokens_table_name, item_name, self.token_item_type, new_token, dict(),
+                                 update_allowed=True, correlation_id=self.correlation_id)
     # endregion
 
     # region get/post/put/delete requests
@@ -532,6 +532,11 @@ class HubSpotClient:
 
 
 class SingleSendClient(HubSpotClient):
+    token_item_id = 'hubspot-emails'
+    expired_token_item_id = 'hubspot-emails-expired'
+    app_id_secret_name = 'emails-app-id'
+    client_id_secret_name = 'emails-client-id'
+    client_secret_name = 'emails-client-secret'
 
     def send_email(self, template_id, message, **kwargs):
         """
