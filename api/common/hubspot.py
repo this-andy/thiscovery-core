@@ -192,6 +192,10 @@ class HubSpotClient:
             'client_id_secret_name': self.client_id_secret_name,
             'client_secret_name': self.client_secret_name,
             'app_id_secret_name': self.app_id_secret_name,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'app_id': self.app_id,
+            'refresh_token': refresh_token
         })
         self.access_token = self.tokens['access_token']
         self.refresh_token = self.tokens['refresh_token']
