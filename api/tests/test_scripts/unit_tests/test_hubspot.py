@@ -15,13 +15,16 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
-import api.common.hubspot as hs
-from api.common.hubspot import HubSpotClient
-
 from http import HTTPStatus
 from unittest import TestCase
+
+import api.common.hubspot as hs
+import api.tests.test_scripts.testing_utilities as test_utils
+from api.common.hubspot import HubSpotClient
+
+from api.common.dev_config import TRANSACTIONAL_EMAILS_RECIPIENT
 from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
+
 
 TIME_TOLERANCE_SECONDS = 10
 DELETE_TEST_DATA = True
@@ -267,3 +270,36 @@ class TestHubspotClient(TestCase):
         self.assertNotEqual(old_token['access_token'], new_token['access_token'])
         self.assertEqual(self.hs_client.app_id, new_token['app-id'])
     # endregion
+
+
+class TestSingleSendClient(test_utils.BaseTestCase):
+    test_custom_properties = [
+        {
+            "name": "project_task_description",
+            "value": "Sounds easy on paper, but setting up the app does take time"
+        },
+        {
+            "name": "project_task_name",
+            "value": "Send a transactional email"
+        },
+        {
+            "name": "project_results_url",
+            "value": "https://www.thiscovery.org/"
+        }
+    ]
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hs_client = hs.SingleSendClient(mock_server=True)
+
+    def test_send_email_ok(self):
+        result = self.hs_client.send_email(
+            template_id=33531457008,
+            message={
+                "to": TEST_USER_01['email']
+            },
+            customProperties=self.test_custom_properties
+        )
+        self.assertEqual(HTTPStatus.OK, result.status_code)
+        self.assertEqual('SENT', result.json().get('sendResult'))

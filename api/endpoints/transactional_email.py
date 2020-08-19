@@ -43,6 +43,7 @@ class TransactionalEmail:
                                            details={'email_dict': email_dict, 'correlation_id': correlation_id})
 
         self.email_dict = email_dict
+        self.logger = utils.get_logger()
         self.correlation_id = correlation_id
         self.ddb_client = Dynamodb(correlation_id=correlation_id)
         self.ss_client = hs.SingleSendClient(correlation_id=correlation_id)
@@ -61,15 +62,20 @@ class TransactionalEmail:
         return self.template
 
     def _validate_properties(self):
+        if self.template is None:
+            self._get_template_details()
         for p_type in ['contact_properties', 'custom_properties']:
             type_name = p_type.split("_")[0]
             required_p_names = list()
             optional_p_names = list()
+            # check all required properties are present in body of call
             for p in self.template[p_type]:
                 if p['required'] is True:
                     required_p_names.append(p['name'])
                 else:
                     optional_p_names.append(p['name'])
+            self.logger.debug(f'{type_name} properties in template', extra={'required_p_names': required_p_names, 'optional_p_names': optional_p_names})
+
             for p_name in required_p_names:
                 try:
                     self.email_dict[p_type][p_name]
@@ -80,15 +86,19 @@ class TransactionalEmail:
                                                             'correlation_id': self.correlation_id,
                                                         })
 
-            p_names_in_call = [x['name'] for x in self.email_dict[p_type]]
-            for p in p_names_in_call:
-                if p not in [*required_p_names, *optional_p_names]:
-                    raise utils.DetailedIntegrityError(f'Call {type_name} property {p} is not specified in email template',
-                                                       details={
-                                                           'email_dict': self.email_dict,
-                                                           f'template_required_{type_name}_properties': self.template[p_type],
-                                                           'correlation_id': self.correlation_id,
-                                                       })
+            # check all properties in body of call are specified in template
+            properties_in_call = self.email_dict.get(p_type)
+            if properties_in_call is not None:
+                p_names_in_call = self.email_dict.get(p_type).keys()
+                for p in p_names_in_call:
+                    if p not in [*required_p_names, *optional_p_names]:
+                        raise utils.DetailedIntegrityError(f'Call {type_name} property {p} is not specified in email template',
+                                                           details={
+                                                               'email_dict': self.email_dict,
+                                                               f'template_required_{type_name}_properties': self.template[p_type],
+                                                               'correlation_id': self.correlation_id,
+                                                           })
+        return True
 
     def _get_user(self):
         try:
@@ -104,7 +114,22 @@ class TransactionalEmail:
                                                     })
         return user
 
-    def send(self):
+    @staticmethod
+    def _format_properties_to_name_value(properties_dict):
+        if properties_dict:
+            output_list = list()
+            for k, v in properties_dict.items():
+                output_list.append(
+                    {
+                        'name': k,
+                        'value': v,
+                    }
+                )
+            return output_list
+
+    def send(self, mock_server=False):
+        if mock_server:
+            self.ss_client.mock_server = True
         self._get_template_details()
         self._validate_properties()
         user = self._get_user()
@@ -114,7 +139,7 @@ class TransactionalEmail:
                                                     'user': user,
                                                     'correlation_id': self.correlation_id,
                                                 })
-        self.ss_client.send_email(
+        return self.ss_client.send_email(
             template_id=self.template['hs_template_id'],
             message={
                 'to': user['email'],
@@ -122,8 +147,8 @@ class TransactionalEmail:
                 'bcc': self.template['bcc'],
                 'sendId': self.correlation_id,
             },
-            contactProperties=self.email_dict.get('contact_properties'),
-            customProperties=self.email_dict.get('custom_properties'),
+            contactProperties=self._format_properties_to_name_value(self.email_dict.get('contact_properties')),
+            customProperties=self._format_properties_to_name_value(self.email_dict.get('custom_properties')),
         )
 
 

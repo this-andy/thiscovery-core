@@ -27,6 +27,7 @@ import common.dynamodb_utilities as ddb_utils
 import common.utilities as utils
 from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
 
+
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # use namespace_override to enable using dev hubspot with production Thiscovery
@@ -36,6 +37,7 @@ DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 # client_secret = hubspot_connection['client-secret']
 
 BASE_URL = 'https://api.hubapi.com'
+MOCK_BASE_URL = 'https://0ed709fe-f683-460b-843b-844744e419f9.mock.pstmn.io'
 CONTACTS_ENDPOINT = '/contacts/v1'
 INTEGRATIONS_ENDPOINT = '/integrations/v1'
 TASK_SIGNUP_TLE_TYPE_NAME = 'task-signup'
@@ -75,7 +77,8 @@ class HubSpotClient:
     client_id_secret_name = 'client-id'
     client_secret_name = 'client-secret'
 
-    def __init__(self, correlation_id=None):
+    def __init__(self, mock_server=False, correlation_id=None):
+        self.mock_server = mock_server
         self.logger = get_logger()
         self.correlation_id = correlation_id
         self.ddb = ddb_utils.Dynamodb()
@@ -214,7 +217,10 @@ class HubSpotClient:
             correlation_id = self.correlation_id
         success = False
         retry_count = 0
-        full_url = BASE_URL + url
+        base_url = BASE_URL
+        if self.mock_server:
+            base_url = MOCK_BASE_URL
+        full_url = base_url + url
         while not success:
             try:
                 result = requests.request(
@@ -280,8 +286,8 @@ class HubSpotClient:
     def get(self, url, correlation_id):
         return self.hubspot_token_request('GET', url, correlation_id=correlation_id)
 
-    def post(self, url: str, data: dict, correlation_id):
-        return self.hubspot_token_request('POST', url, data=data, correlation_id=correlation_id)
+    def post(self, url: str, data: dict):
+        return self.hubspot_token_request('POST', url, data=data, correlation_id=self.correlation_id)
 
     def put(self, url: str, data: dict, correlation_id):
         return self.hubspot_token_request('PUT', url, data=data, correlation_id=correlation_id)
