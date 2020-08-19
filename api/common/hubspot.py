@@ -160,8 +160,6 @@ class HubSpotClient:
         """
         if refresh_token == 'self value':
             refresh_token = self.refresh_token
-        if correlation_id is None:
-            correlation_id = self.correlation_id
 
         hubspot_connection = self.get_hubspot_connection_secret()
         client_id = hubspot_connection[self.client_id_secret_name]
@@ -198,7 +196,7 @@ class HubSpotClient:
         self.access_token = self.tokens['access_token']
         self.refresh_token = self.tokens['refresh_token']
 
-        self.save_token(self.tokens, correlation_id)
+        self.save_token(self.tokens)
         return {**self.tokens, 'app-id': self.app_id}
 
     def get_initial_token_from_hubspot(self):
@@ -245,6 +243,7 @@ class HubSpotClient:
                                          'method': method,
                                          'url': full_url,
                                          'data': data,
+                                         'headers': headers,
                                      },
                                      'result': result.text
                                  })
