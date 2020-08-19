@@ -165,7 +165,10 @@ def send_transactional_email_api(event, context):
         'event': event
     })
     email = TransactionalEmail(email_dict, correlation_id)
-    email.send()
+    if email_dict.get('mock_server') is True:
+        email.send(mock_server=True)
+    else:
+        email.send()
     return {
         "statusCode": HTTPStatus.OK,
     }

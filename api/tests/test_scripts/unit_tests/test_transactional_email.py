@@ -17,6 +17,7 @@
 #
 
 import copy
+import json
 
 from http import HTTPStatus
 from pprint import pprint
@@ -24,7 +25,7 @@ from pprint import pprint
 import api.tests.test_scripts.testing_utilities as test_utils
 import common.utilities as utils
 
-from api.endpoints.transactional_email import TransactionalEmail
+from api.endpoints.transactional_email import TransactionalEmail, send_transactional_email_api
 from api.tests.test_scripts.unit_tests.test_user import EXPECTED_USER
 
 
@@ -146,7 +147,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertCountEqual(expected_result, TransactionalEmail._format_properties_to_name_value(self.test_email_dict['custom_properties']))
 
     def test_10_send_email_ok(self):
-        email_dict = self.test_email_dict.copy()
+        email_dict = copy.deepcopy(self.test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
         email = TransactionalEmail(email_dict=email_dict)
         response = email.send(mock_server=True)
@@ -158,3 +159,31 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         err = context.exception
         err_msg = err.args[0]
         self.assertIn('Recipient does not have a HubSpot id', err_msg)
+
+    def test_12_send_transactional_email_api_locally(self):
+        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
+        email_dict["mock_server"] = True
+        event = {
+            'body': json.dumps(email_dict)
+        }
+        response = send_transactional_email_api(event, context=None)
+        self.assertEqual(HTTPStatus.OK, response['statusCode'])
+
+    def test_13_template_name_missing_from_email_dict(self):
+        email_dict = copy.deepcopy(self.test_email_dict)
+        del email_dict['template_name']
+        with self.assertRaises(utils.DetailedValueError) as context:
+            TransactionalEmail(email_dict=email_dict)
+        err = context.exception
+        err_msg = err.args[0]
+        self.assertIn('template_name and to_recipient_id must be present in email_dict', err_msg)
+
+    def test_14_recipient_missing_from_email_dict(self):
+        email_dict = copy.deepcopy(self.test_email_dict)
+        del email_dict['to_recipient_id']
+        with self.assertRaises(utils.DetailedValueError) as context:
+            TransactionalEmail(email_dict=email_dict)
+        err = context.exception
+        err_msg = err.args[0]
+        self.assertIn('template_name and to_recipient_id must be present in email_dict', err_msg)
