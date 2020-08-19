@@ -1,5 +1,6 @@
 boto3
 botocore
+epsagon
 jinja2
 pip	>= 19.0.1
 psycopg2-binary
