@@ -115,7 +115,7 @@ class TestHubspotContacts(TestCase):
 
     def test_contacts_01_create_and_get_contact_ok(self):
         user_json = TEST_USER_01
-        hubspot_id, is_new = self.hs_client.post_new_user_to_crm(user_json, None)
+        hubspot_id, is_new = self.hs_client.post_new_user_to_crm(user_json)
         contact = self.hs_client.get_hubspot_contact_by_id(hubspot_id, None)
 
         self.assertEqual(user_json['id'], self.hs_client.get_contact_property(contact, 'thiscovery_id'))
@@ -139,7 +139,7 @@ class TestHubspotContacts(TestCase):
             test_case_instance.assertEqual(str(expected_registered_date), thiscovery_registered_datestamp)
 
         user_json = TEST_USER_01
-        hs_user_id, _ = self.hs_client.post_new_user_to_crm(user_json, None)
+        hs_user_id, _ = self.hs_client.post_new_user_to_crm(user_json)
         correlation_id = new_correlation_id()
 
         self.hs_client.logger.info('Testing contact update by email')
@@ -204,7 +204,7 @@ class TestHubspotClient(TestCase):
 
     def test_tle_03_create_tle(self):
         user_json = TEST_USER_01
-        self.hs_client.post_new_user_to_crm(user_json, None)
+        self.hs_client.post_new_user_to_crm(user_json)
         correlation_id = new_correlation_id()
         contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
         contact_hubspot_id = contact['vid']
@@ -251,6 +251,9 @@ class TestHubspotClient(TestCase):
             "app-id",
             "client-id",
             "client-secret",
+            'emails-app-id',
+            'emails-client-id',
+            'emails-client-secret',
         ]
         self.assertEqual(expected_keys, list(cs.keys()))
 

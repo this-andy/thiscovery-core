@@ -343,9 +343,9 @@ class HubSpotClient:
         return contact['properties'][property_name]['value']
 
     @hubspot_api_error_handler
-    def update_contact_core(self, url, property_changes, correlation_id):
+    def update_contact_core(self, url, property_changes, correlation_id=None):
         data = {"properties": property_changes}
-        r = self.post(url, data, correlation_id)
+        r = self.post(url, data)
         return r.status_code
 
     def update_contact_by_email(self, email: str, property_changes: list, correlation_id=None):
@@ -463,7 +463,7 @@ class HubSpotClient:
     # endregion
 
     # region thiscovery functionality
-    def post_new_user_to_crm(self, new_user, correlation_id):
+    def post_new_user_to_crm(self, new_user, correlation_id=None):
         """
 
         Args:
@@ -494,7 +494,7 @@ class HubSpotClient:
             ]
         }
 
-        result = self.post(url=url, data=data, correlation_id=correlation_id)
+        result = self.post(url=url, data=data)
 
         if result.status_code == HTTPStatus.OK:
 

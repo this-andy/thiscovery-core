@@ -195,7 +195,7 @@ class TestNotifications(test_utils.DbTestCase):
 
     def test_05_process_signup_with_expired_token(self):
         expired_token = self.hs_client.get_expired_token_from_database()
-        self.hs_client.save_token(expired_token, correlation_id=None)
+        self.hs_client.save_token(expired_token)
         create_task_signup_notification()
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_task_signup(notification)
@@ -234,7 +234,7 @@ class TestNotifications(test_utils.DbTestCase):
         Tests notification_process.process_user_login with an expired HubSpot token
         """
         expired_token = self.hs_client.get_expired_token_from_database()
-        self.hs_client.save_token(expired_token, correlation_id=None)
+        self.hs_client.save_token(expired_token)
         create_login_notification(TEST_USER_02_JSON)
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_user_login(notification)
