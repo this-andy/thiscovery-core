@@ -99,7 +99,9 @@ class HubSpotClient:
             item_name = self.token_item_id
 
         try:
-            return self.ddb.get_item(self.tokens_table_name, item_name, self.correlation_id)['details']
+            item = self.ddb.get_item(self.tokens_table_name, item_name, self.correlation_id)['details']
+            self.logger.debug('Fetched token details', extra={'item': item})
+            return item
         except:
             self.logger.warning(f'could not retrieve hubspot token from dynamodb item {item_name}')
             return None
