@@ -242,7 +242,7 @@ def post_sample_users_to_crm(user_test_data_csv, hs_client=None):
                 "status": "new"
             }
 
-            hubspot_id, _ = hs_client.post_new_user_to_crm(user_json, correlation_id=None)
+            hubspot_id, _ = hs_client.post_new_user_to_crm(user_json)
             user_jsonpatch = [
                 {'op': 'replace', 'path': '/crm_id', 'value': str(hubspot_id)},
             ]

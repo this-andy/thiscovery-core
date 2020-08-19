@@ -88,10 +88,10 @@ def delete_test_users(test_users=[TEST_USER_01], hs_client=None):
         hs_client = HubSpotClient()
     for user in test_users:
         u_email = user['email']
-        contact = hs_client.get_hubspot_contact_by_email(u_email, None)
+        contact = hs_client.get_hubspot_contact_by_email(u_email)
         if contact is not None:
             contact_hubspot_id = contact['vid']
-            hs_client.delete_hubspot_contact(contact_hubspot_id, None)
+            hs_client.delete_hubspot_contact(contact_hubspot_id)
 
 
 class TestHubspotContacts(TestCase):
@@ -116,7 +116,7 @@ class TestHubspotContacts(TestCase):
     def test_contacts_01_create_and_get_contact_ok(self):
         user_json = TEST_USER_01
         hubspot_id, is_new = self.hs_client.post_new_user_to_crm(user_json)
-        contact = self.hs_client.get_hubspot_contact_by_id(hubspot_id, None)
+        contact = self.hs_client.get_hubspot_contact_by_id(hubspot_id)
 
         self.assertEqual(user_json['id'], self.hs_client.get_contact_property(contact, 'thiscovery_id'))
         self.assertEqual(user_json['first_name'], self.hs_client.get_contact_property(contact, 'firstname'))
@@ -134,13 +134,12 @@ class TestHubspotContacts(TestCase):
         Tests updates by both email and id
         """
         def get_contact_and_check_timestamp(test_case_instance, expected_registered_date):
-            contact = test_case_instance.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
+            contact = test_case_instance.hs_client.get_hubspot_contact_by_email(user_json['email'])
             thiscovery_registered_datestamp = test_case_instance.hs_client.get_contact_property(contact, property_name)
             test_case_instance.assertEqual(str(expected_registered_date), thiscovery_registered_datestamp)
 
         user_json = TEST_USER_01
         hs_user_id, _ = self.hs_client.post_new_user_to_crm(user_json)
-        correlation_id = new_correlation_id()
 
         self.hs_client.logger.info('Testing contact update by email')
         tsn_0 = hs.hubspot_timestamp(str(now_with_tz()))
@@ -148,7 +147,7 @@ class TestHubspotContacts(TestCase):
         changes = [
                 {"property": property_name, "value": int(tsn_0)},
             ]
-        self.hs_client.update_contact_by_email(user_json['email'], changes, correlation_id)
+        self.hs_client.update_contact_by_email(user_json['email'], changes)
         get_contact_and_check_timestamp(self, tsn_0)
 
         self.hs_client.logger.info('Testing contact update by hubspot id')
@@ -158,7 +157,7 @@ class TestHubspotContacts(TestCase):
         changes = [
             {"property": property_name, "value": int(tsn_1)},
         ]
-        self.hs_client.update_contact_by_id(hs_user_id, changes, correlation_id)
+        self.hs_client.update_contact_by_id(hs_user_id, changes)
         get_contact_and_check_timestamp(self, tsn_1)
 
 
@@ -206,7 +205,7 @@ class TestHubspotClient(TestCase):
         user_json = TEST_USER_01
         self.hs_client.post_new_user_to_crm(user_json)
         correlation_id = new_correlation_id()
-        contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'], correlation_id)
+        contact = self.hs_client.get_hubspot_contact_by_email(user_json['email'])
         contact_hubspot_id = contact['vid']
         tle_type_id = self.hs_client.get_timeline_event_type_id(hs.TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
         tle_id = 'test_tle_01'
@@ -234,9 +233,9 @@ class TestHubspotClient(TestCase):
             'timestamp': hs.hubspot_timestamp(signup_details['created'])
         }
 
-        self.hs_client.create_or_update_timeline_event(tle_details, correlation_id)
+        self.hs_client.create_or_update_timeline_event(tle_details)
 
-        tle = self.hs_client.get_timeline_event(tle_type_id, tle_id, correlation_id)
+        tle = self.hs_client.get_timeline_event(tle_type_id, tle_id)
 
         self.assertEqual('test_project_id', tle['project_id'])
         self.assertEqual('Test Project Name', tle['project_name'])

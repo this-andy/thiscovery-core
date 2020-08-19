@@ -142,7 +142,7 @@ class HubSpotClient:
             self.app_id = self.connection_secret[self.app_id_secret_name]
         return self.connection_secret
 
-    def get_new_token_from_hubspot(self, refresh_token='self value', code=None, redirect_url=None, correlation_id=None):
+    def get_new_token_from_hubspot(self, refresh_token='self value', code=None, redirect_url=None):
         """
         Use this function to renew the HubSpot token.
 
@@ -150,7 +150,6 @@ class HubSpotClient:
             refresh_token: HubSpot refresh token stored in AWS Secrets Manager; default value maps to self.refresh_token
             code: HubSpot authorization code required to obtain initial token (one-off use)
             redirect_url: URL for authorization code delivery (one-off use)
-            correlation_id: Correlation id for tracing
 
         Returns:
             Dict of HubSpot credentials, containing values for keys 'access_token', 'refresh_token' and 'app-id'
@@ -209,7 +208,11 @@ class HubSpotClient:
         from common.dev_config import INITIAL_HUBSPOT_AUTH_CODE, NGROK_URL_ID
 
         redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
-        return self.get_new_token_from_hubspot(None, INITIAL_HUBSPOT_AUTH_CODE, redirect_url, None)
+        return self.get_new_token_from_hubspot(
+            refresh_token=None,
+            code=INITIAL_HUBSPOT_AUTH_CODE,
+            redirect_url=redirect_url
+        )
 
     def save_token(self, new_token, item_name=None):
         if item_name is None:
@@ -219,9 +222,7 @@ class HubSpotClient:
     # endregion
 
     # region get/post/put/delete requests
-    def hubspot_request(self, method, url, params={}, data={}, headers=None, correlation_id=None):
-        if correlation_id is None:
-            correlation_id = self.correlation_id
+    def hubspot_request(self, method, url, params={}, data={}, headers=None):
         success = False
         retry_count = 0
         base_url = BASE_URL
@@ -251,7 +252,7 @@ class HubSpotClient:
                     if result.status_code in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
                         success = True
                     elif result.status_code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                        self.get_new_token_from_hubspot(self.refresh_token, correlation_id)
+                        self.get_new_token_from_hubspot(self.refresh_token)
                         retry_count += 1
                         # and loop to retry
                     else:
@@ -271,7 +272,7 @@ class HubSpotClient:
             #TODO: it is now probably ok to remove the try statement and the exception handling code below. Test if that is indeed the case.
             except HTTPError as err:
                 if err.code == HTTPStatus.UNAUTHORIZED and retry_count <= 1:
-                    self.get_new_token_from_hubspot(self.refresh_token, correlation_id)
+                    self.get_new_token_from_hubspot(self.refresh_token)
                     retry_count += 1
                     # and loop to retry
                 else:
@@ -279,33 +280,33 @@ class HubSpotClient:
 
         return result
 
-    def hubspot_token_request(self, method, url, params={}, data={}, correlation_id=None):
+    def hubspot_token_request(self, method, url, params={}, data={}):
         """
         Method for requests using token
         """
         if not self.access_token:
-            self.get_new_token_from_hubspot(correlation_id=correlation_id)
+            self.get_new_token_from_hubspot()
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.access_token}',
         }
-        return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
+        return self.hubspot_request(method, url, params=params, data=data, headers=headers)
 
-    def get(self, url, correlation_id):
-        return self.hubspot_token_request('GET', url, correlation_id=correlation_id)
+    def get(self, url):
+        return self.hubspot_token_request('GET', url)
 
     def post(self, url: str, data: dict):
-        return self.hubspot_token_request('POST', url, data=data, correlation_id=self.correlation_id)
+        return self.hubspot_token_request('POST', url, data=data)
 
-    def put(self, url: str, data: dict, correlation_id):
-        return self.hubspot_token_request('PUT', url, data=data, correlation_id=correlation_id)
+    def put(self, url: str, data: dict):
+        return self.hubspot_token_request('PUT', url, data=data)
 
-    def delete(self, url, correlation_id):
-        return self.hubspot_token_request('DELETE', url, correlation_id=correlation_id)
+    def delete(self, url):
+        return self.hubspot_token_request('DELETE', url)
     # endregion
 
     # region hubspot developer get/post/put/delete methods - used for managing TLE definitions
-    def hubspot_dev_request(self, method, url, data={}, correlation_id=None):
+    def hubspot_dev_request(self, method, url, data={}):
         """
         Make requests using developer API key and user id instead of usual oAuth2 token
         This is necessary for creating TLE types
@@ -321,52 +322,52 @@ class HubSpotClient:
         headers = {
             'Content-Type': 'application/json',
         }
-        return self.hubspot_request(method, url, params=params, data=data, headers=headers, correlation_id=correlation_id)
+        return self.hubspot_request(method, url, params=params, data=data, headers=headers)
 
-    def developer_get(self, url: str, correlation_id=None):
-        return self.hubspot_dev_request('GET', url, correlation_id=correlation_id)
+    def developer_get(self, url: str):
+        return self.hubspot_dev_request('GET', url)
 
-    def developer_post(self, url: str, data: dict, correlation_id=None):
-        return self.hubspot_dev_request('POST', url, data=data, correlation_id=correlation_id)
+    def developer_post(self, url: str, data: dict):
+        return self.hubspot_dev_request('POST', url, data=data)
 
-    def developer_delete(self, url: str, correlation_id=None):
-        return self.hubspot_dev_request('DELETE', url, correlation_id=correlation_id)
+    def developer_delete(self, url: str):
+        return self.hubspot_dev_request('DELETE', url)
     # endregion
 
     # region Contacts API methods
-    def get_hubspot_contacts(self, correlation_id=None):
+    def get_hubspot_contacts(self):
         url = f'{CONTACTS_ENDPOINT}/lists/all/contacts/all'
-        return self.get(url, correlation_id)
+        return self.get(url)
 
-    def get_hubspot_contact_by_id(self, id_, correlation_id=None):
+    def get_hubspot_contact_by_id(self, id_):
         url = f'{CONTACTS_ENDPOINT}/contact/vid/{id_}/profile'
-        return self.get(url, correlation_id)
+        return self.get(url)
 
-    def get_hubspot_contact_by_email(self, email: str, correlation_id=None):
+    def get_hubspot_contact_by_email(self, email: str):
         url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
-        return self.get(url, correlation_id)
+        return self.get(url)
 
     @staticmethod
     def get_contact_property(contact, property_name):
         return contact['properties'][property_name]['value']
 
     @hubspot_api_error_handler
-    def update_contact_core(self, url, property_changes, correlation_id=None):
+    def update_contact_core(self, url, property_changes):
         data = {"properties": property_changes}
         r = self.post(url, data)
         return r.status_code
 
-    def update_contact_by_email(self, email: str, property_changes: list, correlation_id=None):
+    def update_contact_by_email(self, email: str, property_changes: list):
         url = f'{CONTACTS_ENDPOINT}/contact/email/{email}/profile'
-        return self.update_contact_core(url, property_changes, correlation_id)
+        return self.update_contact_core(url, property_changes)
 
-    def update_contact_by_id(self, hubspot_id, property_changes: list, correlation_id=None):
+    def update_contact_by_id(self, hubspot_id, property_changes: list):
         url = f'{CONTACTS_ENDPOINT}/contact/vid/{hubspot_id}/profile'
-        return self.update_contact_core(url, property_changes, correlation_id)
+        return self.update_contact_core(url, property_changes)
 
-    def delete_hubspot_contact(self, id_, correlation_id):
+    def delete_hubspot_contact(self, id_):
         url = f'{CONTACTS_ENDPOINT}/contact/vid/{id_}'
-        return self.delete(url, correlation_id)
+        return self.delete(url)
     # endregion
 
     #region Timeline event types
@@ -395,7 +396,7 @@ class HubSpotClient:
 
     def get_timeline_event_type_properties(self, tle_type_id):
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
-        result = self.developer_get(url, None)
+        result = self.developer_get(url)
         return result
 
     def create_timeline_event_type(self, type_defn):
@@ -411,7 +412,7 @@ class HubSpotClient:
         self.set_app_id()
         type_defn['applicationId'] = self.app_id
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types'
-        response = self.developer_post(url, type_defn, None)
+        response = self.developer_post(url, type_defn)
         content = json.loads(response.content)
         return content['id']
 
@@ -420,7 +421,7 @@ class HubSpotClient:
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties'
         results = list()
         for property_defn in property_defns:
-            results.append(self.developer_post(url, property_defn, None))
+            results.append(self.developer_post(url, property_defn))
         return results
 
     def delete_timeline_event_type_property(self, tle_type_id, property_id):
@@ -436,7 +437,7 @@ class HubSpotClient:
         """
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}/properties/{property_id}'
-        result = self.developer_delete(url, None)
+        result = self.developer_delete(url)
         return result.status_code
 
     def delete_timeline_event_type(self, tle_type_id):
@@ -451,32 +452,31 @@ class HubSpotClient:
         """
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event-types/{tle_type_id}'
-        result = self.developer_delete(url, None)
+        result = self.developer_delete(url)
         return result.status_code
     # endregion
 
     # region Timeline event instances
-    def get_timeline_event(self, tle_type_id, tle_id, correlation_id):
+    def get_timeline_event(self, tle_type_id, tle_id):
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event/{tle_type_id}/{tle_id}'
-        result = self.get(url, correlation_id)
+        result = self.get(url)
         return result
 
     @hubspot_api_error_handler
-    def create_or_update_timeline_event(self, event_data: dict, correlation_id):
+    def create_or_update_timeline_event(self, event_data: dict):
         self.set_app_id()
         url = f'{INTEGRATIONS_ENDPOINT}/{self.app_id}/timeline/event'
-        result = self.put(url, event_data, correlation_id)
+        result = self.put(url, event_data)
         return result.status_code
     # endregion
 
     # region thiscovery functionality
-    def post_new_user_to_crm(self, new_user, correlation_id=None):
+    def post_new_user_to_crm(self, new_user):
         """
 
         Args:
             new_user (json): see test_hubspot.TEST_USER_01 for an example
-            correlation_id:
 
         Returns:
             tuple: (hubspot_id, is_new) if successful, (-1, False) otherwise
@@ -515,8 +515,8 @@ class HubSpotClient:
         else:
             return -1, False
 
-    def post_task_signup_to_crm(self, signup_details, correlation_id):
-        tle_type_id = self.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id)
+    def post_task_signup_to_crm(self, signup_details):
+        tle_type_id = self.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, self.correlation_id)
         tle_details = {
             'id': signup_details['id'],
             'objectId': signup_details['crm_id'],
@@ -531,9 +531,9 @@ class HubSpotClient:
             'timestamp': hubspot_timestamp(signup_details['created'])
         }
 
-        return self.create_or_update_timeline_event(tle_details, correlation_id)
+        return self.create_or_update_timeline_event(tle_details)
 
-    def post_user_login_to_crm(self, login_details, correlation_id):
+    def post_user_login_to_crm(self, login_details):
         user_email = login_details['email']
         login_time_str = login_details['login_datetime']
         login_timestamp = hubspot_timestamp(login_time_str)
@@ -541,7 +541,7 @@ class HubSpotClient:
         changes = [
             {"property": property_name, "value": int(login_timestamp)},
         ]
-        return self.update_contact_by_email(user_email, changes, correlation_id)
+        return self.update_contact_by_email(user_email, changes)
     # endregion
 
 
