@@ -222,7 +222,20 @@ class HubSpotClient:
     # endregion
 
     # region get/post/put/delete requests
-    def hubspot_request(self, method, url, params={}, data={}, headers=None):
+    def get_token_request_headers(self):
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.access_token}',
+        }
+
+    def hubspot_token_request(self, method, url, params={}, data={}):
+        """
+        Method for requests using token
+        """
+
+        if not self.access_token:
+            self.get_new_token_from_hubspot()
+
         success = False
         retry_count = 0
         base_url = BASE_URL
@@ -231,6 +244,7 @@ class HubSpotClient:
         full_url = base_url + url
         while not success:
             try:
+                headers = self.get_token_request_headers()
                 result = requests.request(
                     method=method,
                     url=full_url,
@@ -257,7 +271,7 @@ class HubSpotClient:
                         # and loop to retry
                     else:
                         errorjson = {'url': url, 'result': result, 'content': result.content}
-                        raise DetailedValueError('HTTP code ' + str(result.status_code), errorjson)
+                        raise DetailedValueError('Hubspot call returned HTTP code ' + str(result.status_code), errorjson)
                 elif method in ['GET']:
                     if result.status_code in [HTTPStatus.NOT_FOUND]:
                         self.logger.warning(f'Content not found; returning None',
@@ -279,18 +293,6 @@ class HubSpotClient:
                     raise err
 
         return result
-
-    def hubspot_token_request(self, method, url, params={}, data={}):
-        """
-        Method for requests using token
-        """
-        if not self.access_token:
-            self.get_new_token_from_hubspot()
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.access_token}',
-        }
-        return self.hubspot_request(method, url, params=params, data=data, headers=headers)
 
     def get(self, url):
         return self.hubspot_token_request('GET', url)
@@ -314,6 +316,7 @@ class HubSpotClient:
         from api.local.secrets import HUBSPOT_DEVELOPER_APIKEY, HUBSPOT_DEVELOPER_USERID
         if self.app_id is None:
             self.get_hubspot_connection_secret()
+        full_url = BASE_URL + url
         params = {
             'hapikey': HUBSPOT_DEVELOPER_APIKEY,
             'userId': HUBSPOT_DEVELOPER_USERID,
@@ -322,7 +325,45 @@ class HubSpotClient:
         headers = {
             'Content-Type': 'application/json',
         }
-        return self.hubspot_request(method, url, params=params, data=data, headers=headers)
+
+        result = requests.request(
+            method=method,
+            url=full_url,
+            params=params,
+            headers=headers,
+            data=json.dumps(data),
+        )
+        self.logger.info('Logging request and result',
+                         extra={
+                             'request': {
+                                 'method': method,
+                                 'url': full_url,
+                                 'data': data,
+                             },
+                             'result': result.text
+                         })
+        if method in ['POST', 'PUT', 'DELETE']:
+            if result.status_code not in [HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.CREATED]:
+                errorjson = {
+                    'url': url,
+                    'result': result,
+                    'content': result.content
+                }
+                raise DetailedValueError('Hubspot API call returned HTTP code ' + str(result.status_code), errorjson)
+        elif method in ['GET']:
+            if result.status_code in [HTTPStatus.NOT_FOUND]:
+                self.logger.warning(f'Content not found; returning None',
+                                    extra={
+                                        'result.status_code': result.status_code,
+                                        'result.content': result.content
+                                    })
+                return None
+            else:
+                result = result.json()
+        else:
+            raise DetailedValueError(f'Support for method {method} not implemented in {__file__}')
+
+        return result
 
     def developer_get(self, url: str):
         return self.hubspot_dev_request('GET', url)
