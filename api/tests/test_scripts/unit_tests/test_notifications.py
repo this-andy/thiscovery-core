@@ -199,10 +199,10 @@ class TestNotifications(test_utils.DbTestCase):
         create_task_signup_notification()
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_task_signup(notification)
-        self.assertIsNone(posting_result)
+        self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
         notification = get_notifications()[0]
-        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
     def test_06_post_login(self):
         """
@@ -238,10 +238,10 @@ class TestNotifications(test_utils.DbTestCase):
         create_login_notification(TEST_USER_02_JSON)
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_user_login(notification)
-        self.assertIsNone(posting_result)
+        self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
         notification = get_notifications()[0]
-        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
     def test_09_fail_post_login_invalid_data(self):
         """
