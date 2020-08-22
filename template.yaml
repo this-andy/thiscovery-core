@@ -1536,7 +1536,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref tokens
         - DynamoDBCrudPolicy:
-            TableName: !Ref TransactionalEmails
+            TableName: !Ref notifications
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1561,56 +1561,8 @@ Resources:
           TABLE_ARN: !GetAtt HubspotEmailTemplates.Arn
           TABLE_NAME_2: !Ref tokens
           TABLE_ARN_2: !GetAtt tokens.Arn
-          TABLE_NAME_3: !Ref TransactionalEmails
-          TABLE_ARN_3: !GetAtt TransactionalEmails.Arn
-  TransactionalEmails:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      BillingMode: PAY_PER_REQUEST
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
-      TableName: !Sub ${AWS::StackName}-TransactionalEmails
-  ProcessTransactionalEmails:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-ProcessTransactionalEma
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: ProcessTransactionalEmails
-      CodeUri: api/endpoints
-      Handler: transactional_email.process_transactional_emails
-      Runtime: python3.7
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-        - DynamoDBCrudPolicy:
-            TableName: !Ref TransactionalEmails
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref TransactionalEmails
-          TABLE_ARN: !GetAtt TransactionalEmails.Arn
-      Events:
-        Timer6:
-          Type: Schedule
-          Properties:
-            Schedule: rate(5 minutes)
-          Metadata:
-            StackeryName: timer-process-emails
+          TABLE_NAME_3: !Ref notifications
+          TABLE_ARN_3: !GetAtt notifications.Arn
 Parameters:
   StackTagName:
     Type: String
