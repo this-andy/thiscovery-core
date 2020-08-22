@@ -49,8 +49,6 @@ class Dynamodb(utils.BaseClient):
 
         Returns:
         """
-        if correlation_id is None:
-            correlation_id = utils.new_correlation_id()
         try:
             table = self.get_table(table_name)
 
@@ -61,14 +59,14 @@ class Dynamodb(utils.BaseClient):
             item['created'] = now
             item['modified'] = now
 
-            self.logger.info('dynamodb put', extra={'table_name': table_name, 'item': item, 'correlation_id': correlation_id})
+            self.logger.info('dynamodb put', extra={'table_name': table_name, 'item': item, 'correlation_id': self.correlation_id})
             if update_allowed:
                 return table.put_item(Item=item)
             else:
                 return table.put_item(Item=item, ConditionExpression='attribute_not_exists(id)')
         except ClientError as ex:
             error_code = ex.response['Error']['Code']
-            errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(key), 'correlation_id': correlation_id}
+            errorjson = {'error_code': error_code, 'table_name': table_name, 'item_type': item_type, 'id': str(key), 'correlation_id': self.correlation_id}
             raise utils.DetailedValueError('Dynamodb raised an error', errorjson)
 
     def update_item(self, table_name: str, key: str, name_value_pairs: dict, correlation_id=None, **kwargs):
@@ -124,9 +122,7 @@ class Dynamodb(utils.BaseClient):
             **kwargs,
         )
 
-    def scan(self, table_name: str, filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
-        if correlation_id is None:
-            correlation_id = utils.new_correlation_id()
+    def scan(self, table_name: str, filter_attr_name: str = None, filter_attr_values=None):
         table = self.get_table(table_name)
 
         # accept string but make it into a list for later processing
@@ -136,7 +132,7 @@ class Dynamodb(utils.BaseClient):
             'table_name': table_name,
             'filter_attr_name': filter_attr_name,
             'filter_attr_value': str(filter_attr_values),
-            'correlation_id': correlation_id})
+            'correlation_id': self.correlation_id})
         if filter_attr_name is None:
             response = table.scan()
         else:
@@ -145,7 +141,7 @@ class Dynamodb(utils.BaseClient):
                 filter_expr = filter_expr | Attr(filter_attr_name).eq(value)
             response = table.scan(FilterExpression=filter_expr)
         items = response['Items']
-        self.logger.info('dynamodb scan result', extra={'count': str(len(items)), 'correlation_id': correlation_id})
+        self.logger.info('dynamodb scan result', extra={'count': str(len(items)), 'correlation_id': self.correlation_id})
         return items
 
     def get_item(self, table_name: str, key: str, correlation_id=None):
