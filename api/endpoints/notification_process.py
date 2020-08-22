@@ -30,6 +30,7 @@ from common.notifications import get_notifications, NotificationType, Notificati
 from common.pg_utilities import execute_query
 from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
 from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+from transactional_email import TransactionalEmail
 from user import patch_user
 
 
@@ -41,8 +42,9 @@ def process_notifications(event, context):
     logger.info('process_notifications', extra={'count': str(len(notifications))})
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
-    signup_notifications = []
-    login_notifications = []
+    signup_notifications = list()
+    login_notifications = list()
+    transactional_emails = list()
     for notification in notifications:
         notification_type = notification['type']
         if notification_type == NotificationType.USER_REGISTRATION.value:
@@ -53,6 +55,8 @@ def process_notifications(event, context):
         elif notification_type == NotificationType.USER_LOGIN.value:
             # add to list for later processing
             login_notifications.append(notification)
+        elif notification_type == NotificationType.TRANSACTIONAL_EMAIL.value:
+            transactional_emails.append(notification)
         else:
             error_message = f'Processing of {notification_type} notifications not implemented yet'
             logger.error(error_message)
@@ -63,6 +67,9 @@ def process_notifications(event, context):
 
     for login_notification in login_notifications:
         process_user_login(login_notification)
+
+    for email in transactional_emails:
+        process_transactional_email(email)
 
 
 def process_user_registration(notification):
@@ -153,6 +160,25 @@ def process_user_login(notification):
         posting_result = hs_client.post_user_login_to_crm(login_details)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
         if posting_result == http.HTTPStatus.NO_CONTENT:
+            marking_result = mark_notification_processed(notification, correlation_id)
+    except Exception as ex:
+        error_message = str(ex)
+        marking_result = mark_notification_failure(notification, error_message, correlation_id)
+    finally:
+        return posting_result, marking_result
+
+
+def process_transactional_email(notification):
+    logger = get_logger()
+    correlation_id = new_correlation_id()
+    logger.info('Processing transactional email', extra={'notification': notification, 'correlation_id': correlation_id})
+    posting_result = None
+    marking_result = None
+    try:
+        email = TransactionalEmail(notification['details'], correlation_id=correlation_id)
+        posting_result = email.send()
+        logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
+        if posting_result == http.HTTPStatus.OK:
             marking_result = mark_notification_processed(notification, correlation_id)
     except Exception as ex:
         error_message = str(ex)

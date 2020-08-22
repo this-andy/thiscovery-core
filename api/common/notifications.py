@@ -30,6 +30,7 @@ class NotificationType(Enum):
     USER_REGISTRATION = 'user-registration'
     TASK_SIGNUP = 'task-signup'
     USER_LOGIN = 'user-login'
+    TRANSACTIONAL_EMAIL = 'transactional-email'
 
 
 class NotificationStatus(Enum):

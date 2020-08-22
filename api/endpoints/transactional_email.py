@@ -15,21 +15,14 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import sys
 import json
-from datetime import datetime, timedelta
-from dateutil import parser, tz
 from http import HTTPStatus
 
 import common.hubspot as hs
-import common.notifications as c_notif
 import common.utilities as utils
 import user as u
 from common.dynamodb_utilities import Dynamodb
-from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
-from common.pg_utilities import execute_query
-from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
-from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
+from common.notification_send import new_transactional_email_notification
 
 
 class TransactionalEmail:
@@ -164,6 +157,7 @@ def send_transactional_email_api(event, context):
         'correlation_id': correlation_id,
         'event': event
     })
+    new_transactional_email_notification(email_dict, correlation_id)
     email = TransactionalEmail(email_dict, correlation_id)
     if email_dict.get('mock_server') is True:
         email.send(mock_server=True)
