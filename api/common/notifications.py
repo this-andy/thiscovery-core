@@ -48,8 +48,8 @@ class NotificationAttributes(Enum):
 
 
 def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):
-    ddb = ddb_utils.Dynamodb()
-    notifications = ddb.scan(NOTIFICATION_TABLE_NAME, filter_attr_name, filter_attr_values, correlation_id)
+    ddb = ddb_utils.Dynamodb(correlation_id=correlation_id)
+    notifications = ddb.scan(NOTIFICATION_TABLE_NAME, filter_attr_name, filter_attr_values)
     return notifications
 
 
@@ -67,7 +67,7 @@ def create_notification(label: str):
 
 
 def save_notification(key, task_type, task_signup, notification_item, correlation_id):
-    ddb = ddb_utils.Dynamodb()
+    ddb = ddb_utils.Dynamodb(correlation_id=correlation_id)
     ddb.put_item(NOTIFICATION_TABLE_NAME, key, task_type, task_signup, notification_item, False, correlation_id)
 
 

@@ -168,7 +168,7 @@ def process_user_login(notification):
         return posting_result, marking_result
 
 
-def process_transactional_email(notification):
+def process_transactional_email(notification, mock_server=False):
     logger = get_logger()
     correlation_id = new_correlation_id()
     logger.info('Processing transactional email', extra={'notification': notification, 'correlation_id': correlation_id})
@@ -176,7 +176,7 @@ def process_transactional_email(notification):
     marking_result = None
     try:
         email = TransactionalEmail(notification['details'], correlation_id=correlation_id)
-        posting_result = email.send()
+        posting_result = email.send(mock_server=mock_server)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
         if posting_result == http.HTTPStatus.OK:
             marking_result = mark_notification_processed(notification, correlation_id)
