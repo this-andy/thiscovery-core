@@ -71,6 +71,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
               "required": False
             }
           ],
+          "from": "Sender Name <sender@hubspot.com>",
           "hs_template_id": "33531457008",
           "id": "unittests_email_template_1"
         }
@@ -168,7 +169,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
             'body': json.dumps(email_dict)
         }
         response = send_transactional_email_api(event, context=None)
-        self.assertEqual(HTTPStatus.OK, response['statusCode'])
+        self.assertEqual(HTTPStatus.NO_CONTENT, response['statusCode'])
 
     def test_13_template_name_missing_from_email_dict(self):
         email_dict = copy.deepcopy(self.test_email_dict)

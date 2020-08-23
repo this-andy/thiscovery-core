@@ -20,6 +20,7 @@ from http import HTTPStatus
 
 import common.hubspot as hs
 import common.utilities as utils
+import notification_process as np
 import user as u
 from common.dynamodb_utilities import Dynamodb
 from common.notification_send import new_transactional_email_notification
@@ -37,7 +38,7 @@ class TransactionalEmail:
 
         self.email_dict = email_dict
         self.logger = utils.get_logger()
-        self.correlation_id = correlation_id
+        self.correlation_id = str(correlation_id)
         self.ddb_client = Dynamodb(correlation_id=correlation_id)
         self.ss_client = hs.SingleSendClient(correlation_id=correlation_id)
         self.template = None
@@ -135,6 +136,7 @@ class TransactionalEmail:
         return self.ss_client.send_email(
             template_id=self.template['hs_template_id'],
             message={
+                'from': self.template['from'],
                 'to': user['email'],
                 'cc': self.template['cc'],
                 'bcc': self.template['bcc'],
@@ -158,11 +160,7 @@ def send_transactional_email_api(event, context):
         'event': event
     })
     new_transactional_email_notification(email_dict, correlation_id)
-    email = TransactionalEmail(email_dict, correlation_id)
-    if email_dict.get('mock_server') is True:
-        email.send(mock_server=True)
-    else:
-        email.send()
+    np.process_notifications(event, context)
     return {
-        "statusCode": HTTPStatus.OK,
+        "statusCode": HTTPStatus.NO_CONTENT,
     }

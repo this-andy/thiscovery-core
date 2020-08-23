@@ -30,7 +30,6 @@ from common.notifications import get_notifications, NotificationType, Notificati
 from common.pg_utilities import execute_query
 from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
 from common.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
-from transactional_email import TransactionalEmail
 from user import patch_user
 
 
@@ -175,10 +174,11 @@ def process_transactional_email(notification, mock_server=False):
     posting_result = None
     marking_result = None
     try:
+        from transactional_email import TransactionalEmail
         email = TransactionalEmail(notification['details'], correlation_id=correlation_id)
         posting_result = email.send(mock_server=mock_server)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
-        if posting_result == http.HTTPStatus.OK:
+        if posting_result.status_code == http.HTTPStatus.OK:
             marking_result = mark_notification_processed(notification, correlation_id)
     except Exception as ex:
         error_message = str(ex)

@@ -586,10 +586,7 @@ class SingleSendClient(HubSpotClient):
         """
         data = {
             'emailId': template_id,
-            'message': {
-                "from": "Sender Name <sender@hubspot.com>",
-                **message
-            },
+            'message': message,
         }
         data.update(**kwargs)
         return self.post(

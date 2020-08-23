@@ -337,5 +337,5 @@ class TestNotifications(test_utils.DbTestCase):
         notific_send.new_transactional_email_notification(email_dict=email_dict)
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_transactional_email(notification, mock_server=True)
-        self.assertEqual(HTTPStatus.OK, posting_result)
+        self.assertEqual(HTTPStatus.OK, posting_result.status_code)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
