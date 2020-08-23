@@ -1140,6 +1140,8 @@ Resources:
             TableName: !Ref tokens
         - DynamoDBCrudPolicy:
             TableName: !Ref lookups
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubspotEmailTemplates
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1155,6 +1157,8 @@ Resources:
           TABLE_ARN_2: !GetAtt tokens.Arn
           TABLE_NAME_3: !Ref lookups
           TABLE_ARN_3: !GetAtt lookups.Arn
+          TABLE_NAME_4: !Ref HubspotEmailTemplates
+          TABLE_ARN_4: !GetAtt HubspotEmailTemplates.Arn
       Events:
         Timer9:
           Type: Schedule
