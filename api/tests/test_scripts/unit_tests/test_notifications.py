@@ -31,7 +31,7 @@ from common.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
-from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
+from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification
 from common.utilities import get_country_name, DetailedValueError
 from test_transactional_email import TestTransactionalEmail
 
@@ -94,6 +94,9 @@ def create_task_signup_notification(ut_id="c2712f2a-6ca6-4987-888f-19625668c887"
 def create_login_notification(user_json=TEST_USER_01_JSON):
     notify_user_login(user_json, None)
     return user_json
+
+def create_transactional_email_notification():
+    new_transactional_email_notification(email_dict=TestTransactionalEmail.test_email_dict)
 # endregion
 
 
@@ -114,19 +117,30 @@ class TestNotifications(test_utils.DbTestCase):
         """
         delete_all_notifications()
 
-    def clear_notification_queue_setup(self, target_status, modified_datetime):
+    def clear_notification_queue_setup(self, notification_type_value, target_status, modified_datetime):
         """
         Creates a registration notification in ddb and updates its status to target_status and modified field to modified_datetime
 
         Args:
+            notification_type_value: The NotificationType.<VARIABLE>.value of notification to work with
             target_status (str): The "status" field of the created notification will be set to this value
             modified_datetime (datetime): The "modified" field of the created notification will be set to this value
 
         Returns:
             Tuple: (Id of created notification, list of notificatioins deleted by clear_notification_queue)
         """
-        create_registration_notification()
-        notification = get_notifications('type', [NotificationType.USER_REGISTRATION.value])[0]
+        handlers_map = {
+            NotificationType.USER_REGISTRATION.value: {
+                'create_notification_function': create_registration_notification
+            },
+            NotificationType.TRANSACTIONAL_EMAIL.value: {
+                'create_notification_function': create_transactional_email_notification
+            }
+        }
+
+        create_notification_function = handlers_map[notification_type_value]['create_notification_function']
+        create_notification_function()
+        notification = get_notifications(NotificationAttributes.TYPE.value, [notification_type_value])[0]
         self.ddb_client.update_item(
             table_name=notific.NOTIFICATION_TABLE_NAME,
             key=notification['id'],
@@ -294,6 +308,7 @@ class TestNotifications(test_utils.DbTestCase):
     def test_11_clear_notification_queue_deletes_old_notification(self):
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            notification_type_value=NotificationType.USER_REGISTRATION.value,
             target_status=NotificationStatus.PROCESSED.value,
             modified_datetime=eight_days_ago,
         )
@@ -303,6 +318,7 @@ class TestNotifications(test_utils.DbTestCase):
     def test_12_clear_notification_queue_leaves_recent_notification_untouched(self):
         six_days_ago = utils.now_with_tz() - timedelta(days=6)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            notification_type_value=NotificationType.USER_REGISTRATION.value,
             target_status=NotificationStatus.PROCESSED.value,
             modified_datetime=six_days_ago,
         )
@@ -312,6 +328,7 @@ class TestNotifications(test_utils.DbTestCase):
     def test_13_clear_notification_queue_leaves_dlq_notifications_untouched(self):
         eight_days_ago = utils.now_with_tz() - timedelta(days=8)
         notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            notification_type_value=NotificationType.USER_REGISTRATION.value,
             target_status=NotificationStatus.DLQ.value,
             modified_datetime=eight_days_ago,
         )
@@ -339,3 +356,13 @@ class TestNotifications(test_utils.DbTestCase):
         posting_result, marking_result = np.process_transactional_email(notification, mock_server=True)
         self.assertEqual(HTTPStatus.OK, posting_result.status_code)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
+
+    def test_16_clear_notification_queue_leaves_transactional_email_notifications_untouched(self):
+        eight_days_ago = utils.now_with_tz() - timedelta(days=8)
+        notification_id, deleted_notifications = self.clear_notification_queue_setup(
+            notification_type_value=NotificationType.TRANSACTIONAL_EMAIL.value,
+            target_status=NotificationStatus.PROCESSED.value,
+            modified_datetime=eight_days_ago,
+        )
+        self.assertTrue(notification_id)
+        self.assertEqual(0, len(deleted_notifications))

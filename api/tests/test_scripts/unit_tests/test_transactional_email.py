@@ -94,7 +94,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         email_dict = copy.deepcopy(self.test_email_dict)
         del email_dict['custom_properties']["project_task_description"]
         email = TransactionalEmail(email_dict=email_dict)
-        with self.assertRaises(utils.ObjectDoesNotExistError) as context:
+        with self.assertRaises(utils.DetailedValueError) as context:
             email._validate_properties()
         err = context.exception
         err_msg = err.args[0]

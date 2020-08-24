@@ -72,9 +72,15 @@ class TransactionalEmail:
 
             for p_name in required_p_names:
                 try:
-                    self.email_dict[p_type][p_name]
+                    p_value = self.email_dict[p_type][p_name]
                 except KeyError:
-                    raise utils.ObjectDoesNotExistError(f'Required {type_name} property {p_name} not found in call body',
+                    raise utils.DetailedValueError(f'Required {type_name} property {p_name} not found in call body',
+                                                        details={
+                                                            'email_dict': self.email_dict,
+                                                            'correlation_id': self.correlation_id,
+                                                        })
+                if not p_value:
+                    raise utils.DetailedValueError(f'Required {type_name} property {p_name} cannot be null',
                                                         details={
                                                             'email_dict': self.email_dict,
                                                             'correlation_id': self.correlation_id,
