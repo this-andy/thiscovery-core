@@ -238,8 +238,8 @@ class TestUserTask(test_utils.DbTestCase):
         # check user now has sign-up timeline event
         hs_client = HubSpotClient()
         # sleep(10)
-        tle_type_id = hs_client.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, None)
-        result = hs_client.get_timeline_event(tle_type_id, ut_id, None)
+        tle_type_id = hs_client.get_timeline_event_type_id(TASK_SIGNUP_TLE_TYPE_NAME, correlation_id=None)
+        result = hs_client.get_timeline_event(tle_type_id, ut_id)
         self.assertEqual(ut_id, result['id'])
         notification_details = notification['details']
         self.assertEqual(notification_details['project_task_id'], result['task_id'])

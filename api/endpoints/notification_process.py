@@ -41,8 +41,9 @@ def process_notifications(event, context):
     logger.info('process_notifications', extra={'count': str(len(notifications))})
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
-    signup_notifications = []
-    login_notifications = []
+    signup_notifications = list()
+    login_notifications = list()
+    transactional_emails = list()
     for notification in notifications:
         notification_type = notification['type']
         if notification_type == NotificationType.USER_REGISTRATION.value:
@@ -53,6 +54,8 @@ def process_notifications(event, context):
         elif notification_type == NotificationType.USER_LOGIN.value:
             # add to list for later processing
             login_notifications.append(notification)
+        elif notification_type == NotificationType.TRANSACTIONAL_EMAIL.value:
+            transactional_emails.append(notification)
         else:
             error_message = f'Processing of {notification_type} notifications not implemented yet'
             logger.error(error_message)
@@ -64,6 +67,9 @@ def process_notifications(event, context):
     for login_notification in login_notifications:
         process_user_login(login_notification)
 
+    for email in transactional_emails:
+        process_transactional_email(email)
+
 
 def process_user_registration(notification):
     logger = get_logger()
@@ -74,8 +80,8 @@ def process_user_registration(notification):
         user_id = details['id']
         logger.info('process_user_registration: post to hubspot',
                     extra={'notification_id': str(notification_id), 'user_id': str(user_id), 'email': details['email'], 'correlation_id': str(correlation_id)})
-        hs_client = HubSpotClient()
-        hubspot_id, is_new = hs_client.post_new_user_to_crm(details, correlation_id)
+        hs_client = HubSpotClient(correlation_id=correlation_id)
+        hubspot_id, is_new = hs_client.post_new_user_to_crm(details)
         logger.info('process_user_registration: hubspot details',
                     extra={'notification_id': str(notification_id), 'hubspot_id': str(hubspot_id), 'isNew': str(is_new), 'correlation_id': str(correlation_id)})
 
@@ -128,8 +134,8 @@ def process_task_signup(notification):
             errorjson = {'user_task_id': user_task_id, 'correlation_id': str(correlation_id)}
             raise DetailedValueError('user does not have crm_id', errorjson)
         else:
-            hs_client = HubSpotClient()
-            posting_result = hs_client.post_task_signup_to_crm(signup_details, correlation_id)
+            hs_client = HubSpotClient(correlation_id=correlation_id)
+            posting_result = hs_client.post_task_signup_to_crm(signup_details)
             logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
             if posting_result == http.HTTPStatus.NO_CONTENT:
                 marking_result = mark_notification_processed(notification, correlation_id)
@@ -149,10 +155,30 @@ def process_user_login(notification):
     try:
         # get basic data out of notification
         login_details = notification['details']
-        hs_client = HubSpotClient()
-        posting_result = hs_client.post_user_login_to_crm(login_details, correlation_id)
+        hs_client = HubSpotClient(correlation_id=correlation_id)
+        posting_result = hs_client.post_user_login_to_crm(login_details)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
         if posting_result == http.HTTPStatus.NO_CONTENT:
+            marking_result = mark_notification_processed(notification, correlation_id)
+    except Exception as ex:
+        error_message = str(ex)
+        marking_result = mark_notification_failure(notification, error_message, correlation_id)
+    finally:
+        return posting_result, marking_result
+
+
+def process_transactional_email(notification, mock_server=False):
+    logger = get_logger()
+    correlation_id = new_correlation_id()
+    logger.info('Processing transactional email', extra={'notification': notification, 'correlation_id': correlation_id})
+    posting_result = None
+    marking_result = None
+    try:
+        from transactional_email import TransactionalEmail
+        email = TransactionalEmail(notification['details'], correlation_id=correlation_id)
+        posting_result = email.send(mock_server=mock_server)
+        logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
+        if posting_result.status_code == http.HTTPStatus.OK:
             marking_result = mark_notification_processed(notification, correlation_id)
     except Exception as ex:
         error_message = str(ex)

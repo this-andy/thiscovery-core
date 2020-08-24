@@ -400,7 +400,7 @@ class TestUser(test_utils.DbTestCase):
 
         # and check that hubspot has thiscovery id
         hs_client = HubSpotClient()
-        contact = hs_client.get_hubspot_contact_by_id(result_json['crm_id'], None)
+        contact = hs_client.get_hubspot_contact_by_id(result_json['crm_id'])
         thiscovery_id = hs_client.get_contact_property(contact, 'thiscovery_id')
         self.assertEqual(thiscovery_id, user_id)
 

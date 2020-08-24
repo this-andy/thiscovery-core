@@ -405,6 +405,15 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LogRequest.Arn}/invocations
               responses: {}
+          /v1/send-transactional-email:
+            post:
+              security:
+                - api_key: []
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendTransactionalEmail.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -1131,6 +1140,8 @@ Resources:
             TableName: !Ref tokens
         - DynamoDBCrudPolicy:
             TableName: !Ref lookups
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubspotEmailTemplates
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1146,6 +1157,8 @@ Resources:
           TABLE_ARN_2: !GetAtt tokens.Arn
           TABLE_NAME_3: !Ref lookups
           TABLE_ARN_3: !GetAtt lookups.Arn
+          TABLE_NAME_4: !Ref HubspotEmailTemplates
+          TABLE_ARN_4: !GetAtt HubspotEmailTemplates.Arn
       Events:
         Timer9:
           Type: Schedule
@@ -1491,6 +1504,69 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+  HubspotEmailTemplates:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-HubspotEmailTemplates
+  SendTransactionalEmail:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-SendTransactionalEmail
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: SendTransactionalEmail
+      CodeUri: api/endpoints
+      Handler: transactional_email.send_transactional_email_api
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubspotEmailTemplates
+        - DynamoDBCrudPolicy:
+            TableName: !Ref tokens
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1sendtransactionalemail:
+          Type: Api
+          Properties:
+            Path: /v1/send-transactional-email
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          TABLE_NAME: !Ref HubspotEmailTemplates
+          TABLE_ARN: !GetAtt HubspotEmailTemplates.Arn
+          TABLE_NAME_2: !Ref tokens
+          TABLE_ARN_2: !GetAtt tokens.Arn
+          TABLE_NAME_3: !Ref notifications
+          TABLE_ARN_3: !GetAtt notifications.Arn
 Parameters:
   StackTagName:
     Type: String

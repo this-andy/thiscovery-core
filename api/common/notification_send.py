@@ -40,6 +40,7 @@ def notify_user_login(login_info, correlation_id):
     save_notification(key, NotificationType.USER_LOGIN.value, login_info, notification_item, correlation_id)
 
 
-if __name__ == "__main__":
-    pass
-    print(NotificationStatus.NEW.value)
+def new_transactional_email_notification(email_dict, correlation_id=None):
+    notification_item = create_notification(f"{email_dict['template_name']}_{email_dict['to_recipient_id']}")
+    key = str(uuid.uuid4())
+    save_notification(key, NotificationType.TRANSACTIONAL_EMAIL.value, email_dict, notification_item, correlation_id)

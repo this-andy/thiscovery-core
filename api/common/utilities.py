@@ -275,7 +275,7 @@ def _get_default_session(profile_name):
 
 
 class BaseClient:
-    def __init__(self, service_name, profile_name=None, client_type='low-level'):
+    def __init__(self, service_name, profile_name=None, client_type='low-level', correlation_id=None):
         """
         Args:
             service_name (str): AWS service name (e.g. dynamodb, lambda, etc)
@@ -293,6 +293,7 @@ class BaseClient:
             raise NotImplementedError(f"client_type can only be 'low-level' or 'resource', not {client_type}")
         self.logger = get_logger()
         self.aws_namespace = None
+        self.correlation_id = correlation_id
 
     def get_namespace(self):
         if self.aws_namespace is None:

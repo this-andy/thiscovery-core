@@ -15,6 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import copy
 import os
 
 from datetime import timedelta
@@ -22,6 +23,7 @@ from http import HTTPStatus
 
 import api.endpoints.notification_process as np
 import common.notifications as notific
+import common.notification_send as notific_send
 import common.utilities as utils
 import testing_utilities as test_utils
 
@@ -31,6 +33,7 @@ from common.notifications import NotificationStatus, NotificationAttributes, Not
     mark_notification_failure
 from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login
 from common.utilities import get_country_name, DetailedValueError
+from test_transactional_email import TestTransactionalEmail
 
 
 TIME_TOLERANCE_SECONDS = 10
@@ -195,14 +198,14 @@ class TestNotifications(test_utils.DbTestCase):
 
     def test_05_process_signup_with_expired_token(self):
         expired_token = self.hs_client.get_expired_token_from_database()
-        self.hs_client.save_token(expired_token, correlation_id=None)
+        self.hs_client.save_token(expired_token)
         create_task_signup_notification()
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_task_signup(notification)
-        self.assertIsNone(posting_result)
+        self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
         notification = get_notifications()[0]
-        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
     def test_06_post_login(self):
         """
@@ -234,14 +237,14 @@ class TestNotifications(test_utils.DbTestCase):
         Tests notification_process.process_user_login with an expired HubSpot token
         """
         expired_token = self.hs_client.get_expired_token_from_database()
-        self.hs_client.save_token(expired_token, correlation_id=None)
+        self.hs_client.save_token(expired_token)
         create_login_notification(TEST_USER_02_JSON)
         notification = get_notifications()[0]
         posting_result, marking_result = np.process_user_login(notification)
-        self.assertIsNone(posting_result)
+        self.assertEqual(HTTPStatus.NO_CONTENT, posting_result)
         self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
         notification = get_notifications()[0]
-        self.assertEqual(NotificationStatus.RETRYING.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationStatus.PROCESSED.value, notification[NotificationAttributes.STATUS.value])
 
     def test_09_fail_post_login_invalid_data(self):
         """
@@ -314,3 +317,25 @@ class TestNotifications(test_utils.DbTestCase):
         )
         self.assertTrue(notification_id)
         self.assertEqual(0, len(deleted_notifications))
+
+    def test_14_post_transactional_email(self):
+        email_dict = TestTransactionalEmail.test_email_dict
+        notific_send.new_transactional_email_notification(email_dict=email_dict)
+        notifications = get_notifications('type', [NotificationType.TRANSACTIONAL_EMAIL.value])
+        self.assertEqual(1, len(notifications))
+
+        notification = notifications[0]
+        self.assertEqual(f"{email_dict['template_name']}_{email_dict['to_recipient_id']}", notification['label'])
+        self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationType.TRANSACTIONAL_EMAIL.value, notification[NotificationAttributes.TYPE.value])
+        for i in email_dict.keys():
+            self.assertEqual(email_dict[i], notification['details'][i])
+
+    def test_15_process_transactional_email(self):
+        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
+        notific_send.new_transactional_email_notification(email_dict=email_dict)
+        notification = get_notifications()[0]
+        posting_result, marking_result = np.process_transactional_email(notification, mock_server=True)
+        self.assertEqual(HTTPStatus.OK, posting_result.status_code)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])
