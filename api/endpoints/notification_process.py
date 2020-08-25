@@ -195,10 +195,14 @@ def clear_notification_queue(event, context):
     correlation_id = event['correlation_id']
     seven_days_ago = now_with_tz() - timedelta(days=7)
     processed_notifications = get_notifications('processing_status', ['processed'])
-    old_proc_notifications = [x for x in processed_notifications if parser.isoparse(x['modified']) < seven_days_ago]
+    notifications_to_delete = [
+        x for x in processed_notifications if 
+        (parser.isoparse(x['modified']) < seven_days_ago) and 
+        (x[NotificationAttributes.TYPE.value] != NotificationType.TRANSACTIONAL_EMAIL.value)
+    ]
     deleted_notifications = list()
     ddb_client = Dynamodb()
-    for n in old_proc_notifications:
+    for n in notifications_to_delete:
         response = ddb_client.delete_item(c_notif.NOTIFICATION_TABLE_NAME, n['id'], correlation_id=correlation_id)
         if response['ResponseMetadata']['HTTPStatusCode'] == http.HTTPStatus.OK:
             deleted_notifications.append(n)
