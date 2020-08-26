@@ -309,7 +309,9 @@ class TestUserTask(test_utils.DbTestCase):
                        f'?anon_project_specific_user_id=7e6e4bca-4f0b-4f71-8660-790c1baf3b11' \
                        f'&first_name=Clive' \
                        f'&anon_user_task_id={anon_user_task_id}' \
-                       f'&external_task_id=ext-6b&env={TEST_ENV}'
+                       f'&project_task_id=683598e8-435f-4052-a417-f0f6d808373a' \
+                       f'&external_task_id=ext-6b' \
+                       f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)
 
         self.assertEqual('active', status)
@@ -498,6 +500,7 @@ class TestUserTaskSpecificUrl(test_utils.DbTestCase):
                        f'&anon_project_specific_user_id=87b8f9a8-2400-4259-a8d9-a2f0b16d9ea1' \
                        f'&first_name=Clive' \
                        f'&anon_user_task_id=6fc8cf2d-78d2-4c51-be16-e41e4235fcc9' \
+                       f'&project_task_id=4ee70544-6797-4e21-8cec-5653c8d5b234' \
                        f'&external_task_id=5678' \
                        f'&env={TEST_ENV}'
         self.assertEqual(expected_url, url)

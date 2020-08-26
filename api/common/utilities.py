@@ -559,10 +559,14 @@ def get_environment_name():
 
 
 # this belongs in user_task class as a property - moved here to avoid circular includes
-def create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name, anon_user_task_id, external_task_id):
+def create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name, anon_user_task_id, external_task_id, project_task_id):
     assert anon_project_specific_user_id, 'anon_project_specific_user_id is null'
     assert anon_user_task_id, 'anon_user_task_id is null'
-    params = f'?anon_project_specific_user_id={anon_project_specific_user_id}&first_name={user_first_name}&anon_user_task_id={anon_user_task_id}'
+    assert project_task_id, 'project_task_id is null'
+    params = f'?anon_project_specific_user_id={anon_project_specific_user_id}' \
+             f'&first_name={user_first_name}' \
+             f'&anon_user_task_id={anon_user_task_id}' \
+             f'&project_task_id={project_task_id}'
     if "?" in base_url:
         params = f'&{params[1:]}'
     if external_task_id is not None:

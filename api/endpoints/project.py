@@ -175,8 +175,14 @@ class ProjectStatusForUser:
                 task['url'] = self.projects_usertasks_dict[task_id]['user_task_url']
             if task['url'] is not None:
                 if task['anonymise_url']:
-                    task['url'] += utils.create_anonymous_url_params(task['url'], anon_project_specific_user_id,
-                                                                     self.user_first_name, anon_user_task_id, external_task_id)
+                    task['url'] += utils.create_anonymous_url_params(
+                        base_url=task['url'],
+                        anon_project_specific_user_id=anon_project_specific_user_id,
+                        user_first_name=self.user_first_name,
+                        anon_user_task_id=anon_user_task_id,
+                        external_task_id=external_task_id,
+                        project_task_id=task['id'],
+                    )
                 else:
                     task['url'] += utils.create_url_params(task['url'], self.user_id, self.user_first_name, user_task_id, external_task_id)
                 task['url'] += utils.non_prod_env_url_param()
