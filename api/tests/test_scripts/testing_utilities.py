@@ -53,6 +53,7 @@ class BaseTestCase(unittest.TestCase):
     """
     Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
     """
+    maxDiff = None
     secrets_client = None
 
     @classmethod

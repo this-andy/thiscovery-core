@@ -30,7 +30,6 @@ from project import get_project_task
 from user_project import create_user_project_if_not_exists
 from common.notification_send import notify_new_task_signup
 
-
 STATUS_CHOICES = (
     'active',
     'complete',
@@ -46,7 +45,9 @@ def validate_status(s):
     if s in STATUS_CHOICES:
         return s
     else:
-        errorjson = {'status': s}
+        errorjson = {
+            'status': s
+        }
         raise utils.DetailedValueError('invalid user_task status', errorjson)
 
 
@@ -64,14 +65,20 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
 
 
 def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, pt_anonymise_url,
-                  anon_project_specific_user_id, anon_user_task_id_local, correlation_id=None):
+                  anon_project_specific_user_id, anon_user_task_id_local, project_task_id, correlation_id=None):
     if pt_user_specific_url:
         base_url = ut_url
 
     if base_url:
         if pt_anonymise_url:
-            params = utils.create_anonymous_url_params(base_url, anon_project_specific_user_id, user_first_name,
-                                                       anon_user_task_id_local, pt_external_task_id)
+            params = utils.create_anonymous_url_params(
+                base_url=base_url,
+                anon_project_specific_user_id=anon_project_specific_user_id,
+                user_first_name=user_first_name,
+                anon_user_task_id=anon_user_task_id_local,
+                external_task_id=pt_external_task_id,
+                project_task_id=project_task_id,
+            )
         else:
             params = utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id)
         return "{}{}{}".format(
@@ -82,7 +89,6 @@ def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_ext
 
 
 def list_user_tasks_by_user(user_id, correlation_id=None):
-
     try:
         user_id = utils.validate_uuid(user_id)
     except utils.DetailedValueError:
@@ -92,7 +98,10 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     try:
         user_result = get_user_by_id(user_id, correlation_id)[0]
     except IndexError:
-        errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'user_id': user_id,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.ObjectDoesNotExistError('user does not exist', errorjson)
 
     result = execute_query(sql_q.LIST_USER_TASKS_SQL, (str(user_id),), correlation_id)
@@ -111,6 +120,7 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
             ut['anonymise_url'],
             ut['anon_project_specific_user_id'],
             ut['anon_user_task_id'],
+            ut['project_task_id'],
             correlation_id,
         )
         del ut['base_url']
@@ -141,23 +151,38 @@ def list_user_tasks_api(event, context):
     user_id = parameters.get('user_id')
 
     if not user_id:  # e.g. parameters is None or an empty dict
-        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'queryStringParameters': parameters,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DetailedValueError('This endpoint requires parameter user_id', errorjson)
 
     project_task_id = parameters.get('project_task_id')
 
     if project_task_id:
-        logger.info('API call', extra={'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={
+            'user_id': user_id,
+            'project_task_id': project_task_id,
+            'correlation_id': correlation_id,
+            'event': event
+        })
         result = filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_id)
     else:
-        logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={
+            'user_id': user_id,
+            'correlation_id': correlation_id,
+            'event': event
+        })
         result = list_user_tasks_by_user(user_id, correlation_id)
 
     # todo: this was added here as a way of quickly fixing an issue with the thiscovery frontend; review what to do for the longer term
     if len(result) == 1:
         result = result[0]
 
-    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
+    return {
+        "statusCode": HTTPStatus.OK,
+        "body": json.dumps(result)
+    }
 
 
 def check_if_user_task_exists(user_id, project_task_id, correlation_id):
@@ -184,7 +209,10 @@ def create_user_task(ut_json, correlation_id):
         err.add_correlation_id(correlation_id)
         raise err
     except (KeyError, TypeError) as err:
-        errorjson = {'parameter': err.args[0], 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'parameter': err.args[0],
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DetailedValueError('mandatory data missing', errorjson) from err
 
     # now process optional json data
@@ -219,7 +247,11 @@ def create_user_task(ut_json, correlation_id):
     try:
         pt_ = project_task[0]
     except IndexError:
-        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'user_id': user_id,
+            'project_task_id': project_task_id,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DetailedIntegrityError('project_task does not exist', errorjson)
 
     project_id = pt_['project_id']
@@ -239,8 +271,12 @@ def create_user_task(ut_json, correlation_id):
     existing = check_if_user_task_exists(user_id, project_task_id, correlation_id)
     # if int(existing[0][0]) > 0:
     if len(existing) > 0:
-        errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'existing_user_task': existing[0][0],
-                     'correlation_id': str(correlation_id)}
+        errorjson = {
+            'user_id': user_id,
+            'project_task_id': project_task_id,
+            'existing_user_task': existing[0][0],
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DuplicateInsertError('user_task already exists', errorjson)
 
     # get user first name if not received from calling process
@@ -249,7 +285,10 @@ def create_user_task(ut_json, correlation_id):
         try:
             user = get_user_by_id(user_id, correlation_id=correlation_id)[0]
         except IndexError:
-            errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
+            errorjson = {
+                'user_id': user_id,
+                'correlation_id': str(correlation_id)
+            }
             return utils.ObjectDoesNotExistError('User does not exist', errorjson)
         first_name = user['first_name']
 
@@ -267,7 +306,11 @@ def create_user_task(ut_json, correlation_id):
         try:
             user_task_url = item['user_specific_url']
         except TypeError:
-            errorjson = {'user_id': user_id, 'project_task_id': project_task_id, 'correlation_id': str(correlation_id)}
+            errorjson = {
+                'user_id': user_id,
+                'project_task_id': project_task_id,
+                'correlation_id': str(correlation_id)
+            }
             raise utils.ObjectDoesNotExistError('User specific url not found', errorjson)
 
     row_count = execute_non_query(
@@ -280,7 +323,9 @@ def create_user_task(ut_json, correlation_id):
         ddb.update_item(
             table_name=user_specific_url_table,
             key=item_key,
-            name_value_pairs={'status': 'processed'},
+            name_value_pairs={
+                'status': 'processed'
+            },
             correlation_id=correlation_id,
         )
 
@@ -295,7 +340,8 @@ def create_user_task(ut_json, correlation_id):
         pt_anonymise_url=anonymise_url,
         anon_project_specific_user_id=anon_project_specific_user_id,
         anon_user_task_id_local=anon_user_task_id,
-        correlation_id=correlation_id
+        project_task_id=project_task_id,
+        correlation_id=correlation_id,
     )
 
     new_user_task = {
@@ -323,9 +369,15 @@ def create_user_task_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
     ut_json = json.loads(event['body'])
-    logger.info('API call', extra={'ut_json': ut_json, 'correlation_id': correlation_id})
+    logger.info('API call', extra={
+        'ut_json': ut_json,
+        'correlation_id': correlation_id
+    })
     new_user_task = create_user_task(ut_json, correlation_id)
-    return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user_task)}
+    return {
+        "statusCode": HTTPStatus.CREATED,
+        "body": json.dumps(new_user_task)
+    }
 
 
 def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
@@ -336,7 +388,10 @@ def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
             correlation_id,
         )[0]['id']
     except IndexError:
-        errorjson = {'anon_ut_id': anon_ut_id, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'anon_ut_id': anon_ut_id,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
 
 
@@ -345,7 +400,10 @@ def set_user_task_completed(ut_id, correlation_id=None):
     # check that user_task exists
     result = get_user_task(ut_id, correlation_id)
     if len(result) == 0:
-        errorjson = {'user_task_id': ut_id, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'user_task_id': ut_id,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
 
     updated_rows_count = execute_non_query(
@@ -382,16 +440,34 @@ def set_user_task_completed_api(event, context):
     anon_user_task_id = parameters.get('anon_user_task_id')
 
     if user_task_id and anon_user_task_id:
-        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'queryStringParameters': parameters,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id, not both', errorjson)
     elif user_task_id:
-        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={
+            'user_task_id': user_task_id,
+            'anon_user_task_id': anon_user_task_id,
+            'correlation_id': correlation_id,
+            'event': event
+        })
     elif anon_user_task_id:
-        logger.info('API call', extra={'user_task_id': user_task_id, 'anon_user_task_id': anon_user_task_id, 'correlation_id': correlation_id, 'event': event})
+        logger.info('API call', extra={
+            'user_task_id': user_task_id,
+            'anon_user_task_id': anon_user_task_id,
+            'correlation_id': correlation_id,
+            'event': event
+        })
         user_task_id = anon_user_task_id_2_user_task_id(anon_user_task_id, correlation_id)
     else:  # e.g. parameters is None or an empty dict
-        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        errorjson = {
+            'queryStringParameters': parameters,
+            'correlation_id': str(correlation_id)
+        }
         raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id; none were given', errorjson)
 
     set_user_task_completed(user_task_id, correlation_id)
-    return {"statusCode": HTTPStatus.NO_CONTENT}
+    return {
+        "statusCode": HTTPStatus.NO_CONTENT
+    }
