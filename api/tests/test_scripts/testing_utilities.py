@@ -22,11 +22,12 @@ import requests
 import unittest
 import uuid
 from dateutil import parser
+from thiscovery_lib.dynamodb_utilities import Dynamodb
+from thiscovery_dev_tools.testing_utilities import BaseTestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
 import common.utilities as utils
-from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
@@ -35,85 +36,6 @@ from common.pg_utilities import truncate_table_multiple
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..')  # thiscovery-core/
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'test_data')
-
-
-def tests_running_on_aws():
-    """
-    Checks if tests are calling AWS API endpoints
-    """
-    test_on_aws = os.environ.get('TEST_ON_AWS')
-    if test_on_aws is None:
-        test_on_aws = TEST_ON_AWS
-    elif test_on_aws.lower() == 'false':
-        test_on_aws = False
-    return test_on_aws
-
-
-class BaseTestCase(unittest.TestCase):
-    """
-    Subclass of unittest.TestCase with methods frequently used in Thiscovery testing.
-    """
-    maxDiff = None
-    secrets_client = None
-
-    @classmethod
-    def setUpClass(cls):
-        utils.set_running_unit_tests(True)
-        if cls.secrets_client is None:  # initialise a new secrets_client only if another class instance has not done so yet
-            cls.secrets_client = utils.SecretsManager()
-        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'true'})
-        cls.logger = utils.get_logger()
-
-    @classmethod
-    def tearDownClass(cls):
-        # cls.ssm_client.put_parameter('running-tests', 'false', prefix='/thiscovery/')
-        cls.secrets_client.create_or_update_secret('runtime-parameters', {'running-tests': 'false'})
-        utils.set_running_unit_tests(False)
-
-    def clear_user_specific_urls(self):
-        self.ddb_client = Dynamodb()
-        self.ddb_client.delete_all('UserSpecificUrls')
-
-    def value_test_and_remove(self, entity_dict, attribute_name, expected_value):
-        actual_value = entity_dict[attribute_name]
-        del entity_dict[attribute_name]
-        self.assertEqual(expected_value, actual_value)
-        return actual_value
-
-    def now_datetime_test_and_remove(self, entity_dict, datetime_attribute_name, tolerance=10):
-        datetime_string = entity_dict[datetime_attribute_name]
-        del entity_dict[datetime_attribute_name]
-        now = utils.now_with_tz()
-        datetime_value = parser.parse(datetime_string)
-        difference = abs(now - datetime_value)
-        self.assertLess(difference.seconds, tolerance)
-        return datetime_string
-
-    def uuid_test_and_remove(self, entity_dict, uuid_attribute_name):
-        uuid_value = entity_dict[uuid_attribute_name]
-        del entity_dict[uuid_attribute_name]
-        self.assertTrue(uuid.UUID(uuid_value).version == 4)
-        return uuid_value
-
-    def new_uuid_test_and_remove(self, entity_dict):
-        try:
-            uuid_value = self.uuid_test_and_remove(entity_dict, 'id')
-            return uuid_value
-        except KeyError:
-            self.assertTrue(False, 'id missing')
-
-    @staticmethod
-    def remove_dict_items_to_be_ignored_by_tests(entity_dict, list_of_keys):
-        for key in list_of_keys:
-            del entity_dict[key]
-
-
-@unittest.skipIf(not tests_running_on_aws(), "Testing are using local methods and this test only makes sense if calling an AWS API endpoint")
-class AlwaysOnAwsTestCase(BaseTestCase):
-    """
-    Skips tests if tests are running locally
-    """
-    pass
 
 
 class DbTestCase(BaseTestCase):
@@ -167,62 +89,6 @@ class DbTestCase(BaseTestCase):
             'public.projects_usergroup',
             'public.projects_userexternalaccount',
         )
-
-
-def _aws_request(method, url, params=None, data=None, aws_api_key=None):
-    return utils.aws_request(method, url, AWS_TEST_API, params=params, data=data, aws_api_key=aws_api_key)
-
-
-def aws_get(url, params):
-    return _aws_request(method='GET', url=url, params=params)
-
-
-def aws_post(url, request_body):
-    return _aws_request(method='POST', url=url, data=request_body)
-
-
-def aws_patch(url, request_body):
-    return _aws_request(method='PATCH', url=url, data=request_body)
-
-
-def _test_request(request_method, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, aws_api_key=None,
-                  correlation_id=None):
-    logger = utils.get_logger()
-
-    if tests_running_on_aws():
-        if path_parameters is not None:
-            url = aws_url + '/' + path_parameters['id']
-        else:
-            url = aws_url
-        logger.info(f'Url passed to _aws_request: {url}', extra={'path_parameters': path_parameters, 'querystring_parameters': querystring_parameters})
-        return _aws_request(method=request_method, url=url, params=querystring_parameters, data=request_body, aws_api_key=aws_api_key)
-    else:
-        event = {}
-        if path_parameters is not None:
-            event['pathParameters'] = path_parameters
-        if querystring_parameters is not None:
-            event['queryStringParameters'] = querystring_parameters
-        if request_body is not None:
-            event['body'] = request_body
-        return local_method(event, correlation_id)
-
-
-def test_get(local_method, aws_url, path_parameters=None, querystring_parameters=None, aws_api_key=None, correlation_id=None):
-    return _test_request('GET', local_method, aws_url, path_parameters=path_parameters,
-                         querystring_parameters=querystring_parameters, aws_api_key=aws_api_key, correlation_id=correlation_id)
-
-
-def test_post(local_method, aws_url, path_parameters=None, request_body=None, correlation_id=None):
-    return _test_request('POST', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
-
-
-def test_patch(local_method, aws_url, path_parameters=None, request_body=None, correlation_id=None):
-    return _test_request('PATCH', local_method, aws_url, path_parameters=path_parameters, request_body=request_body, correlation_id=correlation_id)
-
-
-def test_put(local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None, correlation_id=None):
-    return _test_request('PUT', local_method, aws_url, path_parameters=path_parameters,
-                         querystring_parameters=querystring_parameters, request_body=request_body, correlation_id=correlation_id)
 
 
 def post_sample_users_to_crm(user_test_data_csv, hs_client=None):
