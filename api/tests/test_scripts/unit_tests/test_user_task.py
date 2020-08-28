@@ -23,6 +23,7 @@ from http import HTTPStatus
 import api.endpoints.notification_process as np
 import api.endpoints.user_task as ut
 import testing_utilities as test_utils
+import thiscovery_dev_tools.testing_tools as test_tools
 
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.common.dev_config import UNIT_TEST_NAMESPACE
@@ -32,7 +33,7 @@ from api.common.notifications import get_notifications, NotificationStatus, Noti
 from api.endpoints.user import create_user_api
 from api.endpoints.user_task import list_user_tasks_api, create_user_task_api
 from api.endpoints.user_project import list_user_projects_api
-from testing_utilities import test_get, test_post
+from thiscovery_dev_tools.testing_tools import test_get, test_post
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'
@@ -386,7 +387,7 @@ class TestUserTask(test_utils.DbTestCase):
         querystring_parameters = {
             "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
@@ -399,7 +400,7 @@ class TestUserTask(test_utils.DbTestCase):
         querystring_parameters = {
             "user_task_id": "144b1536-ce5c-4def-bd30-05a361976a90"
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
@@ -408,7 +409,7 @@ class TestUserTask(test_utils.DbTestCase):
         querystring_parameters = {
             "invalid_parameter": "615ff0e6-0b41-4870-b9db-527345d1d9e5"
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
@@ -417,7 +418,7 @@ class TestUserTask(test_utils.DbTestCase):
         querystring_parameters = {
             "anon_user_task_id": "00a461f3-7a28-4ed3-940c-c977f55654e3"  # ut_id dad64b2c-8315-4ec4-9824-5e2fdffc11e5
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
@@ -430,7 +431,7 @@ class TestUserTask(test_utils.DbTestCase):
         querystring_parameters = {
             "anon_user_task_id": "144b1536-ce5c-4def-bd30-05a361976a90"
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 
@@ -440,7 +441,7 @@ class TestUserTask(test_utils.DbTestCase):
             "user_task_id": "615ff0e6-0b41-4870-b9db-527345d1d9e5",
             "anon_user_task_id": "e63ebc2e-5c75-445a-892f-9bf7b1a58c8d",
         }
-        result = test_utils.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
+        result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
 

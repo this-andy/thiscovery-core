@@ -18,7 +18,7 @@
 
 import json
 from http import HTTPStatus
-from thiscovery_dev_tools.testing_utilities import test_get, tests_running_on_aws
+from thiscovery_dev_tools.testing_tools import test_get, tests_running_on_aws
 from unittest import TestCase
 
 from api.common.utilities import set_running_unit_tests

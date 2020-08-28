@@ -29,21 +29,23 @@ from api.endpoints.transactional_email import TransactionalEmail, send_transacti
 from api.tests.test_scripts.unit_tests.test_user import EXPECTED_USER
 
 
-class TestTransactionalEmail(test_utils.DbTestCase):
-    test_email_dict = {
-        "template_name": 'unittests_email_template_1',
-        "to_recipient_id": 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
-        "custom_properties": {
-            "project_task_description": "Systematic review for CTG monitoring",
-            "project_task_name": "CTG Monitoring",
-            "project_results_url": "https://www.thiscovery.org/",
-        }
+test_email_dict = {
+    "template_name": 'unittests_email_template_1',
+    "to_recipient_id": 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc',
+    "custom_properties": {
+        "project_task_description": "Systematic review for CTG monitoring",
+        "project_task_name": "CTG Monitoring",
+        "project_results_url": "https://www.thiscovery.org/",
     }
+}
+
+
+class TestTransactionalEmail(test_utils.DbTestCase):
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.email = TransactionalEmail(email_dict=cls.test_email_dict)
+        cls.email = TransactionalEmail(email_dict=test_email_dict)
 
     def test_01_get_template_details_ok(self):
         template = self.email._get_template_details()
@@ -78,7 +80,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertDictEqual(expected_template, template)
 
     def test_02_get_template_details_not_found(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict["template_name"] = 'non_existent_email_template'
         email = TransactionalEmail(email_dict=email_dict)
         with self.assertRaises(utils.ObjectDoesNotExistError) as context:
@@ -91,7 +93,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertTrue(self.email._validate_properties())
 
     def test_04_validate_properties_missing_required_property(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict['custom_properties']["project_task_description"]
         email = TransactionalEmail(email_dict=email_dict)
         with self.assertRaises(utils.DetailedValueError) as context:
@@ -101,7 +103,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertIn('Required custom property project_task_description not found in call body', err_msg)
 
     def test_05_validate_properties_non_specified_property(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict['custom_properties']["unspecified_property"] = "This property is not defined in the template"
         email = TransactionalEmail(email_dict=email_dict)
         self.logger.warning('Email object email_dict', extra={'email_dict': email.email_dict})
@@ -115,13 +117,13 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertCountEqual(EXPECTED_USER, self.email._get_user())
 
     def test_07_get_user_by_anon_project_specific_user_id_ok(self):
-        email_dict = email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"
         email = TransactionalEmail(email_dict=email_dict)
         self.assertCountEqual(EXPECTED_USER, email._get_user())
 
     def test_08_get_user_not_found(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = "49ad25c2-560f-4ed1-8e6f-46debf1f2445"
         email = TransactionalEmail(email_dict=email_dict)
         with self.assertRaises(utils.ObjectDoesNotExistError) as context:
@@ -145,10 +147,10 @@ class TestTransactionalEmail(test_utils.DbTestCase):
                 "value": "https://www.thiscovery.org/"
             }
         ]
-        self.assertCountEqual(expected_result, TransactionalEmail._format_properties_to_name_value(self.test_email_dict['custom_properties']))
+        self.assertCountEqual(expected_result, TransactionalEmail._format_properties_to_name_value(test_email_dict['custom_properties']))
 
     def test_10_send_email_ok(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
         email = TransactionalEmail(email_dict=email_dict)
         response = email.send(mock_server=True)
@@ -162,7 +164,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertIn('Recipient does not have a HubSpot id', err_msg)
 
     def test_12_send_transactional_email_api_locally(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
         email_dict["mock_server"] = True
         event = {
@@ -172,7 +174,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertEqual(HTTPStatus.NO_CONTENT, response['statusCode'])
 
     def test_13_template_name_missing_from_email_dict(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict['template_name']
         with self.assertRaises(utils.DetailedValueError) as context:
             TransactionalEmail(email_dict=email_dict)
@@ -181,7 +183,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertIn('template_name and to_recipient_id must be present in email_dict', err_msg)
 
     def test_14_recipient_missing_from_email_dict(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict['to_recipient_id']
         with self.assertRaises(utils.DetailedValueError) as context:
             TransactionalEmail(email_dict=email_dict)

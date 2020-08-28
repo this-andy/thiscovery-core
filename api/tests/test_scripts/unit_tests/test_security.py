@@ -15,11 +15,13 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
 import json
 import os
 import yaml
-from http import HTTPStatus
+
+from thiscovery_dev_tools.testing_tools import TestApiEndpoints
+
 
 import api.endpoints.misc as m
 import api.endpoints.project as p
@@ -28,32 +30,7 @@ import api.endpoints.user_external_account as uea
 import api.endpoints.user_group_membership as ugm
 import api.endpoints.user_project as up
 import api.endpoints.user_task as ut
-import common.utilities as utils
 import testing_utilities as test_utils
-
-
-class TestApiEndpoints(test_utils.AlwaysOnAwsTestCase):
-    blank_api_key = ''
-    invalid_api_key = '3c907908-44a7-490a-9661-3866b3732d22'
-    logger = utils.get_logger()
-
-    def _common_assertion(self, expected_status, request_verb, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None):
-        for key in [self.blank_api_key, self.invalid_api_key]:
-            self.logger.info(f'Key: {key}')
-            result = test_utils._test_request(request_verb, local_method, aws_url, path_parameters=path_parameters,
-                                              querystring_parameters=querystring_parameters, request_body=request_body, aws_api_key=key)
-            result_status = result['statusCode']
-            self.assertEqual(expected_status, result_status)
-
-    def check_api_is_restricted(self, request_verb, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None):
-        expected_status = HTTPStatus.FORBIDDEN
-        self._common_assertion(expected_status, request_verb, local_method, aws_url, path_parameters=path_parameters,
-                               querystring_parameters=querystring_parameters, request_body=request_body)
-
-    def check_api_is_public(self, request_verb, local_method, aws_url, path_parameters=None, querystring_parameters=None, request_body=None):
-        expected_status = HTTPStatus.OK
-        self._common_assertion(expected_status, request_verb, local_method, aws_url, path_parameters=path_parameters,
-                               querystring_parameters=querystring_parameters, request_body=request_body)
 
 
 class TestUserApiEndpoints(TestApiEndpoints):

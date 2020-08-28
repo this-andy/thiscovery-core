@@ -15,15 +15,14 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
 import csv
 import os
-from thiscovery_dev_tools.testing_utilities import BaseTestCase
+from thiscovery_dev_tools.testing_tools import BaseTestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
 import common.utilities as utils
-from common.dev_config import TEST_ON_AWS
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple

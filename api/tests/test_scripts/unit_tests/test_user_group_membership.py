@@ -20,6 +20,7 @@ import json
 from http import HTTPStatus
 
 import testing_utilities as test_utils
+import thiscovery_dev_tools.testing_tools as test_tools
 from common.utilities import DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 
 TEST_SQL_FOLDER = '../test_sql/'
@@ -186,7 +187,7 @@ class TestUserGroupMembership(test_utils.DbTestCase):
         }
         body = json.dumps(ugm_json)
 
-        result = test_utils.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
+        result = test_tools.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
 
@@ -202,7 +203,7 @@ class TestUserGroupMembership(test_utils.DbTestCase):
 
         # now check we can't insert same record again...
         expected_status = HTTPStatus.NO_CONTENT
-        result = test_utils.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
+        result = test_tools.test_post(create_user_group_membership_api, ENTITY_BASE_URL, None, body, None)
 
         result_status = result['statusCode']
 
