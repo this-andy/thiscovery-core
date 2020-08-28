@@ -18,17 +18,12 @@
 
 import csv
 import os
-import requests
-import unittest
-import uuid
-from dateutil import parser
-from thiscovery_lib.dynamodb_utilities import Dynamodb
 from thiscovery_dev_tools.testing_utilities import BaseTestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
 import common.utilities as utils
-from common.dev_config import TEST_ON_AWS, AWS_TEST_API
+from common.dev_config import TEST_ON_AWS
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple
@@ -44,6 +39,7 @@ class DbTestCase(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
+        # os.environ['TEST_ON_AWS'] = str(TEST_ON_AWS)
         super().setUpClass()
         cls.clear_test_data()
         delete_all_notifications()
