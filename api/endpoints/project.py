@@ -20,7 +20,7 @@ import json
 from http import HTTPStatus
 
 import common.sql_queries as sql_q
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
 
 

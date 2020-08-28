@@ -30,7 +30,7 @@ from common.entity_update import EntityUpdate
 from common.hubspot import HubSpotClient
 from common.notifications import get_notifications, NotificationStatus, \
     NotificationAttributes
-from common.utilities import new_correlation_id
+from thiscovery_lib.utilities import new_correlation_id
 
 TIME_TOLERANCE_SECONDS = 15
 

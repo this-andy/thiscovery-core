@@ -17,7 +17,7 @@
 #
 from api.common.cloudwatch_utilities import CloudWatch, ALARM_PREFIX_LAMBDA_DURATION
 from api.common.lambda_utilities import Lambda
-from api.common.utilities import get_aws_namespace, get_logger
+from thiscovery_lib.utilities import get_aws_namespace, get_logger
 
 
 def main():

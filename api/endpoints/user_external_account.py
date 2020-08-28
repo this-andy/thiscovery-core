@@ -20,7 +20,7 @@ import json
 import uuid
 from http import HTTPStatus
 
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import CHECK_USER_ID_AND_EXTERNAL_ACCOUNT_SQL, CREATE_USER_EXTERNAL_ACCOUNT_SQL
 from user import get_user_by_id

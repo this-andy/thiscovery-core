@@ -18,7 +18,7 @@
 
 import json
 from common.entity_base import EntityBase
-from common.utilities import DetailedValueError
+from thiscovery_lib.utilities import DetailedValueError
 from testing_utilities import BaseTestCase
 
 

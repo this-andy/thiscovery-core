@@ -25,7 +25,7 @@ from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
 import api.endpoints.user as u
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 from api.endpoints.user_group import UserGroup
 from api.endpoints.user_group_membership import UserGroupMembership
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter

@@ -20,7 +20,7 @@ import unittest
 
 import api.common.qualtrics as qualtrics
 from api.common.dev_config import QUALTRICS_TEST_OBJECTS
-from api.common.utilities import set_running_unit_tests
+from thiscovery_lib.utilities import set_running_unit_tests
 
 
 class TestDistributionsClient(unittest.TestCase):

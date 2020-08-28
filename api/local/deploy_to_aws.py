@@ -5,7 +5,7 @@ import subprocess
 import sys
 import requests
 
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 from api.common.dev_config import SECRETS_NAMESPACE
 from api.local.secrets import STACKERY_CREDENTIALS, SLACK_DEPLOYMENT_NOTIFIER_WEBHOOKS
 

@@ -19,7 +19,7 @@ import json
 from http import HTTPStatus
 
 import common.hubspot as hs
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 import notification_process as np
 import user as u
 from thiscovery_lib.dynamodb_utilities import Dynamodb

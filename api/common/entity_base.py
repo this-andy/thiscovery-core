@@ -3,7 +3,7 @@ import json
 import jsons
 from abc import ABC
 
-from common.utilities import now_with_tz, validate_uuid, validate_utc_datetime, DetailedValueError
+from thiscovery_lib.utilities import now_with_tz, validate_uuid, validate_utc_datetime, DetailedValueError
 
 
 class EntityBase(ABC):

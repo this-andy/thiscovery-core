@@ -23,7 +23,7 @@ from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException
 
 import common.sql_queries as sql_q
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
 from common.entity_update import EntityUpdate
 # from utils import validate_uuid

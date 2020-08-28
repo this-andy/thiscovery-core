@@ -21,7 +21,7 @@ from http import HTTPStatus
 from thiscovery_dev_tools.testing_tools import test_get, tests_running_on_aws
 from unittest import TestCase
 
-from api.common.utilities import set_running_unit_tests
+from thiscovery_lib.utilities import set_running_unit_tests
 from common.dev_config import TEST_ON_AWS
 
 

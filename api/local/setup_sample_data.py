@@ -20,7 +20,7 @@ import os
 
 import api.endpoints.user as user
 from api.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
-from api.common.utilities import get_aws_namespace, get_country_name, now_with_tz
+from thiscovery_lib.utilities import get_aws_namespace, get_country_name, now_with_tz
 
 # TEST_DATA_FOLDER = '../tests/test_data/'
 TEST_DATA_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'tests', 'test_data')

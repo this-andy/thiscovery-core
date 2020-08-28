@@ -21,7 +21,7 @@ from http import HTTPStatus
 
 import testing_utilities as test_utils
 import thiscovery_dev_tools.testing_tools as test_tools
-from common.utilities import DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
+from thiscovery_lib.utilities import DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

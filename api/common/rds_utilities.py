@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 
 
 class RdsClient(utils.BaseClient):

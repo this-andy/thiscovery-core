@@ -28,7 +28,7 @@ from tkinter.filedialog import askopenfilename
 
 import api.endpoints.project as p
 import api.endpoints.user as u
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
 

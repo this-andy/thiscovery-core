@@ -22,7 +22,7 @@ import api.endpoints.notification_process as np
 import api.endpoints.user as u
 import common.hubspot as hs
 import common.notifications as notific
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
 from common.dev_config import TIMEZONE_IS_BST

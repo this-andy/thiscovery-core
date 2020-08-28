@@ -20,7 +20,7 @@ import os
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 import api.endpoints.user as u
 
 

@@ -21,7 +21,7 @@ import requests
 from urllib.error import HTTPError
 from http import HTTPStatus
 
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 
 from api.local.secrets import QUALTRICS_API_TOKEN
 

@@ -16,13 +16,14 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 import common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
+import api.local.secrets  # sets env variables THISCOVERY_AFS25_PROFILE and THISCOVERY_AMP205_PROFILE
 import csv
 import os
 from thiscovery_dev_tools.testing_tools import BaseTestCase
 
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications
 from common.pg_utilities import truncate_table_multiple

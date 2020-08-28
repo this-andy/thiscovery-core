@@ -23,7 +23,7 @@ from http import HTTPStatus
 from pprint import pprint
 
 import api.tests.test_scripts.testing_utilities as test_utils
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 
 from api.endpoints.transactional_email import TransactionalEmail, send_transactional_email_api
 from api.tests.test_scripts.unit_tests.test_user import EXPECTED_USER

@@ -25,14 +25,14 @@ from thiscovery_lib.dynamodb_utilities import Dynamodb
 import api.endpoints.notification_process as np
 import common.notifications as notific
 import common.notification_send as notific_send
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
 from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification
-from common.utilities import get_country_name, DetailedValueError
+from thiscovery_lib.utilities import get_country_name, DetailedValueError
 from test_transactional_email import test_email_dict
 
 
