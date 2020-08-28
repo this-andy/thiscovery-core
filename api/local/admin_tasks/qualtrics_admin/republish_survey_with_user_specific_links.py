@@ -27,7 +27,7 @@ import os
 import api.common.qualtrics as qualtrics
 import api.endpoints.user_task as ut
 
-from api.common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.local.admin_tasks.task_setup.import_user_specific_urls import ImportManager
 
 

@@ -22,7 +22,7 @@ import common.hubspot as hs
 import common.utilities as utils
 import notification_process as np
 import user as u
-from common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.notification_send import new_transactional_email_notification
 
 

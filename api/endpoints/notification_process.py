@@ -24,7 +24,7 @@ from dateutil import parser, tz
 
 import common.notifications as c_notif
 import common.utilities as utils
-from common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
 from common.pg_utilities import execute_query

@@ -24,7 +24,7 @@ import api.endpoints.notification_process as np
 import api.endpoints.user_task as ut
 import testing_utilities as test_utils
 
-from api.common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.common.notifications import get_notifications, NotificationStatus, NotificationType, \

@@ -27,7 +27,7 @@ import common.notification_send as notific_send
 import common.utilities as utils
 import testing_utilities as test_utils
 
-from common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure

@@ -26,7 +26,7 @@ from dateutil import parser
 import api.endpoints.user as user
 import common.pg_utilities as pg_utils
 import common.utilities as utils
-from common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.dev_config import TEST_ON_AWS, AWS_TEST_API
 from common.hubspot import HubSpotClient
 from common.notifications import delete_all_notifications

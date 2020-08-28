@@ -8,5 +8,6 @@ jsonpatch
 jsons
 python-json-logger
 requests
+thiscovery-lib >= 2020.2
 urllib3
 validators

@@ -17,8 +17,8 @@
 #
 
 from dateutil import parser
+from thiscovery_lib import dynamodb_utilities as ddb_utils
 
-import common.dynamodb_utilities as ddb_utils
 import common.utilities as utils
 import testing_utilities as test_utils
 

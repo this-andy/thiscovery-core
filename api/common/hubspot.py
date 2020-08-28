@@ -23,7 +23,7 @@ from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime, timezone
 
-import common.dynamodb_utilities as ddb_utils
+from thiscovery_lib import dynamodb_utilities as ddb_utils
 import common.utilities as utils
 from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
 

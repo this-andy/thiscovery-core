@@ -18,7 +18,7 @@
 
 from enum import Enum
 
-import common.dynamodb_utilities as ddb_utils
+from thiscovery_lib import dynamodb_utilities as ddb_utils
 import common.utilities as utils
 
 
