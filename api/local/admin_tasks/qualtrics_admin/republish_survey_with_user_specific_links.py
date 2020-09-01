@@ -24,7 +24,7 @@ Usage: Run this file after setting the values of SURVEY_ID, CONTACT_LIST_ID and 
 
 import os
 
-import api.common.qualtrics as qualtrics
+import thiscovery_lib.qualtrics as qualtrics
 import api.endpoints.user_task as ut
 
 from thiscovery_lib.dynamodb_utilities import Dynamodb

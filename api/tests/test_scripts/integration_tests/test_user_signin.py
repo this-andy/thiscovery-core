@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 import json
+import thiscovery_dev_tools.testing_tools as test_tools
 from http import HTTPStatus
 
 import api.endpoints.notification_process as np
@@ -66,7 +67,7 @@ class TestUserSignin(test_utils.DbTestCase):
 
         expected_status = HTTPStatus.OK
 
-        result = test_utils.test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
+        result = test_tools.test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
         approximate_login_time = utils.now_with_tz()
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
