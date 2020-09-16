@@ -16,6 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 import json
+import validators
 from http import HTTPStatus
 
 import common.hubspot as hs
@@ -30,10 +31,23 @@ class TransactionalEmail:
     templates_table = 'HubspotEmailTemplates'
 
     def __init__(self, email_dict, correlation_id=None):
+        """
+        Args:
+            email_dict (dict): must contain either a to_recipient_id (user_id or anon_project_specific_user_id) or a to_recipient_email.
+                    If both to_recipient_id and to_recipient_email are present, to_recipient_id will be used
+            correlation_id:
+        """
         self.template_name = email_dict.get('template_name')
         self.to_recipient_id = email_dict.get('to_recipient_id')
-        if None in [self.template_name, self.to_recipient_id]:
-            raise utils.DetailedValueError('template_name and to_recipient_id must be present in email_dict',
+        self.to_recipient_email = email_dict.get('to_recipient_email')
+        if (self.to_recipient_id is None) and (self.to_recipient_email is None):
+            raise utils.DetailedValueError('Either to_recipient_id or to_recipient_email must be present in email_dict',
+                                           details={
+                                               'email_dict': email_dict,
+                                               'correlation_id': correlation_id
+                                           })
+        if self.template_name is None:
+            raise utils.DetailedValueError('template_name must be present in email_dict',
                                            details={'email_dict': email_dict, 'correlation_id': correlation_id})
 
         self.email_dict = email_dict
@@ -132,18 +146,26 @@ class TransactionalEmail:
             self.ss_client.mock_server = True
         self._get_template_details()
         self._validate_properties()
-        user = self._get_user()
-        if not user['crm_id']:
-            raise utils.ObjectDoesNotExistError('Recipient does not have a HubSpot id',
-                                                details={
-                                                    'user': user,
-                                                    'correlation_id': self.correlation_id,
-                                                })
+        if self.to_recipient_id:
+            user = self._get_user()
+            if not user['crm_id']:
+                raise utils.ObjectDoesNotExistError('Recipient does not have a HubSpot id',
+                                                    details={
+                                                        'user': user,
+                                                        'correlation_id': self.correlation_id,
+                                                    })
+            self.to_recipient_email = user['email']
+        else:
+            if validators.email(self.to_recipient_email) is not True:
+                raise utils.DetailedValueError('to_recipient_email is not a valid email address', details={
+                                               'email_dict': self.email_dict,
+                                               'correlation_id': self.correlation_id})
+
         return self.ss_client.send_email(
             template_id=self.template['hs_template_id'],
             message={
                 'from': self.template['from'],
-                'to': user['email'],
+                'to': self.to_recipient_email,
                 'cc': self.template['cc'],
                 'bcc': self.template['bcc'],
                 'sendId': self.correlation_id,
