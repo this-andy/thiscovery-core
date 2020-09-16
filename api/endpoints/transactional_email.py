@@ -47,7 +47,7 @@ class TransactionalEmail:
                                                'correlation_id': correlation_id
                                            })
         if self.template_name is None:
-            raise utils.DetailedValueError('template_name and to_recipient_id must be present in email_dict',
+            raise utils.DetailedValueError('template_name must be present in email_dict',
                                            details={'email_dict': email_dict, 'correlation_id': correlation_id})
 
         self.email_dict = email_dict
