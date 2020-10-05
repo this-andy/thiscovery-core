@@ -1541,6 +1541,8 @@ Resources:
             TableName: !Ref tokens
         - DynamoDBCrudPolicy:
             TableName: !Ref notifications
+        - DynamoDBCrudPolicy:
+            TableName: !Ref lookups
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -1567,6 +1569,8 @@ Resources:
           TABLE_ARN_2: !GetAtt tokens.Arn
           TABLE_NAME_3: !Ref notifications
           TABLE_ARN_3: !GetAtt notifications.Arn
+          TABLE_NAME_4: !Ref lookups
+          TABLE_ARN_4: !GetAtt lookups.Arn
 Parameters:
   StackTagName:
     Type: String
