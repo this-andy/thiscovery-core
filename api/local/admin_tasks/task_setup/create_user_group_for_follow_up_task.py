@@ -36,7 +36,7 @@ class ImportManager(CsvImporter):
     def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
         self.user_group_id = None
         super().__init__(anon_project_specific_user_id_column, csvfile_path=csvfile_path)
-        super().validate_input_file_and_get_user_ids()
+        super().validate_input_file_and_get_users()
 
     def set_or_create_user_group(self, ug_id=None, ug_json=None, interactive_mode=True):
         """
