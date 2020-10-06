@@ -100,7 +100,7 @@ class ImportManager(CsvImporter):
 
     def main(self):
         self.check_project_task_exists(self.project_task_id)
-        super().validate_input_file_and_get_user_ids()
+        super().validate_input_file_and_get_users()
         self.populate_ddb()
 
 

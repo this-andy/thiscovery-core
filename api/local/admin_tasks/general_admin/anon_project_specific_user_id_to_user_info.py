@@ -16,7 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 """
-This script parses a CSV file containing anon_project_specific_user_ids and outputs a CSV file of matching user_ids
+This script parses a CSV file containing anon_project_specific_user_ids and outputs a CSV file of matching user info,
+including name, email and id
 """
 
 import csv
@@ -41,4 +42,4 @@ class ImportManager(CsvImporter):
 
 if __name__ == '__main__':
     manager = ImportManager()
-    print(manager.output_csv_of_user_ids())
+    manager.output_csv_of_user_info()
