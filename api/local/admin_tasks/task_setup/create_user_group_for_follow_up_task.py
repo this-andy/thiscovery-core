@@ -100,7 +100,7 @@ class ImportManager(CsvImporter):
 
     def output_user_ids_str(self):
         u_ids = ';\n'.join(self.user_ids)
-        print(f'User_ids for users in user group {self.user_group_id}:\n\n{u_ids}')
+        print(f'User_ids for users in input file:\n\n{u_ids}')
         if sorted(self.added_user_ids) != sorted(self.user_ids):
             added_ids = ';\n'.join(self.added_user_ids)
             print(f'\n\n\nUser_ids for users added to user group {self.user_group_id}:\n\n{added_ids}')
