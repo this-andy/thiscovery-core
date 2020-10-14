@@ -46,6 +46,7 @@ USER_PROJECT_01_EXPECTED_BODY = {
         "created": f"2018-11-05T{tz_hour}:14:13.182231+{tz_offset}",
         "modified": f"2018-11-05T{tz_hour}:14:13.182304+{tz_offset}",
         "status": None,
+        'anon_project_specific_user_id': '754d3468-f6f9-46ba-8e30-e29132b925b4',
 }
 
 USER_PROJECT_02_EXPECTED_BODY = {
@@ -55,6 +56,7 @@ USER_PROJECT_02_EXPECTED_BODY = {
         "created": f"2018-11-05T{tz_hour}:14:23.005412+{tz_offset}",
         "modified": f"2018-11-05T{tz_hour}:14:23.005449+{tz_offset}",
         "status": None,
+        'anon_project_specific_user_id': 'd4714343-305d-40b7-adc1-1b50f5575983',
 }
 # endregion
 

@@ -366,3 +366,28 @@ class TestNotifications(test_utils.DbTestCase):
         )
         self.assertTrue(notification_id)
         self.assertEqual(0, len(deleted_notifications))
+
+    def test_17_post_transactional_email_by_email(self):
+        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        del email_dict["to_recipient_id"]
+        email_dict["to_recipient_email"] = 'recipient@email.com'
+        notific_send.new_transactional_email_notification(email_dict=email_dict)
+        notifications = get_notifications('type', [NotificationType.TRANSACTIONAL_EMAIL.value])
+        self.assertEqual(1, len(notifications))
+
+        notification = notifications[0]
+        self.assertEqual(f"{email_dict['template_name']}_{email_dict['to_recipient_email']}", notification['label'])
+        self.assertEqual(NotificationStatus.NEW.value, notification[NotificationAttributes.STATUS.value])
+        self.assertEqual(NotificationType.TRANSACTIONAL_EMAIL.value, notification[NotificationAttributes.TYPE.value])
+        for i in email_dict.keys():
+            self.assertEqual(email_dict[i], notification['details'][i])
+
+    def test_18_process_transactional_email_by_email(self):
+        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        del email_dict["to_recipient_id"]
+        email_dict["to_recipient_email"] = 'recipient@email.com'
+        notific_send.new_transactional_email_notification(email_dict=email_dict)
+        notification = get_notifications()[0]
+        posting_result, marking_result = np.process_transactional_email(notification, mock_server=True)
+        self.assertEqual(HTTPStatus.OK, posting_result.status_code)
+        self.assertEqual(HTTPStatus.OK, marking_result['ResponseMetadata']['HTTPStatusCode'])

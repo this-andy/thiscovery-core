@@ -16,16 +16,12 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 """
-This script parses a CSV file containing user identifiers and creates a user group in Thiscovery
+This script parses a CSV file containing user identifiers and either creates new a user group in Thiscovery
+or populates an existing user group
 """
 
-import csv
-import os
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
-
-import api.endpoints.user as u
-import thiscovery_lib.utilities as utils
+import api.common.pg_utilities as pg_utils
+import api.common.sql_queries as sql_q
 from api.endpoints.user_group import UserGroup
 from api.endpoints.user_group_membership import UserGroupMembership
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
@@ -35,8 +31,9 @@ class ImportManager(CsvImporter):
 
     def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
         self.user_group_id = None
+        self.added_user_ids = list()
         super().__init__(anon_project_specific_user_id_column, csvfile_path=csvfile_path)
-        super().validate_input_file_and_get_user_ids()
+        super().validate_input_file_and_get_users()
 
     def set_or_create_user_group(self, ug_id=None, ug_json=None, interactive_mode=True):
         """
@@ -77,29 +74,43 @@ class ImportManager(CsvImporter):
             print(f'Created new user group with id {self.user_group_id}')
             return self.user_group_id
 
+    def get_current_membership(self):
+        user_ids_in_group = pg_utils.execute_query(
+            base_sql=sql_q.SQL_USER_IDS_IN_USER_GROUP,
+            params=[self.user_group_id],
+            jsonize_sql=False
+        )
+        return user_ids_in_group
+
     def populate_user_group(self):
+        user_ids_in_group = self.get_current_membership()
         ugm_list = list()
         for user_id in self.user_ids:
-            ugm_json = {
-                'user_id': user_id,
-                'user_group_id': self.user_group_id,
-            }
-            ugm = UserGroupMembership.from_json(ugm_json, None)
-            ugm.insert_to_db()
-            ugm_id = ugm.to_dict()['id']
-            ugm_list.append(ugm_id)
+            if user_id not in user_ids_in_group:
+                ugm_json = {
+                    'user_id': user_id,
+                    'user_group_id': self.user_group_id,
+                }
+                ugm = UserGroupMembership.from_json(ugm_json, None)
+                ugm.insert_to_db()
+                ugm_id = ugm.to_dict()['id']
+                ugm_list.append(ugm_id)
+                self.added_user_ids.append(user_id)
         print(f'Added {len(ugm_list)} members to user group {self.user_group_id}')
 
     def output_user_ids_str(self):
         u_ids = ';\n'.join(self.user_ids)
-        return f'User_ids for users in user group {self.user_group_id}:\n\n{u_ids}'
+        print(f'User_ids for users in input file:\n\n{u_ids}')
+        if sorted(self.added_user_ids) != sorted(self.user_ids):
+            added_ids = ';\n'.join(self.added_user_ids)
+            print(f'\n\n\nUser_ids for users added to user group {self.user_group_id}:\n\n{added_ids}')
 
     def main(self):
         self.set_or_create_user_group()
         self.populate_user_group()
-        return self.output_user_ids_str()
+        self.output_user_ids_str()
 
 
 if __name__ == '__main__':
     manager = ImportManager()
-    print(manager.main())
+    manager.main()

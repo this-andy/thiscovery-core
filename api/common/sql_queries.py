@@ -440,7 +440,8 @@ LIST_USER_PROJECTS_SQL = '''
         project_id,
         created,
         modified,               
-        status                
+        status,
+        anon_project_specific_user_id                
     FROM 
         public.projects_userproject
     WHERE user_id = %s
