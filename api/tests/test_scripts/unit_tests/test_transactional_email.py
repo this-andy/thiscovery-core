@@ -192,7 +192,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertIn('Either to_recipient_id or to_recipient_email must be present in email_dict', err_msg)
 
     def test_15_send_email_to_email_address_ok(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict['to_recipient_email'] = 'thiscovery_dev@email.com'
         email = TransactionalEmail(email_dict=email_dict)
@@ -200,7 +200,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
     def test_15_send_email_to_invalid_email_address_fails(self):
-        email_dict = copy.deepcopy(self.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict['to_recipient_email'] = 'thiscovery_dev@emailcom'
         email = TransactionalEmail(email_dict=email_dict)

@@ -368,7 +368,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(0, len(deleted_notifications))
 
     def test_17_post_transactional_email_by_email(self):
-        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict["to_recipient_email"] = 'recipient@email.com'
         notific_send.new_transactional_email_notification(email_dict=email_dict)
@@ -383,7 +383,7 @@ class TestNotifications(test_utils.DbTestCase):
             self.assertEqual(email_dict[i], notification['details'][i])
 
     def test_18_process_transactional_email_by_email(self):
-        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict["to_recipient_email"] = 'recipient@email.com'
         notific_send.new_transactional_email_notification(email_dict=email_dict)
