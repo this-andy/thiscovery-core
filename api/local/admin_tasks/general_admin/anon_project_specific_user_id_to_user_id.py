@@ -22,10 +22,12 @@ Ouput format: prints to stdout a string containing user_ids separated by ;\n
 """
 import api.common.pg_utilities as pg_utils
 import api.common.sql_queries as sql_q
+import api.common.dev_config  # sets env variables
+import api.local.secrets  # sets env variables
 
 
 if __name__ == '__main__':
-    user_input = input("Please paste list of anon_project_specific_user_ids separated by newline characters:")
+    user_input = input("Please paste list of anon_project_specific_user_ids separated by commas:")
     anon_ids = user_input.split(',')
     anon_ids = [x.strip() for x in anon_ids]
     user_ids = list()
