@@ -19,7 +19,7 @@
 import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 from common.pg_utilities import execute_query
-from common.utilities import validate_uuid, DetailedValueError
+from thiscovery_lib.utilities import validate_uuid, DetailedValueError
 from common.entity_base import EntityBase
 
 

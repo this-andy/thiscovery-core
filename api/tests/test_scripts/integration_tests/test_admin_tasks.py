@@ -20,10 +20,10 @@ from pprint import pprint
 
 import api.common.pg_utilities as pg_utils
 import api.common.sql_queries as sql_q
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
-from api.common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.common.dev_config import QUALTRICS_TEST_OBJECTS
 from api.local.admin_tasks.qualtrics_admin.convert_responses_to_contact_list_input_format import ResponsesToContactListConverter
 from api.local.admin_tasks.qualtrics_admin.republish_survey_with_user_specific_links import DistributionLinksGenerator

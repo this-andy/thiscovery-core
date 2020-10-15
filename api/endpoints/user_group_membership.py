@@ -19,7 +19,7 @@
 import json
 from http import HTTPStatus
 
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_non_query, execute_query_multiple
 from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
 from common.entity_base import EntityBase

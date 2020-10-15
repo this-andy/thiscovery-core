@@ -18,8 +18,8 @@
 
 from enum import Enum
 
-import common.dynamodb_utilities as ddb_utils
-import common.utilities as utils
+from thiscovery_lib import dynamodb_utilities as ddb_utils
+import thiscovery_lib.utilities as utils
 
 
 NOTIFICATION_TABLE_NAME = 'notifications'

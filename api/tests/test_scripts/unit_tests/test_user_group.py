@@ -18,7 +18,7 @@
 
 import testing_utilities as test_utils
 
-from common.utilities import DetailedValueError
+from thiscovery_lib.utilities import DetailedValueError
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

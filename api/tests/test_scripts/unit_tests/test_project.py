@@ -18,10 +18,11 @@
 
 import json
 from http import HTTPStatus
+from thiscovery_dev_tools.testing_tools import test_get
 
 import api.endpoints.project as p
 import testing_utilities as test_utils
-from testing_utilities import test_get
+
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

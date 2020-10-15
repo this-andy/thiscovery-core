@@ -47,7 +47,6 @@ api/local/secrets.py
 /sandbox/
 
 # symbolic-link shortcuts
-/deploy_to_aws.py
 /setup-sample-data.py
 /credentials
 /api/local/scratchpad.py

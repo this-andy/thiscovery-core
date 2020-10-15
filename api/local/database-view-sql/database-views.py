@@ -17,7 +17,7 @@
 #
 import psycopg2
 
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 from common.pg_utilities import run_sql_script_file, execute_non_query
 
 

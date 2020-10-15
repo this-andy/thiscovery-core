@@ -19,7 +19,7 @@
 This script creates or updates CloudWatch alarms that monitor more than one resource and
 that trigger an SNS notification if state is not OK
 """
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 from api.common.cloudwatch_utilities import CloudWatch
 from api.local.secrets import ACCOUNT_MAP
 

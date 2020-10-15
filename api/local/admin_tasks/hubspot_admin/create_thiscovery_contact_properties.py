@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from api.common.hubspot import HubSpotClient
-from api.common.utilities import DetailedValueError
+from thiscovery_lib.utilities import DetailedValueError
 
 
 class ContactPropertyAndGroupManager:

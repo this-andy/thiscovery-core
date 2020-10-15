@@ -22,7 +22,7 @@ import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 
 from common.cochrane import get_progress
-from common.utilities import get_correlation_id, get_logger
+from thiscovery_lib.utilities import get_correlation_id, get_logger
 
 
 def update_cochrane_progress(event, context):

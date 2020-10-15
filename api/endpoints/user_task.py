@@ -20,8 +20,8 @@ import uuid
 from http import HTTPStatus
 
 import common.sql_queries as sql_q
-import common.utilities as utils
-from common.dynamodb_utilities import Dynamodb
+import thiscovery_lib.utilities as utils
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
     CREATE_USER_TASK_SQL

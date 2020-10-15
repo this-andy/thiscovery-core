@@ -20,7 +20,8 @@ import json
 from http import HTTPStatus
 
 import testing_utilities as test_utils
-from testing_utilities import test_post
+from thiscovery_dev_tools.testing_tools import test_post
+
 
 TEST_SQL_FOLDER = '../test_sql/'
 TEST_DATA_FOLDER = '../test_data/'

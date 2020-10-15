@@ -20,20 +20,20 @@ import os
 
 from datetime import timedelta
 from http import HTTPStatus
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 
 import api.endpoints.notification_process as np
 import common.notifications as notific
 import common.notification_send as notific_send
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
-from common.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
 from common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification
-from common.utilities import get_country_name, DetailedValueError
-from test_transactional_email import TestTransactionalEmail
+from thiscovery_lib.utilities import get_country_name, DetailedValueError
+from test_transactional_email import test_email_dict
 
 
 TIME_TOLERANCE_SECONDS = 10
@@ -96,7 +96,7 @@ def create_login_notification(user_json=TEST_USER_01_JSON):
     return user_json
 
 def create_transactional_email_notification():
-    new_transactional_email_notification(email_dict=TestTransactionalEmail.test_email_dict)
+    new_transactional_email_notification(email_dict=test_email_dict)
 # endregion
 
 
@@ -336,7 +336,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(0, len(deleted_notifications))
 
     def test_14_post_transactional_email(self):
-        email_dict = TestTransactionalEmail.test_email_dict
+        email_dict = test_email_dict
         notific_send.new_transactional_email_notification(email_dict=email_dict)
         notifications = get_notifications('type', [NotificationType.TRANSACTIONAL_EMAIL.value])
         self.assertEqual(1, len(notifications))
@@ -349,7 +349,7 @@ class TestNotifications(test_utils.DbTestCase):
             self.assertEqual(email_dict[i], notification['details'][i])
 
     def test_15_process_transactional_email(self):
-        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
         notific_send.new_transactional_email_notification(email_dict=email_dict)
         notification = get_notifications()[0]
@@ -368,7 +368,7 @@ class TestNotifications(test_utils.DbTestCase):
         self.assertEqual(0, len(deleted_notifications))
 
     def test_17_post_transactional_email_by_email(self):
-        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict["to_recipient_email"] = 'recipient@email.com'
         notific_send.new_transactional_email_notification(email_dict=email_dict)
@@ -383,7 +383,7 @@ class TestNotifications(test_utils.DbTestCase):
             self.assertEqual(email_dict[i], notification['details'][i])
 
     def test_18_process_transactional_email_by_email(self):
-        email_dict = copy.deepcopy(TestTransactionalEmail.test_email_dict)
+        email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict["to_recipient_email"] = 'recipient@email.com'
         notific_send.new_transactional_email_notification(email_dict=email_dict)

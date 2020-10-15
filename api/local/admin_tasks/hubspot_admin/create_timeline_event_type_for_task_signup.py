@@ -1,6 +1,6 @@
-import api.common.dynamodb_utilities as ddb
+import thiscovery_lib.dynamodb_utilities as ddb
 import api.common.hubspot as hs
-from api.common.utilities import get_aws_namespace
+from thiscovery_lib.utilities import get_aws_namespace
 
 
 def save_timeline_event_type_id(name: str, hubspot_id, correlation_id):

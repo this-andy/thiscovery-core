@@ -6,7 +6,7 @@ import unittest
 from copy import deepcopy
 
 import api.local.deploy_to_aws as d2aws
-import api.common.utilities as utils
+import thiscovery_lib.utilities as utils
 
 
 TARGET_ENV = 'test-afs25'

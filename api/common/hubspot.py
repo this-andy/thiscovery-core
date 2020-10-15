@@ -23,9 +23,9 @@ from urllib.error import HTTPError
 from http import HTTPStatus
 from datetime import datetime, timezone
 
-import common.dynamodb_utilities as ddb_utils
-import common.utilities as utils
-from common.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
+from thiscovery_lib import dynamodb_utilities as ddb_utils
+import thiscovery_lib.utilities as utils
+from thiscovery_lib.utilities import get_secret, get_logger, get_aws_namespace, DetailedValueError, now_with_tz
 
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'

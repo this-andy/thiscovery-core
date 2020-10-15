@@ -18,12 +18,11 @@
 from http import HTTPStatus
 from unittest import TestCase
 
+import api.common.dev_config
 import api.common.hubspot as hs
 import api.tests.test_scripts.testing_utilities as test_utils
 from api.common.hubspot import HubSpotClient
-
-from api.common.dev_config import TRANSACTIONAL_EMAILS_RECIPIENT
-from api.common.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
+from thiscovery_lib.utilities import set_running_unit_tests, now_with_tz, new_correlation_id
 
 
 TIME_TOLERANCE_SECONDS = 10

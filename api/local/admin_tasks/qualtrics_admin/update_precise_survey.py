@@ -20,8 +20,8 @@ import csv
 import jinja2 as j2
 from copy import deepcopy
 
-import common.qualtrics as qs
-import common.utilities as utils
+import thiscovery_lib.qualtrics as qs
+import thiscovery_lib.utilities as utils
 
 DEFAULT_SURVEY = "SV_9SUp48JfOurEzI1"
 logger = utils.get_logger()

@@ -20,7 +20,7 @@ import os
 import time
 from http import HTTPStatus
 
-import common.utilities as utils
+import thiscovery_lib.utilities as utils
 
 
 @utils.lambda_wrapper
