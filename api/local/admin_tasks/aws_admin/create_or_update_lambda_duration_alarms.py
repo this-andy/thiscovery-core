@@ -16,7 +16,7 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 from api.common.cloudwatch_utilities import CloudWatch, ALARM_PREFIX_LAMBDA_DURATION
-from api.common.lambda_utilities import Lambda
+from thiscovery_lib.lambda_utilities import Lambda
 from thiscovery_lib.utilities import get_aws_namespace, get_logger
 
 
