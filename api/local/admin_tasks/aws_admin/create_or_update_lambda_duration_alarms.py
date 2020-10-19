@@ -15,6 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import api.common.dev_config  # sets env variables
+import api.local.secrets  # sets env variables
 from api.common.cloudwatch_utilities import CloudWatch, ALARM_PREFIX_LAMBDA_DURATION
 from thiscovery_lib.lambda_utilities import Lambda
 from thiscovery_lib.utilities import get_aws_namespace, get_logger
