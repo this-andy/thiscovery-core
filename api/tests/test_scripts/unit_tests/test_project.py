@@ -15,13 +15,12 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
 from thiscovery_dev_tools.testing_tools import test_get
 
 import api.endpoints.project as p
-import testing_utilities as test_utils
 
 
 TEST_SQL_FOLDER = '../test_sql/'

@@ -15,11 +15,10 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import api.endpoints.progress_process as prog_proc
 import api.endpoints.project as p
 import api.endpoints.user_task as ut
-import testing_utilities as test_utils
 
 TEST_DATA_FOLDER = '../test_data/'
 

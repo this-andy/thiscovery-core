@@ -15,8 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
-import testing_utilities as test_utils
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 
 from thiscovery_lib.utilities import DetailedValueError
 

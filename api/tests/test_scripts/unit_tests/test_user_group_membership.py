@@ -15,11 +15,10 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
 
-import testing_utilities as test_utils
 import thiscovery_dev_tools.testing_tools as test_tools
 from thiscovery_lib.utilities import DetailedValueError, ObjectDoesNotExistError, DuplicateInsertError
 

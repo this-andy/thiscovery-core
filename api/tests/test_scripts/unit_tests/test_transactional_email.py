@@ -15,14 +15,13 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import copy
 import json
 
 from http import HTTPStatus
 from pprint import pprint
 
-import api.tests.test_scripts.testing_utilities as test_utils
 import thiscovery_lib.utilities as utils
 
 from api.endpoints.transactional_email import TransactionalEmail, send_transactional_email_api

@@ -15,13 +15,12 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
 from thiscovery_dev_tools.testing_tools import test_get
 
 import api.endpoints.user as u
-import testing_utilities as test_utils
 from api.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api  # , get_project_status_for_external_user_api
 

@@ -15,6 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import copy
 import os
 
@@ -26,7 +27,6 @@ import api.endpoints.notification_process as np
 import common.notifications as notific
 import common.notification_send as notific_send
 import thiscovery_lib.utilities as utils
-import testing_utilities as test_utils
 
 from common.hubspot import HubSpotClient
 from common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \

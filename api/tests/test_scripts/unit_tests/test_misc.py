@@ -15,14 +15,13 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
 from thiscovery_dev_tools.testing_tools import test_get, tests_running_on_aws
 from unittest import TestCase
 
 from thiscovery_lib.utilities import set_running_unit_tests
-from common.dev_config import TEST_ON_AWS
 
 
 class TestUserExternalAccount(TestCase):

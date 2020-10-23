@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 import os
 import yaml
@@ -30,7 +30,6 @@ import api.endpoints.user_external_account as uea
 import api.endpoints.user_group_membership as ugm
 import api.endpoints.user_project as up
 import api.endpoints.user_task as ut
-import testing_utilities as test_utils
 
 
 class TestUserApiEndpoints(TestApiEndpoints):

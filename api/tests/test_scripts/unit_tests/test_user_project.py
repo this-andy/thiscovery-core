@@ -15,11 +15,10 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
 
-import testing_utilities as test_utils
 from api.common.dev_config import TIMEZONE_IS_BST
 from api.endpoints.user_project import list_user_projects_api, create_user_project_api, \
     create_user_project_if_not_exists
