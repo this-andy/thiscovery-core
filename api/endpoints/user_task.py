@@ -37,9 +37,6 @@ STATUS_CHOICES = (
 )
 DEFAULT_STATUS = 'active'
 
-# this line is only here to prevent PyCharm from marking these global variables as unresolved; they are reassigned in create_user_project function below
-anon_user_task_id, created, status, first_name = None, None, None, None
-
 
 class UserTask:
     user_specific_url_table = "UserSpecificUrls"
@@ -85,7 +82,7 @@ class UserTask:
     def from_dict(self, ut_dict):
         self.__dict__.update(ut_dict)
 
-    def validate_status(self):
+    def _validate_status(self):
         if self.status in STATUS_CHOICES:
             return self.status
         else:
@@ -114,7 +111,7 @@ class UserTask:
             ('id', str(uuid.uuid4()), utils.validate_uuid),
             ('anon_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
             ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
-            ('status', DEFAULT_STATUS, validate_status),
+            ('status', DEFAULT_STATUS, self._validate_status),
         ]
         for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
             if variable_name in ut_dict:
