@@ -70,6 +70,7 @@ class UserTask:
         # this is the same as user_project above
         self.user_project_id = None
         self.anon_project_specific_user_id = None
+        self.task_type_name = None
 
         self._ddb_client = ddb_client
 
@@ -143,6 +144,7 @@ class UserTask:
         self.external_task_id = pt_['external_task_id']
         self.user_specific_url = pt_['user_specific_url']
         self.anonymise_url = pt_['anonymise_url']
+        self.task_type_name = pt_['task_type_name']
 
     def _create_user_task_abort_if_exists(self):
         existing = check_if_user_task_exists(self.user_id, self.project_task_id, self._correlation_id)
@@ -192,6 +194,15 @@ class UserTask:
                     user_task_id=self.id,
                     external_task_id=self.external_task_id
                 )
+
+            if self.task_type_name is None:
+                self._get_project_task()
+            if self.task_type_name == 'interview':
+                # add last name and email for use with Acuity Scheduler
+                params = f"{params}" \
+                         f"&last_name={self.last_name}" \
+                         f"&email={self.email}"
+
             return "{}{}{}".format(
                 self.base_url,
                 params,
