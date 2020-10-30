@@ -93,6 +93,13 @@ class UserTask:
             raise utils.DetailedValueError('invalid user_task status', errorjson)
 
     def _create_user_task_validate_mandatory_data(self):
+        for param in ['user_id', 'project_task_id', 'consented']:
+            if self.__dict__[param] is None:
+                errorjson = {
+                    'parameter': param,
+                    'correlation_id': str(self._correlation_id)
+                }
+                raise utils.DetailedValueError('mandatory data missing', details=errorjson)
         try:
             utils.validate_uuid(self.user_id)
             utils.validate_uuid(self.project_task_id)
@@ -100,12 +107,6 @@ class UserTask:
         except utils.DetailedValueError as err:
             err.add_correlation_id(self._correlation_id)
             raise err
-        except (KeyError, TypeError) as err:
-            errorjson = {
-                'parameter': err.args[0],
-                'correlation_id': str(self._correlation_id)
-            }
-            raise utils.DetailedValueError('mandatory data missing', errorjson) from err
 
     def _create_user_task_process_optional_data(self, ut_dict):
         optional_fields_name_default_and_validator = [

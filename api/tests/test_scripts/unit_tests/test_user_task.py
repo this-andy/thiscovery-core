@@ -369,7 +369,7 @@ class TestUserTask(test_utils.DbTestCase):
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
-        pprint(result_json)
+
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
