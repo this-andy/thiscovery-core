@@ -41,14 +41,260 @@ DEFAULT_STATUS = 'active'
 anon_user_task_id, created, status, first_name = None, None, None, None
 
 
-def validate_status(s):
-    if s in STATUS_CHOICES:
-        return s
-    else:
-        errorjson = {
-            'status': s
+class UserTask:
+    user_specific_url_table = "UserSpecificUrls"
+
+    def __init__(self, correlation_id=None, ddb_client=None):
+        self.id = None
+        self.user_project = None
+        self.project_task = None
+        self.status = None
+        self.consented = None
+        self.progress_info = None
+        self.ext_user_task_id = None
+        self.anon_user_task_id = None
+        self.user_task_url = None
+
+        self._correlation_id = correlation_id
+        self.user_id = None
+        self.first_name = None
+        self.last_name = None
+        self.email = None
+        # this is the same as project_task above
+        self.project_task_id = None
+        self.anon_user_task_id = None
+        self.created = None
+        self.project_id = None
+        self.base_url = None
+        self.task_provider_name = None
+        self.external_task_id = None
+        self.user_specific_url = None
+        self.anonymise_url = None
+        # this is the same as user_project above
+        self.user_project_id = None
+        self.anon_project_specific_user_id = None
+
+        self._ddb_client = ddb_client
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+    def as_dict(self):
+        return {k: v for k, v in self.__dict__.items() if (k[0] != "_")}
+
+    def from_dict(self, ut_dict):
+        self.__dict__.update(ut_dict)
+
+    def validate_status(self):
+        if self.status in STATUS_CHOICES:
+            return self.status
+        else:
+            errorjson = {
+                'status': self.status
+            }
+            raise utils.DetailedValueError('invalid user_task status', errorjson)
+
+    def _create_user_task_validate_mandatory_data(self):
+        try:
+            utils.validate_uuid(self.user_id)
+            utils.validate_uuid(self.project_task_id)
+            utils.validate_utc_datetime(self.consented)
+        except utils.DetailedValueError as err:
+            err.add_correlation_id(self._correlation_id)
+            raise err
+        except (KeyError, TypeError) as err:
+            errorjson = {
+                'parameter': err.args[0],
+                'correlation_id': str(self._correlation_id)
+            }
+            raise utils.DetailedValueError('mandatory data missing', errorjson) from err
+
+    def _create_user_task_process_optional_data(self, ut_dict):
+        optional_fields_name_default_and_validator = [
+            ('id', str(uuid.uuid4()), utils.validate_uuid),
+            ('anon_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
+            ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
+            ('status', DEFAULT_STATUS, validate_status),
+        ]
+        for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
+            if variable_name in ut_dict:
+                try:
+                    self.__dict__[variable_name] = validating_func(ut_dict[variable_name])  # https://stackoverflow.com/a/4687672
+                except utils.DetailedValueError as err:
+                    err.add_correlation_id(self._correlation_id)
+                    raise err
+            else:
+                self.__dict__[variable_name] = default_value
+
+    def _get_project_task(self):
+        project_task = get_project_task(self.project_task_id, self._correlation_id)
+        try:
+            pt_ = project_task[0]
+        except IndexError:
+            errorjson = {
+                'user_id': self.user_id,
+                'project_task_id': self.project_task_id,
+                'correlation_id': str(self._correlation_id)
+            }
+            raise utils.DetailedIntegrityError('project_task does not exist', errorjson)
+
+        self.project_id = pt_['project_id']
+        self.base_url = pt_['base_url']
+        self.task_provider_name = pt_['task_provider_name']
+        self.external_task_id = pt_['external_task_id']
+        self.user_specific_url = pt_['user_specific_url']
+        self.anonymise_url = pt_['anonymise_url']
+
+    def _create_user_task_abort_if_exists(self):
+        existing = check_if_user_task_exists(self.user_id, self.project_task_id, self._correlation_id)
+        if len(existing) > 0:
+            errorjson = {
+                'user_id': self.user_id,
+                'project_task_id': self.project_task_id,
+                'existing_user_task': existing[0][0],
+                'correlation_id': str(self._correlation_id)
+            }
+            raise utils.DuplicateInsertError('user_task already exists', errorjson)
+
+    def _get_user_info(self):
+        # get user info if not received from calling process
+        if None in [self.first_name, self.last_name, self.email]:
+            try:
+                user = get_user_by_id(self.user_id, correlation_id=self._correlation_id)[0]
+            except IndexError:
+                errorjson = {
+                    'user_id': self.user_id,
+                    'correlation_id': str(self._correlation_id)
+                }
+                return utils.ObjectDoesNotExistError('User does not exist', errorjson)
+            self.first_name = user['first_name']
+            self.last_name = user['last_name']
+            self.email = user['email']
+
+    def _calculate_url(self):
+        if self.user_specific_url:
+            self.base_url = self.user_task_url
+
+        if self.base_url:
+            if self.anonymise_url:
+                params = utils.create_anonymous_url_params(
+                    base_url=self.base_url,
+                    anon_project_specific_user_id=self.anon_project_specific_user_id,
+                    user_first_name=self.first_name,
+                    anon_user_task_id=self.anon_user_task_id,
+                    external_task_id=self.external_task_id,
+                    project_task_id=self.project_task_id,
+                )
+            else:
+                params = utils.create_url_params(
+                    base_url=self.base_url,
+                    user_id=self.user_id,
+                    user_first_name=self.first_name,
+                    user_task_id=self.id,
+                    external_task_id=self.external_task_id
+                )
+            return "{}{}{}".format(
+                self.base_url,
+                params,
+                utils.non_prod_env_url_param()
+            )
+
+    def _get_ddb_client(self):
+        if self._ddb_client is None:
+            self._ddb_client = Dynamodb(correlation_id=self._correlation_id)
+
+    def _get_user_specific_task_url_from_ddb(self):
+        if self.user_specific_url:
+            self._get_ddb_client()
+            item_key = f"{self.project_task_id}_{self.user_id}"
+            item = self._ddb_client.get_item(
+                table_name=self.user_specific_url_table,
+                key=item_key,
+                correlation_id=self._correlation_id,
+            )
+            try:
+                self.user_task_url = item['user_specific_url']
+            except TypeError:
+                errorjson = {
+                    'user_id': self.user_id,
+                    'project_task_id': self.project_task_id,
+                    'correlation_id': str(self._correlation_id)
+                }
+                raise utils.ObjectDoesNotExistError('User specific url not found', errorjson)
+            return item_key
+
+    def thiscovery_db_dump(self):
+        row_count = execute_non_query(
+            sql=CREATE_USER_TASK_SQL,
+            params=(
+                self.id,
+                self.created,
+                self.created,
+                self.user_project_id,
+                self.project_task_id,
+                self.status,
+                self.consented,
+                self.anon_user_task_id,
+                self.user_task_url,
+            ),
+            correlation_id=self._correlation_id
+        )
+        return row_count
+
+    def _mark_user_specific_url_as_processed_in_ddb(self, item_key):
+        self._get_ddb_client()
+        self._ddb_client.update_item(
+            table_name=self.user_specific_url_table,
+            key=item_key,
+            name_value_pairs={
+                'status': 'processed'
+            },
+            correlation_id=self._correlation_id,
+        )
+
+    def create_user_task(self, ut_dict):
+        """
+        Inserts new UserTask row in thiscovery db
+
+        Args:
+            ut_dict: must contain user_id, project_task_id and consented; may optionally include id, created,
+                    status, anon_user_task_id, first_name, last_name, email
+
+        Returns:
+            Dictionary representation of new user task
+        """
+        self.from_dict(ut_dict=ut_dict)
+        self._create_user_task_validate_mandatory_data()
+        self._create_user_task_process_optional_data(ut_dict=ut_dict)
+        self._get_project_task()
+        user_project = create_user_project_if_not_exists(self.user_id, self.project_id, self._correlation_id)
+        self.user_project_id = user_project['id']
+        self.anon_project_specific_user_id = user_project['anon_project_specific_user_id']
+        self._create_user_task_abort_if_exists()
+        self._get_user_info()
+        item_key = self._get_user_specific_task_url_from_ddb()
+        row_count = self.thiscovery_db_dump()
+        if self.user_specific_url and row_count:
+            self._mark_user_specific_url_as_processed_in_ddb(item_key=item_key)
+        url = self._calculate_url()
+
+        new_user_task = {
+            'id': self.id,
+            'created': self.created,
+            'modified': self.created,
+            'user_id': self.user_id,
+            'user_project_id': self.user_project_id,
+            'project_task_id': self.project_task_id,
+            'task_provider_name': self.task_provider_name,
+            'url': url,
+            'status': self.status,
+            'consented': self.consented,
+            'anon_user_task_id': self.anon_user_task_id,
         }
-        raise utils.DetailedValueError('invalid user_task status', errorjson)
+
+        notify_new_task_signup(new_user_task, self._correlation_id)
+
+        return new_user_task
 
 
 def get_user_task(ut_id, correlation_id=None):
@@ -62,30 +308,6 @@ def filter_user_tasks_by_project_task_id(user_id, project_task_id, correlation_i
     """
     result = [t for t in list_user_tasks_by_user(user_id, correlation_id) if t['project_task_id'] == project_task_id]
     return result
-
-
-def calculate_url(base_url, pt_user_specific_url, ut_url, user_id, ut_id, pt_external_task_id, user_first_name, pt_anonymise_url,
-                  anon_project_specific_user_id, anon_user_task_id_local, project_task_id, correlation_id=None):
-    if pt_user_specific_url:
-        base_url = ut_url
-
-    if base_url:
-        if pt_anonymise_url:
-            params = utils.create_anonymous_url_params(
-                base_url=base_url,
-                anon_project_specific_user_id=anon_project_specific_user_id,
-                user_first_name=user_first_name,
-                anon_user_task_id=anon_user_task_id_local,
-                external_task_id=pt_external_task_id,
-                project_task_id=project_task_id,
-            )
-        else:
-            params = utils.create_url_params(base_url, user_id, user_first_name, ut_id, pt_external_task_id)
-        return "{}{}{}".format(
-            base_url,
-            params,
-            utils.non_prod_env_url_param()
-        )
 
 
 def list_user_tasks_by_user(user_id, correlation_id=None):
@@ -189,180 +411,6 @@ def check_if_user_task_exists(user_id, project_task_id, correlation_id):
     return execute_query(CHECK_IF_USER_TASK_EXISTS_SQL, (str(user_id), str(project_task_id)), correlation_id, False)
 
 
-def create_user_task(ut_json, correlation_id):
-    """
-    Inserts new UserTask row in thiscovery db
-
-    Args:
-        ut_json: must contain user_id, project_task_id and consented; may optionally include id, created, status, anon_user_task_id, first_name
-        correlation_id:
-
-    Returns:
-        Dictionary representation of new user task
-    """
-    # extract mandatory data from json
-    try:
-        user_id = utils.validate_uuid(ut_json['user_id'])
-        project_task_id = utils.validate_uuid(ut_json['project_task_id'])
-        consented = utils.validate_utc_datetime(ut_json['consented'])
-    except utils.DetailedValueError as err:
-        err.add_correlation_id(correlation_id)
-        raise err
-    except (KeyError, TypeError) as err:
-        errorjson = {
-            'parameter': err.args[0],
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.DetailedValueError('mandatory data missing', errorjson) from err
-
-    # now process optional json data
-    optional_fields_name_default_and_validator = [
-        ('anon_user_task_id', str(uuid.uuid4()), utils.validate_uuid),
-        ('created', str(utils.now_with_tz()), utils.validate_utc_datetime),
-        ('status', DEFAULT_STATUS, validate_status),
-        ('first_name', None, utils.null_validator),
-    ]
-    for variable_name, default_value, validating_func in optional_fields_name_default_and_validator:
-        if variable_name in ut_json:
-            try:
-                globals()[variable_name] = validating_func(ut_json[variable_name])  # https://stackoverflow.com/a/4687672
-            except utils.DetailedValueError as err:
-                err.add_correlation_id(correlation_id)
-                raise err
-        else:
-            globals()[variable_name] = default_value
-
-    # id shadows builtin function, so treat if separately (using globals() approach above would overwrite that function)
-    if 'id' in ut_json:
-        try:
-            id = utils.validate_uuid(ut_json['id'])
-        except utils.DetailedValueError as err:
-            err.add_correlation_id(correlation_id)
-            raise err
-    else:
-        id = str(uuid.uuid4())
-
-    # get corresponding project_task...
-    project_task = get_project_task(project_task_id, correlation_id)
-    try:
-        pt_ = project_task[0]
-    except IndexError:
-        errorjson = {
-            'user_id': user_id,
-            'project_task_id': project_task_id,
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.DetailedIntegrityError('project_task does not exist', errorjson)
-
-    project_id = pt_['project_id']
-    base_url = pt_['base_url']
-    task_provider_name = pt_['task_provider_name']
-    external_task_id = pt_['external_task_id']
-    user_specific_url = pt_['user_specific_url']
-    anonymise_url = pt_['anonymise_url']
-
-    # create_user_external_account_if_not_exists(user_id, project_task['external_system_id'], correlation_id)
-
-    user_project = create_user_project_if_not_exists(user_id, project_id, correlation_id)
-    user_project_id = user_project['id']
-    anon_project_specific_user_id = user_project['anon_project_specific_user_id']
-
-    # check external account does not already exist
-    existing = check_if_user_task_exists(user_id, project_task_id, correlation_id)
-    # if int(existing[0][0]) > 0:
-    if len(existing) > 0:
-        errorjson = {
-            'user_id': user_id,
-            'project_task_id': project_task_id,
-            'existing_user_task': existing[0][0],
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.DuplicateInsertError('user_task already exists', errorjson)
-
-    # get user first name if not received from calling process
-    global first_name
-    if first_name is None:
-        try:
-            user = get_user_by_id(user_id, correlation_id=correlation_id)[0]
-        except IndexError:
-            errorjson = {
-                'user_id': user_id,
-                'correlation_id': str(correlation_id)
-            }
-            return utils.ObjectDoesNotExistError('User does not exist', errorjson)
-        first_name = user['first_name']
-
-    # fetch user_task_url from Dynamodb if project task specifies this
-    user_task_url = None
-    if user_specific_url:
-        ddb = Dynamodb()
-        user_specific_url_table = "UserSpecificUrls"
-        item_key = f"{project_task_id}_{user_id}"
-        item = ddb.get_item(
-            table_name=user_specific_url_table,
-            key=item_key,
-            correlation_id=correlation_id,
-        )
-        try:
-            user_task_url = item['user_specific_url']
-        except TypeError:
-            errorjson = {
-                'user_id': user_id,
-                'project_task_id': project_task_id,
-                'correlation_id': str(correlation_id)
-            }
-            raise utils.ObjectDoesNotExistError('User specific url not found', errorjson)
-
-    row_count = execute_non_query(
-        CREATE_USER_TASK_SQL,
-        (id, created, created, user_project_id, project_task_id, status, consented, anon_user_task_id, user_task_url),
-        correlation_id
-    )
-
-    if user_specific_url and row_count:
-        ddb.update_item(
-            table_name=user_specific_url_table,
-            key=item_key,
-            name_value_pairs={
-                'status': 'processed'
-            },
-            correlation_id=correlation_id,
-        )
-
-    url = calculate_url(
-        base_url=base_url,
-        pt_user_specific_url=user_specific_url,
-        ut_url=user_task_url,
-        user_id=user_id,
-        ut_id=id,
-        pt_external_task_id=external_task_id,
-        user_first_name=first_name,
-        pt_anonymise_url=anonymise_url,
-        anon_project_specific_user_id=anon_project_specific_user_id,
-        anon_user_task_id_local=anon_user_task_id,
-        project_task_id=project_task_id,
-        correlation_id=correlation_id,
-    )
-
-    new_user_task = {
-        'id': id,
-        'created': created,
-        'modified': created,
-        'user_id': user_id,
-        'user_project_id': user_project_id,
-        'project_task_id': project_task_id,
-        'task_provider_name': task_provider_name,
-        'url': url,
-        'status': status,
-        'consented': consented,
-        'anon_user_task_id': anon_user_task_id,
-    }
-
-    notify_new_task_signup(new_user_task, correlation_id)
-
-    return new_user_task
-
-
 @utils.lambda_wrapper
 @utils.api_error_handler
 def create_user_task_api(event, context):
@@ -373,7 +421,8 @@ def create_user_task_api(event, context):
         'ut_json': ut_json,
         'correlation_id': correlation_id
     })
-    new_user_task = create_user_task(ut_json, correlation_id)
+    ut = UserTask(correlation_id=correlation_id)
+    new_user_task = ut.create_user_task(ut_json, correlation_id)
     return {
         "statusCode": HTTPStatus.CREATED,
         "body": json.dumps(new_user_task)
