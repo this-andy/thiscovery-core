@@ -21,12 +21,12 @@ from http import HTTPStatus
 
 import api.endpoints.notification_process as np
 import api.endpoints.user as u
-import common.hubspot as hs
-import common.notifications as notific
+import api.endpoints.common.hubspot as hs
+import api.endpoints.common.notifications as notific
 import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
-from common.dev_config import TIMEZONE_IS_BST
+from api.endpoints.common.dev_config import TIMEZONE_IS_BST
 
 TIME_TOLERANCE_SECONDS = 10
 

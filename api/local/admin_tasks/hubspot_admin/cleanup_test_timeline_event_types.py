@@ -18,7 +18,7 @@
 """
 This script fetches all timeline event types associated with an environment and deletes all event types whose name == "Test timeline type"
 """
-from api.common.hubspot import HubSpotClient
+from api.endpoints.common.hubspot import HubSpotClient
 
 if __name__ == "__main__":
     hs_client = HubSpotClient()

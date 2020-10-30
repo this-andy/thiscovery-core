@@ -15,18 +15,18 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
+import api.endpoints.common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
 import api.local.secrets  # sets env variables THISCOVERY_AFS25_PROFILE and THISCOVERY_AMP205_PROFILE
 import csv
 import os
 from thiscovery_dev_tools.testing_tools import BaseTestCase
 
 import api.endpoints.user as user
-import common.pg_utilities as pg_utils
+import api.endpoints.common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
-from common.hubspot import HubSpotClient
-from common.notifications import delete_all_notifications
-from common.pg_utilities import truncate_table_multiple
+from api.endpoints.common.hubspot import HubSpotClient
+from api.endpoints.common.notifications import delete_all_notifications
+from api.endpoints.common.pg_utilities import truncate_table_multiple
 
 
 BASE_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..')  # thiscovery-core/

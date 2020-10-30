@@ -21,7 +21,7 @@ from http import HTTPStatus
 from thiscovery_dev_tools.testing_tools import test_get
 
 import api.endpoints.user as u
-from api.common.dev_config import UNIT_TEST_NAMESPACE
+from api.endpoints.common.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.project import get_project_status_for_user_api  # , get_project_status_for_external_user_api
 
 

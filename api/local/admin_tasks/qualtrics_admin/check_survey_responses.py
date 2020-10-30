@@ -27,11 +27,11 @@ from pprint import pprint
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
-import api.common.pg_utilities as pg_utils
-import api.common.sql_queries as sql_q
+import api.endpoints.common.pg_utilities as pg_utils
+import api.endpoints.common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 
-from api.common.dev_config import SECRETS_NAMESPACE
+from api.endpoints.common.dev_config import SECRETS_NAMESPACE
 
 
 class DataCheckManager:

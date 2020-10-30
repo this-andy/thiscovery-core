@@ -20,10 +20,11 @@ This script converts anon_project_specific_user_ids into user_ids.
 Input format: string of anon_project_specific_user_ids separated by commas (and optionally a space) (,)
 Ouput format: prints to stdout a string containing user_ids separated by ;\n
 """
-import api.common.pg_utilities as pg_utils
-import api.common.sql_queries as sql_q
-import api.common.dev_config  # sets env variables
+import api.endpoints.common.dev_config  # sets env variables
 import api.local.secrets  # sets env variables
+import api.endpoints.common.pg_utilities as pg_utils
+import api.endpoints.common.sql_queries as sql_q
+
 
 
 if __name__ == '__main__':

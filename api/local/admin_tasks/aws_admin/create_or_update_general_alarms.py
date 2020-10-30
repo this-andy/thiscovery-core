@@ -20,7 +20,7 @@ This script creates or updates CloudWatch alarms that monitor more than one reso
 that trigger an SNS notification if state is not OK
 """
 import thiscovery_lib.utilities as utils
-from api.common.cloudwatch_utilities import CloudWatch
+from api.endpoints.common.cloudwatch_utilities import CloudWatch
 from api.local.secrets import ACCOUNT_MAP
 
 

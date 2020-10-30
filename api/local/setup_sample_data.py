@@ -19,7 +19,7 @@ import csv
 import os
 
 import api.endpoints.user as user
-from api.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
+from api.endpoints.common.pg_utilities import insert_data_from_csv, truncate_table, populate_table_from_csv
 from thiscovery_lib.utilities import get_aws_namespace, get_country_name, now_with_tz
 
 # TEST_DATA_FOLDER = '../tests/test_data/'

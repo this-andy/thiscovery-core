@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import common.pg_utilities as pg_utils
+import api.endpoints.common.pg_utilities as pg_utils
 
 
 UPDATE_EXT_USER_PROJECT_ID_IF_NULL = '''

@@ -36,8 +36,8 @@ import csv
 
 import api.endpoints.project as p
 import api.endpoints.user_project as up
-import api.common.pg_utilities as pg_utils
-import api.common.sql_queries as sq
+import api.endpoints.common.pg_utilities as pg_utils
+import api.endpoints.common.sql_queries as sq
 import thiscovery_lib.utilities as utils
 
 
