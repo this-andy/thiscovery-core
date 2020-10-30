@@ -18,7 +18,7 @@
 import psycopg2
 
 import thiscovery_lib.utilities as utils
-from common.pg_utilities import run_sql_script_file, execute_non_query
+from api.endpoints.common.pg_utilities import run_sql_script_file, execute_non_query
 
 
 VIEW_SQL_FOLDER = './'
