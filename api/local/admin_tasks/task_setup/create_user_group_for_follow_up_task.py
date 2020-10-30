@@ -19,7 +19,7 @@
 This script parses a CSV file containing user identifiers and either creates new a user group in Thiscovery
 or populates an existing user group
 """
-import api.endpoints.common.dev_config  # sets env variables
+import api.local.dev_config  # sets env variables
 import api.local.secrets  # sets env variables
 import api.endpoints.common.pg_utilities as pg_utils
 import api.endpoints.common.sql_queries as sql_q

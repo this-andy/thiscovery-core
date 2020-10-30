@@ -82,12 +82,13 @@ class UserTask:
     def from_dict(self, ut_dict):
         self.__dict__.update(ut_dict)
 
-    def _validate_status(self):
-        if self.status in STATUS_CHOICES:
-            return self.status
+    @staticmethod
+    def _validate_status(status):
+        if status in STATUS_CHOICES:
+            return status
         else:
             errorjson = {
-                'status': self.status
+                'status': status
             }
             raise utils.DetailedValueError('invalid user_task status', errorjson)
 
@@ -168,7 +169,7 @@ class UserTask:
             self.last_name = user['last_name']
             self.email = user['email']
 
-    def _calculate_url(self):
+    def calculate_url(self):
         if self.user_specific_url:
             self.base_url = self.user_task_url
 
@@ -273,7 +274,7 @@ class UserTask:
         row_count = self.thiscovery_db_dump()
         if self.user_specific_url and row_count:
             self._mark_user_specific_url_as_processed_in_ddb(item_key=item_key)
-        url = self._calculate_url()
+        url = self.calculate_url()
 
         new_user_task = {
             'id': self.id,
@@ -328,20 +329,13 @@ def list_user_tasks_by_user(user_id, correlation_id=None):
     # add url field to each user_task in result
     edited_result = list()
     for ut in result:
-        ut['url'] = calculate_url(
-            ut['base_url'],
-            ut['user_specific_url'],
-            ut['user_task_url'],
-            ut['user_id'],
-            ut['user_task_id'],
-            ut['external_task_id'],
-            user_result['first_name'],
-            ut['anonymise_url'],
-            ut['anon_project_specific_user_id'],
-            ut['anon_user_task_id'],
-            ut['project_task_id'],
-            correlation_id,
-        )
+        user_task = UserTask(correlation_id=correlation_id)
+        user_task.from_dict(ut_dict=ut)
+        user_task.id = ut['user_task_id']
+        user_task.first_name = user_result['first_name']
+        user_task.last_name = user_result['last_name']
+        user_task.email = user_result['email']
+        ut['url'] = user_task.calculate_url()
         del ut['base_url']
         del ut['external_task_id']
         del ut['user_specific_url']
@@ -419,7 +413,7 @@ def create_user_task_api(event, context):
         'correlation_id': correlation_id
     })
     ut = UserTask(correlation_id=correlation_id)
-    new_user_task = ut.create_user_task(ut_json, correlation_id)
+    new_user_task = ut.create_user_task(ut_json)
     return {
         "statusCode": HTTPStatus.CREATED,
         "body": json.dumps(new_user_task)

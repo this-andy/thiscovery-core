@@ -31,7 +31,7 @@ import api.endpoints.common.pg_utilities as pg_utils
 import api.endpoints.common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 
-from api.endpoints.common.dev_config import SECRETS_NAMESPACE
+from api.local.dev_config import SECRETS_NAMESPACE
 
 
 class DataCheckManager:

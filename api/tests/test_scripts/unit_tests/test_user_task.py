@@ -17,15 +17,15 @@
 #
 import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
-import unittest
 from http import HTTPStatus
+from pprint import pprint
 
 import api.endpoints.notification_process as np
 import api.endpoints.user_task as ut
 import thiscovery_dev_tools.testing_tools as test_tools
 
 from thiscovery_lib.dynamodb_utilities import Dynamodb
-from api.endpoints.common.dev_config import UNIT_TEST_NAMESPACE
+from api.local.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.endpoints.common.notifications import get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
@@ -369,7 +369,7 @@ class TestUserTask(test_utils.DbTestCase):
         result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
-
+        pprint(result_json)
         self.assertEqual(expected_status, result_status)
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue(
