@@ -24,7 +24,7 @@ from datetime import datetime
 from time import sleep
 
 from api.local.secrets import THISCOVERY_STAGING_PROFILE, THISCOVERY_STAGING_DELETION_AND_REBUILD
-from api.common.rds_utilities import RdsClient
+from api.endpoints.common.rds_utilities import RdsClient
 
 
 rds_client = RdsClient(profile_name=THISCOVERY_STAGING_PROFILE)

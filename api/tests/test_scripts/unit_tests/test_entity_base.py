@@ -17,7 +17,7 @@
 #
 import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
-from common.entity_base import EntityBase
+from api.endpoints.common.entity_base import EntityBase
 from thiscovery_lib.utilities import DetailedValueError
 from testing_utilities import BaseTestCase
 

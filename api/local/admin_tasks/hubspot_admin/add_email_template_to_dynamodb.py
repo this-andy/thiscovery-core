@@ -22,7 +22,7 @@ import re
 import requests
 import sys
 
-from api.common.dynamodb_utilities import Dynamodb
+from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.local.secrets import TRANSACTIONAL_EMAILS_FROM_ADDRESS
 
 

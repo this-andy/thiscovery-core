@@ -19,7 +19,7 @@ import testing_utilities as test_utils  # this should be the first import; it se
 import json
 from http import HTTPStatus
 
-from api.common.dev_config import TIMEZONE_IS_BST
+from api.endpoints.common.dev_config import TIMEZONE_IS_BST
 from api.endpoints.user_project import list_user_projects_api, create_user_project_api, \
     create_user_project_if_not_exists
 from thiscovery_dev_tools.testing_tools import test_get, test_post

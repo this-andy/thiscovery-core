@@ -16,8 +16,8 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 
-from api.common.pg_utilities import execute_query_multiple, execute_query
-from api.common.notifications import get_notifications
+from api.endpoints.common.pg_utilities import execute_query_multiple, execute_query
+from api.endpoints.common.notifications import get_notifications
 
 
 def multiple_query():
