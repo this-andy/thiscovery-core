@@ -26,7 +26,7 @@ import api.endpoints.common.notifications as notific
 import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 
-from api.endpoints.common.dev_config import TIMEZONE_IS_BST
+from api.local.dev_config import TIMEZONE_IS_BST
 
 TIME_TOLERANCE_SECONDS = 10
 

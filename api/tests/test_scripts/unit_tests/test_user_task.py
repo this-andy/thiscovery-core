@@ -17,15 +17,15 @@
 #
 import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
-import unittest
 from http import HTTPStatus
+from pprint import pprint
 
 import api.endpoints.notification_process as np
 import api.endpoints.user_task as ut
 import thiscovery_dev_tools.testing_tools as test_tools
 
 from thiscovery_lib.dynamodb_utilities import Dynamodb
-from api.endpoints.common.dev_config import UNIT_TEST_NAMESPACE
+from api.local.dev_config import UNIT_TEST_NAMESPACE
 from api.endpoints.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from api.endpoints.common.notifications import get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
@@ -85,6 +85,31 @@ USER_TASK_02_EXPECTED_BODY = {
                f"&external_task_id=ext-5a"
                f"&env={TEST_ENV}",
 }
+
+USER_TASK_03_EXPECTED_BODY = {
+        "user_id": "e067ed7b-bc98-454f-9c5e-573e2da5705c",
+        "user_project_id": "88906ccf-0db3-4d06-a6d4-a9d6ef0e99e3",
+        "user_project_status": None,
+        "project_task_id": "387166e6-99fd-4c98-84a5-3908f942dcb3",
+        "task_description": "Patient interviews",
+        "user_task_id": "3445fa5c-5a37-4549-a5ed-508320034db6",
+        "created": "2020-10-17T20:59:41.178701+00:00",
+        "modified": "2020-10-17T20:59:41.178768+00:00",
+        "status": "active",
+        "consented": "2020-10-17T22:00:00+00:00",
+        "progress_info": None,
+        "anon_user_task_id": "3dfa1080-9b00-401a-a620-30273046b29e",
+        "task_provider_name": "Qualtrics",
+        "url": f"https://www.qualtrics.com"
+               f"?anon_project_specific_user_id=cc694281-91a1-4bad-b46f-9b69e71503bb"
+               f"&first_name=Glenda"
+               f"&anon_user_task_id=3dfa1080-9b00-401a-a620-30273046b29e"
+               f"&project_task_id=387166e6-99fd-4c98-84a5-3908f942dcb3"
+               f"&external_task_id=5678"
+               f"&last_name=Gupta"
+               f"&email=glenda@email.co.uk"
+               f"&env={TEST_ENV}",
+}
 # endregion
 
 
@@ -104,6 +129,17 @@ class TestUserTask(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         for actual, expected in zip(result_json, expected_body):
             self.assertDictEqual(expected, actual)
+
+    def test_01a_list_user_tasks_api_ok_interview_task(self):
+        expected_status = HTTPStatus.OK
+        expected_body = USER_TASK_03_EXPECTED_BODY
+        querystring_parameters = {'user_id': 'e067ed7b-bc98-454f-9c5e-573e2da5705c'}
+
+        result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        self.assertEqual(expected_status, result_status)
+        self.assertDictEqual(expected_body, result_json)
 
     def test_02_list_user_tasks_api_ok_with_project_task_id(self):
         expected_status = HTTPStatus.OK
@@ -443,6 +479,37 @@ class TestUserTask(test_utils.DbTestCase):
         result = test_tools.test_put(ut.set_user_task_completed_api, "v1/user-task-completed", querystring_parameters=querystring_parameters)
         result_status = result['statusCode']
         self.assertEqual(expected_status, result_status)
+
+    def test_17_create_user_task_api_ok_interview_task(self):
+        expected_status = HTTPStatus.CREATED
+        user_id = 'dceac123-03a7-4e29-ab5a-739e347b374d'  # Fred
+        ut_json = {
+            'user_id': user_id,
+            'project_task_id': '387166e6-99fd-4c98-84a5-3908f942dcb3',  # interview
+            'consented': '2018-06-12 16:16:56.087895+01',
+        }
+        body = json.dumps(ut_json)
+        result = test_post(create_user_task_api, ENTITY_BASE_URL, None, body, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+        url = result_json['url']
+
+        self.assertEqual(expected_status, result_status)
+        expected_substrings = [
+            'https://www.qualtrics.com',
+            '?anon_project_specific_user_id=',
+            '&first_name=Fred',
+            '&anon_user_task_id=',
+            '&external_task_id=5678',
+            f'&env={TEST_ENV}',
+            '&last_name=Flintstone',
+            '&email=fred@email.co.uk',
+        ]
+        for es in expected_substrings:
+            self.assertIn(
+                member=es,
+                container=url,
+            )
 
 
 class TestUserTaskSpecificUrl(test_utils.DbTestCase):

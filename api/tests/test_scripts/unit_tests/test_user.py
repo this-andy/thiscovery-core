@@ -24,7 +24,7 @@ import api.endpoints.user as u
 
 from api.endpoints.user import get_user_by_id_api, get_user_by_email_api, patch_user_api, create_user_api
 from thiscovery_dev_tools.testing_tools import test_get, test_post, test_patch
-from api.endpoints.common.dev_config import TIMEZONE_IS_BST
+from api.local.dev_config import TIMEZONE_IS_BST
 from api.endpoints.common.entity_update import EntityUpdate
 from api.endpoints.common.hubspot import HubSpotClient
 from api.endpoints.common.notifications import get_notifications, NotificationStatus, \

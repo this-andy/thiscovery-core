@@ -19,7 +19,7 @@ import testing_utilities as test_utils  # this should be the first import; it se
 from http import HTTPStatus
 from unittest import TestCase
 
-import api.endpoints.common.dev_config
+import api.local.dev_config
 import api.endpoints.common.hubspot as hs
 from api.endpoints.common.hubspot import HubSpotClient
 from thiscovery_lib.utilities import set_running_unit_tests, now_with_tz, new_correlation_id

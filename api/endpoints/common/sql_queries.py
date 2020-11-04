@@ -185,9 +185,11 @@ GET_PROJECT_TASK_SQL = '''
         progress_info_modified,
         es.short_name as task_provider_name,
         user_specific_url,
-        anonymise_url
+        anonymise_url,
+		tt.short_name as task_type_name
     FROM public.projects_projecttask pt
-    JOIN projects_externalsystem es on pt.external_system_id = es.id
+    JOIN public.projects_externalsystem es on pt.external_system_id = es.id
+	JOIN public.projects_tasktype tt on pt.task_type_id = tt.id
     WHERE pt.id = %s
 '''
 
@@ -226,9 +228,11 @@ PROJECT_USER_SELECT_SQL = '''
                         FALSE as signup_available,
                         null as user_task_status,
                         user_specific_url,
-                        anonymise_url
+                        anonymise_url,
+                        tt.short_name as task_type_name
                     from public.projects_projecttask task
                     join public.projects_externalsystem es on task.external_system_id = es.id
+                    join public.projects_tasktype tt on task.task_type_id = tt.id
                     where task.project_id = project.id
                         AND task.status != 'planned'                   
                     order by task.created
@@ -274,7 +278,7 @@ get_project_status_for_user_sql = {
     """,
 
     'sql5': """
-        SELECT first_name
+        SELECT first_name, last_name, email
         FROM public.projects_user
         WHERE id = %s
     """,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import api.endpoints.common.dev_config  # set environment variables
+import api.local.dev_config  # set environment variables
 import api.local.secrets  # set environment variables
 from thiscovery_dev_tools.deploy_to_aws import AwsDeployer
 

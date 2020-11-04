@@ -376,6 +376,21 @@ PROJECT_08_JSON = """
                 "external_task_id": "5678",
                 "base_url": "https://www.qualtrics.com",
                 "status": "active"
+            },
+            {
+                "base_url": "https://www.qualtrics.com",
+                "closing_date": "2018-08-17T09:30:00+00:00",
+                "created": "2018-08-17T12:10:58.074321+00:00",
+                "description": "Patient interviews",
+                "earliest_start_date": null,
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "5678",
+                "id": "387166e6-99fd-4c98-84a5-3908f942dcb3",
+                "modified": "2018-08-17T12:10:58.111495+00:00",
+                "signup_status": "open",
+                "status": "active",
+                "task_type_id": "8ba4a647-6df0-4f7b-bc06-f814f91ca53d",
+                "visibility": "public"
             }
         ]
     }

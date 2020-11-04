@@ -109,6 +109,8 @@ class ProjectStatusForUser:
         self.projects_usertasks_dict = dict_from_dataset(results[4], 'project_task_id')
         try:
             self.user_first_name = results[5][0]['first_name']
+            self.user_last_name = results[5][0]['last_name']
+            self.user_email = results[5][0]['email']
         except IndexError:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise utils.ObjectDoesNotExistError(f"User {user_id} could not be found", errorjson)
@@ -185,13 +187,18 @@ class ProjectStatusForUser:
                     )
                 else:
                     task['url'] += utils.create_url_params(task['url'], self.user_id, self.user_first_name, user_task_id, external_task_id)
+
+                if task['task_type_name'] == 'interview':
+                    # add last name and email for use with Acuity Scheduler
+                    task['url'] += f"&last_name={self.user_last_name}" \
+                                   f"&email={self.user_email}"
+
                 task['url'] += utils.non_prod_env_url_param()
         else:
             task['url'] = None
         return task['url']
 
     def main(self):
-        # now add calculated attributes to returned json...
         try:
             for project in self.project_list:
                 project['project_is_visible'] = self.calculate_project_visibility(project)

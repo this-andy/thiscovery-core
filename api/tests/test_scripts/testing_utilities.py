@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import api.endpoints.common.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
+import api.local.dev_config  # sets env variables TEST_ON_AWS and AWS_TEST_API
 import api.local.secrets  # sets env variables THISCOVERY_AFS25_PROFILE and THISCOVERY_AMP205_PROFILE
 import csv
 import os

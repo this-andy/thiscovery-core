@@ -195,7 +195,7 @@ class HubSpotClient:
         Returns:
             HubSpot token (dict), containing values for keys 'access_token' and 'refresh_token'
         """
-        from common.dev_config import INITIAL_HUBSPOT_AUTH_CODE, NGROK_URL_ID
+        from api.local.dev_config import INITIAL_HUBSPOT_AUTH_CODE, NGROK_URL_ID
 
         redirect_url = 'https://' + NGROK_URL_ID + '.ngrok.io/hubspot'
         return self.get_new_token_from_hubspot(

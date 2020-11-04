@@ -24,8 +24,7 @@ var/
 venv-mint/
 
 # individual development config settings
-api/common/dev_config.py
-api/endpoints/common/dev_config.py
+api/local/dev_config.py
 
 .idea
 .pytest_cache/
@@ -50,3 +49,4 @@ api/local/secrets.py
 /setup-sample-data.py
 /credentials
 /api/local/scratchpad.py
+
