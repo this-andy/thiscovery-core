@@ -45,7 +45,7 @@ def extract_custom_properties(string):
 
 
 def format_custom_properties(custom_properties_list):
-    return [{"name": x, "required": True} for x in custom_properties_list]
+    return [{"name": x, "required": False} for x in custom_properties_list]
 
 
 def add_template_to_ddb(template_id, template_name, template_type, formatted_custom_properties, preview_url):
