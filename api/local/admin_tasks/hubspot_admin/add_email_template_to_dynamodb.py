@@ -18,6 +18,8 @@
 """
 This script parses a transactional email template preview page and adds the template to Dynamodb table HubspotEmailTemplates
 """
+import api.local.dev_config  # env variables
+import api.local.secrets  # env variables
 import re
 import requests
 import sys
