@@ -414,6 +414,13 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendTransactionalEmail.Arn}/invocations
               responses: {}
+          /v1/send-consent-email:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendConsentEmail.Arn}/invocations
+              responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
       StackeryName: Core Thiscovery API
@@ -1569,6 +1576,73 @@ Resources:
           TABLE_ARN_2: !GetAtt tokens.Arn
           TABLE_NAME_3: !Ref notifications
           TABLE_ARN_3: !GetAtt notifications.Arn
+          TABLE_NAME_4: !Ref lookups
+          TABLE_ARN_4: !GetAtt lookups.Arn
+  SendConsentEmail:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-SendConsentEmail
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: SendConsentEmail
+      CodeUri: api/endpoints
+      Handler: transactional_email.send_consent_email_api
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref ThiscoveryDBRootUserSecret
+        - Statement:
+            - Effect: Allow
+              Action:
+                - rds-data:BatchExecuteStatement
+                - rds-data:BeginTransaction
+                - rds-data:CommitTransaction
+                - rds-data:ExecuteStatement
+                - rds-data:RollbackTransaction
+              Resource:
+                - !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref tokens
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubspotEmailTemplates
+        - DynamoDBCrudPolicy:
+            TableName: !Ref lookups
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIPOSTv1sendconsentemail:
+          Type: Api
+          Properties:
+            Path: /v1/send-consent-email
+            Method: POST
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          DB_ROOT_USER_SECRET_ARN: !Ref ThiscoveryDBRootUserSecret
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          TABLE_NAME: !Ref tokens
+          TABLE_ARN: !GetAtt tokens.Arn
+          TABLE_NAME_2: !Ref notifications
+          TABLE_ARN_2: !GetAtt notifications.Arn
+          TABLE_NAME_3: !Ref HubspotEmailTemplates
+          TABLE_ARN_3: !GetAtt HubspotEmailTemplates.Arn
           TABLE_NAME_4: !Ref lookups
           TABLE_ARN_4: !GetAtt lookups.Arn
 Parameters:
