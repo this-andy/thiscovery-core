@@ -416,6 +416,8 @@ Resources:
               responses: {}
           /v1/send-consent-email:
             post:
+              security:
+                - api_key: [ ]
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
