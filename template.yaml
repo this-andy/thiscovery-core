@@ -1637,7 +1637,6 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
-          DB_ROOT_USER_SECRET_ARN: !Ref ThiscoveryDBRootUserSecret
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
           TABLE_NAME: !Ref tokens
           TABLE_ARN: !GetAtt tokens.Arn
