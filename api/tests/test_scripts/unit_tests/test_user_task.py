@@ -130,7 +130,20 @@ class TestUserTask(test_utils.DbTestCase):
         for actual, expected in zip(result_json, expected_body):
             self.assertDictEqual(expected, actual)
 
-    def test_01a_list_user_tasks_api_ok_interview_task(self):
+    def test_01a_list_user_tasks_api_ok_anon_user_task_id(self):
+        expected_status = HTTPStatus.OK
+        expected_body = [USER_TASK_01_EXPECTED_BODY, USER_TASK_02_EXPECTED_BODY]
+        querystring_parameters = {'anon_user_task_id': 'e63ebc2e-5c75-445a-892f-9bf7b1a58c8d'}
+
+        result = test_get(list_user_tasks_api, ENTITY_BASE_URL, None, querystring_parameters, None)
+        result_status = result['statusCode']
+        result_json = json.loads(result['body'])
+
+        self.assertEqual(expected_status, result_status)
+        for actual, expected in zip(result_json, expected_body):
+            self.assertDictEqual(expected, actual)
+
+    def test_01b_list_user_tasks_api_ok_interview_task(self):
         expected_status = HTTPStatus.OK
         expected_body = USER_TASK_03_EXPECTED_BODY
         querystring_parameters = {'user_id': 'e067ed7b-bc98-454f-9c5e-573e2da5705c'}
