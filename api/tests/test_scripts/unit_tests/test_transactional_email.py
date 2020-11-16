@@ -24,9 +24,8 @@ from pprint import pprint
 
 import thiscovery_lib.utilities as utils
 
-from api.endpoints.transactional_email import TransactionalEmail, send_transactional_email_api
+from api.endpoints.transactional_email import TransactionalEmail, send_transactional_email_api, parse_consent_body
 from api.tests.test_scripts.unit_tests.test_user import EXPECTED_USER
-
 
 test_email_dict = {
     "template_name": 'unittests_email_template_1',
@@ -49,32 +48,32 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_01_get_template_details_ok(self):
         template = self.email._get_template_details()
         expected_template = {
-          "bcc": [
-            "thiscovery_dev@email.com"
-          ],
-          "cc": [
-            "this_researcher@email.com"
-          ],
-          "contact_properties": [
+            "bcc": [
+                "thiscovery_dev@email.com"
+            ],
+            "cc": [
+                "this_researcher@email.com"
+            ],
+            "contact_properties": [
 
-          ],
-          "custom_properties": [
-            {
-              "name": "project_task_name",
-              "required": True
-            },
-            {
-              "name": "project_task_description",
-              "required": True
-            },
-            {
-              "name": "project_results_url",
-              "required": False
-            }
-          ],
-          "from": "Sender Name <sender@hubspot.com>",
-          "hs_template_id": "33531457008",
-          "id": "unittests_email_template_1"
+            ],
+            "custom_properties": [
+                {
+                    "name": "project_task_name",
+                    "required": True
+                },
+                {
+                    "name": "project_task_description",
+                    "required": True
+                },
+                {
+                    "name": "project_results_url",
+                    "required": False
+                }
+            ],
+            "from": "Sender Name <sender@hubspot.com>",
+            "hs_template_id": "33531457008",
+            "id": "unittests_email_template_1"
         }
         self.assertDictEqual(expected_template, template)
 
@@ -208,3 +207,74 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         err = context.exception
         err_msg = err.args[0]
         self.assertIn('to_recipient_email is not a valid email address', err_msg)
+
+    def test_16_consent_email_parse_body_ok(self):
+        test_body = {
+            'current_date': '2020-11-11T23:27:44+00:00',
+            'consent_statements': '{"I can confirm that I have read the information sheet dated October 23rd, '
+                                  '2020 (Version 3.1) for the above study. I have had the opportunity to consider '
+                                  'the information, ask questions, and have had these satisfactorily answered.":"Yes",'
+                                  '"I understand that my participation is voluntary and that I am free to withdraw '
+                                  'at any time without giving any reason. I understand that my personal data will '
+                                  'only be removed from the study records, if it is practical to do so at the point '
+                                  'in time that I contact the researchers.":"No","I understand that my data may '
+                                  'be accessed by the research sponsor (the Cambridge University Hospitals '
+                                  'NHS Foundation Trust and the University of Cambridge), or the Hospital\'s'
+                                  ' Research and Development Office for the purpose of monitoring and audit only.":'
+                                  '"Yes","I agree to my interview being digitally recorded.":"No","I agree '
+                                  'to take part in the above study.":"Yes","I agree that anonymised quotations'
+                                  ' from my interview may be used in reports and publications arising from the '
+                                  'study.":"Yes","I agree to be contacted at the end of the study to be '
+                                  'invited to a workshop. At this workshop we will focus on the practical, '
+                                  'ethical and legal challenges of differential diagnosis and the potential '
+                                  'for reform.":"No","I wish to be contacted at the end of the study to be '
+                                  'informed of the findings of the study.":"Yes","I understand that the '
+                                  'information collected about me may be used to support other research in '
+                                  'the future, and may be shared anonymously with other researchers.":"No"}',
+            'project_short_name': 'test_project',
+            'consent_info_url': 'https://en.wikipedia.org/wiki/Consent'
+        }
+        expected_result = {
+            'consent_info_url': 'https://en.wikipedia.org/wiki/Consent',
+            'consent_row_01': 'I can confirm that I have read the information sheet dated '
+                              'October 23rd, 2020 (Version 3.1) for the above study. I '
+                              'have had the opportunity to consider the information, ask '
+                              'questions, and have had these satisfactorily answered.',
+            'consent_row_02': 'I understand that my participation is voluntary and that I am '
+                              'free to withdraw at any time without giving any reason. '
+                              'I understand that my personal data will only be removed '
+                              'from the study records, if it is practical to do so at the '
+                              'point in time that I contact the researchers.',
+            'consent_row_03': 'I understand that my data may be accessed by the research '
+                              'sponsor (the Cambridge University Hospitals NHS Foundation '
+                              "Trust and the University of Cambridge), or the Hospital's "
+                              'Research and Development Office for the purpose of '
+                              'monitoring and audit only.',
+            'consent_row_04': 'I agree to my interview being digitally recorded.',
+            'consent_row_05': 'I agree to take part in the above study.',
+            'consent_row_06': 'I agree that anonymised quotations from my interview may '
+                              'be used in reports and publications arising from the '
+                              'study.',
+            'consent_row_07': 'I agree to be contacted at the end of the study to be '
+                              'invited to a workshop. At this workshop we will focus on '
+                              'the practical, ethical and legal challenges of '
+                              'differential diagnosis and the potential for reform.',
+            'consent_row_08': 'I wish to be contacted at the end of the study to be '
+                              'informed of the findings of the study.',
+            'consent_row_09': 'I understand that the information collected about me may '
+                              'be used to support other research in the future, and may '
+                              'be shared anonymously with other researchers.',
+            'consent_value_01': 'Yes',
+            'consent_value_02': 'No',
+            'consent_value_03': 'Yes',
+            'consent_value_04': 'No',
+            'consent_value_05': 'Yes',
+            'consent_value_06': 'Yes',
+            'consent_value_07': 'No',
+            'consent_value_08': 'Yes',
+            'consent_value_09': 'No',
+            'current_date': '2020-11-11T23:27:44+00:00',
+            'project_short_name': 'test_project'
+        }
+        result = parse_consent_body(test_body)
+        self.assertDictEqual(expected_result, result)

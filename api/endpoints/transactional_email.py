@@ -192,3 +192,36 @@ def send_transactional_email_api(event, context):
     return {
         "statusCode": HTTPStatus.NO_CONTENT,
     }
+
+
+def parse_consent_body(body):
+    consent_embedded_data_fieldname = 'consent_statements'
+    consent_dict = json.loads(body[consent_embedded_data_fieldname])
+    del body[consent_embedded_data_fieldname]
+    counter = 1
+    for k, v in consent_dict.items():
+        body[f'consent_row_{counter:02}'] = k
+        body[f'consent_value_{counter:02}'] = v
+        counter += 1
+    return body
+
+
+@utils.lambda_wrapper
+@utils.api_error_handler
+def send_consent_email_api(event, context):
+    logger = event['logger']
+    correlation_id = event['correlation_id']
+
+    raw_body = json.loads(event['body'])
+    body = parse_consent_body(raw_body)
+
+    logger.info('API call', extra={
+        'email_dict': body,
+        'correlation_id': correlation_id,
+        'event': event
+    })
+    new_transactional_email_notification(body, correlation_id)
+    np.process_notifications(event, context)
+    return {
+        "statusCode": HTTPStatus.NO_CONTENT,
+    }
