@@ -517,7 +517,7 @@ def create_user_task_api(event, context):
 
 
 def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
-    anon_user_task_id_2_parameter(anon_ut_id, 'id', correlation_id=correlation_id)
+    return anon_user_task_id_2_parameter(anon_ut_id, 'id', correlation_id=correlation_id)
 
 
 def set_user_task_completed(ut_id, correlation_id=None):
