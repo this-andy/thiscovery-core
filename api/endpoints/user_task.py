@@ -15,6 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import functools
 import json
 import uuid
 from http import HTTPStatus
@@ -307,6 +308,69 @@ class UserTask:
         return new_user_task
 
 
+# region decorators
+def anon_user_task_id_support(default_parameter_name, lookup_func):
+    """
+    Extends api endpoints to support anon_user_task_id as parameter
+
+    Args:
+        default_parameter_name (str): The default parameter anon_user_task_id will be an alternative to (e.g. 'user_id')
+        lookup_func (function): The function that converts anon_user_task_id to the default parameter
+
+    Notes:
+        Use with lambda_wrapper api_error_handler as outer decorators. E.g.:
+            @lambda_wrapper
+            @api_error_handler
+            @anon_user_task_id_support
+            def decorated_function():
+
+    """
+    def inner_function(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            event = args[0]
+            correlation_id = event['correlation_id']
+            logger = event['logger']
+            parameters = event['queryStringParameters']
+            default_parameter = parameters.get(default_parameter_name)
+            anon_user_task_id = parameters.get('anon_user_task_id')
+
+            if default_parameter and anon_user_task_id:
+                errorjson = {
+                    'queryStringParameters': parameters,
+                    'correlation_id': str(correlation_id)
+                }
+                raise utils.DetailedValueError(f'This endpoint requires parameter {default_parameter_name} or anon_user_task_id, not both', errorjson)
+            elif default_parameter:
+                logger.info('API call', extra={
+                    default_parameter_name: default_parameter,
+                    'anon_user_task_id': anon_user_task_id,
+                    'correlation_id': correlation_id,
+                    'event': args[0]
+                })
+            elif anon_user_task_id:
+                logger.info('API call', extra={
+                    default_parameter_name: default_parameter,
+                    'anon_user_task_id': anon_user_task_id,
+                    'correlation_id': correlation_id,
+                    'event': args[0]
+                })
+                parameters[default_parameter_name] = lookup_func(anon_user_task_id, correlation_id)
+            else:  # e.g. parameters is None or an empty dict
+                errorjson = {
+                    'queryStringParameters': parameters,
+                    'correlation_id': str(correlation_id)
+                }
+                raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id; none were given', errorjson)
+
+            updated_args = (event, *args[1:])
+            result = func(*updated_args, **kwargs)
+            return result
+        return wrapper
+    return inner_function
+# endregion
+
+
 def get_user_task(ut_id, correlation_id=None):
     result = execute_query(GET_USER_TASK_SQL, (str(ut_id),), correlation_id)
     return result
@@ -366,8 +430,28 @@ def clear_user_tasks_for_project_task_id(project_task_id):
     )
 
 
+def anon_user_task_id_2_parameter(anon_ut_id, parameter_name, correlation_id=None):
+    try:
+        return execute_query(
+            sql_q.ANON_USER_TASK_ID_2_ID_SQL,
+            [anon_ut_id],
+            correlation_id,
+        )[0][parameter_name]
+    except IndexError:
+        errorjson = {
+            'anon_ut_id': anon_ut_id,
+            'correlation_id': str(correlation_id)
+        }
+        raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
+
+
+def anon_user_task_id_2_user_id(anon_ut_id, correlation_id=None):
+    return anon_user_task_id_2_parameter(anon_ut_id, 'user_id', correlation_id=correlation_id)
+
+
 @utils.lambda_wrapper
 @utils.api_error_handler
+@anon_user_task_id_support('user_id', anon_user_task_id_2_user_id)
 def list_user_tasks_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -433,18 +517,7 @@ def create_user_task_api(event, context):
 
 
 def anon_user_task_id_2_user_task_id(anon_ut_id, correlation_id=None):
-    try:
-        return execute_query(
-            sql_q.ANON_USER_TASK_ID_2_ID_SQL,
-            [anon_ut_id],
-            correlation_id,
-        )[0]['id']
-    except IndexError:
-        errorjson = {
-            'anon_ut_id': anon_ut_id,
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.ObjectDoesNotExistError('user task does not exist', errorjson)
+    return anon_user_task_id_2_parameter(anon_ut_id, 'id', correlation_id=correlation_id)
 
 
 def set_user_task_completed(ut_id, correlation_id=None):
@@ -473,6 +546,7 @@ def set_user_task_completed(ut_id, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@anon_user_task_id_support('user_task_id', anon_user_task_id_2_user_task_id)
 def set_user_task_completed_api(event, context):
     """
     Third party systems (eg Qualtrics) use this endpoint to inform Thiscovery that a user has completed a task.
@@ -484,40 +558,10 @@ def set_user_task_completed_api(event, context):
     Also, this is fundamentally the wrong approach to be taking to this problem.  We need to be posting events to Thiscovery.
     So this code will be completely superseded in the medium term.
     """
-    logger = event['logger']
     correlation_id = event['correlation_id']
 
     parameters = event['queryStringParameters']
     user_task_id = parameters.get('user_task_id')
-    anon_user_task_id = parameters.get('anon_user_task_id')
-
-    if user_task_id and anon_user_task_id:
-        errorjson = {
-            'queryStringParameters': parameters,
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id, not both', errorjson)
-    elif user_task_id:
-        logger.info('API call', extra={
-            'user_task_id': user_task_id,
-            'anon_user_task_id': anon_user_task_id,
-            'correlation_id': correlation_id,
-            'event': event
-        })
-    elif anon_user_task_id:
-        logger.info('API call', extra={
-            'user_task_id': user_task_id,
-            'anon_user_task_id': anon_user_task_id,
-            'correlation_id': correlation_id,
-            'event': event
-        })
-        user_task_id = anon_user_task_id_2_user_task_id(anon_user_task_id, correlation_id)
-    else:  # e.g. parameters is None or an empty dict
-        errorjson = {
-            'queryStringParameters': parameters,
-            'correlation_id': str(correlation_id)
-        }
-        raise utils.DetailedValueError('This endpoint requires parameter user_task_id or anon_user_task_id; none were given', errorjson)
 
     set_user_task_completed(user_task_id, correlation_id)
     return {

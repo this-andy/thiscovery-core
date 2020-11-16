@@ -478,9 +478,10 @@ CREATE_USER_PROJECT_SQL = '''
 # region user_task
 ANON_USER_TASK_ID_2_ID_SQL = '''
     SELECT 
-        ut.id              
+        ut.id, up.user_id              
     FROM 
         public.projects_usertask ut
+    JOIN public.projects_userproject up on up.id = ut.user_project_id
     WHERE ut.anon_user_task_id = %s
 '''
 
