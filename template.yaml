@@ -1597,6 +1597,18 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref ThiscoveryDBRootUserSecret
+        - Statement:
+            - Effect: Allow
+              Action:
+                - rds-data:BatchExecuteStatement
+                - rds-data:BeginTransaction
+                - rds-data:CommitTransaction
+                - rds-data:ExecuteStatement
+                - rds-data:RollbackTransaction
+              Resource:
+                - !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+        - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
         - DynamoDBCrudPolicy:
             TableName: !Ref tokens
