@@ -15,6 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import api.local.dev_config  # env variables
+import api.local.secrets  # env variables
 import psycopg2
 
 import thiscovery_lib.utilities as utils
