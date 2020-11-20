@@ -3,4 +3,4 @@ pip	>= 19.0.1
 psycopg2-binary
 jsonpatch
 jsons
-thiscovery-lib==2020.9.2
+thiscovery-lib
