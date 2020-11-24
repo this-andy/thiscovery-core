@@ -36,8 +36,8 @@ from user import patch_user
 # region processing
 def process_notifications(event, context):
     logger = get_logger()
-    notifications = get_notifications(NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
-
+    notifications = c_notif.get_notifications_to_process()
+    # notifications = get_notifications(NotificationAttributes.STATUS.value, [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value])
     logger.info('process_notifications', extra={'count': str(len(notifications))})
 
     # note that we need to process all registrations first, then do task signups (otherwise we might try to process a signup for someone not yet registered)
@@ -194,7 +194,8 @@ def clear_notification_queue(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
     seven_days_ago = now_with_tz() - timedelta(days=7)
-    processed_notifications = get_notifications('processing_status', ['processed'])
+    # processed_notifications = get_notifications('processing_status', ['processed'])
+    processed_notifications = c_notif.get_notifications_to_clear(datetime_threshold=seven_days_ago)
     notifications_to_delete = [
         x for x in processed_notifications if 
         (parser.isoparse(x['modified']) < seven_days_ago) and 

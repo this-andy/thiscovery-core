@@ -15,7 +15,6 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
 from enum import Enum
 
 from thiscovery_lib import dynamodb_utilities as ddb_utils
@@ -45,6 +44,36 @@ class NotificationAttributes(Enum):
     FAIL_COUNT = 'processing_fail_count'
     ERROR_MESSAGE = 'processing_error_message'
     TYPE = 'type'
+
+
+def get_notifications_to_process(correlation_id=None):
+    ddb = ddb_utils.Dynamodb(correlation_id=correlation_id)
+    notifications_to_process = list()
+    for status in [NotificationStatus.NEW.value, NotificationStatus.RETRYING.value]:
+        notifications_to_process += ddb.query(
+            table_name=NOTIFICATION_TABLE_NAME,
+            IndexName="processing-status-index",
+            KeyConditionExpression='processing_status = :status',
+            ExpressionAttributeValues={
+                ':status': status,
+            }
+        )
+    return notifications_to_process
+
+
+def get_notifications_to_clear(datetime_threshold, correlation_id=None):
+    ddb = ddb_utils.Dynamodb(correlation_id=correlation_id)
+    return ddb.query(
+            table_name=NOTIFICATION_TABLE_NAME,
+            IndexName="processing-status-index",
+            KeyConditionExpression='processing_status = :status '
+                                   'AND created < :t1',
+            ExpressionAttributeValues={
+                ':status': NotificationStatus.PROCESSED.value,
+                ':t1': str(datetime_threshold),
+            },
+            ScanIndexForward=False,
+        )
 
 
 def get_notifications(filter_attr_name: str = None, filter_attr_values=None, correlation_id=None):

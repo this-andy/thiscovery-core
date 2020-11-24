@@ -119,7 +119,8 @@ class TestNotifications(test_utils.DbTestCase):
 
     def clear_notification_queue_setup(self, notification_type_value, target_status, modified_datetime):
         """
-        Creates a registration notification in ddb and updates its status to target_status and modified field to modified_datetime
+        Creates a registration notification in ddb and updates its status to target_status, and created and
+        modified fields to modified_datetime
 
         Args:
             notification_type_value: The NotificationType.<VARIABLE>.value of notification to work with
@@ -145,6 +146,7 @@ class TestNotifications(test_utils.DbTestCase):
             table_name=notific.NOTIFICATION_TABLE_NAME,
             key=notification['id'],
             name_value_pairs={
+                'created': modified_datetime.isoformat(),
                 'modified': modified_datetime.isoformat(),
                 NotificationAttributes.STATUS.value: target_status,
             }
