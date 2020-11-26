@@ -74,6 +74,7 @@ class UserTask:
         self.task_type_name = None
 
         self._ddb_client = ddb_client
+        self._logger = utils.get_logger()
 
     def __repr__(self):
         return str(self.__dict__)
@@ -174,6 +175,9 @@ class UserTask:
             self.email = user['email']
 
     def calculate_url(self):
+        self._logger.debug('Calculating url of user task', extra={
+            'user_task_dict': self.as_dict()
+        })
         if self.user_specific_url:
             self.base_url = self.user_task_url
 
