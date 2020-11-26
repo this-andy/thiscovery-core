@@ -1549,8 +1549,6 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref ThiscoveryDBRootUserSecret
         - Statement:
             - Effect: Allow
               Action:
@@ -1582,7 +1580,6 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
-          DB_ROOT_USER_SECRET_ARN: !Ref ThiscoveryDBRootUserSecret
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
 Parameters:
   StackTagName:
