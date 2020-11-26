@@ -380,15 +380,6 @@ Resources:
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${createusergroupmembership.Arn}/invocations
               responses: {}
-          /v2/project-user-status:
-            get:
-              security:
-                - api_key: []
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetExtProjectStatuses.Arn}/invocations
-              responses: {}
           /v1/user-task-completed:
             put:
               security:
@@ -413,6 +404,13 @@ Resources:
                 httpMethod: POST
                 type: aws_proxy
                 uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendTransactionalEmail.Arn}/invocations
+              responses: {}
+          /v1/list-project-users:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListUsersByProject.Arn}/invocations
               responses: {}
       EndpointConfiguration: REGIONAL
     Metadata:
@@ -1309,44 +1307,6 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-  GetExtProjectStatuses:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub ${AWS::StackName}-GetExtProjectStatuses
-      Description: !Sub
-        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: GetExtProjectStatuses
-      CodeUri: api/endpoints
-      Handler: project.get_project_status_for_external_user_api
-      Runtime: python3.7
-      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
-      Timeout: !Ref EnvConfiglambdatimeoutAsString
-      Tracing: Active
-      Policies:
-        - AWSXrayWriteOnlyAccess
-        - AWSLambdaENIManagementAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt VirtualNetwork.DefaultSecurityGroup
-        SubnetIds:
-          - !Ref VirtualNetworkPrivateSubnet1
-          - !Ref VirtualNetworkPrivateSubnet2
-      Environment:
-        Variables:
-          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          DB_ID: !Ref ThiscoveryDB
-          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
-          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
-          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
-      Events:
-        CoreAPIGETv2projectuserstatus:
-          Type: Api
-          Properties:
-            Path: /v2/project-user-status
-            Method: GET
-            RestApiId: !Ref CoreAPI
   ClearProcessedNotifications:
     Type: AWS::Serverless::Function
     Properties:
@@ -1571,6 +1531,57 @@ Resources:
           TABLE_ARN_3: !GetAtt notifications.Arn
           TABLE_NAME_4: !Ref lookups
           TABLE_ARN_4: !GetAtt lookups.Arn
+  ListUsersByProject:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ListUsersByProject
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: ListUsersByProject
+      CodeUri: api/endpoints
+      Handler: project.list_users_by_project_api
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSLambdaENIManagementAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref ThiscoveryDBRootUserSecret
+        - Statement:
+            - Effect: Allow
+              Action:
+                - rds-data:BatchExecuteStatement
+                - rds-data:BeginTransaction
+                - rds-data:CommitTransaction
+                - rds-data:ExecuteStatement
+                - rds-data:RollbackTransaction
+              Resource:
+                - !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt VirtualNetwork.DefaultSecurityGroup
+        SubnetIds:
+          - !Ref VirtualNetworkPrivateSubnet1
+          - !Ref VirtualNetworkPrivateSubnet2
+      Events:
+        CoreAPIGETv1listprojectusers:
+          Type: Api
+          Properties:
+            Path: /v1/list-project-users
+            Method: GET
+            RestApiId: !Ref CoreAPI
+      Environment:
+        Variables:
+          DB_ID: !Ref ThiscoveryDB
+          DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
+          DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
+          DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+          DB_ROOT_USER_SECRET_ARN: !Ref ThiscoveryDBRootUserSecret
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
 Parameters:
   StackTagName:
     Type: String
