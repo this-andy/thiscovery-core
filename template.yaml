@@ -407,6 +407,8 @@ Resources:
               responses: {}
           /v1/list-project-users:
             get:
+              security:
+                - api_key: []
               x-amazon-apigateway-integration:
                 httpMethod: POST
                 type: aws_proxy
