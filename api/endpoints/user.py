@@ -127,6 +127,38 @@ def get_user_by_email(user_email, correlation_id):
     return append_calculated_properties_to_list(user_json)
 
 
+def list_users_by_project(project_id, logger=None, correlation_id=None):
+    if logger is None:
+        logger = utils.get_logger()
+    users = execute_query(
+        base_sql=sql_q.LIST_USERS_BY_PROJECT_SQL,
+        params=(project_id,),
+        correlation_id=correlation_id
+    )
+    return users
+
+
+@utils.lambda_wrapper
+@utils.api_error_handler
+def list_users_by_project_api(event, context):
+    logger = event['logger']
+    correlation_id = event['correlation_id']
+
+    parameters = event['queryStringParameters']
+    try:
+        project_id = parameters['project_id']
+    except KeyError:
+        errorjson = {'queryStringParameters': parameters, 'correlation_id': str(correlation_id)}
+        raise utils.DetailedValueError('This endpoint requires one query parameter (project_id); none were found', errorjson)
+
+    result = list_users_by_project(
+        project_id=project_id,
+        correlation_id=correlation_id
+    )
+
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
+
+
 @utils.lambda_wrapper
 @utils.api_error_handler
 def get_user_by_email_api(event, context):

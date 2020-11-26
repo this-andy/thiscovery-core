@@ -472,6 +472,22 @@ CREATE_USER_PROJECT_SQL = '''
         anon_project_specific_user_id
     ) VALUES ( %s, %s, %s, %s, %s, %s, %s );
 '''
+
+
+LIST_USERS_BY_PROJECT_SQL = '''
+    SELECT 
+        up.anon_project_specific_user_id,
+        up.user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        up.project_id             
+    FROM 
+        public.projects_userproject up
+    JOIN 
+        public.projects_user u on up.user_id = u.id
+    WHERE up.project_id = %s
+'''
 # endregion
 
 
