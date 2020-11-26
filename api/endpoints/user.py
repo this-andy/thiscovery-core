@@ -156,7 +156,7 @@ def list_users_by_project_api(event, context):
         correlation_id=correlation_id
     )
 
-    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result[0])}
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
 
 
 @utils.lambda_wrapper

@@ -26,7 +26,6 @@ import api.endpoints.common.pg_utilities as pg_utils
 import api.endpoints.common.sql_queries as sql_q
 
 
-
 if __name__ == '__main__':
     user_input = input("Please paste list of anon_project_specific_user_ids separated by commas:")
     anon_ids = user_input.split(',')
