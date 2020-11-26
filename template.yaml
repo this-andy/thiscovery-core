@@ -1107,6 +1107,10 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
+        - AttributeName: processing_status
+          AttributeType: S
+        - AttributeName: created
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: id
@@ -1114,6 +1118,15 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
       TableName: !Sub ${AWS::StackName}-notifications
+      GlobalSecondaryIndexes:
+        - IndexName: processing-status-index
+          KeySchema:
+            - AttributeName: processing_status
+              KeyType: HASH
+            - AttributeName: created
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
     Metadata:
       StackeryName: Notifications
   processnotifications:
