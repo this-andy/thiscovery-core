@@ -1541,7 +1541,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: ListUsersByProject
       CodeUri: api/endpoints
-      Handler: project.list_users_by_project_api
+      Handler: user.list_users_by_project_api
       Runtime: python3.7
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
