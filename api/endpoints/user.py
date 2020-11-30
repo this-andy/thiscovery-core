@@ -17,10 +17,11 @@
 #
 
 import json
+import traceback
 import uuid
 from http import HTTPStatus
 from datetime import timedelta
-from jsonpatch import JsonPatch, JsonPatchException
+from jsonpatch import JsonPatch, JsonPatchException, InvalidJsonPatch
 
 import common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
@@ -255,7 +256,13 @@ def patch_user_api(event, context):
 
     # get info supplied to api call
     user_id = event['pathParameters']['id']
-    user_jsonpatch = JsonPatch.from_string(event['body'])
+    try:
+        user_jsonpatch = JsonPatch.from_string(event['body'])
+    except InvalidJsonPatch:
+        raise utils.DetailedValueError('invalid jsonpatch', details={
+            'traceback': traceback.format_exc(),
+            'correlation_id': correlation_id,
+        })
 
     # convert email to lowercase
     for p in user_jsonpatch:
