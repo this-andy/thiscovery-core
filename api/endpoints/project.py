@@ -91,16 +91,23 @@ def get_project_api(event, context):
 
 class ProjectStatusForUser:
 
-    def __init__(self, user_id, correlation_id):
+    def __init__(self, user_id, correlation_id=None, demo=None):
         self.user_id = user_id
+        self.demo = demo
         self.correlation_id = correlation_id
-        self.project_list = execute_query(sql_q.PROJECT_USER_SELECT_SQL, None, correlation_id, True, False)
 
         results = execute_query_multiple(
-            (sql_q.get_project_status_for_user_sql['sql0'], sql_q.get_project_status_for_user_sql['sql1'], sql_q.get_project_status_for_user_sql['sql2'],
-             sql_q.get_project_status_for_user_sql['sql3'], sql_q.get_project_status_for_user_sql['sql4'], sql_q.get_project_status_for_user_sql['sql5']),
-            ((user_id,),) * 6,
-            correlation_id
+            base_sql_tuple=(
+                sql_q.get_project_status_for_user_sql['sql0'],
+                sql_q.get_project_status_for_user_sql['sql1'],
+                sql_q.get_project_status_for_user_sql['sql2'],
+                sql_q.get_project_status_for_user_sql['sql3'],
+                sql_q.get_project_status_for_user_sql['sql4'],
+                sql_q.get_project_status_for_user_sql['sql5'],
+                sql_q.PROJECT_USER_SELECT_SQL,
+            ),
+            params_tuple=((user_id,),) * 6 + ((None,),),
+            correlation_id=correlation_id,
         )
         self.project_group_users_dict = dict_from_dataset(results[0], 'project_id')
         self.project_testgroup_users_dict = dict_from_dataset(results[1], 'project_id')
@@ -114,6 +121,7 @@ class ProjectStatusForUser:
         except IndexError:
             errorjson = {'user_id': user_id, 'correlation_id': str(correlation_id)}
             raise utils.ObjectDoesNotExistError(f"User {user_id} could not be found", errorjson)
+        self.project_list = results[6]
 
     def calculate_project_visibility(self, project):
         project_id = project['id']
@@ -220,8 +228,12 @@ class ProjectStatusForUser:
         return self.project_list
 
 
-def get_project_status_for_user(user_id, correlation_id):
-    project_status_for_user = ProjectStatusForUser(user_id, correlation_id)
+def get_project_status_for_user(user_id, demo, correlation_id):
+    project_status_for_user = ProjectStatusForUser(
+        user_id=user_id,
+        demo=demo,
+        correlation_id=correlation_id,
+    )
     return project_status_for_user.main()
 
 
@@ -233,10 +245,15 @@ def get_project_status_for_user_api(event, context):
 
     params = event['queryStringParameters']
     user_id = str(utils.validate_uuid(params['user_id']))
+    demo = params.get('demo')
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
     if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
         raise ValueError('Deliberate error raised to test error handling')
     return {
         "statusCode": HTTPStatus.OK,
-        "body": json.dumps(get_project_status_for_user(user_id, correlation_id))
+        "body": json.dumps(get_project_status_for_user(
+            user_id=user_id,
+            demo=demo,
+            correlation_id=correlation_id,
+        ))
     }
