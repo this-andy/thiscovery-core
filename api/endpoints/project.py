@@ -93,8 +93,10 @@ class ProjectStatusForUser:
 
     def __init__(self, user_id, correlation_id=None, demo=None):
         self.user_id = user_id
-        self.demo = demo
         self.correlation_id = correlation_id
+        project_list_sql = sql_q.PROJECT_USER_SELECT_SQL_NON_DEMO_ONLY
+        if demo:
+            project_list_sql = sql_q.PROJECT_USER_SELECT_SQL_DEMO_ONLY
 
         results = execute_query_multiple(
             base_sql_tuple=(
@@ -104,7 +106,7 @@ class ProjectStatusForUser:
                 sql_q.get_project_status_for_user_sql['sql3'],
                 sql_q.get_project_status_for_user_sql['sql4'],
                 sql_q.get_project_status_for_user_sql['sql5'],
-                sql_q.PROJECT_USER_SELECT_SQL,
+                project_list_sql,
             ),
             params_tuple=((user_id,),) * 6 + ((None,),),
             correlation_id=correlation_id,
@@ -245,7 +247,7 @@ def get_project_status_for_user_api(event, context):
 
     params = event['queryStringParameters']
     user_id = str(utils.validate_uuid(params['user_id']))
-    demo = params.get('demo')
+    demo = params.get('demo', False)
     logger.info('API call', extra={'user_id': user_id, 'correlation_id': correlation_id, 'event': event})
     if user_id == '760f4e4d-4a3b-4671-8ceb-129d81f9d9ca':
         raise ValueError('Deliberate error raised to test error handling')
