@@ -23,8 +23,32 @@ class DbViewsTestCase(test_utils.DbTestCase):
     tester_group = {
         'group_name': 'testers',
         'users': ["bernie@email.co.uk", "clive@email.co.uk", "delia@email.co.uk"],
-        'projects': ["PSFU-01-pub-plan", "PSFU-03-pub-tst-grp", "PSFU-04-prv-tst-grp", "PSFU-05-pub-act", "PSFU-06-prv-act"],
-        'tasks': ["PSFU-03-A", "PSFU-04-A", "PSFU-05-D", "PSFU-05-E", "PSFU-06-C", "PSFU-06-D"],
+        'projects': [
+            "PSFU-01-pub-plan",
+            "PSFU-03-pub-tst-grp",
+            "PSFU-04-prv-tst-grp",
+            "PSFU-05-pub-act",
+            "PSFU-06-prv-act",
+            "PSFU-09-demo-pub-plan",
+            "PSFU-11-demo-pub-tst-grp",
+            "PSFU-12-demo-prv-tst-grp",
+            "PSFU-13-demo-pub-act",
+            "PSFU-14-demo-prv-act",
+        ],
+        'tasks': [
+            "PSFU-03-A",
+            "PSFU-04-A",
+            "PSFU-05-D",
+            "PSFU-05-E",
+            "PSFU-06-C",
+            "PSFU-06-D",
+            "PSFU-11-A",
+            "PSFU-12-A",
+            "PSFU-13-D",
+            "PSFU-13-E",
+            "PSFU-14-C",
+            "PSFU-14-D",
+        ],
     }
     group_1 = {
         'group_name': 'G1',
@@ -37,6 +61,18 @@ class DbViewsTestCase(test_utils.DbTestCase):
         'users': ["delia@email.co.uk", "eddie@email.co.uk"],
         'projects': ["PSFU-04-prv-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
         'tasks': ["PSFU-04-A", "PSFU-05-C", "PSFU-06-B", "PSFU-08-A"],
+    }
+    demo_1 = {
+        'group_name': 'D1',
+        'users': ["clive@email.co.uk", "delia@email.co.uk"],
+        'projects': ["PSFU-11-demo-pub-tst-grp", "PSFU-14-demo-prv-act", "PSFU-16-demo-prv-comp"],
+        'tasks': ["PSFU-11-A", "PSFU-13-B", "PSFU-14-A"],
+    }
+    demo_2 = {
+        'group_name': 'D2',
+        'users': ["delia@email.co.uk", "eddie@email.co.uk"],
+        'projects': ["PSFU-12-demo-prv-tst-grp", "PSFU-14-demo-prv-act", "PSFU-16-demo-prv-comp"],
+        'tasks': ["PSFU-12-A", "PSFU-13-C", "PSFU-14-B", "PSFU-16-A"],
     }
 
     def _common_assertions(self, groups, view_name, view_entity='p'):
@@ -66,7 +102,9 @@ class DbViewsTestCase(test_utils.DbTestCase):
                 for e in g[entity_key]:
                     for r in view_result:
                         if (r['email'] == u) and (r[entity_name_column] == e) and (r['group_name'] == g['group_name']):
-                            self.logger.debug(f'About to remove an expected row from list of unexpected rows', extra={'expected row': r})
+                            self.logger.debug(f'About to remove an expected row from list of unexpected rows', extra={
+                                'expected row': r
+                            })
                             unexpected_rows.remove(r)
         self.assertFalse(unexpected_rows)
 
@@ -77,13 +115,27 @@ class DbViewsTestCase(test_utils.DbTestCase):
         self.assertEqual(len(view_result), len(table_result))
 
     def test_02_project_group_users(self):
-        self._common_assertions([self.group_1, self.group_2], 'project_group_users')
+        self._common_assertions(
+            groups=[self.group_1, self.group_2, self.demo_1, self.demo_2],
+            view_name='project_group_users'
+        )
 
     def test_03_project_testgroup_users(self):
-        self._common_assertions(self.tester_group, 'project_testgroup_users')
+        self._common_assertions(
+            groups=self.tester_group,
+            view_name='project_testgroup_users'
+        )
 
     def test_04_project_group_users(self):
-        self._common_assertions([self.group_1, self.group_2], 'projecttask_group_users', view_entity='t')
+        self._common_assertions(
+            groups=[self.group_1, self.group_2, self.demo_1, self.demo_2],
+            view_name='projecttask_group_users',
+            view_entity='t'
+        )
 
     def test_05_projecttask_testgroup_users(self):
-        self._common_assertions(self.tester_group, 'projecttask_testgroup_users', view_entity='t')
+        self._common_assertions(
+            groups=self.tester_group,
+            view_name='projecttask_testgroup_users',
+            view_entity='t',
+        )

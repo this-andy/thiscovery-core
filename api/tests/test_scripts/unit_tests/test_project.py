@@ -395,6 +395,327 @@ PROJECT_08_JSON = """
         ]
     }
 """
+
+PROJECT_10_JSON = """
+    {
+        "id": "c140336f-4d6e-4f5e-aeaf-b4a764d649f6",
+        "name": "PSFU-10-demo-pub-tst-ngrp",
+        "short_name": "PSFU-10-demo-pub-tst-ngrp",
+        "created": "2020-12-04T21:21:16.280126+00:00",
+        "modified": "2020-12-04T21:21:16.280147+00:00",
+        "visibility": "public",
+        "status": "testing",
+        "tasks": [
+            {
+                "id": "9f22fd51-6f64-4985-a39a-76028bdf5f49",
+                "description": "PSFU-10-A",
+                "created": "2020-12-05T12:05:48.724076+00:00",
+                "modified": "2020-12-05T12:06:32.725907+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "not-open",
+                "visibility": "public",
+                "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+                "external_task_id": "ext-10a",
+                "base_url": "http://crowd.cochrane.org/index.html",
+                "status": "testing"
+            }
+        ]
+    }
+"""
+
+PROJECT_11_JSON = """
+    {
+        "id": "5072aa27-6160-4dbc-888d-6e608a4fc63b",
+        "name": "PSFU-11-demo-pub-tst-grp",
+        "short_name": "PSFU-11-demo-pub-tst-grp",
+        "created": "2020-12-04T21:21:51.76129+00:00",
+        "modified": "2020-12-04T21:21:51.761314+00:00",
+        "visibility": "public",
+        "status": "testing",
+        "tasks": [
+            {
+                "id": "0d6bf6be-b9bd-499b-a06a-a140013d4201",
+                "description": "PSFU-11-A",
+                "created": "2020-12-05T13:53:58.077718+00:00",
+                "modified": "2020-12-05T13:53:58.07774+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "not-open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-11a",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            }
+        ]
+    }
+"""
+
+PROJECT_12_JSON = """
+    {
+        "id": "cb327169-4cfa-434d-8867-57c9add2d03d",
+        "name": "PSFU-12-demo-prv-tst-grp",
+        "short_name": "PSFU-12-demo-prv-tst-grp",
+        "created": "2020-12-04T21:22:39.58747+00:00",
+        "modified": "2020-12-04T21:22:39.587492+00:00",
+        "visibility": "private",
+        "status": "testing",
+        "tasks": [
+            {
+                "id": "1fa92927-8b1a-4839-8a98-3b65005df8ff",
+                "description": "PSFU-12-A",
+                "created": "2020-12-05T13:55:00.272251+00:00",
+                "modified": "2020-12-05T13:55:00.272312+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-12a",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            }
+        ]
+    }
+"""
+
+PROJECT_13_JSON = """
+    {
+        "id": "8b0c6514-d800-4157-8f75-54a7204b5762",
+        "name": "PSFU-13-demo-pub-act",
+        "short_name": "PSFU-13-demo-pub-act",
+        "created": "2020-12-04T21:24:48.970756+00:00",
+        "modified": "2020-12-04T21:24:48.970787+00:00",
+        "visibility": "public",
+        "status": "active",
+        "tasks": [
+            {
+                "id": "737e5e8e-586c-43d8-9e20-2398596baa24",
+                "description": "PSFU-13-D",
+                "created": "2020-02-05T13:57:28.162673+00:00",
+                "modified": "2020-02-05T13:57:28.162704+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-13d",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "b98c25ad-5dd4-4f3f-a4aa-94ef618362f7",
+                "description": "PSFU-13-E",
+                "created": "2020-02-06T14:57:28.162673+00:00",
+                "modified": "2020-02-06T14:57:28.162704+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-13e",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "3d83fea4-eaed-4f13-9500-af549c1a0017",
+                "description": "PSFU-13-A",
+                "created": "2020-12-05T13:55:53.660935+00:00",
+                "modified": "2020-12-05T13:55:53.660956+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+                "external_task_id": "ext-13a",
+                "base_url": "http://crowd.cochrane.org/index.html",
+                "status": "active"
+            },
+            {
+                "id": "d63bf7cb-03b8-4451-829f-19db54e09b17",
+                "description": "PSFU-13-B",
+                "created": "2020-12-05T13:56:52.956515+00:00",
+                "modified": "2020-12-05T13:56:52.956539+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-13b",
+                "base_url": "https://www.qualtrics.com",
+                "status": "active"
+            },
+            {
+                "id": "5e0f03d4-ffba-4c7c-a427-ada48fd458b5",
+                "description": "PSFU-13-C",
+                "created": "2020-12-05T13:57:28.162673+00:00",
+                "modified": "2020-12-05T13:57:28.162704+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "not-open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-13c",
+                "base_url": "https://www.qualtrics.com",
+                "status": "active"
+            }
+        ]
+    }
+"""
+
+PROJECT_14_JSON = """
+    {
+        "id": "1d6b31aa-0ecf-4afd-b7b7-a41fc4f01167",
+        "name": "PSFU-14-demo-prv-act",
+        "short_name": "PSFU-14-demo-prv-act",
+        "created": "2020-12-04T21:25:19.957343+00:00",
+        "modified": "2020-12-04T21:25:19.957375+00:00",
+        "visibility": "private",
+        "status": "active",
+        "tasks": [
+            {
+                "id": "236ca296-04b1-4cc9-b407-9b5854231b1a",
+                "description": "PSFU-14-C",
+                "created": "2019-12-05T13:58:41.564792+00:00",
+                "modified": "2019-12-05T13:58:41.564816+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-14c",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "051a4980-b6d6-40a1-b2ad-15038a06fa6d",
+                "description": "PSFU-14-D",
+                "created": "2019-12-06T13:58:41.564792+00:00",
+                "modified": "2019-12-06T13:58:41.564816+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-14d",
+                "base_url": "https://www.qualtrics.com",
+                "status": "testing"
+            },
+            {
+                "id": "f04ab738-3993-4dae-899b-12b978d73aa3",
+                "description": "PSFU-14-A",
+                "created": "2020-12-05T13:58:07.35628+00:00",
+                "modified": "2020-12-05T13:58:07.356304+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "open",
+                "visibility": "private",
+                "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+                "external_task_id": "ext-14a",
+                "base_url": "http://crowd.cochrane.org/index.html",
+                "status": "active"
+            },
+            {
+                "id": "8e0fb129-f6b6-4b6b-a01a-cfdb14f8fec8",
+                "description": "PSFU-14-B",
+                "created": "2020-12-05T13:58:41.564792+00:00",
+                "modified": "2020-12-05T13:58:41.564816+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "closed",
+                "visibility": "private",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-14b",
+                "base_url": "https://www.qualtrics.com",
+                "status": "active"
+            }
+        ]
+    }
+"""
+
+PROJECT_15_JSON = """
+    {
+        "id": "e55b9093-fe9d-4a8c-86be-caf2789d20df",
+        "name": "PSFU-15-demo-pub-comp",
+        "short_name": "PSFU-15-demo-pub-comp",
+        "created": "2020-12-04T21:25:52.222854+00:00",
+        "modified": "2020-12-04T21:25:52.222876+00:00",
+        "visibility": "public",
+        "status": "complete",
+        "tasks": [
+            {
+                "id": "d78079ae-46a0-4dc2-bcc4-9e089eba65eb",
+                "description": "PSFU-15-A",
+                "created": "2020-12-05T13:59:21.213185+00:00",
+                "modified": "2020-12-05T13:59:21.213207+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "closed",
+                "visibility": "public",
+                "external_system_id": "9645a6b1-febb-4c40-8ee4-ff3264cf26af",
+                "external_task_id": "ext-15a",
+                "base_url": "https://www.qualtrics.com",
+                "status": "complete"
+            }
+        ]
+    }
+"""
+
+PROJECT_16_JSON = """
+    {
+        "id": "751e2e2a-1614-4e61-9350-2d7161b8010c",
+        "name": "PSFU-16-demo-prv-comp",
+        "short_name": "PSFU-16-demo-prv-comp",
+        "created": "2020-12-04T21:26:12.339373+00:00",
+        "modified": "2020-12-04T21:26:12.339396+00:00",
+        "visibility": "private",
+        "status": "complete",
+        "tasks": [
+            {
+                "id": "33345c03-52ab-4ac8-8a4a-d8c95660f0f3",
+                "description": "PSFU-16-A",
+                "created": "2020-12-05T13:59:47.111638+00:00",
+                "modified": "2020-12-05T13:59:47.111661+00:00",
+                "task_type_id": "a5537c85-7d29-4500-9986-ddc18b27d46f",
+                "earliest_start_date": null,
+                "closing_date": null,
+                "signup_status": "closed",
+                "visibility": "private",
+                "external_system_id": "e056e0bf-8d24-487e-a57b-4e812b40c4d8",
+                "external_task_id": "ext-16a",
+                "base_url": "http://crowd.cochrane.org/index.html",
+                "status": "complete"
+            }
+        ]
+    }
+"""
+
+PROJECT_17_JSON = """
+    {
+        "id": "97406352-d482-428e-abd1-a3e0b6f550e3",
+        "name": "CTG Monitoring (demo)",
+        "short_name": "CTG Monitoring (demo)",
+        "created": "2020-12-17T12:10:56.084487+00:00",
+        "modified": "2020-12-17T12:10:56.119612+00:00",
+        "visibility": "public",
+        "status": "active",
+        "tasks": []
+    }
+"""
 # endregion
 
 
@@ -419,8 +740,26 @@ class TestProject(test_utils.DbTestCase):
 
     def test_1_list_projects_api(self):
         expected_status = HTTPStatus.OK
-        expected_body = [json.loads(x) for x in [PROJECT_08_JSON, PROJECT_01_JSON, PROJECT_02_JSON, PROJECT_03_JSON, PROJECT_04_JSON, PROJECT_05_JSON,
-                                                 PROJECT_06_JSON, PROJECT_07_JSON]]
+        expected_body = [
+            json.loads(x) for x in [
+                PROJECT_08_JSON,
+                PROJECT_01_JSON,
+                PROJECT_02_JSON,
+                PROJECT_03_JSON,
+                PROJECT_04_JSON,
+                PROJECT_05_JSON,
+                PROJECT_06_JSON,
+                PROJECT_07_JSON,
+                PROJECT_10_JSON,
+                PROJECT_11_JSON,
+                PROJECT_12_JSON,
+                PROJECT_13_JSON,
+                PROJECT_14_JSON,
+                PROJECT_15_JSON,
+                PROJECT_16_JSON,
+                PROJECT_17_JSON,
+            ]
+        ]
         result = test_get(p.list_projects_api, f'v1/{ENTITY_BASE_URL}', None, None, None)
         result_status = result['statusCode']
         result_json = json.loads(result['body'])
