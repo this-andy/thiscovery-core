@@ -16,6 +16,9 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 """
+UPDATE 08/12/2020: Sadly, HubSpot now requires users to login before viewing a preview page,
+so this script no longer works
+
 This script parses a transactional email template preview page and adds the template to Dynamodb table HubspotEmailTemplates
 """
 import api.local.dev_config  # env variables
