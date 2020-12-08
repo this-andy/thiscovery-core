@@ -201,48 +201,8 @@ UPDATE_PROJECT_TASK_SQL = '''
 '''
 
 
-PROJECT_USER_SELECT_SQL = '''
-    SELECT row_to_json(project_row) 
-    from (
-        select 
-            id, 
-            short_name,
-            visibility,
-            status,
-            FALSE as project_is_visible,
-            (
-                select coalesce(json_agg(task_row), '[]'::json)
-                from (
-                    select 
-                        task.id,
-                        description,
-                        signup_status,
-                        visibility,   
-                        external_task_id,
-                        base_url as url,                    
-                        status,
-                        es.short_name as task_provider_name,
-                        es.display_method as display_method,
-                        FALSE as task_is_visible,
-                        FALSE as user_is_signedup,
-                        FALSE as signup_available,
-                        null as user_task_status,
-                        user_specific_url,
-                        anonymise_url,
-                        tt.short_name as task_type_name
-                    from public.projects_projecttask task
-                    join public.projects_externalsystem es on task.external_system_id = es.id
-                    join public.projects_tasktype tt on task.task_type_id = tt.id
-                    where task.project_id = project.id
-                        AND task.status != 'planned'                   
-                    order by task.created
-                    ) task_row
-            ) as tasks
-        from public.projects_project project
-        where project.status != 'planned'
-        order by created
-        ) project_row
-'''
+PROJECT_USER_SELECT_SQL_NON_DEMO_ONLY = sql_t.project_user_select_template.render()
+PROJECT_USER_SELECT_SQL_DEMO_ONLY = sql_t.project_user_select_template.render(demo=True)
 
 
 get_project_status_for_user_sql = {
