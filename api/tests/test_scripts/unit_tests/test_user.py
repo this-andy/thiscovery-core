@@ -58,6 +58,8 @@ EXPECTED_USER = {
     "status": None,
     "avatar_string": "AA",
 }
+
+
 # endregion
 
 
@@ -538,3 +540,33 @@ class TestUser(test_utils.DbTestCase):
         result_json = json.loads(result['body'])
         self.assertEqual(expected_status, result_status)
         self.assertEqual(user_email.lower(), result_json['email'])
+
+    def test_20_list_users_by_project_ok(self):
+        project_id = '183c23a1-76a7-46c3-8277-501f0740939d'  # PSFU 7
+        expected_users = [
+            {'anon_project_specific_user_id': '1406c523-6d12-4510-a745-271ddd9ad3e2',
+             'email': 'eddie@email.co.uk',
+             'first_name': 'Eddie',
+             'last_name': 'Eagleton',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'},
+            {'anon_project_specific_user_id': '2c8bba57-58a9-4ac7-98e8-beb34f0692c1',
+             'email': 'altha@email.co.uk',
+             'first_name': 'Altha',
+             'last_name': 'Alcorn',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'},
+            {'anon_project_specific_user_id': '82ca200e-66d6-455d-95bc-617f974bcb26',
+             'email': 'clive@email.co.uk',
+             'first_name': 'Clive',
+             'last_name': 'Cresswell',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'},
+        ]
+        result = test_get(
+            local_method=u.list_users_by_project_api,
+            aws_url='v1/list-project-users',
+            querystring_parameters={'project_id': project_id},
+        )
+        users = json.loads(result['body'])
+        self.assertCountEqual(expected_users, users)
