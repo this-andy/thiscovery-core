@@ -255,38 +255,39 @@ GET_PROJECT_BY_PROJECT_TASK_ID_SQL = '''
 
 # region user
 BASE_USER_SELECT_SQL = '''
-    SELECT 
-        id, 
-        created, 
-        modified, 
-        email, 
-        title, 
-        first_name, 
-        last_name, 
-        country_code,
-        auth0_id, 
-        crm_id,
-        status
-    FROM 
-        public.projects_user
+    SELECT
+        u.id,
+        u.created,
+        u.modified,
+        u.email,
+        u.title,
+        u.first_name,
+        u.last_name,
+        u.country_code,
+        u.auth0_id,
+        u.crm_id,
+        u.status,
+        (
+            SELECT EXISTS (
+				SELECT 1 FROM projects_usergroupmembership ugm
+				JOIN projects_usergroup ug ON ug.id = ugm.user_group_id
+				WHERE ugm.user_id = u.id AND ug.demo = TRUE
+			)
+		) as has_demo_project,
+		(
+		    SELECT EXISTS (
+				SELECT 1 FROM projects_usergroupmembership ugm
+				JOIN projects_usergroup ug ON ug.id = ugm.user_group_id
+				WHERE ugm.user_id = u.id AND ug.demo = FALSE
+			)
+		) as has_live_project
+    FROM
+        public.projects_user u
     '''
 
 
-GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = '''
-    SELECT 
-        u.id, 
-        u.created, 
-        u.modified, 
-        u.email, 
-        u.title, 
-        u.first_name, 
-        u.last_name, 
-        u.country_code,
-        u.auth0_id, 
-        u.crm_id,
-        u.status
-    FROM 
-        public.projects_user as u
+GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = f'''
+    {BASE_USER_SELECT_SQL}
         JOIN public.projects_userproject as up on up.user_id = u.id
     WHERE
         up.anon_project_specific_user_id = (%s)

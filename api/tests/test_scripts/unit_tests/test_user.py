@@ -56,6 +56,8 @@ EXPECTED_USER = {
     "auth0_id": None,
     "crm_id": None,
     "status": None,
+    "has_demo_project": False,
+    "has_live_project": False,
     "avatar_string": "AA",
 }
 
@@ -570,3 +572,32 @@ class TestUser(test_utils.DbTestCase):
         )
         users = json.loads(result['body'])
         self.assertCountEqual(expected_users, users)
+
+    def test_21_users_demo_flag_ok(self):
+        expected_results = [
+            {
+                'user_id': "851f7b34-f76c-49de-a382-7e4089b744e2",  # bernie@email.co.uk
+                'has_demo_project': False,
+                'has_live_project': True,
+            },
+            {
+                'user_id': "8518c7ed-1df4-45e9-8dc4-d49b57ae0663",  # clive@email.co.uk
+                'has_demo_project': True,
+                'has_live_project': True,
+            },
+        ]
+        for expected_result in expected_results:
+            path_parameters = {
+                'id': expected_result['user_id']
+            }
+
+            expected_status = HTTPStatus.OK
+
+            result = test_get(get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
+            result_status = result['statusCode']
+            result_json = json.loads(result['body'])
+
+            # test results returned from api call
+            self.assertEqual(expected_status, result_status)
+            for flag in ['has_demo_project', 'has_live_project']:
+                self.assertEqual(expected_result[flag], result_json[flag])
