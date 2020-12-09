@@ -255,20 +255,34 @@ GET_PROJECT_BY_PROJECT_TASK_ID_SQL = '''
 
 # region user
 BASE_USER_SELECT_SQL = '''
-    SELECT 
-        id, 
-        created, 
-        modified, 
-        email, 
-        title, 
-        first_name, 
-        last_name, 
+    SELECT
+        id,
+        created,
+        modified,
+        email,
+        title,
+        first_name,
+        last_name,
         country_code,
-        auth0_id, 
+        auth0_id,
         crm_id,
-        status
-    FROM 
-        public.projects_user
+        status,
+        (
+            SELECT EXISTS (
+				SELECT 1 FROM projects_usergroupmembership ugm
+				JOIN projects_usergroup ug ON ug.id = ugm.user_group_id
+				WHERE ugm.user_id = u.id AND ug.demo = TRUE
+			)
+		) as has_demo_project,
+		(
+		    SELECT EXISTS (
+				SELECT 1 FROM projects_usergroupmembership ugm
+				JOIN projects_usergroup ug ON ug.id = ugm.user_group_id
+				WHERE ugm.user_id = u.id AND ug.demo = FALSE
+			)
+		) as has_live_project
+    FROM
+        public.projects_user u
     '''
 
 
