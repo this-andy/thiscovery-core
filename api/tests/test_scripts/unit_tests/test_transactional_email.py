@@ -155,7 +155,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_10_send_email_ok(self):
         email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
-        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
+        email = TransactionalEmail(email_dict=email_dict, send_id=str(utils.new_correlation_id()))
         response = email.send(mock_server=True)
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
@@ -198,7 +198,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict['to_recipient_email'] = 'thiscovery_dev@email.com'
-        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
+        email = TransactionalEmail(email_dict=email_dict, send_id=str(utils.new_correlation_id()))
         response = email.send(mock_server=True)
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
