@@ -21,17 +21,81 @@ or populates an existing user group
 """
 import api.local.dev_config  # sets env variables
 import api.local.secrets  # sets env variables
+
+from http import HTTPStatus
+
 import api.endpoints.common.pg_utilities as pg_utils
 import api.endpoints.common.sql_queries as sql_q
+from api.endpoints.transactional_email import TransactionalEmail
 from api.endpoints.user_group import UserGroup
 from api.endpoints.user_group_membership import UserGroupMembership
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
+
+
+class Inviter:
+    def __init__(self, user_group_id, users_to_invite):
+        """
+        Args:
+            user_group_id (str):
+            users_to_invite (list):
+        """
+        self.user_group_id = user_group_id
+        self.users_to_invite = users_to_invite
+        self.project_task = None
+
+    def _get_task_from_user_group_id(self):
+        tasks = pg_utils.execute_query(
+            base_sql=sql_q.TASKS_BY_USER_GROUP_ID_SQL,
+            params=(self.user_group_id,)
+        )
+        if len(tasks) != 1:
+            raise ValueError(f'User group {self.user_group_id} is associated with {len(tasks)} tasks; expected 1')
+        self.project_task = tasks[0]
+
+    def _get_template_details(self):
+        custom_properties_base = {
+            'project_short_name': self.project_task.get('project_short_name'),
+        }
+
+        if self.project_task['task_type_name'] == 'interview':
+            template_name = 'interview_task_invite'
+        else:
+            template_name = 'generic_task_invite'
+            custom_properties_base.update(task_short_name=self.project_task.get('task_description'))
+
+        return template_name, custom_properties_base
+
+    def send_invites(self):
+        invited_users = list()
+        self._get_task_from_user_group_id()
+        template_name, custom_properties_base = self._get_template_details()
+        for user in self.users_to_invite:
+            user_id = user['id']
+            email_dict = {
+                "template_name": template_name,
+                "to_recipient_id": user_id,
+                "custom_properties": {
+                    **custom_properties_base,
+                    "user_first_name": user['first_name'],
+                }
+            }
+            email = TransactionalEmail(email_dict=email_dict)
+            response = email.send()
+            try:
+                assert response.status_code == HTTPStatus.OK
+            except AssertionError:
+                print(f'The following users were invited before an error occurred:\n'
+                      f'{invited_users}')
+                raise
+            else:
+                invited_users.append(user_id)
 
 
 class ImportManager(CsvImporter):
 
     def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
         self.user_group_id = None
+        self.added_users = list()
         self.added_user_ids = list()
         super().__init__(anon_project_specific_user_id_column, csvfile_path=csvfile_path)
         super().validate_input_file_and_get_users()
@@ -86,7 +150,8 @@ class ImportManager(CsvImporter):
     def populate_user_group(self):
         user_ids_in_group = self.get_current_membership()
         ugm_list = list()
-        for user_id in self.user_ids:
+        for user in self.users:
+            user_id = user['id']
             if user_id not in user_ids_in_group:
                 ugm_json = {
                     'user_id': user_id,
@@ -97,6 +162,7 @@ class ImportManager(CsvImporter):
                 ugm_id = ugm.to_dict()['id']
                 ugm_list.append(ugm_id)
                 self.added_user_ids.append(user_id)
+                self.added_users.append(user)
         print(f'Added {len(ugm_list)} members to user group {self.user_group_id}')
 
     def output_user_ids_str(self):
@@ -110,6 +176,10 @@ class ImportManager(CsvImporter):
         self.set_or_create_user_group()
         self.populate_user_group()
         self.output_user_ids_str()
+        invite_users = input("Invite added users? (y/N)")
+        if invite_users in ['y', 'Y']:
+            inviter = Inviter(user_group_id=self.user_group_id, users_to_invite=self.added_users)
+            inviter.send_invites()
 
 
 if __name__ == '__main__':

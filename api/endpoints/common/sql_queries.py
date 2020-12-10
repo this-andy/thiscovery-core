@@ -156,6 +156,20 @@ TASKS_BY_EXTERNAL_ID_SQL = sql_t.project_tasks_by_external_id.render(extra_colum
 ])
 
 
+TASKS_BY_USER_GROUP_ID_SQL = '''
+    SELECT
+        description as task_description,
+        tt.short_name as task_type_name,
+        p.short_name as project_short_name
+    FROM public.projects_projecttask pt
+    JOIN public.projects_project p on pt.project_id = p.id
+    JOIN public.projects_tasktype tt on pt.task_type_id = tt.id
+    JOIN public.projects_projecttaskgroupvisibility ptgv on pt.id = ptgv.project_task_id
+    JOIN public.projects_usergroup ug on ptgv.user_group_id = ug.id
+    WHERE ug.id = %s
+'''
+
+
 LIST_PROJECTS_SQL = '''
     SELECT 
         id, 

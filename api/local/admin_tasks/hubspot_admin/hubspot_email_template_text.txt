@@ -2,15 +2,15 @@
 thiscovery
 Hi
 {{custom.user_first_name}}
-Your next task is now available
+You are invited to take part in an interview
 
-Thank you for signing up to take part in the research project {{custom.project_short_name}}.
+Thank you for your interest in the research project {{custom.project_short_name}}.
 
-We would now like to ask you to {{custom.task_short_name}}.
+We would like to learn more about your experiences in a remote interview.
 
-Please sign in to your Thiscovery account to take part in the next stage of this project.
-Continue to the next task
-Receptionist_RGB_YellowBG
+Please sign in to your Thiscovery account to book your appointment with a researcher.
+Book an appointment
+Nurse_Female_RGB_YellowBG
 
 Have questions?
 help@thiscovery.org
