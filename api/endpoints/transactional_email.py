@@ -30,13 +30,17 @@ from common.notification_send import new_transactional_email_notification
 class TransactionalEmail:
     templates_table = 'HubspotEmailTemplates'
 
-    def __init__(self, email_dict, correlation_id=None):
+    def __init__(self, email_dict, send_id, correlation_id=None):
         """
         Args:
             email_dict (dict): must contain either a to_recipient_id (user_id or anon_project_specific_user_id) or a to_recipient_email.
                     If both to_recipient_id and to_recipient_email are present, to_recipient_id will be used
+            send_id (str): The ID of a particular send. No more than one email with a given sendId will be send per portal,
+                    so including a sendId is a good way to prevent duplicate email sends. This will normally be the item id of the
+                    notification table.
             correlation_id:
         """
+        self.send_id = send_id
         self.template_name = email_dict.get('template_name')
         self.to_recipient_id = email_dict.get('to_recipient_id')
         self.to_recipient_email = email_dict.get('to_recipient_email')
@@ -168,7 +172,7 @@ class TransactionalEmail:
                 'to': self.to_recipient_email,
                 'cc': self.template['cc'],
                 'bcc': self.template['bcc'],
-                'sendId': self.correlation_id,
+                'sendId': self.send_id,
             },
             contactProperties=self._format_properties_to_name_value(self.email_dict.get('contact_properties')),
             customProperties=self._format_properties_to_name_value(self.email_dict.get('custom_properties')),

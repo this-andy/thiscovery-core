@@ -22,11 +22,10 @@ or populates an existing user group
 import api.local.dev_config  # sets env variables
 import api.local.secrets  # sets env variables
 
-from http import HTTPStatus
+from thiscovery_lib.core_api_utilities import CoreApiClient
 
 import api.endpoints.common.pg_utilities as pg_utils
 import api.endpoints.common.sql_queries as sql_q
-from api.endpoints.transactional_email import TransactionalEmail
 from api.endpoints.user_group import UserGroup
 from api.endpoints.user_group_membership import UserGroupMembership
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
@@ -42,6 +41,7 @@ class Inviter:
         self.user_group_id = user_group_id
         self.users_to_invite = users_to_invite
         self.project_task = None
+        self.core_api_client = CoreApiClient()
 
     def _get_task_from_user_group_id(self):
         tasks = pg_utils.execute_query(
@@ -72,17 +72,17 @@ class Inviter:
         for user in self.users_to_invite:
             user_id = user['id']
             email_dict = {
-                "template_name": template_name,
                 "to_recipient_id": user_id,
                 "custom_properties": {
                     **custom_properties_base,
                     "user_first_name": user['first_name'],
                 }
             }
-            email = TransactionalEmail(email_dict=email_dict)
-            response = email.send()
             try:
-                assert response.status_code == HTTPStatus.OK
+                self.core_api_client.send_transactional_email(
+                    template_name=template_name,
+                    **email_dict
+                )
             except AssertionError:
                 print(f'The following users were invited before an error occurred:\n'
                       f'{invited_users}')

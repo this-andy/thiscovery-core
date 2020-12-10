@@ -175,7 +175,11 @@ def process_transactional_email(notification, mock_server=False):
     marking_result = None
     try:
         from transactional_email import TransactionalEmail
-        email = TransactionalEmail(notification['details'], correlation_id=correlation_id)
+        email = TransactionalEmail(
+            email_dict=notification['details'],
+            send_id=notification['id'],
+            correlation_id=correlation_id
+        )
         posting_result = email.send(mock_server=mock_server)
         logger.debug('Response from HubSpot API', extra={'posting_result': posting_result, 'correlation_id': correlation_id})
         if posting_result.status_code == http.HTTPStatus.OK:

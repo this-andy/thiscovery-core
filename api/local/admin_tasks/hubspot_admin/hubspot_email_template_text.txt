@@ -2,20 +2,13 @@
 thiscovery
 Hi
 {{custom.user_first_name}}
-You are invited to take part in an interview
+Don't forget to book your appointment
 
-Thank you for your interest in the research project {{custom.project_short_name}}.
+We wanted to remind you that you have been invited to take part in a remote interview for the research project {{custom.project_short_name}}.
 
-We would like to learn more about your experiences in a remote interview.
+We are very interested in learning about your views and experiences but don't worry, we won't send you any more emails about this.
 
-Please sign in to your Thiscovery account to book your appointment with a researcher.
-Book an appointment
+If possible, please sign in to your Thiscovery account to book an appointment with a researcher.
+Take part in an interview
 Nurse_Female_RGB_YellowBG
 
-Have questions?
-help@thiscovery.org
-THIS Institute
-
-THIS Institute, Clifford Allbutt Building, Cambridge Biomedical Campus, Cambridge, Cambridgeshire CB2 0AH, United Kingdom, +441223761841
-
-Manage preferences

@@ -97,3 +97,8 @@ class CsvImporter:
             writer.writerow([self.anon_project_specific_user_id_column, *list(self.users[0].keys())])
             for k, v in self.anon_id_to_user_map.items():
                 writer.writerow([k, *list(v.values())])
+
+    def output_list_of_anon_project_specific_user_ids(self):
+        if not self.anon_project_specific_user_ids:
+            self.validate_input_file_and_get_users()
+        return ", ".join(self.anon_project_specific_user_ids)
