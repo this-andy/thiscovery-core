@@ -16,9 +16,6 @@
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
 """
-UPDATE 08/12/2020: Sadly, HubSpot now requires users to login before viewing a preview page,
-so this script no longer works
-
 This script parses a transactional email template preview page and adds the template to Dynamodb table HubspotEmailTemplates
 """
 import api.local.dev_config  # env variables
@@ -73,7 +70,10 @@ def add_template_to_ddb(template_id, template_name, template_type, formatted_cus
 
 def main():
     preview_url = input("Please enter the url of the template preview page:")
-    page_html = get_html(preview_url)
+    # page_html = get_html(preview_url)
+    input("Please paste the template text in file hubspot_email_template_text.txt, save it and press return to continue.")
+    with open('hubspot_email_template_text.txt') as f:
+        page_html = f.read()
     custom_properties = extract_custom_properties(page_html)
     template_id = extract_template_id_from_url(preview_url)
     if not template_id:

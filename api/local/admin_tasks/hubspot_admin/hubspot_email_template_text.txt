@@ -1,0 +1,21 @@
+
+thiscovery
+Hi
+{{custom.user_first_name}}
+Your next task is now available
+
+Thank you for signing up to take part in the research project {{custom.project_short_name}}.
+
+We would now like to ask you to {{custom.task_short_name}}.
+
+Please sign in to your Thiscovery account to take part in the next stage of this project.
+Continue to the next task
+Receptionist_RGB_YellowBG
+
+Have questions?
+help@thiscovery.org
+THIS Institute
+
+THIS Institute, Clifford Allbutt Building, Cambridge Biomedical Campus, Cambridge, Cambridgeshire CB2 0AH, United Kingdom, +441223761841
+
+Manage preferences
