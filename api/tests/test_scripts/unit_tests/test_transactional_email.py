@@ -44,7 +44,10 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.email = TransactionalEmail(email_dict=test_email_dict)
+        cls.email = TransactionalEmail(
+            email_dict=test_email_dict,
+            send_id=utils.new_correlation_id()
+        )
 
     def test_01_get_template_details_ok(self):
         template = self.email._get_template_details()
@@ -81,7 +84,8 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_02_get_template_details_not_found(self):
         email_dict = copy.deepcopy(test_email_dict)
         email_dict["template_name"] = 'non_existent_email_template'
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict,
+                                   send_id=utils.new_correlation_id())
         with self.assertRaises(utils.ObjectDoesNotExistError) as context:
             email._get_template_details()
         err = context.exception
@@ -94,7 +98,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_04_validate_properties_missing_required_property(self):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict['custom_properties']["project_task_description"]
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         with self.assertRaises(utils.DetailedValueError) as context:
             email._validate_properties()
         err = context.exception
@@ -104,7 +108,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_05_validate_properties_non_specified_property(self):
         email_dict = copy.deepcopy(test_email_dict)
         email_dict['custom_properties']["unspecified_property"] = "This property is not defined in the template"
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         self.logger.warning('Email object email_dict', extra={'email_dict': email.email_dict})
         with self.assertRaises(utils.DetailedIntegrityError) as context:
             email._validate_properties()
@@ -118,13 +122,13 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_07_get_user_by_anon_project_specific_user_id_ok(self):
         email_dict = email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = "2c8bba57-58a9-4ac7-98e8-beb34f0692c1"
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         self.assertCountEqual(EXPECTED_USER, email._get_user())
 
     def test_08_get_user_not_found(self):
         email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = "49ad25c2-560f-4ed1-8e6f-46debf1f2445"
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         with self.assertRaises(utils.ObjectDoesNotExistError) as context:
             email._get_user()
         err = context.exception
@@ -151,7 +155,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
     def test_10_send_email_ok(self):
         email_dict = copy.deepcopy(test_email_dict)
         email_dict["to_recipient_id"] = 'dceac123-03a7-4e29-ab5a-739e347b374d'
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=str(utils.new_correlation_id()))
         response = email.send(mock_server=True)
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
@@ -176,7 +180,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict['template_name']
         with self.assertRaises(utils.DetailedValueError) as context:
-            TransactionalEmail(email_dict=email_dict)
+            TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         err = context.exception
         err_msg = err.args[0]
         self.assertIn('template_name must be present in email_dict', err_msg)
@@ -185,7 +189,7 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict['to_recipient_id']
         with self.assertRaises(utils.DetailedValueError) as context:
-            TransactionalEmail(email_dict=email_dict)
+            TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         err = context.exception
         err_msg = err.args[0]
         self.assertIn('Either to_recipient_id or to_recipient_email must be present in email_dict', err_msg)
@@ -194,15 +198,15 @@ class TestTransactionalEmail(test_utils.DbTestCase):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict['to_recipient_email'] = 'thiscovery_dev@email.com'
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=str(utils.new_correlation_id()))
         response = email.send(mock_server=True)
         self.assertEqual(HTTPStatus.OK, response.status_code)
 
-    def test_15_send_email_to_invalid_email_address_fails(self):
+    def test_16_send_email_to_invalid_email_address_fails(self):
         email_dict = copy.deepcopy(test_email_dict)
         del email_dict["to_recipient_id"]
         email_dict['to_recipient_email'] = 'thiscovery_dev@emailcom'
-        email = TransactionalEmail(email_dict=email_dict)
+        email = TransactionalEmail(email_dict=email_dict, send_id=utils.new_correlation_id())
         with self.assertRaises(utils.DetailedValueError) as context:
             response = email.send(mock_server=True)
         err = context.exception

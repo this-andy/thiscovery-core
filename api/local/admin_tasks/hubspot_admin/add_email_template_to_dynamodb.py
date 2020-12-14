@@ -70,7 +70,10 @@ def add_template_to_ddb(template_id, template_name, template_type, formatted_cus
 
 def main():
     preview_url = input("Please enter the url of the template preview page:")
-    page_html = get_html(preview_url)
+    # page_html = get_html(preview_url)
+    input("Please paste the template text in file hubspot_email_template_text.txt, save it and press return to continue.")
+    with open('hubspot_email_template_text.txt') as f:
+        page_html = f.read()
     custom_properties = extract_custom_properties(page_html)
     template_id = extract_template_id_from_url(preview_url)
     if not template_id:

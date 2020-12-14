@@ -28,8 +28,8 @@ from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.local.dev_config import QUALTRICS_TEST_OBJECTS
 from api.local.admin_tasks.qualtrics_admin.convert_responses_to_contact_list_input_format import ResponsesToContactListConverter
 from api.local.admin_tasks.qualtrics_admin.republish_survey_with_user_specific_links import DistributionLinksGenerator
-from api.local.admin_tasks.task_setup.output_anon_project_specific_user_ids_for_test_group import ProcessManager as OutputAnonIds
-from api.local.admin_tasks.task_setup.create_user_group_for_follow_up_task import ImportManager as CreateUserGroup
+from api.local.admin_tasks.task_management.output_anon_project_specific_user_ids_for_test_group import ProcessManager as OutputAnonIds
+from api.local.admin_tasks.task_management.create_user_group_for_follow_up_task import ImportManager as CreateUserGroup
 
 
 class TestAdminTasksDbAccess(test_utils.DbTestCase):

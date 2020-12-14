@@ -1,0 +1,14 @@
+
+thiscovery
+Hi
+{{custom.user_first_name}}
+Don't forget to book your appointment
+
+We wanted to remind you that you have been invited to take part in a remote interview for the research project {{custom.project_short_name}}.
+
+We are very interested in learning about your views and experiences but don't worry, we won't send you any more emails about this.
+
+If possible, please sign in to your Thiscovery account to book an appointment with a researcher.
+Take part in an interview
+Nurse_Female_RGB_YellowBG
+
