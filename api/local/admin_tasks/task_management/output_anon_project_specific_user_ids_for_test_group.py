@@ -77,6 +77,11 @@ class ProcessManager:
         self.output_anon_project_specific_user_ids()
 
 
-if __name__ == '__main__':
+@pg_utils.db_connection_handler
+def main():
     manager = ProcessManager()
     manager.main()
+
+
+if __name__ == '__main__':
+    main()

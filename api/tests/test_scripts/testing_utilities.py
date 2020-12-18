@@ -63,6 +63,7 @@ class DbTestCase(BaseTestCase):
             cls.clear_test_data()
         if cls.delete_notifications:
             delete_all_notifications()
+        pg_utils.close_connection()
         super().tearDownClass()
 
     @classmethod

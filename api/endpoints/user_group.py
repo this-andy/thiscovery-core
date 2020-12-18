@@ -64,6 +64,7 @@ class UserGroup(EntityBase):
         return ug
 
     @classmethod
+    @pg_utils.db_connection_handler
     def get_by_id(cls, user_group_id, correlation_id):
 
         try:
@@ -82,6 +83,7 @@ class UserGroup(EntityBase):
             return None
 
     @classmethod
+    @pg_utils.db_connection_handler
     def get_by_url_code(cls, url_code, correlation_id):
 
         sql_where_clause = " WHERE url_code = %s"
@@ -94,6 +96,7 @@ class UserGroup(EntityBase):
         else:
             return None
 
+    @pg_utils.db_connection_handler
     def create(self, correlation_id=None):
         return pg_utils.execute_non_query(
             sql_q.CREATE_USER_GROUP_SQL,

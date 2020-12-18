@@ -18,9 +18,10 @@
 
 import uuid
 import json
+import thiscovery_lib.utilities as utils
 from http import HTTPStatus
 
-import thiscovery_lib.utilities as utils
+import common.pg_utilities as pg_utils
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import LIST_USER_PROJECTS_SQL, GET_EXISTING_USER_PROJECT_ID_SQL, CREATE_USER_PROJECT_SQL
 from user import get_user_by_id
@@ -64,6 +65,7 @@ def list_user_projects(user_id, correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def list_user_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -161,6 +163,7 @@ def create_user_project(up_json, correlation_id, do_nothing_if_exists=False):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def create_user_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']

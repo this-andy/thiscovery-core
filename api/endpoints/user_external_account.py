@@ -20,6 +20,7 @@ import json
 import uuid
 from http import HTTPStatus
 
+import common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_non_query
 from common.sql_queries import CHECK_USER_ID_AND_EXTERNAL_ACCOUNT_SQL, CREATE_USER_EXTERNAL_ACCOUNT_SQL
@@ -118,6 +119,7 @@ def create_user_external_account(uea_json, correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def create_user_external_account_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']

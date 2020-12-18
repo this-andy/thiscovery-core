@@ -33,4 +33,5 @@ if __name__ == '__main__':
     user_ids = list()
     for anon_project_specific_user_id in anon_ids:
         user_ids.append(pg_utils.execute_query(sql_q.GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL, [str(anon_project_specific_user_id)])[0]['id'])
+    pg_utils.close_connection()
     print(';\n'.join(user_ids))

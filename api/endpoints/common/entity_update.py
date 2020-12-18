@@ -18,6 +18,8 @@
 
 import uuid
 from jsonpatch import JsonPatch
+
+import common.pg_utilities as pg_utils
 from common.pg_utilities import execute_non_query, execute_query
 from common.sql_queries import SAVE_ENTITY_UPDATE_SQL, GET_ENTITY_UPDATES_FOR_ENTITY_SQL
 
@@ -52,5 +54,6 @@ class EntityUpdate:
         return rowcount
 
     @staticmethod
+    @pg_utils.db_connection_handler
     def get_entity_updates_for_entity(entity_name:str, entity_id:uuid, correlation_id):
         return execute_query(GET_ENTITY_UPDATES_FOR_ENTITY_SQL, (entity_name, str(entity_id)), correlation_id)

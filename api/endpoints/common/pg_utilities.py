@@ -15,7 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-
+import functools
 import psycopg2
 
 from thiscovery_lib.utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
@@ -28,15 +28,22 @@ conn = None
 def _get_connection(correlation_id=None):
     logger = get_logger()
 
-    # todo sort out connection pooling
     global conn
-    env_dict = get_secret('database-connection')
-    conn = psycopg2.connect(**env_dict)
+    if conn is None:
+        env_dict = get_secret('database-connection')
+        conn = psycopg2.connect(**env_dict)
 
-    # using dsn obscures password
-    logger.info('created database connection', extra={'conn_string': conn.dsn, 'correlation_id': correlation_id})
+        # using dsn obscures password
+        logger.info('created database connection', extra={'conn_string': conn.dsn, 'correlation_id': correlation_id})
 
     return conn
+
+
+def close_connection():
+    global conn
+    if conn is not None:
+        conn.close()
+        conn = None
 
 
 def _get_json_from_tuples(t):
@@ -94,8 +101,6 @@ def execute_query(base_sql, params=None, correlation_id=new_correlation_id(), re
             return records
     except Exception as ex:
         raise ex
-    finally:
-        conn.close()
 
 
 def execute_query_multiple(base_sql_tuple, params_tuple=None, correlation_id=new_correlation_id(), return_json=True, jsonize_sql=True):
@@ -142,8 +147,6 @@ def execute_query_multiple(base_sql_tuple, params_tuple=None, correlation_id=new
 
     except Exception as ex:
         raise ex
-    finally:
-        conn.close()
 
 
 def execute_non_query(sql, params, correlation_id=new_correlation_id()):
@@ -172,8 +175,6 @@ def execute_non_query(sql, params, correlation_id=new_correlation_id()):
         raise DetailedIntegrityError('Database integrity error', errorjson)
     except Exception as ex:
         raise ex
-    finally:
-        conn.close()
 
 
 def execute_non_query_multiple(sql_iterable, params_iterable, correlation_id=new_correlation_id()):
@@ -217,7 +218,6 @@ def execute_non_query_multiple(sql_iterable, params_iterable, correlation_id=new
         results.append(rowcount)
 
     conn.commit()
-    conn.close()
     return results
 
 
@@ -236,7 +236,6 @@ def insert_data_from_csv(source_file, destination_table, separator=',', header_r
             next(f)  # Skip the header row.
         conn.cursor().copy_from(f, destination_table, sep=separator, null='')
     conn.commit()
-    conn.close()
 
 
 def insert_data_from_csv_multiple(*args, separator=',', header_row=False):
@@ -259,7 +258,6 @@ def insert_data_from_csv_multiple(*args, separator=',', header_row=False):
                 next(f)  # Skip the header row.
             cursor.copy_from(f, destination_table, sep=separator, null='')
     conn.commit()
-    conn.close()
 
 
 def populate_table_from_csv(source_folder, destination_table_name, separator=','):
@@ -396,3 +394,26 @@ def dict_from_dataset(dataset, key_name):
     for datarow in dataset:
         dataset_as_dict[datarow[key_name]] = datarow
     return dataset_as_dict
+
+
+# region decorators
+def db_connection_handler(func):
+    """
+    Ensures connection to the database is closed if lambda function fails. Use as innermost decorator:
+        @lambda_wrapper
+        @api_error_handler
+        @db_connection_handler
+        def decorated_function():
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            close_connection()
+            return result
+        except Exception:
+            close_connection()
+            raise
+    return wrapper
+# endregion

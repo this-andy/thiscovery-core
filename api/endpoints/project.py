@@ -19,6 +19,7 @@
 import json
 from http import HTTPStatus
 
+import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_query_multiple, dict_from_dataset, execute_non_query
@@ -35,6 +36,7 @@ def list_projects_with_tasks(correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def list_projects_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -73,6 +75,7 @@ def get_project_task_by_external_task_id(external_task_id, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def get_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -241,6 +244,7 @@ def get_project_status_for_user(user_id, demo, correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def get_project_status_for_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']

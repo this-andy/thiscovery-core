@@ -105,6 +105,11 @@ class Reminder:
                 reminded_users.append(user_id)
 
 
-if __name__ == '__main__':
+@pg_utils.db_connection_handler
+def main():
     reminder = Reminder()
     reminder.remind_users()
+
+
+if __name__ == '__main__':
+    main()

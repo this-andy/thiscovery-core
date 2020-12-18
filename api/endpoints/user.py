@@ -23,6 +23,7 @@ from http import HTTPStatus
 from datetime import timedelta
 from jsonpatch import JsonPatch, JsonPatchException, InvalidJsonPatch
 
+import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
@@ -98,6 +99,7 @@ def get_user_by_id(user_id, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def get_user_by_id_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -141,6 +143,7 @@ def list_users_by_project(project_id, logger=None, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def list_users_by_project_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -162,6 +165,7 @@ def list_users_by_project_api(event, context):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def get_user_by_email_api(event, context):
     """
     Handler for Lambda function supporting the /v1/user API endpoint. Supports retrieval of user info by email or anon_project_specific_user_id
@@ -250,6 +254,7 @@ def create_user_entity_update(user_id, user_jsonpatch, modified, correlation_id)
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def patch_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -375,6 +380,7 @@ def create_user(user_json, correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def create_user_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']

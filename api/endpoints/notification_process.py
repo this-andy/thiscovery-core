@@ -23,6 +23,7 @@ from datetime import datetime, timedelta
 from dateutil import parser, tz
 
 import common.notifications as c_notif
+import common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
@@ -104,6 +105,7 @@ def process_user_registration(notification):
 
 def get_task_signup_data_for_crm(user_task_id, correlation_id):
     extra_data = execute_query(SIGNUP_DETAILS_SELECT_SQL, (str(user_task_id),), correlation_id)
+    pg_utils.close_connection()
     if len(extra_data) == 1:
         return extra_data[0]
     else:
