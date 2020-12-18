@@ -17,9 +17,10 @@
 #
 
 import json
+import thiscovery_lib.utilities as utils
 from http import HTTPStatus
 
-import thiscovery_lib.utilities as utils
+import common.pg_utilities as pg_utils
 from common.pg_utilities import execute_non_query, execute_query_multiple
 from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
 from common.entity_base import EntityBase
@@ -59,6 +60,7 @@ class UserGroupMembership(EntityBase):
         return ugm
 
     @classmethod
+    @pg_utils.db_connection_handler
     def new_from_json(cls, ugm_json, correlation_id):
         """
         Full process of creating validating and persisting new membership record.
@@ -108,12 +110,14 @@ class UserGroupMembership(EntityBase):
 
         # if no errors nothing to do, nothing to return, let things carry on...
 
+    @pg_utils.db_connection_handler
     def insert_to_db(self, correlation_id=None):
         # todo ref integrity check
         execute_non_query(INSERT_USER_GROUP_MEMBERSHIP_SQL, (self.id, self.created, self.created, self.user_id, self.user_group_id), correlation_id)
 
 
 @utils.lambda_wrapper
+@pg_utils.db_connection_handler
 def create_user_group_membership_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
