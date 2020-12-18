@@ -21,29 +21,25 @@ import psycopg2
 from thiscovery_lib.utilities import minimise_white_space, get_file_as_string, get_logger, ObjectDoesNotExistError, PatchOperationNotSupportedError, \
     PatchAttributeNotRecognisedError, PatchInvalidJsonError, DetailedIntegrityError, get_secret, new_correlation_id
 
-
-conn = None
+import common.config as config
 
 
 def _get_connection(correlation_id=None):
     logger = get_logger()
-
-    global conn
-    if conn is None:
+    if config.conn is None:
         env_dict = get_secret('database-connection')
-        conn = psycopg2.connect(**env_dict)
+        config.conn = psycopg2.connect(**env_dict)
 
         # using dsn obscures password
-        logger.info('created database connection', extra={'conn_string': conn.dsn, 'correlation_id': correlation_id})
+        logger.info('created database connection', extra={'conn_string': config.conn.dsn, 'correlation_id': correlation_id})
 
-    return conn
+    return config.conn
 
 
 def close_connection():
-    global conn
-    if conn is not None:
-        conn.close()
-        conn = None
+    if config.conn is not None:
+        config.conn.close()
+        config.conn = None
 
 
 def _get_json_from_tuples(t):
