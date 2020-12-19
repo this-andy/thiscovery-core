@@ -90,7 +90,11 @@ class UserGroupMembership(EntityBase):
         Checks that the ids in self actually exist in database and that self does not already exist
         :return: nothing, but raises errors if not valid
         """
-        results = execute_query_multiple((SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP), ((self.user_id,), (self.user_group_id,), (self.user_id, self.user_group_id)), correlation_id)
+        results = execute_query_multiple(
+            base_sql_tuple=(SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP),
+            params_tuple=((self.user_id,), (self.user_group_id,), (self.user_id, self.user_group_id)),
+            correlation_id=correlation_id
+        )
 
         user_data = results[0]
         user_group_data = results[1]
