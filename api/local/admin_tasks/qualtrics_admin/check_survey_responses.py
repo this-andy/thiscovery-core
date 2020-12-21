@@ -119,6 +119,7 @@ class DataCheckManager:
 
             return users_in_both_groups, users_in_test_group, users_in_user_group, user_ids_in_input_file
 
+    @pg_utils.db_connection_handler
     def main(self):
         self.get_user_group_ids()
         self.get_test_group_ids()

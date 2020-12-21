@@ -38,6 +38,7 @@ class DbTestCase(BaseTestCase):
     delete_notifications = False
 
     @classmethod
+    @pg_utils.db_connection_handler
     def setUpClass(cls):
         # os.environ['TEST_ON_AWS'] = str(TEST_ON_AWS)
         super().setUpClass()
@@ -58,6 +59,7 @@ class DbTestCase(BaseTestCase):
         )
 
     @classmethod
+    @pg_utils.db_connection_handler
     def tearDownClass(cls):
         if cls.delete_test_data:
             cls.clear_test_data()

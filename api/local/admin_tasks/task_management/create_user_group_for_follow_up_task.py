@@ -172,6 +172,7 @@ class ImportManager(CsvImporter):
             added_ids = ';\n'.join(self.added_user_ids)
             print(f'\n\n\nUser_ids for users added to user group {self.user_group_id}:\n\n{added_ids}')
 
+    @pg_utils.db_connection_handler
     def main(self):
         self.set_or_create_user_group()
         self.populate_user_group()

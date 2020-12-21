@@ -20,6 +20,7 @@ import json
 import uuid
 from http import HTTPStatus
 
+import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
@@ -455,6 +456,7 @@ def anon_user_task_id_2_user_id(anon_ut_id, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 @anon_user_task_id_support('user_id', anon_user_task_id_2_user_id)
 def list_user_tasks_api(event, context):
     logger = event['logger']
@@ -504,6 +506,7 @@ def check_if_user_task_exists(user_id, project_task_id, correlation_id):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 def create_user_task_api(event, context):
     logger = event['logger']
     correlation_id = event['correlation_id']
@@ -550,6 +553,7 @@ def set_user_task_completed(ut_id, correlation_id=None):
 
 @utils.lambda_wrapper
 @utils.api_error_handler
+@pg_utils.db_connection_handler
 @anon_user_task_id_support('user_task_id', anon_user_task_id_2_user_task_id)
 def set_user_task_completed_api(event, context):
     """

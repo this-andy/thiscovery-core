@@ -207,92 +207,35 @@ class TestUser(test_utils.DbTestCase):
         self.assertTrue('correlation_id' in result_json)
         self.assertTrue('message' in result_json and 'does not exist' in result_json['message'])
 
-    def test_10_patch_user_api_ok(self):
-        user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
-
-        expected_status = HTTPStatus.NO_CONTENT
-        user_jsonpatch = [
-            {'op': 'replace', 'path': '/title', 'value': 'Sir'},
-            {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
-            {'op': 'replace', 'path': '/last_name', 'value': 'smith'},
-            {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'},
-            {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
-            {'op': 'replace', 'path': '/status', 'value': 'singing'},
-            {'op': 'replace', 'path': '/country_code', 'value': 'GB-SCT'},
+    def test_10_list_users_by_project_ok(self):
+        project_id = '183c23a1-76a7-46c3-8277-501f0740939d'  # PSFU 7
+        expected_users = [
+            {'anon_project_specific_user_id': '1406c523-6d12-4510-a745-271ddd9ad3e2',
+             'email': 'eddie@email.co.uk',
+             'first_name': 'Eddie',
+             'last_name': 'Eagleton',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'},
+            {'anon_project_specific_user_id': '2c8bba57-58a9-4ac7-98e8-beb34f0692c1',
+             'email': 'altha@email.co.uk',
+             'first_name': 'Altha',
+             'last_name': 'Alcorn',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'},
+            {'anon_project_specific_user_id': '82ca200e-66d6-455d-95bc-617f974bcb26',
+             'email': 'clive@email.co.uk',
+             'first_name': 'Clive',
+             'last_name': 'Cresswell',
+             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
+             'user_id': '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'},
         ]
-        body = json.dumps(user_jsonpatch)
-        path_parameters = {'id': user_id}
-
-        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
-        result_status = result['statusCode']
-
-        self.assertEqual(expected_status, result_status)
-        # now check database values...
-        path_parameters = {'id': user_id}
-
-        expected_body = {
-            "id": user_id,
-            "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
-            "email": "simon.smith@dancingbear.com",
-            "title": "Sir",
-            "first_name": "simon",
-            "last_name": "smith",
-            "auth0_id": "new-auth0-id",
-            "country_code": "GB-SCT",
-            "country_name": "United Kingdom - Scotland",
-            "crm_id": None,
-            "avatar_string": "ss",
-            "status": "singing"
-        }
-
-        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
-        result_json = json.loads(result['body'])
-
-        # will test modified separately so extract it from dictionary here
-        self.now_datetime_test_and_remove(result_json, 'modified', tolerance=TIME_TOLERANCE_SECONDS)
-
-        # now check that we have a corresponding entity update record
-        entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
-        self.assertTrue(len(entity_updates) > 0, 'No entity update record found')
-        if len(entity_updates) > 0:
-            # get most recent update record
-            last_entity_update = entity_updates[-1]
-
-            # remove from returned value those things we don't want to test
-            self.remove_dict_items_to_be_ignored_by_tests(last_entity_update, ['id', 'modified'])
-
-            # remove and store data items to be tested individually
-            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
-            self.now_datetime_test_and_remove(last_entity_update, 'created', tolerance=TIME_TOLERANCE_SECONDS)
-
-            result_json_reverse_patch = last_entity_update['json_reverse_patch']
-            del last_entity_update['json_reverse_patch']
-            result_json_patch = last_entity_update['json_patch']
-            del last_entity_update['json_patch']
-
-            # check jsonpatch - compare as lists in case order different
-            result_json_patch = json.loads(result_json_patch)
-            self.assertCountEqual(user_jsonpatch, result_json_patch)
-
-            # need to compare list objects not strings as elements may be in different order
-            result_json_reverse_patch = json.loads(result_json_reverse_patch)
-            expected_json_reverse_patch = [
-                {"op": "replace", "path": "/first_name", "value": "Altha"},
-                {"op": "replace", "path": "/auth0_id", "value": None},
-                {"op": "replace", "path": "/title", "value": "Mrs"},
-                {"op": "replace", "path": "/last_name", "value": "Alcorn"},
-                {"op": "replace", "path": "/status", "value": None},
-                {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
-                {"op": "replace", "path": "/country_code", "value": "GB"},
-            ]
-            self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
-
-            # and finally check what's left
-            expected_body = {
-                'entity_name': 'user',
-                'entity_id': user_id,
-            }
-            self.assertDictEqual(expected_body, last_entity_update)
+        result = test_get(
+            local_method=u.list_users_by_project_api,
+            aws_url='v1/list-project-users',
+            querystring_parameters={'project_id': project_id},
+        )
+        users = json.loads(result['body'])
+        self.assertCountEqual(expected_users, users)
 
     def test_11_patch_user_api_user_not_exists(self):
         expected_status = HTTPStatus.NOT_FOUND
@@ -543,35 +486,92 @@ class TestUser(test_utils.DbTestCase):
         self.assertEqual(expected_status, result_status)
         self.assertEqual(user_email.lower(), result_json['email'])
 
-    def test_20_list_users_by_project_ok(self):
-        project_id = '183c23a1-76a7-46c3-8277-501f0740939d'  # PSFU 7
-        expected_users = [
-            {'anon_project_specific_user_id': '1406c523-6d12-4510-a745-271ddd9ad3e2',
-             'email': 'eddie@email.co.uk',
-             'first_name': 'Eddie',
-             'last_name': 'Eagleton',
-             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
-             'user_id': '1cbe9aad-b29f-46b5-920e-b4c496d42515'},
-            {'anon_project_specific_user_id': '2c8bba57-58a9-4ac7-98e8-beb34f0692c1',
-             'email': 'altha@email.co.uk',
-             'first_name': 'Altha',
-             'last_name': 'Alcorn',
-             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
-             'user_id': 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'},
-            {'anon_project_specific_user_id': '82ca200e-66d6-455d-95bc-617f974bcb26',
-             'email': 'clive@email.co.uk',
-             'first_name': 'Clive',
-             'last_name': 'Cresswell',
-             'project_id': '183c23a1-76a7-46c3-8277-501f0740939d',
-             'user_id': '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'},
+    def test_20_patch_user_api_ok(self):
+        user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebdc'
+
+        expected_status = HTTPStatus.NO_CONTENT
+        user_jsonpatch = [
+            {'op': 'replace', 'path': '/title', 'value': 'Sir'},
+            {'op': 'replace', 'path': '/first_name', 'value': 'simon'},
+            {'op': 'replace', 'path': '/last_name', 'value': 'smith'},
+            {'op': 'replace', 'path': '/email', 'value': 'simon.smith@dancingbear.com'},
+            {'op': 'replace', 'path': '/auth0_id', 'value': 'new-auth0-id'},
+            {'op': 'replace', 'path': '/status', 'value': 'singing'},
+            {'op': 'replace', 'path': '/country_code', 'value': 'GB-SCT'},
         ]
-        result = test_get(
-            local_method=u.list_users_by_project_api,
-            aws_url='v1/list-project-users',
-            querystring_parameters={'project_id': project_id},
-        )
-        users = json.loads(result['body'])
-        self.assertCountEqual(expected_users, users)
+        body = json.dumps(user_jsonpatch)
+        path_parameters = {'id': user_id}
+
+        result = test_patch(patch_user_api, ENTITY_BASE_URL, path_parameters=path_parameters, request_body=body)
+        result_status = result['statusCode']
+
+        self.assertEqual(expected_status, result_status)
+        # now check database values...
+        path_parameters = {'id': user_id}
+
+        expected_body = {
+            "id": user_id,
+            "created": f"2018-08-17T{tz_hour}:10:56.798192+{tz_offset}",
+            "email": "simon.smith@dancingbear.com",
+            "title": "Sir",
+            "first_name": "simon",
+            "last_name": "smith",
+            "auth0_id": "new-auth0-id",
+            "country_code": "GB-SCT",
+            "country_name": "United Kingdom - Scotland",
+            "crm_id": None,
+            "avatar_string": "ss",
+            "status": "singing"
+        }
+
+        result = test_get(u.get_user_by_id_api, ENTITY_BASE_URL, path_parameters=path_parameters)
+        result_json = json.loads(result['body'])
+
+        # will test modified separately so extract it from dictionary here
+        self.now_datetime_test_and_remove(result_json, 'modified', tolerance=TIME_TOLERANCE_SECONDS)
+
+        # now check that we have a corresponding entity update record
+        entity_updates = EntityUpdate.get_entity_updates_for_entity('user', user_id, new_correlation_id())
+        self.assertTrue(len(entity_updates) > 0, 'No entity update record found')
+        if len(entity_updates) > 0:
+            # get most recent update record
+            last_entity_update = entity_updates[-1]
+
+            # remove from returned value those things we don't want to test
+            self.remove_dict_items_to_be_ignored_by_tests(last_entity_update, ['id', 'modified'])
+
+            # remove and store data items to be tested individually
+            # check created datetime - allow up to TIME_TOLERANCE_SECONDS difference
+            self.now_datetime_test_and_remove(last_entity_update, 'created', tolerance=TIME_TOLERANCE_SECONDS)
+
+            result_json_reverse_patch = last_entity_update['json_reverse_patch']
+            del last_entity_update['json_reverse_patch']
+            result_json_patch = last_entity_update['json_patch']
+            del last_entity_update['json_patch']
+
+            # check jsonpatch - compare as lists in case order different
+            result_json_patch = json.loads(result_json_patch)
+            self.assertCountEqual(user_jsonpatch, result_json_patch)
+
+            # need to compare list objects not strings as elements may be in different order
+            result_json_reverse_patch = json.loads(result_json_reverse_patch)
+            expected_json_reverse_patch = [
+                {"op": "replace", "path": "/first_name", "value": "Altha"},
+                {"op": "replace", "path": "/auth0_id", "value": None},
+                {"op": "replace", "path": "/title", "value": "Mrs"},
+                {"op": "replace", "path": "/last_name", "value": "Alcorn"},
+                {"op": "replace", "path": "/status", "value": None},
+                {"op": "replace", "path": "/email", "value": "altha@email.co.uk"},
+                {"op": "replace", "path": "/country_code", "value": "GB"},
+            ]
+            self.assertCountEqual(expected_json_reverse_patch, result_json_reverse_patch)
+
+            # and finally check what's left
+            expected_body = {
+                'entity_name': 'user',
+                'entity_id': user_id,
+            }
+            self.assertDictEqual(expected_body, last_entity_update)
 
     def test_21_users_demo_flag_ok(self):
         expected_results = [

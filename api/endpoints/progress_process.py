@@ -25,6 +25,7 @@ from common.cochrane import get_progress
 from thiscovery_lib.utilities import get_correlation_id, get_logger
 
 
+@pg_utils.db_connection_handler
 def update_cochrane_progress(event, context):
     """
     AWS lambda handler to update progress of task hosted by Cochrane Crowd
