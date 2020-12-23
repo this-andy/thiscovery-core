@@ -1,3 +1,4 @@
+# AWS requirements go here
 jinja2
 pip	>= 19.0.1
 psycopg2-binary
