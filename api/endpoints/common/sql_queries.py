@@ -83,6 +83,8 @@ BASE_PROJECT_SELECT_SQL = '''
             id, 
             name,
             short_name,
+            description,
+            project_page_url,
             created,
             modified,
             visibility,
@@ -92,7 +94,10 @@ BASE_PROJECT_SELECT_SQL = '''
                 from (
                     select 
                         id,
+                        name,
+                        short_name,
                         description,
+                        task_page_url,
                         created,
                         modified,
                         task_type_id,
