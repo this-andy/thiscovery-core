@@ -1609,8 +1609,6 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSSecretsManagerGetSecretValuePolicy:
-            SecretArn: !Ref ThiscoveryDBRootUserSecret
         - Statement:
             - Effect: Allow
               Action:
@@ -1621,9 +1619,9 @@ Resources:
                 - rds-data:RollbackTransaction
               Resource:
                 - !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
+        - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-        - AWSLambdaENIManagementAccess
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
