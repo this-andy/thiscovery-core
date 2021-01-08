@@ -394,6 +394,9 @@ def create_user_api(event, context):
 @utils.lambda_wrapper
 def record_user_login_event(event, context):
     namespace = utils.get_aws_namespace()
+    logger = event['logger']
+    logger.info('API call', extra={'namespace': namespace, 'event': event})
+
     # Note that Auth0 event log sources are either prod or staging. If this code is being invoked in other environments then
     # it is because events are being forwarded for dev/test purposes.  In this scenario the user referred to in the event will
     # not exist in this environment's RDS database or HubSpot database.  So ignore.
