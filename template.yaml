@@ -1622,14 +1622,17 @@ Resources:
         - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
       Environment:
         Variables:
           DB_ID: !Ref ThiscoveryDB
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
-          DB_ROOT_USER_SECRET_ARN: !Ref ThiscoveryDBRootUserSecret
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          TABLE_NAME: !Ref notifications
+          TABLE_ARN: !GetAtt notifications.Arn
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
