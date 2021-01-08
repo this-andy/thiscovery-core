@@ -111,12 +111,12 @@ def get_user_by_id_api(event, context):
 
     if len(result) > 0:
         user_json = result[0]
-        login_info = {
-            'email': user_json['email'],
-            'user_id': user_id,
-            'login_datetime': str(utils.now_with_tz())
-        }
-        notify_user_login(login_info, correlation_id)
+        # login_info = {
+        #     'email': user_json['email'],
+        #     'user_id': user_id,
+        #     'login_datetime': str(utils.now_with_tz())
+        # }
+        # notify_user_login(login_info, correlation_id)
         return {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
 
     else:
@@ -389,3 +389,26 @@ def create_user_api(event, context):
     logger.info('API call', extra={'user_json': user_json, 'correlation_id': correlation_id, 'event': event})
     new_user = create_user(user_json, correlation_id)
     return {"statusCode": HTTPStatus.CREATED, "body": json.dumps(new_user)}
+
+
+@utils.lambda_wrapper
+@utils.api_error_handler
+def user_login_event_api(event, context):
+    namespace = utils.get_aws_namespace()
+    # Note that Auth0 event log sources are either prod or staging. If this code is being invoked in other environments then
+    # it is because events are being forwarded for dev/test purposes.  In this scenario the user referred to in the event will
+    # not exist in this environment's RDS database or HubSpot database.  So ignore.
+    if namespace in ['/prod/', '/staging/']:
+        # event will contain an Auth0 event of type 's''
+        event_id = event['id']   # note that event id will be used as correlation id for subsequent processing
+        detail_data = event['detail']['data']
+        event_type = detail_data['type']
+        login_datetime = detail_data['date'].replace('T', ' ').replace('Z', '')
+        user_email = detail_data['user_name']
+        user_id = get_user_by_email(user_email, event_id)
+        login_info = {
+            'email': user_email,
+            'user_id': user_id,
+            'login_datetime': login_datetime
+        }
+        notify_user_login(login_info, event_id)
