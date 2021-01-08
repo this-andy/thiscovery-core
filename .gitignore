@@ -50,3 +50,4 @@ api/local/secrets.py
 /credentials
 /api/local/scratchpad.py
 
+/wily_report/
