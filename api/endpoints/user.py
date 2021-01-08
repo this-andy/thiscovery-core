@@ -392,8 +392,7 @@ def create_user_api(event, context):
 
 
 @utils.lambda_wrapper
-@utils.api_error_handler
-def user_login_event_api(event, context):
+def record_user_login_event(event, context):
     namespace = utils.get_aws_namespace()
     # Note that Auth0 event log sources are either prod or staging. If this code is being invoked in other environments then
     # it is because events are being forwarded for dev/test purposes.  In this scenario the user referred to in the event will
@@ -412,3 +411,4 @@ def user_login_event_api(event, context):
             'login_datetime': login_datetime
         }
         notify_user_login(login_info, event_id)
+        return {"statusCode": HTTPStatus.OK, "body": json.dumps('')}
