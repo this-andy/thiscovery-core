@@ -32,11 +32,11 @@ class EventbridgeClient(utils.BaseClient):
     def __init__(self, profile_name=None):
         super().__init__('events', profile_name=profile_name)
 
-    def put_event(self, event, event_bus_name='thiscovery-event-bus'):
+    def put_event(self, event, event_source='thiscovery', event_bus_name='thiscovery-event-bus'):
         event_json = event.to_json()
         entries = [
             {
-                'Source': 'thiscovery',
+                'Source': event_source,
                 'Resources': [],
                 'Time': event.event_time,
                 'DetailType': event.detail_type,
