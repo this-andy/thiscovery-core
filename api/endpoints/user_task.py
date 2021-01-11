@@ -32,6 +32,8 @@ from project import get_project_task
 from user_project import create_user_project_if_not_exists
 from common.notification_send import notify_new_task_signup
 
+from common.eb_utilities import ThiscoveryEvent, EventbridgeClient
+
 STATUS_CHOICES = (
     'active',
     'complete',
@@ -308,6 +310,25 @@ class UserTask:
             'anon_user_task_id': self.anon_user_task_id,
         }
 
+        # raise event on event bus
+        task_signup_event = {
+            'id': str(uuid.uuid4()),
+            'event_time': self.created.isoformat(),
+            'detail_type': 'task_signup',
+            'user_id': str(self.user_id),
+            'user_email': self.email,
+            'detail': {
+                'user_project_id': self.user_project_id,
+                'project_task_id': self.project_task_id,
+                'task_provider_name': self.task_provider_name,
+                'status': self.status,
+                'consented': self.consented,
+                'anon_user_task_id': self.anon_user_task_id,
+            },
+        }
+        ThiscoveryEvent(task_signup_event).put_event()
+
+        # todo - move this and drive process from event raised above.
         notify_new_task_signup(new_user_task, self._correlation_id)
 
         return new_user_task
