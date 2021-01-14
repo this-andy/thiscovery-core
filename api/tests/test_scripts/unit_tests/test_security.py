@@ -20,7 +20,7 @@ import json
 import os
 import yaml
 
-from thiscovery_dev_tools.testing_tools import TestApiEndpoints
+from thiscovery_dev_tools.testing_tools import TestApiEndpoints, TestSecurityOfEndpointsDefinedInTemplateYaml
 
 
 import api.endpoints.misc as m
@@ -163,32 +163,7 @@ class TestUserExternalAccountApiEndpoints(TestApiEndpoints):
         self.check_api_is_restricted('POST', self.ENTITY_BASE_URL, request_body=body)
 
 
-# region yaml constructors for stackery tags
-class GetAtt(yaml.YAMLObject):
-    yaml_tag = '!GetAtt'
-
-    def __init__(self, val):
-        self.val = val
-
-    @classmethod
-    def from_yaml(cls, loader, node):
-        return cls(node.value)
-
-
-class Sub(GetAtt):
-    yaml_tag = '!Sub'
-
-
-class Select(GetAtt):
-    yaml_tag = '!Select'
-
-
-class Ref(GetAtt):
-    yaml_tag = '!Ref'
-# endregion
-
-
-class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
+class TestTemplate(TestSecurityOfEndpointsDefinedInTemplateYaml):
     public_endpoints = [
         ('/v1/ping', 'get'),
         ('/v1/raise-error', 'post'),
@@ -197,23 +172,9 @@ class TestSecurityOfEndpointsDefinedInTemplateYaml(test_utils.BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass()
-        template_file = os.path.join(test_utils.BASE_FOLDER, 'template.yaml')
-        with open(template_file) as f:
-            cls.t_dict = yaml.load(f, Loader=yaml.Loader)
+        super().setUpClass(
+            template_file_path=os.path.join(test_utils.BASE_FOLDER, 'template.yaml')
+        )
 
     def test_16_defined_endpoints_are_secure(self):
-        endpoint_counter = 0
-        api_paths = self.t_dict['Resources']['CoreAPI']['Properties']['DefinitionBody']['paths']
-        for url, value in api_paths.items():
-            for verb in ['delete', 'get', 'head', 'patch', 'post', 'put']:
-                endpoint_config = value.get(verb)
-                if endpoint_config:
-                    endpoint_counter += 1
-                    self.logger.info(f'Found endpoint {verb.upper()} {url} in template.yaml. Checking if it is secure',
-                                     extra={'endpoint_config': endpoint_config})
-                    if (url, verb) in self.public_endpoints:
-                        self.assertIsNone(endpoint_config.get('security'))
-                    else:
-                        self.assertEqual([{'api_key': []}], endpoint_config.get('security'))
-        self.logger.info(f'The configuration of {endpoint_counter} endpoints in template.yaml is as expected')
+        self.check_defined_endpoints_are_secure()
