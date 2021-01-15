@@ -70,6 +70,22 @@ def append_calculated_properties(user):
     return user
 
 
+def get_user_by_any_anon_id(anon_id, correlation_id=None):
+    try:
+        anon_id = utils.validate_uuid(anon_id)
+    except utils.DetailedValueError as err:
+        err.add_correlation_id(correlation_id)
+        raise err
+
+    user_json = execute_query(
+        sql_q.GET_USER_BY_ANY_ANON_ID_SQL,
+        ((str(anon_id),),) * 2,
+        correlation_id
+    )
+
+    return append_calculated_properties_to_list(user_json)
+
+
 def get_user_by_anon_project_specific_user_id(anon_project_specific_user_id, correlation_id=None):
     try:
         anon_project_specific_user_id = utils.validate_uuid(anon_project_specific_user_id)

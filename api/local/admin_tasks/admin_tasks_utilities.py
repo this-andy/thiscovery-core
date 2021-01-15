@@ -26,12 +26,12 @@ import api.endpoints.user as u
 
 class CsvImporter:
 
-    def __init__(self, anon_project_specific_user_id_column, csvfile_path=None):
+    def __init__(self, anon_id_column, csvfile_path=None):
         self.logger = utils.get_logger()
-        self.anon_project_specific_user_id_column = anon_project_specific_user_id_column
+        self.anon_id_column = anon_id_column
         self.users = list()
         self.user_ids = list()
-        self.anon_project_specific_user_ids = list()
+        self.anon_ids = list()
         self.anon_id_to_user_id_map = dict()
         self.anon_id_to_user_map = dict()
 
@@ -57,24 +57,27 @@ class CsvImporter:
             rows = list(reader)
             for i, row in enumerate(rows):
                 print(f'Validating input file row {i+1} of {len(rows)}')
-                anon_id = row[self.anon_project_specific_user_id_column]
+                anon_id = row[self.anon_id_column]
 
                 if not anon_id:
-                    self.logger.warning('Missing value in anon_project_specific_user_id column; skipped row', extra={'row': row})
+                    self.logger.warning('Missing value in anon id column; skipped row', extra={'row': row})
                     continue
-                elif anon_id == 'anon_project_specific_user_id':
+                elif anon_id in ['anon_project_specific_user_id', 'anon_user_task_id']:
                     self.logger.warning('Skipped row of putative Qualtrics labels', extra={'row': row})
                     continue
 
-                if anon_id in self.anon_project_specific_user_ids:
+                if anon_id in self.anon_ids:
                     raise ValueError(f'Input csv file has more than one row for user {anon_id}')
                 else:
-                    user = u.get_user_by_anon_project_specific_user_id(anon_id)[0]
+                    try:
+                        user = u.get_user_by_any_anon_id(anon_id)[0]
+                    except IndexError:
+                        raise utils.ObjectDoesNotExistError(f'Anon_id {anon_id} not found in database', details={})
                     user_id = user['id']
                     if user:
                         self.users.append(user)
                         self.user_ids.append(user_id)
-                        self.anon_project_specific_user_ids.append(anon_id)
+                        self.anon_ids.append(anon_id)
                         self.anon_id_to_user_id_map[anon_id] = user_id
                         self.anon_id_to_user_map[anon_id] = user
                     else:
@@ -85,20 +88,21 @@ class CsvImporter:
         output_filename = f"{root}_user_ids{ext}"
         with open(output_filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow([self.anon_project_specific_user_id_column, 'user_id'])
+            writer.writerow([self.anon_id_column, 'user_id'])
             for k, v in self.anon_id_to_user_id_map.items():
                 writer.writerow([k, v])
+        print(f'Export completed: {output_filename}')
 
     def output_csv_of_user_info(self):
         root, ext = os.path.splitext(self.input_filename)
         output_filename = f"{root}_user_info{ext}"
         with open(output_filename, 'w') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow([self.anon_project_specific_user_id_column, *list(self.users[0].keys())])
+            writer.writerow([self.anon_id_column, *list(self.users[0].keys())])
             for k, v in self.anon_id_to_user_map.items():
                 writer.writerow([k, *list(v.values())])
 
     def output_list_of_anon_project_specific_user_ids(self):
-        if not self.anon_project_specific_user_ids:
+        if not self.anon_ids:
             self.validate_input_file_and_get_users()
-        return ", ".join(self.anon_project_specific_user_ids)
+        return ", ".join(self.anon_ids)

@@ -324,6 +324,16 @@ GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = f'''
 '''
 
 
+GET_USER_BY_ANY_ANON_ID_SQL = f'''
+    {BASE_USER_SELECT_SQL}
+        JOIN public.projects_userproject as up on up.user_id = u.id
+        JOIN public.projects_usertask as ut on ut.user_project_id = up.id
+    WHERE
+        up.anon_project_specific_user_id = (%s) OR
+        ut.anon_user_task_id = (%s)
+'''
+
+
 CREATE_USER_SQL = '''
     INSERT INTO public.projects_user (
         id,
