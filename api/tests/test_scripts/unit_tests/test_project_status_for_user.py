@@ -88,9 +88,12 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
 
         expected_project_visiblities = expected_results['project_visibility']
         for (project_result, expected_project_is_visible) in zip(result_json, expected_project_visiblities):
-            # print(project_result['short_name'])
-            # print(querystring_parameters, expected_project_is_visible, project_result['project_is_visible'])
-            self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
+            try:
+                self.assertEqual(expected_project_is_visible, project_result['project_is_visible'])
+            except AssertionError:
+                print(project_result['short_name'])
+                print(querystring_parameters, expected_project_is_visible, project_result['project_is_visible'])
+                raise
             for (task) in project_result['tasks']:
                 task_desc = task['description']
                 # print(task_desc)

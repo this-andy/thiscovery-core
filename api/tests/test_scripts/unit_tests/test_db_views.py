@@ -29,11 +29,6 @@ class DbViewsTestCase(test_utils.DbTestCase):
             "PSFU-04-prv-tst-grp",
             "PSFU-05-pub-act",
             "PSFU-06-prv-act",
-            "PSFU-09-demo-pub-plan",
-            "PSFU-11-demo-pub-tst-grp",
-            "PSFU-12-demo-prv-tst-grp",
-            "PSFU-13-demo-pub-act",
-            "PSFU-14-demo-prv-act",
         ],
         'tasks': [
             "PSFU-03-A",
@@ -42,12 +37,6 @@ class DbViewsTestCase(test_utils.DbTestCase):
             "PSFU-05-E",
             "PSFU-06-C",
             "PSFU-06-D",
-            "PSFU-11-A",
-            "PSFU-12-A",
-            "PSFU-13-D",
-            "PSFU-13-E",
-            "PSFU-14-C",
-            "PSFU-14-D",
         ],
     }
     group_1 = {
@@ -61,6 +50,25 @@ class DbViewsTestCase(test_utils.DbTestCase):
         'users': ["delia@email.co.uk", "eddie@email.co.uk"],
         'projects': ["PSFU-04-prv-tst-grp", "PSFU-06-prv-act", "PSFU-08-prv-comp"],
         'tasks': ["PSFU-04-A", "PSFU-05-C", "PSFU-06-B", "PSFU-08-A"],
+    }
+    demo_tester_group = {
+        'group_name': 'd testers',
+        'users': ["bernie@email.co.uk", "clive@email.co.uk", "delia@email.co.uk"],
+        'projects': [
+            "PSFU-09-demo-pub-plan",
+            "PSFU-11-demo-pub-tst-grp",
+            "PSFU-12-demo-prv-tst-grp",
+            "PSFU-13-demo-pub-act",
+            "PSFU-14-demo-prv-act",
+        ],
+        'tasks': [
+            "PSFU-11-A",
+            "PSFU-12-A",
+            "PSFU-13-D",
+            "PSFU-13-E",
+            "PSFU-14-C",
+            "PSFU-14-D",
+        ],
     }
     demo_1 = {
         'group_name': 'D1',
@@ -122,7 +130,7 @@ class DbViewsTestCase(test_utils.DbTestCase):
 
     def test_03_project_testgroup_users(self):
         self._common_assertions(
-            groups=self.tester_group,
+            groups=[self.tester_group, self.demo_tester_group],
             view_name='project_testgroup_users'
         )
 
@@ -135,7 +143,7 @@ class DbViewsTestCase(test_utils.DbTestCase):
 
     def test_05_projecttask_testgroup_users(self):
         self._common_assertions(
-            groups=self.tester_group,
+            groups=[self.tester_group, self.demo_tester_group],
             view_name='projecttask_testgroup_users',
             view_entity='t',
         )
