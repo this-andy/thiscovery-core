@@ -32,34 +32,40 @@ class EventbridgeClient(utils.BaseClient):
     def __init__(self, profile_name=None):
         super().__init__('events', profile_name=profile_name)
 
-    def put_event(self, event, event_source='thiscovery', event_bus_name='thiscovery-event-bus'):
-        event_json = event.to_json()
+    def put_event(self, thiscovery_event, event_source='thiscovery', event_bus_name='thiscovery-event-bus'):
+        """
+        Args:
+            thiscovery_event (ThiscoveryEvent): instance of ThiscoveryEvent
+            event_source:
+            event_bus_name:
+
+        Returns:
+        """
+        event_json = thiscovery_event.to_json()
         entries = [
             {
                 'Source': event_source,
                 'Resources': [],
-                'Time': event.event_time,
-                'DetailType': event.detail_type,
-                'Detail': event.detail,
+                'Time': thiscovery_event.event_time,
+                'DetailType': thiscovery_event.detail_type,
+                'Detail': thiscovery_event.detail,
                 'EventBusName': event_bus_name
             }
         ]
         return self.client.put_events(Entries=entries)
 
-# ThiscoveryEvent must contain:
-# detail_type
-# user_id
-# detail - a json-serializable version of event details
-# It can optionally contain
-# event_time (string in iso format) - if this is omitted creation time of entity will be used
-# id - uuid for event - if this is omitted it will be created
-# user_email - no action if this is omitted
-# further eventtype-specific details
-
 
 class ThiscoveryEvent(EntityBase):
-
     def __init__(self, event):
+        """
+
+        Args:
+            event (dict): must contain detail_type, user_id and detail (a json-serializable version of event details). It can optionally contain:
+                            event_time (string in iso format) - if this is omitted creation time of entity will be used
+                            id - uuid for event - if this is omitted it will be created
+                            user_email - no action if this is omitted
+                            further eventtype-specific details
+        """
         # self.logger = utils.get_logger()
 
         if 'user_id' not in event or 'detail_type' not in event:

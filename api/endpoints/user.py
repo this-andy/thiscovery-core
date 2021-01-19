@@ -413,21 +413,23 @@ def record_user_login_event(event, context):
     logger = event['logger']
     logger.info('API call', extra={'namespace': namespace, 'event': event})
 
-    # Note that Auth0 event log sources are either prod or staging. If this code is being invoked in other environments then
-    # it is because events are being forwarded for dev/test purposes.  In this scenario the user referred to in the event will
-    # not exist in this environment's RDS database or HubSpot database.  So ignore.
-    if namespace in ['/prod/', '/staging/']:
-        # event will contain an Auth0 event of type 's''
-        event_id = event['id']   # note that event id will be used as correlation id for subsequent processing
-        detail_data = event['detail']['data']
-        event_type = detail_data['type']
-        login_datetime = detail_data['date'].replace('T', ' ').replace('Z', '')
-        user_email = detail_data['user_name']
-        user_id = get_user_by_email(user_email, event_id)
-        login_info = {
-            'email': user_email,
-            'user_id': user_id,
-            'login_datetime': login_datetime
-        }
-        notify_user_login(login_info, event_id)
-        return {"statusCode": HTTPStatus.OK, "body": json.dumps('')}
+    # # Note that Auth0 event log sources are either prod or staging. If this code is being invoked in other environments then
+    # # it is because events are being forwarded for dev/test purposes.  In this scenario the user referred to in the event will
+    # # not exist in this environment's RDS database or HubSpot database.  So ignore.
+    # if namespace in ['/prod/', '/staging/']:
+
+    # event will contain an Auth0 event of type 's''
+    event_id = event['id']   # note that event id will be used as correlation id for subsequent processing
+    detail_data = event['detail']['data']
+    event_type = detail_data['type']
+    login_datetime = detail_data['date'].replace('T', ' ').replace('Z', '')
+    user_email = detail_data['user_name']
+    user = get_user_by_email(user_email, event_id)[0]
+    for x in ['has_demo_project', 'has_live_project', 'title']:
+        del user[x]
+    login_info = {
+        **user,
+        'login_datetime': login_datetime,
+    }
+    notify_user_login(login_info, event_id)
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps('')}
