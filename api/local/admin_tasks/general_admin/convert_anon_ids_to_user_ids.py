@@ -18,18 +18,19 @@
 """
 This script parses a CSV file containing anon_project_specific_user_ids and outputs a CSV file of matching user_ids
 """
-
+import api.local.dev_config
+import api.local.secrets
 from api.local.admin_tasks.admin_tasks_utilities import CsvImporter
 
 
 class ImportManager(CsvImporter):
 
-    def __init__(self, anon_project_specific_user_id_column='anon_project_specific_user_id', csvfile_path=None):
+    def __init__(self, anon_id_column, csvfile_path=None):
         self.user_group_id = None
-        super().__init__(anon_project_specific_user_id_column, csvfile_path=csvfile_path)
+        super().__init__(anon_id_column, csvfile_path=csvfile_path)
         super().validate_input_file_and_get_users()
 
 
 if __name__ == '__main__':
-    manager = ImportManager()
-    print(manager.output_csv_of_user_ids())
+    manager = ImportManager(anon_id_column='anon_project_specific_user_id')
+    manager.output_csv_of_user_ids()

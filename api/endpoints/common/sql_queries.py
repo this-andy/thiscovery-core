@@ -83,6 +83,8 @@ BASE_PROJECT_SELECT_SQL = '''
             id, 
             name,
             short_name,
+            description,
+            project_page_url,
             created,
             modified,
             visibility,
@@ -92,7 +94,10 @@ BASE_PROJECT_SELECT_SQL = '''
                 from (
                     select 
                         id,
+                        name,
+                        short_name,
                         description,
+                        task_page_url,
                         created,
                         modified,
                         task_type_id,
@@ -316,6 +321,16 @@ GET_USER_BY_ANON_PROJECT_SPECIFIC_USER_ID_SQL = f'''
         JOIN public.projects_userproject as up on up.user_id = u.id
     WHERE
         up.anon_project_specific_user_id = (%s)
+'''
+
+
+GET_USER_BY_ANY_ANON_ID_SQL = f'''
+    {BASE_USER_SELECT_SQL}
+        JOIN public.projects_userproject as up on up.user_id = u.id
+        JOIN public.projects_usertask as ut on ut.user_project_id = up.id
+    WHERE
+        up.anon_project_specific_user_id = (%s) OR
+        ut.anon_user_task_id = (%s)
 '''
 
 

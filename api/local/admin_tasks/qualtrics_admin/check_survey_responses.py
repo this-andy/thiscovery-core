@@ -19,7 +19,8 @@
 This script parses csv files of surveys' responses exported from Qualtrics. It checks that none of the
 recorded responses belong to users in the test group of a project task
 """
-
+import api.local.dev_config
+import api.local.secrets
 import csv
 import os
 import sys
