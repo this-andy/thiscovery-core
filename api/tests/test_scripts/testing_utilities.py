@@ -25,7 +25,7 @@ import api.endpoints.user as user
 import api.endpoints.common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
 from api.endpoints.common.hubspot import HubSpotClient
-from api.endpoints.common.notifications import delete_all_notifications
+from thiscovery_lib.notifications import delete_all_notifications
 from api.endpoints.common.pg_utilities import truncate_table_multiple
 
 

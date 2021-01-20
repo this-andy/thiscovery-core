@@ -29,7 +29,7 @@ import thiscovery_lib.utilities as utils
 from common.pg_utilities import execute_query, execute_jsonpatch, execute_non_query, new_correlation_id
 from common.entity_update import EntityUpdate
 # from utils import validate_uuid
-from common.notification_send import notify_new_user_registration, notify_user_login
+from thiscovery_lib.notification_send import notify_new_user_registration, notify_user_login
 
 
 def validate_status(s):

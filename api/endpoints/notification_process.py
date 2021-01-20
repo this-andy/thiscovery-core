@@ -22,12 +22,12 @@ import json
 from datetime import datetime, timedelta
 from dateutil import parser, tz
 
-import common.notifications as c_notif
+import thiscovery_lib.notifications as c_notif
 import common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 from common.hubspot import HubSpotClient
-from common.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
+from thiscovery_lib.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
 from common.pg_utilities import execute_query
 from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL
 from thiscovery_lib.utilities import get_logger, new_correlation_id, now_with_tz, DetailedValueError
