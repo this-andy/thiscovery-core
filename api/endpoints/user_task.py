@@ -24,15 +24,13 @@ import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
+from common.eb_utilities import ThiscoveryEvent
 from common.pg_utilities import execute_query, execute_non_query
-from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, \
-    CREATE_USER_TASK_SQL
+from common.sql_queries import GET_USER_TASK_SQL, CHECK_IF_USER_TASK_EXISTS_SQL, CREATE_USER_TASK_SQL
 from user import get_user_by_id
 from project import get_project_task
 from user_project import create_user_project_if_not_exists
-from common.notification_send import notify_new_task_signup
 
-from common.eb_utilities import ThiscoveryEvent, EventbridgeClient
 
 STATUS_CHOICES = (
     'active',
@@ -317,19 +315,9 @@ class UserTask:
             'detail_type': 'task_signup',
             'user_id': str(self.user_id),
             'user_email': self.email,
-            'detail': {
-                'user_project_id': self.user_project_id,
-                'project_task_id': self.project_task_id,
-                'task_provider_name': self.task_provider_name,
-                'status': self.status,
-                'consented': self.consented,
-                'anon_user_task_id': self.anon_user_task_id,
-            },
+            'detail': new_user_task,
         }
         ThiscoveryEvent(task_signup_event).put_event()
-
-        # todo - move this and drive process from event raised above.
-        notify_new_task_signup(new_user_task, self._correlation_id)
 
         return new_user_task
 
