@@ -1674,8 +1674,9 @@ Resources:
           Type: EventBridgeRule
           Properties:
             Pattern:
-              source:
-                - aws.health
+              detail_type:
+                - task_signup
+            EventBusName: thiscovery-event-bus
           Metadata:
             StackeryName: RecordTaskSignup
 Parameters:
