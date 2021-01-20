@@ -26,7 +26,7 @@ import thiscovery_dev_tools.testing_tools as test_tools
 
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 from api.local.dev_config import UNIT_TEST_NAMESPACE
-from api.endpoints.common.hubspot import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
+from thiscovery_lib.hubspot_utilities import HubSpotClient, TASK_SIGNUP_TLE_TYPE_NAME
 from thiscovery_lib.notifications import get_notifications, NotificationStatus, NotificationType, \
     NotificationAttributes
 from api.endpoints.user import create_user_api

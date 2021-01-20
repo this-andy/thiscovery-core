@@ -28,7 +28,7 @@ import thiscovery_lib.notifications as notific
 import thiscovery_lib.notification_send as notific_send
 import thiscovery_lib.utilities as utils
 
-from api.endpoints.common.hubspot import HubSpotClient
+from thiscovery_lib.hubspot_utilities import HubSpotClient
 from thiscovery_lib.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
 from thiscovery_lib.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification

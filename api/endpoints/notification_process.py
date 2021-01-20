@@ -26,7 +26,7 @@ import thiscovery_lib.notifications as c_notif
 import common.pg_utilities as pg_utils
 import thiscovery_lib.utilities as utils
 from thiscovery_lib.dynamodb_utilities import Dynamodb
-from common.hubspot import HubSpotClient
+from thiscovery_lib.hubspot_utilities import HubSpotClient
 from thiscovery_lib.notifications import get_notifications, NotificationType, NotificationStatus, NotificationAttributes, mark_notification_processed, mark_notification_failure
 from common.pg_utilities import execute_query
 from common.sql_queries import SIGNUP_DETAILS_SELECT_SQL

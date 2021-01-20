@@ -19,7 +19,7 @@ import json
 import validators
 from http import HTTPStatus
 
-import common.hubspot as hs
+import thiscovery_lib.hubspot_utilities as hs
 import thiscovery_lib.utilities as utils
 import notification_process as np
 import user as u
