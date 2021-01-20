@@ -435,8 +435,6 @@ Resources:
         - AWSLambdaENIManagementAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
-        - DynamoDBCrudPolicy:
-            TableName: !Ref notifications
       VpcConfig:
         SecurityGroupIds:
           - !GetAtt VirtualNetwork.DefaultSecurityGroup
@@ -450,8 +448,6 @@ Resources:
           DB_ADDRESS: !GetAtt ThiscoveryDB.Endpoint.Address
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${ThiscoveryDB}
-          TABLE_NAME: !Ref notifications
-          TABLE_ARN: !GetAtt notifications.Arn
       Events:
         CoreAPIGETv1userid:
           Type: Api
@@ -913,8 +909,6 @@ Resources:
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
         - DynamoDBCrudPolicy:
-            TableName: !Ref tokens
-        - DynamoDBCrudPolicy:
             TableName: !Ref notifications
         - DynamoDBCrudPolicy:
             TableName: !Ref UserSpecificUrls
@@ -931,8 +925,6 @@ Resources:
           DB_PORT: !GetAtt ThiscoveryDB.Endpoint.Port
           DB_ARN: !Sub arn:aws:rds:${AWS::Region}:${AWS::AccountId}:cluster:${ThiscoveryDB}
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
-          TABLE_NAME: !Ref tokens
-          TABLE_ARN: !GetAtt tokens.Arn
           TABLE_NAME_2: !Ref notifications
           TABLE_ARN_2: !GetAtt notifications.Arn
           TABLE_NAME_3: !Ref UserSpecificUrls
@@ -1653,6 +1645,39 @@ Resources:
             EventBusName: !Ref EnvConfigeventbridgeauth0eventbusAsString
           Metadata:
             StackeryName: RecordUserLogin
+  RecordTaskSignup:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-RecordTaskSignup
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: RecordTaskSignup
+      CodeUri: api/endpoints
+      Handler: event_handlers.record_new_task_signup
+      Runtime: python3.7
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref notifications
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          TABLE_NAME: !Ref notifications
+          TABLE_ARN: !GetAtt notifications.Arn
+      Events:
+        EventRule2:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.health
+          Metadata:
+            StackeryName: RecordTaskSignup
 Parameters:
   StackTagName:
     Type: String
