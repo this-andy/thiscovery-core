@@ -127,12 +127,6 @@ def get_user_by_id_api(event, context):
 
     if len(result) > 0:
         user_json = result[0]
-        login_info = {
-            'email': user_json['email'],
-            'user_id': user_id,
-            'login_datetime': str(utils.now_with_tz())
-        }
-        notify_user_login(login_info, correlation_id)
         return {"statusCode": HTTPStatus.OK, "body": json.dumps(user_json)}
 
     else:
