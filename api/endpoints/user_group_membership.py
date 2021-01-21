@@ -23,7 +23,7 @@ from http import HTTPStatus
 import common.pg_utilities as pg_utils
 from common.pg_utilities import execute_non_query, execute_query_multiple
 from common.sql_queries import SQL_USER, SQL_USER_GROUP, SQL_USER_GROUP_MEMBERSHIP, INSERT_USER_GROUP_MEMBERSHIP_SQL
-from common.entity_base import EntityBase
+from thiscovery_lib.entity_base import EntityBase
 from user_group import UserGroup
 
 # todo how best to deal with correlation ids
