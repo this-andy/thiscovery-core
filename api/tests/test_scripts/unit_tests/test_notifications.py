@@ -24,14 +24,14 @@ from http import HTTPStatus
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 
 import api.endpoints.notification_process as np
-import api.endpoints.common.notifications as notific
-import api.endpoints.common.notification_send as notific_send
+import thiscovery_lib.notifications as notific
+import thiscovery_lib.notification_send as notific_send
 import thiscovery_lib.utilities as utils
 
-from api.endpoints.common.hubspot import HubSpotClient
-from api.endpoints.common.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
+from thiscovery_lib.hubspot_utilities import HubSpotClient
+from thiscovery_lib.notifications import NotificationStatus, NotificationAttributes, NotificationType, delete_all_notifications, get_notifications, \
     mark_notification_failure
-from api.endpoints.common.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification
+from thiscovery_lib.notification_send import notify_new_user_registration, notify_new_task_signup, notify_user_login, new_transactional_email_notification
 from thiscovery_lib.utilities import get_country_name, DetailedValueError
 from test_transactional_email import test_email_dict
 

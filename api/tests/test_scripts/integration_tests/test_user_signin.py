@@ -21,8 +21,8 @@ from http import HTTPStatus
 
 import api.endpoints.notification_process as np
 import api.endpoints.user as u
-import api.endpoints.common.hubspot as hs
-import api.endpoints.common.notifications as notific
+import thiscovery_lib.hubspot_utilities as hs
+import thiscovery_lib.notifications as notific
 import thiscovery_lib.utilities as utils
 import testing_utilities as test_utils
 

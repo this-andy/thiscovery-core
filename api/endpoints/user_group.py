@@ -20,7 +20,7 @@ import common.pg_utilities as pg_utils
 import common.sql_queries as sql_q
 from common.pg_utilities import execute_query
 from thiscovery_lib.utilities import validate_uuid, DetailedValueError
-from common.entity_base import EntityBase
+from thiscovery_lib.entity_base import EntityBase
 
 
 # todo how best to deal with correlation ids

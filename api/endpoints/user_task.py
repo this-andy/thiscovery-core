@@ -30,7 +30,7 @@ from common.sql_queries import GET_USER_TASK_SQL, UPDATE_USER_TASK_PROGRESS_INFO
 from user import get_user_by_id
 from project import get_project_task
 from user_project import create_user_project_if_not_exists
-from common.notification_send import notify_new_task_signup
+from thiscovery_lib.notification_send import notify_new_task_signup
 
 STATUS_CHOICES = (
     'active',

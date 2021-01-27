@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from api.endpoints.common.hubspot import HubSpotClient
+from thiscovery_lib.hubspot_utilities import HubSpotClient
 from thiscovery_lib.utilities import DetailedValueError
 
 

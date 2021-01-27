@@ -1,4 +1,4 @@
-from api.endpoints.common.hubspot import HubSpotClient, SingleSendClient
+from thiscovery_lib.hubspot_utilities import HubSpotClient, SingleSendClient
 
 
 def renew_token(client_class):

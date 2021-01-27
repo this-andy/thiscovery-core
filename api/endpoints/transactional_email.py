@@ -19,12 +19,12 @@ import json
 import validators
 from http import HTTPStatus
 
-import common.hubspot as hs
+import thiscovery_lib.hubspot_utilities as hs
 import thiscovery_lib.utilities as utils
 import notification_process as np
 import user as u
 from thiscovery_lib.dynamodb_utilities import Dynamodb
-from common.notification_send import new_transactional_email_notification
+from thiscovery_lib.notification_send import new_transactional_email_notification
 
 
 class TransactionalEmail:

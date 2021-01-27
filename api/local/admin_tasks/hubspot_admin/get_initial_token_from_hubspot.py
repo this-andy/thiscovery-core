@@ -1,5 +1,5 @@
 from pprint import pprint
-from api.endpoints.common.hubspot import HubSpotClient, SingleSendClient
+from thiscovery_lib.hubspot_utilities import HubSpotClient, SingleSendClient
 
 
 def setup_app(client_class):

@@ -1,5 +1,5 @@
 import thiscovery_lib.dynamodb_utilities as ddb
-import api.endpoints.common.hubspot as hs
+import thiscovery_lib.hubspot_utilities as hs
 from thiscovery_lib.utilities import get_aws_namespace
 
 
