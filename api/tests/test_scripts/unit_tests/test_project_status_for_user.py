@@ -18,6 +18,7 @@
 import testing_utilities as test_utils  # this should be the first import; it sets env variables
 import json
 from http import HTTPStatus
+from pprint import pprint
 from thiscovery_dev_tools.testing_tools import test_get
 
 import api.endpoints.user as u
@@ -113,6 +114,50 @@ class TestProjectStatusForUser(test_utils.DbTestCase):
                     self.assertEqual(expected_task_result.url, task['url'], user_id + ":" + task_desc + ":url")
                     self.assertEqual(expected_task_result.task_provider_name, task['task_provider_name'],
                                      user_id + ":" + task_desc + ":task_provider_name")
+
+    def test_response_includes_all_expected_attributes(self):
+        user_id = '8518c7ed-1df4-45e9-8dc4-d49b57ae0663'
+        querystring_parameters = {
+            'user_id': user_id
+        }
+        response = test_get(get_project_status_for_user_api, f'v1/{ENTITY_BASE_URL}', None, querystring_parameters, None)
+        result = json.loads(response['body'])
+        project = result[0]
+        expected_project_attributes = [
+            'id',
+            'name',
+            'short_name',
+            'description',
+            'project_page_url',
+            'project_is_visible',
+            'status',
+            'visibility',
+            'tasks',
+        ]
+        self.assertCountEqual(expected_project_attributes, project.keys())
+        task = project['tasks'][0]
+        expected_task_attributes = [
+            'anonymise_url',
+            'description',
+            'display_method',
+            'external_task_id',
+            'id',
+            'name',
+            'short_name',
+            'signup_available',
+            'signup_status',
+            'status',
+            'task_is_visible',
+            'task_page_url',
+            'task_provider_name',
+            'task_type_name',
+            'url',
+            'user_is_signedup',
+            'user_specific_url',
+            'user_task_status',
+            'visibility',
+        ]
+        self.assertCountEqual(expected_task_attributes, task.keys())
 
     def test_project_status_invalid_user_id(self):
         user_id = 'd1070e81-557e-40eb-a7ba-b951ddb7ebd'

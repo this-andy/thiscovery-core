@@ -21,7 +21,10 @@ project_user_select_template = Template(
     FROM (
         select 
             id, 
+            name,
             short_name,
+            description,
+            project_page_url,
             visibility,
             status,
             FALSE as project_is_visible,
@@ -30,7 +33,10 @@ project_user_select_template = Template(
                 from (
                     select 
                         task.id,
-                        description,
+                        task.name,
+                        task.short_name,
+                        task.description,
+                        task.task_page_url,
                         signup_status,
                         visibility,   
                         external_task_id,
